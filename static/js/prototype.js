@@ -1,0 +1,4 @@
+$(function ()
+ {
+   $('#need-js').hide();
+ });

@@ -1,0 +1,25 @@
+2017-04-20
+https://cloud.google.com/appengine/docs/flexible/python/runtime gives info on configuring gunicorn
+through a configuration file (gunicorn.conf.py). This can be useful if you need access to the
+client's IP address or to know whether the request was made through https or not. (HTTPS requests
+become http requests when they go through gunicorn.)
+
+Trying to figure out what url rules get specified in app.yaml and what ones in main.py using flask.
+
+2017-04-19
+Pure static pages don't work. Need to work with Flask, which can do both static (templated if you
+want them so) and app code, which I will need for authentication anyway.
+Flask is based on the WSGI interface. Gunicorn is the server on app engine; Werkzeug is the server
+when testing locally(?)
+
+2017-04-15
+Trying to get back to this...
+Starting with pure static pages ...
+
+2017-03-04
+I copied the files from ../python-docs-samples/appengine/flexible/hello_world/ but haven't set up
+the virtual environment yet.
+
+Do I need the main_test.py file?
+Can I get this thing to deploy and do authentication?
+I want to set up static pages for index.html, prototype.js, and prototype.css
