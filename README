@@ -1,3 +1,9 @@
+2017-04-21
+First successful deploy with css and js. Initialized git repository.
+Used http://realfavicongenerator.net/ to generate Q logo favicon based on one on MyQC. (It doesn't
+show up on appspot.com, but its presence suppresses a Javascript error message.)
+Next step: try to get user's QC google login id.
+
 2017-04-20
 https://cloud.google.com/appengine/docs/flexible/python/runtime gives info on configuring gunicorn
 through a configuration file (gunicorn.conf.py). This can be useful if you need access to the
