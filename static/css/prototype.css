@@ -4,3 +4,6 @@ body {
   padding: 1em;
   background-color: #0cc;
 }
+.error {
+  color:red;
+}

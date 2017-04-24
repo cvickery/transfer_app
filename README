@@ -1,3 +1,18 @@
+2017-04-24
+
+I think I have authentication under control. Main stumbling block was attempting to call
+auth.isSignedIn.listen() when user is not signed in. Rather, use auth.signIn(...).then() to set up
+the function that responds to successful signins. Once signed in, you can call .listen() to find out
+if the user signs out, but that's probably not needed for my apps.
+
+The reason for pursuing this was so that meaningful prompts could be delivered to the user: the
+prompt (choose account) dialog won't display unless the user allows third-party cookies from Google;
+need to alert people to sign in using their short-form QC email address (the latter not implemented
+yet).
+
+Next step: clean this up  bit. Then see if you can access a Postgres database to get info about the
+user's and the assessment repository metadata.
+
 2017-04-21
 First successful deploy with css and js. Initialized git repository.
 Used http://realfavicongenerator.net/ to generate Q logo favicon based on one on MyQC. (It doesn't

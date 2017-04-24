@@ -2,12 +2,27 @@
 <html>
   <head>
     <title>Provost Prototype</title>
+
     <link rel='stylesheet' href='/static/css/prototype.css' />
-    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
-    <script src='/static/js/prototype.js'></script>
+
+    <meta
+      name="google-signin-client_id"
+      content="4735595349-oje44rn7t2ohu3881ocpf2u7g6gt61c6.apps.googleusercontent.com">
+    <script src="/static/js/login.js"></script>
+    <script src="https://apis.google.com/js/platform.js?onload=appStart" async defer></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="/static/js/prototype.js"></script>
+
   </head>
   <body>
-    <h1>Hello, Stranger!</h1>
+    <h1>Hello, <span id='user-name'>Stranger</span>!</h1>
+    <p id='error-msg' class='error'></p>
+    <div>Current User: <span id="curr-user-cell"></span></div>
+    <div>Signed In? <span id="signed-in-cell"></span></div>
+    <div>User ID: <span id="user-id"></span></div>
+    <div>User Scopes: <span id="user-scopes"></span></div>
+    <div>Auth Response: <span id="auth-response"></span></div>
     <p id='need-js'>This app requires JavaScript.</p>
   </body>
 </html>
