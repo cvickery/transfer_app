@@ -103,39 +103,55 @@
 //     updateGoogleUser();
 //   }
 // };
-
 var auth = null;
 console.log('prototype.js here');
 function appStart()
 {
   console.log('doit here');
-
-  gapi.load('auth2', function ()
+  document.getElementById('error-msg').innerText = '';
+  try
   {
-    auth = gapi.auth2.init(
+    gapi.load('auth2', function ()
     {
-      client_id: '4735595349-oje44rn7t2ohu3881ocpf2u7g6gt61c6.apps.googleusercontent.com',
-      scope: 'profile'
+      auth = gapi.auth2.init(
+      {
+        client_id: '4735595349-oje44rn7t2ohu3881ocpf2u7g6gt61c6.apps.googleusercontent.com',
+        scope: 'profile'
+      });
+      auth.then(authInit, authError);
     });
-    console.log(auth);
-    auth.then(authInit, authError);
-  });
+  }
+  catch (e)
+  {
+    document.getElementById('error-msg').innerText = 'appStart: ' + e;
+  }
+
 }
 
 function authInit()
 {
   console.log('authInit here');
-  var auth = gapi.auth2.getAuthInstance();
-  if (auth.isSignedIn.get())
+  try
   {
-    console.log('is signed in');
-    console.log(auth);
-    onSignIn(auth.currentUser.get());
+    var auth = gapi.auth2.getAuthInstance();
+    if (auth.isSignedIn.get())
+    {
+      console.log('is signed in', auth);
+      onSignIn(auth.currentUser.get());
+    }
+    else
+    {
+      console.log('signing in');
+      var p = auth.signIn({scope: 'profile email openid', prompt: 'select_account'});
+console.log('promise:', p)
+      p.then(signInListener);
+      document.getElementById('error-msg').innerText =
+          'Signing in: be sure pop-ups are allowed for this site.'
+    }
   }
-  else
+  catch (e)
   {
-    console.log('signing in');
-    auth.signIn({scope: 'profile email openid', prompt: 'select_account'}).then(signInListener);
+    document.getElementById('error-msg').innerText = 'authInit: ' + e;
   }
 }
 
@@ -144,18 +160,47 @@ function authError(reason)
   console.log('authError', reason);
   if (reason.error.indexOf('idpiframe_initialization_failed') !== -1)
   {
-    document.getElementById('error-msg').innerText = 'You need to enable cookies from Google ' +
-                                                     'to use this site.';
+    document.getElementById('error-msg').innerText =
+      'Error signing in: Your browser is not set to allow third-party cookies from Google.';
+  }
+  else
+  {
+    document.getElementById('error-msg').innerText = reason.error;
   }
 }
 
-function signInListener(isSignedIn)
+function signInListener(userObj)
 {
-  console.log('signInListener: ' + isSignedIn);
+  console.log('signInListener: ', userObj);
+  if (userObj.isSignedIn())
+  {
+    onSignIn(userObj)
+  }
+  else
+  {
+    console.log('User not signed in');
+  }
 }
-function onSignIn(user)
+
+function onSignIn(userObj)
 {
-  var profile = user.getBasicProfile();
-  $('#user-name').text(profile.getName());
-  console.log(profile.getName());
+  console.log('user: ', userObj);
+  var profile = userObj.getBasicProfile();
+  console.log('profile: ', profile);
+  document.getElementById('error-msg').innerText = '';
+  document.getElementById('user-img').innerHTML = '<img alt="" width="32" src="' +
+                                                  profile.getImageUrl() + '"> '
+  document.getElementById('user-name').innerText = profile.getName();
+  var email = profile.getEmail();
+  var email_domain = email.substr(email.indexOf('@')).toLowerCase();
+  console.log(email, email_domain);
+  if (email_domain !== '@qc.cuny.edu')
+  {
+    document.getElementById('error-msg').innerText = 'You are signed in as ' + email +
+        ', but you must be signed in using a QC email address to access this site.'
+  }
+  else
+  {
+    document.getElementById('error-msg').innerText = 'Everything is hunky-dory.'
+  }
 }

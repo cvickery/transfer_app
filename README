@@ -1,3 +1,10 @@
+2017-04-28
+Trying to give meaningful error messages when people don't sign in successfully for one reason or
+another. This is going to take a lot of testing to get "right." One mystery case: if I disallow
+third party cookies, I get an appropriate message saying they aren't allowed from Google. If I enable
+them I used to get a message saying I was signed into my gmail account, but now Google hangs in that
+situation. Going to bed.
+
 2017-04-24
 
 I think I have authentication under control. Main stumbling block was attempting to call

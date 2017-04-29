@@ -2,8 +2,10 @@ body {
   font-family: sans-serif;
   border: 1em;
   padding: 1em;
-  background-color: #0cc;
+  background-color: #eff;
 }
 .error {
-  color:red;
+  color:#922;
+  font-size:1.5em;
+  font-variant:small-caps;
 }
