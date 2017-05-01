@@ -5,7 +5,14 @@ body {
   background-color: #eff;
 }
 .error {
-  color:#922;
-  font-size:1.5em;
-  font-variant:small-caps;
+  color: #922;
+  font-size: 1.5em;
+  text-transform: lowercase;
+  font-variant: small-caps;
+}
+button {
+    background-color: white;
+    font-size: 0.8em;
+    padding: 0.5em;
+    margin: 1em;
 }

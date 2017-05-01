@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from flask import Flask, url_for, render_template, redirect
+from flask import Flask, url_for, render_template, redirect, send_file
 
 app = Flask(__name__)
 
@@ -10,6 +10,10 @@ app = Flask(__name__)
 @app.route('/index')
 def index():
   return render_template('index.html')
+
+@app.route('/favicon.ico')
+def favicon():
+  return send_file('favicon.ico', mimetype = "image/x-icon")
 
 @app.errorhandler(500)
 def server_error(e):
