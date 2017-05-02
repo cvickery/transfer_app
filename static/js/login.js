@@ -1,5 +1,5 @@
 var auth = null;
-console.log('prototype.js here');
+console.log('login.js here');
 
 //  manageStatus()
 //  -------------------------------------------------------------------
@@ -36,6 +36,7 @@ function manageStatus(msg = null, show_signin = false, show_signout = false, sho
   $('#signin-button').click(function ()
   {
     console.log('signin click');
+    $('#content-div').hide();
     gapi.auth2.getAuthInstance()
                .signIn({scope: 'profile email openid', prompt: 'select_account'})
                .then(signInListener, authError);
@@ -45,6 +46,7 @@ function manageStatus(msg = null, show_signin = false, show_signout = false, sho
   $('#signout-button').click(function ()
   {
     console.log('signout click');
+    $('#content-div').hide();
     var auth = gapi.auth2.getAuthInstance();
     auth.signOut().then(function ()
     {
@@ -59,6 +61,7 @@ function manageStatus(msg = null, show_signin = false, show_signout = false, sho
   $('#switch-button').click(function ()
   {
     console.log('switch click');
+    $('#content-div').hide();
     gapi.auth2.getAuthInstance()
                .signIn({scope: 'profile email openid', prompt: 'select_account'})
                .then(signInListener, authError);
@@ -183,11 +186,12 @@ function onSignIn(userObj)
     document.getElementById('error-msg').innerText = 'You are signed in as ' + email +
         ', but you must be signed in using a QC email address to access this site.'
     manageStatus('You are signed in as ' + email +
-        ', but you must be signed in using a QC email address to access this site.', false, true, true);
+        ', but you must be signed in using a QC email address to use this site.', false, true, true);
   }
   else
   {
     // document.getElementById('error-msg').innerText = 'Everything is hunky-dory.';
     manageStatus('', false, true, false);
+    $('#content-div').show();
   }
 }
