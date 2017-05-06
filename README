@@ -1,3 +1,10 @@
+2017-05-05
+
+Thinking signin flow is working, start adding and app that accesses G-drive. After much searching,
+finally stumbled across gapi.client. For login, there is a url for js apis on google. The gapi
+object has a load() function, which I used to load the auth module. Now I'm going to try loading
+the client module and hope to access stuff on drive.
+
 2017-05-01
 
 Chief Alpha Tester (CAT) Report

@@ -38,8 +38,8 @@ function manageStatus(msg = null, show_signin = false, show_signout = false, sho
     console.log('signin click');
     $('#content-div').hide();
     gapi.auth2.getAuthInstance()
-               .signIn({scope: 'profile email openid', prompt: 'select_account'})
-               .then(signInListener, authError);
+              .signIn({scope: 'profile email openid', prompt: 'select_account'})
+              .then(signInListener, authError);
   });
 
   //  Signout handler
@@ -47,11 +47,11 @@ function manageStatus(msg = null, show_signin = false, show_signout = false, sho
   {
     console.log('signout click');
     $('#content-div').hide();
-    var auth = gapi.auth2.getAuthInstance();
+    auth = gapi.auth2.getAuthInstance();
     auth.signOut().then(function ()
     {
       document.getElementById('user-img').innerHTML = '<img alt="" width="32" src="' +
-                                                  '/favicon.ico"> '
+                                                      '/favicon.ico"> '
       document.getElementById('user-name').innerText = 'Stranger';
       manageStatus('', true, false, false);
     });
@@ -77,7 +77,7 @@ function appStart()
   manageStatus();
   try
   {
-    gapi.load('auth2', function ()
+    gapi.load('client:auth2', function ()
     {
       auth = gapi.auth2.init(
       {
@@ -172,6 +172,8 @@ function authError(reason)
 function onSignIn(userObj)
 {
   console.log('onSignIn userObj: ', userObj);
+  console.log('onSignIn scopes: ', userObj.getGrantedScopes());
+  console.log('onSignIn domains: ', userObj.getHostedDomain());
   var profile = userObj.getBasicProfile();
   console.log('onSignIn profile: ', profile);
   // document.getElementById('error-msg').innerText = '';
@@ -192,6 +194,12 @@ function onSignIn(userObj)
   {
     // document.getElementById('error-msg').innerText = 'Everything is hunky-dory.';
     manageStatus('', false, true, false);
+    gapi.client.init(
+    {
+      apiKey: 'AIzaSyCqVYaYohqgP_b4DekcHKZAPIHiCIYl3r0',
+      clientId: '4735595349-oje44rn7t2ohu3881ocpf2u7g6gt61c6.apps.googleusercontent.com',
+      scope: 'profile',
+    }).then(clientReady);
     $('#content-div').show();
   }
 }
