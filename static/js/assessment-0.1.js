@@ -5,43 +5,41 @@
 console.log('assessment.js here');
 $(function ()
 {
- $('#content-div').html('<h1>Assessment Repository Stuff</h1>').show();
+ $('#content-div').html('<h1>Assessment Repository</h1><div id="repository-info"></div>').show();
 });
 
-function clientReady()
+function clientReady(email)
 {
   console.log('clientReady', gapi.client);
-  /*******************************************************************************************
-   *  TODO: this stuff was supposed to be done when you called gapi.client.init in login.js  *
-   *******************************************************************************************/
-  var DISCOVERY_DOCS = ['https://sheets.googleapis.com/$discovery/rest?version=v4'];
-  var SCOPES = 'HTTPS://www.googleapis.com/auth/spreadsheets.readonly';
-
-  gapi.client.init(
+  console.log('get the values', gapi.client.sheets.spreadsheets.values);
+  var user = email.substr(0, email.indexOf('@'));
+  manageStatus('Accessing Spreadsheet...', false, true, false);
+  gapi.client.sheets.spreadsheets.values.batchGet(
   {
-    discoveryDocs: DISCOVERY_DOCS,
-    clientId: '4735595349-oje44rn7t2ohu3881ocpf2u7g6gt61c6.apps.googleusercontent.com',
-    scope: SCOPES
-  }).then(function ()
+    spreadsheetId: '10QHfEDwmF3N9E1KBnC7XP_DW-Ht51j5UmkRuH-KGbYQ',
+    ranges: ['Documents', 'Editors']
+  }).then(function (response)
   {
-    // client.init success
-    console.log('get the values');
-    gapi.client.sheets.spreadsheets.values.get(
+    // values.get success
+    console.log(response.result);
+    manageStatus('', false, true, false);
+    // Tell what kind of person this is, and how many docs there are
+    var user_info = '';
+    for (var row = 1; row < response.result.valueRanges[1].values.length; row++)
     {
-      spreadsheetId: '10QHfEDwmF3N9E1KBnC7XP_DW-Ht51j5UmkRuH-KGbYQ',
-      range: 'Documents'
-    }).then(function (response)
+      if (response.result.valueRanges[1].values[row][1] === user)
+      {
+        user_info += '<p>Department: ' + response.result.valueRanges[1].values[row][0] + '</p>';
+      }
+    }
+    if (user_info === '')
     {
-      // values.get success
-      console.log(response.result);
-    }, function (reason)
-    {
-      // values.get fail
-      console.log('Error: ' + reason.result.error.message);
-    });
+      user_info = '<p>You have not been authorized to access the assessment repository.</p>'
+    }
+    $('#repository-info').html(user_info);
   }, function (reason)
   {
-    // client.init fail
-    console.log('Error: ' + reason.result.error.message);
+    // values.get fail
+    console.log('values.get Error: ' + reason.result.error.message);
   });
 }

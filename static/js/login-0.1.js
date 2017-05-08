@@ -1,5 +1,14 @@
-var auth = null;
 console.log('login.js here');
+var signin_msg =
+    'You need to sign into Google using your QC account in order to use this site.<br/>' +
+    'Be sure your browser is not set to block pop-ups or third-party cookies from ' +
+    'Google before signing in.<br/>' +
+    'When prompted for your email address, use the short form (jdoe@qc.cuny.edu ' +
+    'rather than jane.doe@qc.cuny.edu). Students: use your CAMS account address.<br/>' +
+    'See <a target="_blank" href="http://ctl.qc.cuny.edu/google">http://ctl.qc.cuny.edu/google' +
+    '</a> for more information.';
+var auth = null;
+var client = null;
 
 //  manageStatus()
 //  -------------------------------------------------------------------
@@ -16,7 +25,7 @@ function manageStatus(msg = null, show_signin = false, show_signout = false, sho
     return;
   }
   var buttons = '';
-  document.getElementById('error-msg').innerText = msg ? msg : '';
+  document.getElementById('error-msg').innerHTML = msg ? msg : '';
   if (show_signin)
   {
     buttons += '<button id="signin-button">Sign In</button>';
@@ -51,9 +60,9 @@ function manageStatus(msg = null, show_signin = false, show_signout = false, sho
     auth.signOut().then(function ()
     {
       document.getElementById('user-img').innerHTML = '<img alt="" width="32" src="' +
-                                                      '/favicon.ico"> '
+                                                      '/favicon.ico"> ';
       document.getElementById('user-name').innerText = 'Stranger';
-      manageStatus('', true, false, false);
+      manageStatus(signin_msg, true, false, false);
     });
   });
 
@@ -69,29 +78,40 @@ function manageStatus(msg = null, show_signin = false, show_signout = false, sho
 }
 
 //  appStart()
-//  -------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+/*  Initialize Client API and manage User signin.
+ *
+ */
 function appStart()
 {
   console.log('appStart here');
-  // document.getElementById('error-msg').innerText = '';
   manageStatus();
   try
   {
     gapi.load('client:auth2', function ()
     {
-      auth = gapi.auth2.init(
+      console.log('client.init');
+      gapi.client.init(
       {
-        client_id: '4735595349-oje44rn7t2ohu3881ocpf2u7g6gt61c6.apps.googleusercontent.com',
-        scope: 'profile'
-      });
-      auth.then(authInit, authError);
+        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+        clientId: '4735595349-oje44rn7t2ohu3881ocpf2u7g6gt61c6.apps.googleusercontent.com',
+        scope: 'https://www.googleapis.com/auth/spreadsheets.readonly'
+      }).then(authInit);
+      // }).then(function ()
+      // {
+      //   console.log('this is then');
+        // gapi.auth2.init(
+        // {
+        //   client_id: '4735595349-oje44rn7t2ohu3881ocpf2u7g6gt61c6.apps.googleusercontent.com',
+        //   scope: 'profile'
+        // }).then(authInit, authError);
+      // });
     });
   }
   catch (e)
   {
     manageStatus('appStart: ' + e);
   }
-
 }
 
 //  authInit()
@@ -110,9 +130,12 @@ function authInit()
     else
     {
       console.log('authInit signing in');
-      auth.signIn({scope: 'profile email openid', prompt: 'select_account'})
-           .then(signInListener, authError);
-      manageStatus('Be sure pop-ups from Google are allowed for this site.', true, false, false);
+      auth.signIn(
+      {
+        scope: 'profile email openid',
+        prompt: 'select_account'
+      }).then(signInListener, authError);
+      manageStatus(signin_msg, true, false, false);
     }
   }
   catch (e)
@@ -129,7 +152,7 @@ function signInListener(userObj)
   console.log('signInListener: ', userObj);
   if (userObj.isSignedIn())
   {
-    onSignIn(userObj)
+    onSignIn(userObj);
   }
   else
   {
@@ -144,7 +167,7 @@ function authError(reason)
 {
   console.log('authError reason:', reason);
   var msg = 'Signin Failed';
-  if ((typeof reason.error) !== "undefined")
+  if ((typeof reason.error) !== undefined)
   {
     console.log((typeof reason.error) !== undefined);
     if (reason.error.indexOf('idpiframe_initialization_failed') !== -1)
@@ -163,7 +186,7 @@ function authError(reason)
   }
   else
   {
-      manageStatus('Be sure pop-ups from Google are allowed for this site.', true, false, false);
+      manageStatus(signin_msg, true, false, false);
   }
 }
 
@@ -178,28 +201,30 @@ function onSignIn(userObj)
   console.log('onSignIn profile: ', profile);
   // document.getElementById('error-msg').innerText = '';
   document.getElementById('user-img').innerHTML = '<img alt="" width="32" src="' +
-                                                  profile.getImageUrl() + '"> '
+                                                  profile.getImageUrl() + '"> ';
   document.getElementById('user-name').innerText = profile.getName();
   var email = profile.getEmail();
   var email_domain = email.substr(email.indexOf('@')).toLowerCase();
   console.log('onSignIn email & domain:', email, email_domain);
   if (email_domain !== '@qc.cuny.edu')
   {
-    document.getElementById('error-msg').innerText = 'You are signed in as ' + email +
-        ', but you must be signed in using a QC email address to access this site.'
-    manageStatus('You are signed in as ' + email +
-        ', but you must be signed in using a QC email address to use this site.', false, true, true);
+    manageStatus('You are signed in to Google as ' + email + '.<br/>' + signin_msg,
+                 false, true, true);
   }
   else
   {
-    // document.getElementById('error-msg').innerText = 'Everything is hunky-dory.';
+    // User is authenticated
     manageStatus('', false, true, false);
-    gapi.client.init(
+
+    // Initialize client APIs if there is a clientReady function available
+    if (typeof clientReady === 'function')
     {
-      apiKey: 'AIzaSyCqVYaYohqgP_b4DekcHKZAPIHiCIYl3r0',
-      clientId: '4735595349-oje44rn7t2ohu3881ocpf2u7g6gt61c6.apps.googleusercontent.com',
-      scope: 'profile',
-    }).then(clientReady);
+      clientReady(email);
+    }
+    else
+    {
+      console.log('no clientReady');
+    }
     $('#content-div').show();
   }
 }

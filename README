@@ -1,3 +1,10 @@
+2017-05-08
+
+I know it can be done: I added the quickstart example from the web as a sheet at /quickstart (flask
+is slowly submitting to my will), and it worked using my client id. And it worked when I substituted
+my test spreadsheet's id for theirs. They specify the discovery documents array, the client id, and
+the scope uri when they call client.init, so I know that's the correct pattern.
+
 2017-05-05
 
 Thinking signin flow is working, start adding and app that accesses G-drive. After much searching,

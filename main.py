@@ -10,6 +10,10 @@ app = Flask(__name__)
 def favicon():
   return send_file('favicon.ico', mimetype = "image/x-icon")
 
+@app.route('/image/<file_name>')
+def image_file(file_name):
+  return send_file('static/images/' + file_name + '.png')
+
 @app.route('/')
 @app.route('/index')
 def index():
@@ -18,6 +22,10 @@ def index():
 @app.route('/assessment')
 def assessment():
   return render_template('assessment.html')
+
+@app.route('/quickstart')
+def quickstart():
+  return render_template('quickstart.html')
 
 @app.errorhandler(500)
 def server_error(e):
