@@ -1,12 +1,12 @@
 console.log('login.js here');
 var signin_msg =
-    'You need to sign into Google using your QC account in order to use this site.<br/>' +
-    'Be sure your browser is not set to block pop-ups or third-party cookies from ' +
-    'Google before signing in.<br/>' +
-    'When prompted for your email address, use the short form (jdoe@qc.cuny.edu ' +
-    'rather than jane.doe@qc.cuny.edu). Students: use your CAMS account address.<br/>' +
-    'See <a target="_blank" href="http://ctl.qc.cuny.edu/google">http://ctl.qc.cuny.edu/google' +
-    '</a> for more information.';
+    '<ul><li>You need to sign into Google using your QC account in order to use this site.</li>' +
+    '<li>Be sure your browser is not set to block pop-ups or third-party cookies from ' +
+    'Google before signing in.</li>' +
+    '<li>When prompted for your email address, use the short form (jdoe@qc.cuny.edu ' +
+    'rather than jane.doe@qc.cuny.edu). Students: use your CAMS account address.</li></ul>' +
+    '<p>See <a target="_blank" href="http://ctl.qc.cuny.edu/google">http://ctl.qc.cuny.edu/google' +
+    '</a> for more information.</p>';
 var auth = null;
 var client = null;
 
