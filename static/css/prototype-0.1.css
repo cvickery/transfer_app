@@ -23,6 +23,9 @@ button {
     width:50%;
     background-color:white;
     display:none;
+    padding: 1em;
+    border: 1px solid black;
+    border-radius: 0.25em;
 }
 
 fieldset {
@@ -47,4 +50,9 @@ table, td, th {
     left: 50%;
     transform: translate(-50%, -50%);
     display: none;
+}
+
+
+h2 + * {
+  margin-left: 2em;
 }

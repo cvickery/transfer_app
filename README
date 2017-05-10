@@ -1,3 +1,15 @@
+2017-05-10
+
+Because of an error message, it became clear that gapi.load('auth2:client', then gapi.init(auth2,
+then gapi.init(client was leading to inconsistent authentications. So I switched it around to be
+more like the quickstart: init the client apis, then init and authenticate the user. It works.
+
+Accessing the assessment spreadsheet seems to go so much faster than the HTML services api from .gs
+files. Experimenting with full fetch of the assessment workbook and generating summary info all  on
+the client side today to see whether I might be able to put off (or even avoid altogether) the
+process of setting up a Linux VM running PostgreSQL for the faculty scholarship/tenurebox
+repository.
+
 2017-05-08
 
 I know it can be done: I added the quickstart example from the web as a sheet at /quickstart (flask
