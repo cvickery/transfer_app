@@ -42,8 +42,8 @@ function clientReady(email)
   {
     // values.get success
     console.log(response.result);
-    var elapsed = (Date.now() - start_query) /1000;
-    manageStatus('That took ' + Number(elapsed).toLocaleString() + ' seconds', false, true, false);
+    var elapsed = (Date.now() - start_query) / 1000;
+    manageStatus('Sheet access took ' + Number(elapsed).toLocaleString() + ' seconds', false, true, false);
     // For each sheet in the result set, augment it with its data array and cols structure
     // [Assumes the returned valueRanges array matches the order
     // of the ranges array passed to batchGet().]
@@ -75,6 +75,7 @@ function clientReady(email)
                      '<th>By Type</th><th>By Program</th></tr>';
     var docs_by_dept = {};
     var depts = [];
+    var total_docs = 0, total_by_type = 0, total_by_prog = 0;
     for (var d_row = 1; d_row < sheets.documents.values.length; d_row++)
     {
       var dept = sheets.documents.values[d_row][sheets.documents.cols.department];
@@ -87,15 +88,17 @@ function clientReady(email)
           num_docs: 0,
           num_by_type: 0,
           num_by_prog: 0
-        }
+        };
       }
       docs_by_dept[dept].num_docs++;
+      total_docs++;
       for (var t_row = 1; t_row < sheets.documents_by_type.values.length; t_row++)
       {
         if (doc_id ===
             sheets.documents_by_type.values[t_row][sheets.documents_by_type.cols.document_id])
         {
           docs_by_dept[dept].num_by_type++;
+          total_by_type++;
           break; // count each doc just once
         }
       }
@@ -105,18 +108,20 @@ function clientReady(email)
             sheets.documents_by_program.values[p_row][sheets.documents_by_program.cols.document_id])
         {
           docs_by_dept[dept].num_by_prog++;
+          total_by_prog++;
           break; // count each doc just once
         }
       }
     }
     console.log(docs_by_dept);
-    depts.sort(function (a,b)
+    // Sort in decreasing order by number of documents
+    depts.sort(function (a, b)
     {
-      if (docs_by_dept[a].num_docs < docs_by_dept[b].num_docs)
+      if (docs_by_dept[a].num_docs > docs_by_dept[b].num_docs)
       {
         return -1;
       }
-      if (docs_by_dept[a].num_docs > docs_by_dept[b].num_docs)
+      if (docs_by_dept[a].num_docs < docs_by_dept[b].num_docs)
       {
         return +1;
       }
@@ -125,16 +130,16 @@ function clientReady(email)
         return 0;
       }
     });
+
     for (var dept in depts)
     {
-      if (depts.hasOwnProperty(dept))
-      {
-        state_info += '<tr><td>' + dept + '</td><td>' + docs_by_dept[dept].num_docs + '</td>' +
-        '<td>' + docs_by_dept[dept].num_by_type + '</td>' +
-        '<td>' + docs_by_dept[dept].num_by_prog + '</td></tr>';
-      }
+      state_info += '<tr><td>' + depts[dept] + '</td><td>' + docs_by_dept[depts[dept]].num_docs + '</td>' +
+      '<td>' + docs_by_dept[depts[dept]].num_by_type + '</td>' +
+      '<td>' + docs_by_dept[depts[dept]].num_by_prog + '</td></tr>';
     }
 
+    state_info += '<tr><td>Total</td><td>' + total_docs + '</td><td>' + total_by_type +
+                  '</td><td>' + total_by_prog + '</td></tr>';
     state_info += '</table></div>';
 
     // Tell what kind of person this is, and how many docs there are

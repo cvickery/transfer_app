@@ -56,3 +56,7 @@ table, td, th {
 h2 + * {
   margin-left: 2em;
 }
+
+tr:last-child {
+  font-weight: bold;
+}
