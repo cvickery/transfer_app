@@ -155,7 +155,7 @@ function clientReady(email)
         user_info += '<p><strong>Can access all departments:</strong> ' +
           (sheets.editors.values[row][sheets.editors.cols.is_super] ? 'Yes' : 'No') + '</p>';
         user_info += '<p><strong>View-only access:</strong> ' +
-          (sheets.editors.values[row][sheets.editors.cols.can_edit] ? 'Yes': 'No') + '</p>';
+          (sheets.editors.values[row][sheets.editors.cols.can_edit] ? 'No': 'Yes') + '</p>';
         if (sheets.editors.values[row][sheets.editors.cols.events])
         {
           user_info += '<p><strong>Edit history:</strong> ' +
