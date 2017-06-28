@@ -1,7 +1,9 @@
 import logging
 import sys
 
-from flask import Flask, url_for, render_template, redirect, send_file
+import sqlite3
+
+from flask import Flask, url_for, render_template, redirect, send_file, Markup, request
 
 app = Flask(__name__)
 
@@ -23,9 +25,37 @@ def index():
 def assessment():
   return render_template('assessment.html')
 
-@app.route('/quickstart')
-def quickstart():
-  return render_template('quickstart.html')
+# Courses page
+@app.route('/courses/', methods=['POST', 'GET'])
+def courses():
+  if request.method == 'POST':
+    conn = sqlite3.connect('static/db/courses.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    query = "select * from courses where institution = '{}'".format(request.form['institution'].upper())
+    c.execute(query)
+    result = ''
+    for row in c:
+      result = result + """
+      <div><strong>{}-{} {}</strong><br/>
+      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</div>
+      """.format(row['discipline'],
+                 row['number'],
+                 row['title'],
+                 float(row['hours']),
+                 float(row['credits']),
+                 row['requisites'],
+                 row['description'],
+                 row['designation'])
+  else:
+    result = """
+    <form method="post" action="">
+      <legend for="institution">Institution: </legend>
+      <input type="text" id="institution" name="institution" />
+      <button type="submit">Please</button>
+    <form>
+    """
+  return render_template('courses.html', result=Markup(result))
 
 @app.errorhandler(500)
 def server_error(e):
