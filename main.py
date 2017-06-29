@@ -28,33 +28,50 @@ def assessment():
 # Courses page
 @app.route('/courses/', methods=['POST', 'GET'])
 def courses():
+  num_courses = 0
   if request.method == 'POST':
     conn = sqlite3.connect('static/db/courses.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    query = "select * from courses where institution = '{}'".format(request.form['institution'].upper())
+    c.execute("select name from institutions where code ='{}'".format(request.form['inst']))
+    row = c.fetchone()
+    result = "<h1>{} Courses</h1>".format(row['name'])
+    query = "select * from courses where institution = '{}' order by discipline, number"\
+      .format(request.form['inst'])
     c.execute(query)
-    result = ''
     for row in c:
+      num_courses += 1
       result = result + """
-      <div><strong>{}-{} {}</strong><br/>
-      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</div>
+      <p class="catalog-entry"><strong>{}-{} {}</strong> (<em>{}; {}</em>)<br/>
+      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
       """.format(row['discipline'],
                  row['number'],
                  row['title'],
+                 row['career'],
+                 row['cuny_subject'],
                  float(row['hours']),
                  float(row['credits']),
                  row['requisites'],
                  row['description'],
                  row['designation'])
-  else:
+  if num_courses == 0:
+    prompt = '<fieldset><legend>Select a College</legend>'
+    conn = sqlite3.connect('static/db/courses.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("select * from institutions order by code")
+    n = 0
+    for row in c:
+      n += 1
+      prompt = prompt + """
+      <input type="radio" name="inst" id="inst-{}" value="{}"><label for="inst-{}">{}</label>
+      """.format(n, row['code'], n, row['name'])
     result = """
     <form method="post" action="">
-      <legend for="institution">Institution: </legend>
-      <input type="text" id="institution" name="institution" />
+      {}
       <button type="submit">Please</button>
     <form>
-    """
+    """.format(prompt)
   return render_template('courses.html', result=Markup(result))
 
 @app.errorhandler(500)
