@@ -1,5 +1,6 @@
 $(function ()
 {
-  var gapi_delay = 0;
   $('#need-js').hide();
+  $('button').prop('disabled', true);
+  $('input').change(function(){$('button').prop('disabled', false);})
 });

@@ -60,3 +60,14 @@ h2 + * {
 .totals {
   font-weight: bold;
 }
+.institution-select {
+  display:inline-block;
+  width:18em;
+}
+
+.subtitle {
+  margin:-0.5em 0 1em 0;
+  font-size:0.9em;
+  font-style:italic;
+}
+

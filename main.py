@@ -1,6 +1,7 @@
 import logging
 import sys
 
+import datetime
 import sqlite3
 
 from flask import Flask, url_for, render_template, redirect, send_file, Markup, request
@@ -33,19 +34,21 @@ def courses():
     conn = sqlite3.connect('static/db/courses.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute("select name from institutions where code ='{}'".format(request.form['inst']))
+    c.execute("select name, date_updated from institutions where code ='{}'".format(request.form['inst']))
     row = c.fetchone()
-    result = "<h1>{} Courses</h1>".format(row['name'])
+    date_updated = datetime.datetime.strptime(row['date_updated'], '%Y-%m-%d').strftime('%B %d, %Y')
+    result = "<h1>{} Courses</h1><p class='subtitle'>As of {}</p>".format(row['name'], date_updated)
+
     query = "select * from courses where institution = '{}' order by discipline, number"\
       .format(request.form['inst'])
     c.execute(query)
     for row in c:
       num_courses += 1
       result = result + """
-      <p class="catalog-entry"><strong>{}-{} {}</strong> (<em>{}; {}</em>)<br/>
+      <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}</em>)<br/>
       {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
       """.format(row['discipline'],
-                 row['number'],
+                 row['number'].strip(),
                  row['title'],
                  row['career'],
                  row['cuny_subject'],
@@ -54,6 +57,8 @@ def courses():
                  row['requisites'],
                  row['description'],
                  row['designation'])
+
+  # Form not submitted yet or institution has no courses
   if num_courses == 0:
     prompt = '<fieldset><legend>Select a College</legend>'
     conn = sqlite3.connect('static/db/courses.db')
@@ -64,12 +69,15 @@ def courses():
     for row in c:
       n += 1
       prompt = prompt + """
-      <input type="radio" name="inst" id="inst-{}" value="{}"><label for="inst-{}">{}</label>
+      <div class='institution-select'>
+        <input type="radio" name="inst" id="inst-{}" value="{}">
+        <label for="inst-{}">{}</label>
+      </div>
       """.format(n, row['code'], n, row['name'])
     result = """
     <form method="post" action="">
       {}
-      <button type="submit">Please</button>
+      <div><button type="submit">Please</button></div>
     <form>
     """.format(prompt)
   return render_template('courses.html', result=Markup(result))
