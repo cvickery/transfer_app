@@ -34,18 +34,26 @@ def courses():
     conn = sqlite3.connect('static/db/courses.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
+
     c.execute("select * from external_subjects")
     cuny_subjects = {row['area']:row['description'] for row in c}
+
     c.execute("select * from careers")
     careers = {(row['institution'], row['career']): row['description'] for row in c}
+
+    c.execute("select * from designations")
+    designations = {row['designation']: row['description'] for row in c}
+
     c.execute("select name, date_updated from institutions where code ='{}'".format(request.form['inst']))
     row = c.fetchone()
     date_updated = datetime.datetime.strptime(row['date_updated'], '%Y-%m-%d').strftime('%B %d, %Y')
+
     result = "<h1>{} Courses</h1><p class='subtitle'>As of {}</p>".format(row['name'], date_updated)
 
     query = "select * from courses where institution = '{}' order by discipline, number"\
       .format(request.form['inst'])
     c.execute(query)
+
     for row in c:
       num_courses += 1
       result = result + """
@@ -60,7 +68,7 @@ def courses():
                  float(row['credits']),
                  row['requisites'],
                  row['description'],
-                 row['designation'])
+                 designations[row['designation']])
 
   # Form not submitted yet or institution has no courses
   if num_courses == 0:
