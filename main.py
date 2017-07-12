@@ -102,6 +102,7 @@ def courses():
     """.format(prompt)
   return render_template('courses.html', result=Markup(result))
 
+
 # TRANSFERS PAGE
 # User submits a CUNY email address and lists of sending colleges, external subjects, receiving
 # colleges, and course attributes. Lists may be empty, which means "all." (No email address means
@@ -115,10 +116,16 @@ def transfers():
     # colleges, a list of external subject areas, and a list of receiving colleges.
 
     # Get sending college(s)
-    # Get external subject
+    # Get cuny subject(s) for receiving college(s)
     # Get receiving college(s)
     # Verify the email address. It must match the single receiving college's domain. Otherwise, the
     # user is in view-only mode.
+    #
+    # select distinct c.description, i.institution, i.discipline
+    #   from cuny_subjects c, courses i
+    #   where i.cuny_subject = c.area
+    #   order by i.institution, discipline;
+    #
     conn = sqlite3.connect('static/db/courses.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
@@ -132,57 +139,71 @@ def transfers():
     c.execute("select * from designations")
     designations = {row['designation']: row['description'] for row in c}
 
-    c.execute("select name, date_updated from institutions where code ='{}'".format(request.form['inst']))
-    row = c.fetchone()
-    institution = row['name']
-    date_updated = datetime.datetime.strptime(row['date_updated'], '%Y-%m-%d').strftime('%B %d, %Y')
-
-    query = "select * from courses where institution = '{}' and status = 'A' order by discipline, number"\
-      .format(request.form['inst'])
-    c.execute(query)
-
-    result = """
-      <h1>{} Courses</h1><p class='subtitle'>{:,} active courses as of {}</p>
-      """.format(institution, len(c), date_updated)
-
-    for row in c:
-      num_courses += 1
-      result = result + """
-      <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}</em>)<br/>
-      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
-      """.format(row['discipline'],
-                 row['number'].strip(),
-                 row['title'],
-                 careers[(row['institution'],row['career'])],
-                 cuny_subjects[row['cuny_subject']],
-                 float(row['hours']),
-                 float(row['credits']),
-                 row['requisites'],
-                 row['description'],
-                 designations[row['designation']])
+    result = ''
+    sources = request.form.getlist('source')
+    for source in sources:
+      result = result + '<p>{}</p>'.format(source)
 
   # Form not submitted yet, so generate it.
   else:
-    prompt = '<fieldset><legend>Select sending college(s)</legend>'
     conn = sqlite3.connect('static/db/courses.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("select * from institutions order by code")
+    institution_list = c.fetchall()
+
+    source_prompt = '<fieldset id="sending-field"><legend>Sending College(s)</legend>'
     n = 0
-    for row in c:
+    for row in institution_list:
       n += 1
-      prompt = prompt + """
-      <div class='institution-select'>
-        <input type="radio" name="inst" id="inst-{}" value="{}">
-        <label for="inst-{}">{}</label>
-      </div>
+      source_prompt += """
+          <div class='institution-select'>
+            <input type="checkbox" name="source" class="source" id="source-{}" value="{}">
+            <label for="source-{}">{}</label>
+          </div>
       """.format(n, row['code'], n, row['name'])
+    source_prompt += """
+      <div>
+      <button id="all-sources">Select All Sending Colleges</button>
+      <button id="no-sources">Clear All Sending Colleges</button>
+      </div>
+    </fieldset>
+    """
+
+    destination_prompt = '<fieldset id="receiving-field"><legend>Receiving College(s)</legend>'
+    n = 0
+    for row in institution_list:
+      n += 1
+      destination_prompt += """
+          <div class='institution-select'>
+            <input type="checkbox" name="destination" class="destination" id="dest-{}" value="{}">
+            <label for="dest-{}">{}</label>
+          </div>
+      """.format(n, row['code'], n, row['name'])
+    destination_prompt += """
+      <div>
+      <button id="all-destinations">Select All Receiving Colleges</button>
+      <button id="no-destinations">Clear All Receiving Colleges</button>
+      </div>
+    </fieldset>
+    """
+    destination_disciplines_prompt = "<fieldset><legend>Discipline/Subject(s)</legend>"
+    destination_disciplines_prompt += "</fieldset>"
     result = """
     <form method="post" action="">
+      <fieldset>
       {}
+      {}
+      {}
+      <fieldset><legend>Your email address</legend>
+      <p>This must be a valid CUNY email address.</p>
+      <div>
+        <input type="text" name="email" id="email-text"/>
+      </div>
       <div><button type="submit">Please</button></div>
+      </fieldset>
     <form>
-    """.format(prompt)
+    """.format(source_prompt, destination_prompt, destination_disciplines_prompt)
   return render_template('courses.html', result=Markup(result))
 
 @app.errorhandler(500)

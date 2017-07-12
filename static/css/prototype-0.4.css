@@ -60,9 +60,24 @@ h2 + * {
 .totals {
   font-weight: bold;
 }
+
+fieldset fieldset {
+  margin-top:1em;
+  background-color:white;
+}
+
+legend {
+  border-radius:0.75em;
+  padding:0.5em;
+  background-color:white;
+}
 .institution-select {
   display:inline-block;
   width:18em;
+}
+
+#email-text {
+  width:20em;
 }
 
 .subtitle {
