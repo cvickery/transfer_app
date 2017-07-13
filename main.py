@@ -1,14 +1,17 @@
 import logging
 import sys
+import os
 
 import datetime
 import sqlite3
 
-from flask import Flask, url_for, render_template, redirect, send_file, Markup, request
+from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
-
+#
+# Overhead URIs
 @app.route('/favicon.ico')
 def favicon():
   return send_file('favicon.ico', mimetype = "image/x-icon")
@@ -17,16 +20,201 @@ def favicon():
 def image_file(file_name):
   return send_file('static/images/' + file_name + '.png')
 
+def error():
+  result = "<h1>Error</h1>"
+  return render_template('transfers.html', result=Markup(result))
+
+#
+# QC Applications
+# =================================================================================================
+# Index: Require user to sign in using  QC email address, and provide a menu of applications.
+# Assessment: Demonstrate accessing G-Suite Assessment repository info.
+
+# INDEX
+# -------------------------------------------------------------------------------------------------
 @app.route('/')
 @app.route('/index')
 def index():
   return render_template('index.html')
 
+# ASSESSMENT
+# -------------------------------------------------------------------------------------------------
 @app.route('/assessment')
 def assessment():
   return render_template('assessment.html')
 
+
+#
+# CUNY Applications
+# =================================================================================================
+# Transfer Pages: A sequence of pages for reviewing transfer rules.
+# Courses Page: Display the complete catalog of currently active courses for any college.
+
+# TRANSFERS PAGES
+# -------------------------------------------------------------------------------------------------
+#   Not posted: display form_1, which displays email prompt, source, and destination lists. User
+#   must provide email and select exactly one institution from one of the lists and 1+ institutions
+#   from the other list.
+#   Posted form_1: display form_2, which provides list of disciplines for the single institution.
+#   The user may select 1+ of them.
+#   Posted form_2: display form_3, which provides matching transfer rules for all discipline pairs
+#   selected. For each one, display a "verified" checkbox and a "notation" text box.
+#   Posted form_3: enter all verified/notation data, along with person's email into db; send email
+#   for confirmation. When user replies to the email, mark all matching items as confirmed and
+#   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
+#   (This allows people to accidentally deny their work without losing it.)
+
+def form_0():
+  """ Generate form_1. Source and destination institutions; user's email.
+  """
+  conn = sqlite3.connect('static/db/courses.db')
+  conn.row_factory = sqlite3.Row
+  c = conn.cursor()
+  c.execute("select * from institutions order by code")
+  institution_list = c.fetchall()
+
+  source_prompt = '<fieldset id="sending-field"><legend>Sending College(s)</legend>'
+  n = 0
+  for row in institution_list:
+    n += 1
+    source_prompt += """
+        <div class='institution-select'>
+          <input type="checkbox" name="source" class="source" id="source-{}" value="{}">
+          <label for="source-{}">{}</label>
+        </div>
+    """.format(n, row['code'], n, row['name'])
+  source_prompt += """
+    <div>
+    <button id="all-sources">Select All Sending Colleges</button>
+    <button id="no-sources">Clear All Sending Colleges</button>
+    </div>
+  </fieldset>
+  """
+
+  destination_prompt = '<fieldset id="receiving-field"><legend>Receiving College(s)</legend>'
+  n = 0
+  for row in institution_list:
+    n += 1
+    destination_prompt += """
+        <div class='institution-select'>
+          <input type="checkbox" name="destination" class="destination" id="dest-{}" value="{}">
+          <label for="dest-{}">{}</label>
+        </div>
+    """.format(n, row['code'], n, row['name'])
+  destination_prompt += """
+    <div>
+    <button id="all-destinations">Select All Receiving Colleges</button>
+    <button id="no-destinations">Clear All Receiving Colleges</button>
+    </div>
+  </fieldset>
+  """
+  destination_disciplines_prompt = "<fieldset><legend>Discipline/Subject(s)</legend>"
+  destination_disciplines_prompt += "</fieldset>"
+  result = """
+    <form method="post" action="" id="form-0">
+      <fieldset>
+      {}
+      {}
+      <fieldset><legend>Your email address</legend>
+      <p>This must be a valid CUNY email address.</p>
+      <div>
+        <input type="text" name="email" id="email-text"/>
+      </div>
+      <div>
+        <div id="error-msg" class="error"> </div>
+        <input type="hidden" name="form" value="form_1" />
+        <button type="submit" id="submit-form-0">Next</button>
+      </div>
+      </fieldset>
+    <form>
+    """.format(source_prompt, destination_prompt)
+  return render_template('transfers.html', result=Markup(result))
+
+def form_1(request, session):
+  """ Generate form_2: Filter disciplines
+  """
+
+  # Get filter info
+  conn = sqlite3.connect('static/db/courses.db')
+  conn.row_factory = sqlite3.Row
+  c = conn.cursor()
+
+  c.execute("select * from external_subjects")
+  cuny_subjects = {row['area']:row['description'] for row in c}
+
+  c.execute("select * from careers")
+  careers = {(row['institution'], row['career']): row['description'] for row in c}
+
+  c.execute("select * from designations")
+  designations = {row['designation']: row['description'] for row in c}
+
+  result = """
+  <h1>Filter Transfer Rules</h1>
+  <form method="post" action="" id="form-1">
+    <fieldset>
+      <input type="hidden" name="form" value="form_2" />
+      <button type="submit" id="form-1-submit">Next</button>
+    </fieldset>
+  </form>
+  """
+  result += '<h2>Sources</h2>'
+  session['sources'] = request.form.getlist('source')
+
+  for source in session['sources']:
+    result += '<p>{}</p>'.format(source)
+
+  result += '<h2>Destinations</h2>'
+  session['destinations'] = request.form.getlist('destination')
+  for destination in session['destinations']:
+    result += '<p>{}</p>'.format(destination)
+  session['email'] = request.form.get('email')
+  result += '<h2>Email: {}</h2>'.format(session['email'])
+  return render_template('transfers.html', result=Markup(result))
+
+def form_2(request, session):
+  """ Generate form_3: Collect transfer rule evaluations
+  """
+  result = '<h1>Form 2 not implemented yet</h1>'
+  result = """
+  <h1>Evaluate Transfer Rules</h1>
+  <form method="post" action="" id="form-2">
+    <fieldset>
+      <input type="hidden" name="form" value="form_3" />
+      <button type="submit" id="form-1-submit">Next</button>
+    </fieldset>
+  </form>
+  """
+  return render_template('transfers.html', result=Markup(result))
+
+def form_3(request, session):
+  result = '<h1>Confirmation page not implemented yet</h1>'
+  return render_template('transfers.html', result=Markup(result))
+
+@app.route('/transfers/', methods=['POST', 'GET'])
+def transfers():
+  # Dispatcher for forms
+  dispatcher = {
+    'form_1': form_1,
+    'form_2': form_2,
+    'form_3': form_3,
+  }
+  if request.method == 'POST':
+    # User has submitted a form.
+    return dispatcher.get(request.form['form'], lambda: error)(request, session)
+
+  # Form not submitted yet, so generate form_1
+  else:
+    return form_0()
+
+
+    # select distinct c.description, i.institution, i.discipline
+    #   from cuny_subjects c, courses i
+    #   where i.cuny_subject = c.area
+    #   order by i.institution, discipline;
+
+
 # COURSES PAGE
+# -------------------------------------------------------------------------------------------------
 # Allows user to pick a college, and see catalog descriptions of all courses offered there.
 @app.route('/courses/', methods=['POST', 'GET'])
 def courses():
@@ -97,114 +285,15 @@ def courses():
     result = """
     <form method="post" action="">
       {}
-      <div><button type="submit">Please</button></div>
+      <div>
+        <button type="submit">Please
+        </button>
+      </div>
     <form>
     """.format(prompt)
   return render_template('courses.html', result=Markup(result))
 
 
-# TRANSFERS PAGE
-# User submits a CUNY email address and lists of sending colleges, external subjects, receiving
-# colleges, and course attributes. Lists may be empty, which means "all." (No email address means
-# "none.")
-# Show a form that can be used to verify the corresponding transfer rules or to note anomalies.
-@app.route('/transfers/', methods=['POST', 'GET'])
-def transfers():
-  num_courses = 0
-  if request.method == 'POST':
-    # User has submitted the form. They must have supplied a cuny email addresss, a list of sending
-    # colleges, a list of external subject areas, and a list of receiving colleges.
-
-    # Get sending college(s)
-    # Get cuny subject(s) for receiving college(s)
-    # Get receiving college(s)
-    # Verify the email address. It must match the single receiving college's domain. Otherwise, the
-    # user is in view-only mode.
-    #
-    # select distinct c.description, i.institution, i.discipline
-    #   from cuny_subjects c, courses i
-    #   where i.cuny_subject = c.area
-    #   order by i.institution, discipline;
-    #
-    conn = sqlite3.connect('static/db/courses.db')
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-
-    c.execute("select * from external_subjects")
-    cuny_subjects = {row['area']:row['description'] for row in c}
-
-    c.execute("select * from careers")
-    careers = {(row['institution'], row['career']): row['description'] for row in c}
-
-    c.execute("select * from designations")
-    designations = {row['designation']: row['description'] for row in c}
-
-    result = ''
-    sources = request.form.getlist('source')
-    for source in sources:
-      result = result + '<p>{}</p>'.format(source)
-
-  # Form not submitted yet, so generate it.
-  else:
-    conn = sqlite3.connect('static/db/courses.db')
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-    c.execute("select * from institutions order by code")
-    institution_list = c.fetchall()
-
-    source_prompt = '<fieldset id="sending-field"><legend>Sending College(s)</legend>'
-    n = 0
-    for row in institution_list:
-      n += 1
-      source_prompt += """
-          <div class='institution-select'>
-            <input type="checkbox" name="source" class="source" id="source-{}" value="{}">
-            <label for="source-{}">{}</label>
-          </div>
-      """.format(n, row['code'], n, row['name'])
-    source_prompt += """
-      <div>
-      <button id="all-sources">Select All Sending Colleges</button>
-      <button id="no-sources">Clear All Sending Colleges</button>
-      </div>
-    </fieldset>
-    """
-
-    destination_prompt = '<fieldset id="receiving-field"><legend>Receiving College(s)</legend>'
-    n = 0
-    for row in institution_list:
-      n += 1
-      destination_prompt += """
-          <div class='institution-select'>
-            <input type="checkbox" name="destination" class="destination" id="dest-{}" value="{}">
-            <label for="dest-{}">{}</label>
-          </div>
-      """.format(n, row['code'], n, row['name'])
-    destination_prompt += """
-      <div>
-      <button id="all-destinations">Select All Receiving Colleges</button>
-      <button id="no-destinations">Clear All Receiving Colleges</button>
-      </div>
-    </fieldset>
-    """
-    destination_disciplines_prompt = "<fieldset><legend>Discipline/Subject(s)</legend>"
-    destination_disciplines_prompt += "</fieldset>"
-    result = """
-    <form method="post" action="">
-      <fieldset>
-      {}
-      {}
-      {}
-      <fieldset><legend>Your email address</legend>
-      <p>This must be a valid CUNY email address.</p>
-      <div>
-        <input type="text" name="email" id="email-text"/>
-      </div>
-      <div><button type="submit">Please</button></div>
-      </fieldset>
-    <form>
-    """.format(source_prompt, destination_prompt, destination_disciplines_prompt)
-  return render_template('courses.html', result=Markup(result))
 
 @app.errorhandler(500)
 def server_error(e):

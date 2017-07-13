@@ -1,0 +1,51 @@
+body {
+  font-family: sans-serif;
+  border: 1em;
+  padding: 1em;
+  background-color: #eff;
+}
+
+.error {
+  color: #922;
+  font-size: 1.5em;
+  text-transform: lowercase;
+  font-variant: small-caps;
+}
+
+button {
+    background-color: white;
+    font-size: 0.8em;
+    padding: 0.5em;
+    margin: 1em;
+}
+
+#content-div {
+    width:50%;
+    background-color:white;
+    display:none;
+    padding: 1em;
+    border: 1px solid black;
+    border-radius: 0.25em;
+}
+
+fieldset {
+    border-radius:0.5em;
+}
+
+table, td, th {
+    border: 1px solid black;
+    padding:0.5em;
+    border-collapse:collapse;
+}
+
+.institution-select {
+  display:inline-block;
+  width:18em;
+}
+
+.subtitle {
+  margin:-0.5em 0 1em 0;
+  font-size:0.9em;
+  font-style:italic;
+}
+
