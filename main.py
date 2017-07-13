@@ -133,13 +133,35 @@ def form_0():
 def form_1(request, session):
   """ Generate form_2: Filter disciplines
   """
+  # Capture form data in user's session
+  session['sources'] = request.form.getlist('source')
+  session['destinations'] = request.form.getlist('destination')
+  session['email'] = request.form.get('email')
 
   # Get filter info
+
+  institutions = set(session['sources']) | set(session['destinations'])
+  institution_list = "('" + "', '".join(institutions) + "')"
+  q = """
+  select t.source_course_id as source_id,
+         c1.institution as source_institution,
+         c1.discipline || c1.number as source_course,
+         t.destination_course_id as destination_id,
+         c2.institution as destination_institution,
+         c2.discipline || c2.number as destination_course
+    from transfer_rules t, courses c1, courses c2
+    where
+          c1.institution in {} and c2.institution in {}
+      and c1.course_id = t.source_course_id
+      and c2.course_id = t.destination_course_id
+    order by source_institution, destination_institution, source_course
+  """.format(institution_list, institution_list)
   conn = sqlite3.connect('static/db/courses.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
 
-  c.execute("select * from external_subjects")
+
+  c.execute("select * from cuny_subjects")
   cuny_subjects = {row['area']:row['description'] for row in c}
 
   c.execute("select * from careers")
@@ -148,27 +170,18 @@ def form_1(request, session):
   c.execute("select * from designations")
   designations = {row['designation']: row['description'] for row in c}
 
+
+
   result = """
   <h1>Filter Transfer Rules</h1>
+  {}
   <form method="post" action="" id="form-1">
     <fieldset>
       <input type="hidden" name="form" value="form_2" />
       <button type="submit" id="form-1-submit">Next</button>
     </fieldset>
   </form>
-  """
-  result += '<h2>Sources</h2>'
-  session['sources'] = request.form.getlist('source')
-
-  for source in session['sources']:
-    result += '<p>{}</p>'.format(source)
-
-  result += '<h2>Destinations</h2>'
-  session['destinations'] = request.form.getlist('destination')
-  for destination in session['destinations']:
-    result += '<p>{}</p>'.format(destination)
-  session['email'] = request.form.get('email')
-  result += '<h2>Email: {}</h2>'.format(session['email'])
+  """.format(q)
   return render_template('transfers.html', result=Markup(result))
 
 def form_2(request, session):
