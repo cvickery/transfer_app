@@ -5,8 +5,9 @@ import os
 import datetime
 import sqlite3
 
-from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session
+from collections import namedtuple
 
+from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
@@ -64,6 +65,8 @@ def assessment():
 #   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
 #   (This allows people to accidentally deny their work without losing it.)
 
+# form_0()
+# -------------------------------------------------------------------------------------------------
 def form_0():
   """ Generate form_1. Source and destination institutions; user's email.
   """
@@ -110,6 +113,11 @@ def form_0():
   """
   destination_disciplines_prompt = "<fieldset><legend>Discipline/Subject(s)</legend>"
   destination_disciplines_prompt += "</fieldset>"
+  email = ''
+  try:
+    email = session['email']
+  except:
+    pass
   result = """
     <form method="post" action="" id="form-0">
       <fieldset>
@@ -118,7 +126,7 @@ def form_0():
       <fieldset><legend>Your email address</legend>
       <p>This must be a valid CUNY email address.</p>
       <div>
-        <input type="text" name="email" id="email-text"/>
+        <input type="text" name="email" id="email-text" value="{}"/>
       </div>
       <div>
         <div id="error-msg" class="error"> </div>
@@ -127,9 +135,11 @@ def form_0():
       </div>
       </fieldset>
     <form>
-    """.format(source_prompt, destination_prompt)
+    """.format(source_prompt, destination_prompt, email)
   return render_template('transfers.html', result=Markup(result))
 
+# form_1()
+# -------------------------------------------------------------------------------------------------
 def form_1(request, session):
   """ Generate form_2: Filter disciplines
   """
@@ -143,21 +153,23 @@ def form_1(request, session):
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
 
-  # Get institiution names
+  # Get source and destination institiution names
   c.execute("select * from institutions order by code")
   institution_names = {row['code']: row['name'] for row in c}
 
-
+  # Look up all the rules for the source and destination institutions
   source_institution_list = "('" + "', '".join(session['sources']) + "')"
   destination_institution_list = "('" + "', '".join(session['destinations']) + "')"
   q = """
   select t.source_course_id as source_id,
          c1.institution as source_institution,
-         c1.discipline || c1.number as source_course,
+         c1.discipline as source_discipline,
+         c1.discipline || ' ' || c1.number as source_course,
          c1.cuny_subject as source_subject,
          t.destination_course_id as destination_id,
          c2.institution as destination_institution,
-         c2.discipline || c2.number as destination_course,
+         c2.discipline as destination_discipline,
+         c2.discipline || ' ' || c2.number as destination_course,
          c2.cuny_subject as destination_subject
     from transfer_rules t, courses c1, courses c2
     where
@@ -167,11 +179,38 @@ def form_1(request, session):
     order by source_institution, destination_institution, source_course
   """.format(source_institution_list, destination_institution_list)
   c.execute(q)
-  rules = c.fetchall()
+  Rule = namedtuple('Rule', [ 'source_id', 'source_institution', 'source_discipline',
+                              'source_course', 'source_subject',
+                              'destination_id', 'destination_institution', 'destination_discipline',
+                              'destination_course', 'destination_subject'])
+  rules = [rule for rule in map(Rule._make, c.fetchall())]
+
+  # Create lists of disciplines for subjects found in the transfer rules
+  #   You want a set of institution:discipline pairs for each subject
+  source_subjects = {}
+  destination_subjects = {}
+  for rule in rules:
+    if rule.source_subject not in source_subjects:
+      source_subjects[rule.source_subject] = set()
+    source_subjects[rule.source_subject].add((rule.source_institution,
+                                                 rule.source_discipline))
+    if rule.destination_subject not in destination_subjects:
+      destination_subjects[rule.destination_subject] = set()
+    destination_subjects[rule.destination_subject].add((rule.destination_institution,
+                                                           rule.destination_discipline))
+
+  sending_is_singleton = False
+  sending_suffix = 's’'
+  receiving_is_singleton = False
+  receiving_suffix ='s’'
   criterion = ''
   if len(session['sources']) == 1:
     criterion = 'the sending college is ' + institution_names[session['sources'][0]]
+    sending_is_singleton = True
+    sending_suffix = '’s'
   if len(session['destinations']) == 1:
+    receiving_is_singleton = True
+    receiving_suffix = '’s'
     if criterion != '': criterion += ' and '
     criterion += 'the receiving college is ' + institution_names[session['destinations'][0]]
 
@@ -184,27 +223,138 @@ def form_1(request, session):
   c.execute("select * from designations")
   designations = {row['designation']: row['description'] for row in c}
 
+  # Build filter table. For each cuny_subject found in either sending or receiving courses, list
+  # all disciplines at those colleges.
+  # tuples are cuny_subject, college, discipline
+  Filter = namedtuple('Filter', ['subject', 'college', 'discipline'])
+  source_filters = set()
+  destination_filters = set()
+  for rule in rules:
+    source_filters.add(Filter(rule.source_subject,
+                              rule.source_institution,
+                              rule.source_discipline))
+    destination_filters.add(Filter(rule.destination_subject,
+                                   rule.destination_institution,
+                                   rule.destination_discipline))
+  # Table rows with checkboxes for subjects
+  all_subjects = set([filter.subject for filter in source_filters])
+  all_subjects |= set([filter.subject for filter in destination_filters])
+  all_subjects = sorted(all_subjects)
+  filter_rows = ''
+  for subject in all_subjects:
+    # Sending College Disciplines
+    source_disciplines = ''
+    source_discipline_set = set()
+    for filter in source_filters:
+      if filter.subject == subject:
+        if sending_is_singleton:
+          source_discipline_set.add(filter.discipline)
+        else:
+          source_discipline_set.add((filter.college, filter.discipline))
+    if sending_is_singleton:
+      if len(source_discipline_set) > 1:
+        source_disciplines = '<div>' +'</div><div>'.join(source_discipline_set) + '</div>'
+      else:
+        source_disciplines = ''.join(source_discipline_set)
+    else:
+      source_disciplines = ''
+      source_discipline_set = sorted(source_discipline_set)
+      colleges = {}
+      for discipline in source_discipline_set:
+        if discipline[0] not in colleges.keys():
+          colleges[discipline[0]] = []
+        colleges[discipline[0]].append(discipline[1])
+      for college in colleges:
+        source_disciplines += '<div>{}: <em>{}</em></div>'.format(institution_names[college],
+                                                                  ', '.join(colleges[college]))
 
+    # Receiving College Disciplines
+    destination_disciplines = ''
+    destination_discipline_set = set()
+    for filter in destination_filters:
+      if filter.subject == subject:
+        if receiving_is_singleton:
+          destination_discipline_set.add(filter.discipline)
+        else:
+          destination_discipline_set.add((filter.college, filter.discipline))
+    if receiving_is_singleton:
+      destination_disciplines = ''
+      if len(destination_discipline_set) > 1:
+        destination_disciplines = '<div>' +'</div><div>'.join(destination_discipline_set) + '</div>'
+      else:
+        destination_disciplines = ''.join(destination_discipline_set)
+    else:
+      destination_disciplines = ''
+      destination_discipline_set = sorted(destination_discipline_set)
+      colleges = {}
+      for discipline in destination_discipline_set:
+        if discipline[0] not in colleges.keys():
+          colleges[discipline[0]] = []
+        colleges[discipline[0]].append(discipline[1])
+      for college in colleges:
+        destination_disciplines += '<div>{}: <em>{}</em></div>'.format(institution_names[college],
+                                                                       ', '.join(colleges[college]))
 
+    filter_rows += """
+    <tr>
+      <td><input type="checkbox" name="subject" value="{}"/></td>
+      <td>{}</td>
+      <td>{}</td>
+      <td>{}</td>
+    </tr>
+    """.format(subject, cuny_subjects[subject], source_disciplines, destination_disciplines)
+
+  if len(all_subjects) > 1:
+    filter_rows += """
+      <tr>
+      <td>
+        <input type="checkbox" id="all-subjects" />
+        <label for="all-subjects"><em> all</em></label></td>
+        <td colspan="3"><em>Select All Subjects</em></td>
+      </tr>
+      <tr>
+        <td>
+          <input type="checkbox" id="no-subjects" />
+          <label for="no-subjects"><em> none</em></label></td>
+        <td colspan="3"><em>Clear All Subjects</em></td>
+      </tr>
+      """
   result = """
   <h1>Filter Transfer Rules</h1>
-  <p>There are {} rules where {}.</p>
+  <p>There are {:,} rules where {}.</p>
+  <p>There are {} source filters and {} destination filters.</p>
+  <p>There are {} subjects: {} source subjects and {} destination subjects.</p>
   <form method="post" action="" id="form-1">
     <fieldset>
+      <table id="subject-filters">
+        <tr>
+          <th>Select</th>
+          <th>CUNY Subject</th>
+          <th>Sending College{} Discipline(s)</th>
+          <th>Receiving College{} Discipline(s)</th>
+        </tr>
+        {}
+      </table>
       <a href="" class="restart">Restart</a>
       <input type="hidden" name="form" value="form_2" />
       <button type="submit" id="form-1-submit">Next</button>
     </fieldset>
   </form>
-  """.format(len(rules), criterion)
+  """.format(len(rules), criterion, len(source_filters), len(destination_filters),
+             len(all_subjects), len(source_subjects), len(destination_subjects),
+             sending_suffix, receiving_suffix, filter_rows)
   return render_template('transfers.html', result=Markup(result))
 
+# form_2()
+# -------------------------------------------------------------------------------------------------
 def form_2(request, session):
   """ Generate form_3: Collect transfer rule evaluations
   """
+  session['subjects'] = request.form.getlist('subject')
   result = '<h1>Form 2 not implemented yet</h1>'
   result = """
   <h1>Evaluate Transfer Rules</h1>
+  <p>Number of subjects: {}</p>
   <form method="post" action="" id="form-2">
     <fieldset>
       <a href="" class="restart">Restart</a>
@@ -212,9 +362,11 @@ def form_2(request, session):
       <button type="submit" id="form-2-submit">Next</button>
     </fieldset>
   </form>
-  """
+  """.format(len(session['subjects']))
   return render_template('transfers.html', result=Markup(result))
 
+# form_3()
+# -------------------------------------------------------------------------------------------------
 def form_3(request, session):
   result = '<h1>Confirmation page not implemented yet</h1>'
   return render_template('transfers.html', result=Markup(result))
@@ -246,7 +398,7 @@ def transfers():
 
 # COURSES PAGE
 # -------------------------------------------------------------------------------------------------
-# Allows user to pick a college, and see catalog descriptions of all courses offered there.
+# Pick a college, and see catalog descriptions of all courses currently active there.
 @app.route('/courses/', methods=['POST', 'GET'])
 def courses():
   num_courses = 0
@@ -265,7 +417,11 @@ def courses():
     designations = {row['designation']: row['description'] for row in c}
 
     institution_code = request.form['inst']
-    c.execute("select name, date_updated from institutions where code ='{}'".format(institution_code))
+    c.execute("""
+              select name, date_updated
+                from institutions
+               where code ='{}'
+               """.format(institution_code))
     row = c.fetchone()
     institution_name = row['name']
     date_updated = datetime.datetime.strptime(row['date_updated'], '%Y-%m-%d').strftime('%B %d, %Y')
@@ -277,8 +433,12 @@ def courses():
       <h1>{} Courses</h1><p class='subtitle'>{:,} active courses as of {}</p>
       """.format(institution_name, num_active_courses, date_updated)
 
-    query = "select * from courses where institution = '{}' and status = 'A' order by discipline, number"\
-      .format(institution_code)
+    query = """
+      select * from courses
+       where institution = '{}'
+         and status = 'A'
+       order by discipline, number
+       """.format(institution_code)
     c.execute(query)
 
     for row in c:

@@ -101,4 +101,15 @@ $(function ()
     submit_button_0 = true;
   });
 
+  // Form 1: Manage checkboxes
+  $('#all-subjects').click(function ()
+  {
+    $('input:checkbox').prop('checked', true);
+    $('#all-subjects, #no-subjects').prop('checked', false);
+  });
+  $('#no-subjects').click(function ()
+  {
+    $('input:checkbox').prop('checked', false);
+  });
+
 });
