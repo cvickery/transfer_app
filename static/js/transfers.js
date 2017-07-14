@@ -16,10 +16,10 @@ $(function ()
   // ----------------------------------------------------------------------------------------------
   function validate_form_0()
   {
+    error_msg = '';
     var num_source = $('.source:checked').length;
     var num_dest = $('.destination:checked').length;
-    var valid_email = /^\w+(.\w+)*@(\w+\.)*cuny.edu$/i.test($('#email-text').val());
-
+    var valid_email = /^\s*\w+(.\w+)*@(\w+\.)*cuny.edu\s*$/i.test($('#email-text').val());
 
     //  Check number of institutions selected
     if ((num_source === 1 && num_dest > 0) ||

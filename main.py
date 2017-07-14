@@ -139,27 +139,41 @@ def form_1(request, session):
   session['email'] = request.form.get('email')
 
   # Get filter info
+  conn = sqlite3.connect('static/db/courses.db')
+  conn.row_factory = sqlite3.Row
+  c = conn.cursor()
 
-  institutions = set(session['sources']) | set(session['destinations'])
-  institution_list = "('" + "', '".join(institutions) + "')"
+  # Get institiution names
+  c.execute("select * from institutions order by code")
+  institution_names = {row['code']: row['name'] for row in c}
+
+
+  source_institution_list = "('" + "', '".join(session['sources']) + "')"
+  destination_institution_list = "('" + "', '".join(session['destinations']) + "')"
   q = """
   select t.source_course_id as source_id,
          c1.institution as source_institution,
          c1.discipline || c1.number as source_course,
+         c1.cuny_subject as source_subject,
          t.destination_course_id as destination_id,
          c2.institution as destination_institution,
-         c2.discipline || c2.number as destination_course
+         c2.discipline || c2.number as destination_course,
+         c2.cuny_subject as destination_subject
     from transfer_rules t, courses c1, courses c2
     where
           c1.institution in {} and c2.institution in {}
       and c1.course_id = t.source_course_id
       and c2.course_id = t.destination_course_id
     order by source_institution, destination_institution, source_course
-  """.format(institution_list, institution_list)
-  conn = sqlite3.connect('static/db/courses.db')
-  conn.row_factory = sqlite3.Row
-  c = conn.cursor()
-
+  """.format(source_institution_list, destination_institution_list)
+  c.execute(q)
+  rules = c.fetchall()
+  criterion = ''
+  if len(session['sources']) == 1:
+    criterion = 'the sending college is ' + institution_names[session['sources'][0]]
+  if len(session['destinations']) == 1:
+    if criterion != '': criterion += ' and '
+    criterion += 'the receiving college is ' + institution_names[session['destinations'][0]]
 
   c.execute("select * from cuny_subjects")
   cuny_subjects = {row['area']:row['description'] for row in c}
@@ -174,14 +188,15 @@ def form_1(request, session):
 
   result = """
   <h1>Filter Transfer Rules</h1>
-  {}
+  <p>There are {} rules where {}.</p>
   <form method="post" action="" id="form-1">
     <fieldset>
+      <a href="" class="restart">Restart</a>
       <input type="hidden" name="form" value="form_2" />
       <button type="submit" id="form-1-submit">Next</button>
     </fieldset>
   </form>
-  """.format(q)
+  """.format(len(rules), criterion)
   return render_template('transfers.html', result=Markup(result))
 
 def form_2(request, session):
@@ -192,8 +207,9 @@ def form_2(request, session):
   <h1>Evaluate Transfer Rules</h1>
   <form method="post" action="" id="form-2">
     <fieldset>
+      <a href="" class="restart">Restart</a>
       <input type="hidden" name="form" value="form_3" />
-      <button type="submit" id="form-1-submit">Next</button>
+      <button type="submit" id="form-2-submit">Next</button>
     </fieldset>
   </form>
   """
@@ -203,6 +219,8 @@ def form_3(request, session):
   result = '<h1>Confirmation page not implemented yet</h1>'
   return render_template('transfers.html', result=Markup(result))
 
+# app.route()
+# -------------------------------------------------------------------------------------------------
 @app.route('/transfers/', methods=['POST', 'GET'])
 def transfers():
   # Dispatcher for forms
