@@ -7,6 +7,8 @@ import sqlite3
 
 from collections import namedtuple
 
+from cuny_catalog import CatalogInfo
+
 from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -65,12 +67,49 @@ def assessment():
 #   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
 #   (This allows people to accidentally deny their work without losing it.)
 
+# CatalogInfo
+# -------------------------------------------------------------------------------------------------
+class CatalogInfo:
+  """ Catalog and related info for a CUNYfirst course.
+  """
+  def __init(self, course_id):
+    """ Get complete information for a course from cuny_catalog.db.
+    """
+    conn = sqlite3.connect('static/db/cuny_catalog.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("select * from courses where course_id = '{}'".format(course_id))
+    course = c.fetchone()
+    if course:
+      c.execute("select * from external_subjects where ")
+      # cuny_subjects = {row['area']:row['description'] for row in c}
+
+      # c.execute("select * from careers")
+      # careers = {(row['institution'], row['career']): row['description'] for row in c}
+
+      # c.execute("select * from designations")
+      # designations = {row['designation']: row['description'] for row in c}
+
+      self.html = """
+      <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}</em>)<br/>
+      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
+      """.format(course['discipline'],
+                 course['number'].strip(),
+                 course['title'],
+                 careers[(course['institution'],course['career'])],
+                 cuny_subjects[course['cuny_subject']],
+                 float(course['hours']),
+                 float(course['credits']),
+                 course['requisites'],
+                 course['description'],
+                 designations[course['designation']])
+
 # form_0()
 # -------------------------------------------------------------------------------------------------
 def form_0():
   """ Generate form_1. Source and destination institutions; user's email.
   """
-  conn = sqlite3.connect('static/db/courses.db')
+  conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
   c.execute("select * from institutions order by code")
@@ -149,7 +188,7 @@ def form_1(request, session):
   session['email'] = request.form.get('email')
 
   # Get filter info
-  conn = sqlite3.connect('static/db/courses.db')
+  conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
 
@@ -403,7 +442,7 @@ def transfers():
 def courses():
   num_courses = 0
   if request.method == 'POST':
-    conn = sqlite3.connect('static/db/courses.db')
+    conn = sqlite3.connect('static/db/cuny_catalog.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
@@ -460,7 +499,7 @@ def courses():
   # Form not submitted yet or institution has no courses
   if num_courses == 0:
     prompt = '<fieldset><legend>Select a College</legend>'
-    conn = sqlite3.connect('static/db/courses.db')
+    conn = sqlite3.connect('static/db/cuny_catalog.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("select * from institutions order by code")

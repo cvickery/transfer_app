@@ -1,3 +1,12 @@
+2017-07-15
+
+The problem of authenticating mobile app users remains unresolved.
+Meantime, the app has-been / is-being expanded with two new endpoints that do not requre QC
+authentication:
+    * courses - gives course catalog info for all courses at any CUNY college
+    * transfer - solicits comments on CUNY transfer rules
+
+
 2017-05-10
 
 Because of an error message, it became clear that gapi.load('auth2:client', then gapi.init(auth2,
