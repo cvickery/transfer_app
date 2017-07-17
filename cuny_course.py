@@ -1,9 +1,9 @@
 import sqlite3
 import re
 
-# CatalogInfo
+# CUNYCourse
 # -------------------------------------------------------------------------------------------------
-class CatalogInfo:
+class CUNYCourse:
   """ Catalog and related info for a CUNYfirst course.
   """
   def __init__(self, course_id):

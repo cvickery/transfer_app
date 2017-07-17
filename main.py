@@ -7,7 +7,7 @@ import sqlite3
 
 from collections import namedtuple
 
-from cuny_catalog import CatalogInfo
+from cuny_course import CUNYCourse
 
 from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session
 app = Flask(__name__)
@@ -183,8 +183,8 @@ def form_1(request, session):
   """ Generate form_2: Filter disciplines
   """
   # Capture form data in user's session
-  session['sources'] = request.form.getlist('source')
-  session['destinations'] = request.form.getlist('destination')
+  session['source_institutions'] = request.form.getlist('source')
+  session['destination_institutions'] = request.form.getlist('destination')
   session['email'] = request.form.get('email')
 
   # Get filter info
@@ -197,8 +197,8 @@ def form_1(request, session):
   institution_names = {row['code']: row['name'] for row in c}
 
   # Look up all the rules for the source and destination institutions
-  source_institution_list = "('" + "', '".join(session['sources']) + "')"
-  destination_institution_list = "('" + "', '".join(session['destinations']) + "')"
+  source_institution_list = "('" + "', '".join(session['source_institutions']) + "')"
+  destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
   q = """
   select t.source_course_id as source_id,
          c1.institution as source_institution,
@@ -237,21 +237,23 @@ def form_1(request, session):
       destination_subjects[rule.destination_subject] = set()
     destination_subjects[rule.destination_subject].add((rule.destination_institution,
                                                            rule.destination_discipline))
+  session['source_subjects'] = [source_subject for source_subject in source_subjects]
+  session['destination_subjects'] = [destination_subject for destination_subject in destination_subjects]
 
   sending_is_singleton = False
   sending_suffix = 's’'
   receiving_is_singleton = False
   receiving_suffix ='s’'
   criterion = ''
-  if len(session['sources']) == 1:
-    criterion = 'the sending college is ' + institution_names[session['sources'][0]]
+  if len(session['source_institutions']) == 1:
+    criterion = 'the sending college is ' + institution_names[session['source_institutions'][0]]
     sending_is_singleton = True
     sending_suffix = '’s'
-  if len(session['destinations']) == 1:
+  if len(session['destination_institutions']) == 1:
     receiving_is_singleton = True
     receiving_suffix = '’s'
     if criterion != '': criterion += ' and '
-    criterion += 'the receiving college is ' + institution_names[session['destinations'][0]]
+    criterion += 'the receiving college is ' + institution_names[session['destination_institutions'][0]]
 
   c.execute("select * from cuny_subjects")
   cuny_subjects = {row['area']:row['description'] for row in c}
@@ -390,10 +392,44 @@ def form_2(request, session):
   """ Generate form_3: Collect transfer rule evaluations
   """
   session['subjects'] = request.form.getlist('subject')
+  conn = sqlite3.connect('static/db/cuny_catalog.db')
+  conn.row_factory = sqlite3.Row
+  c = conn.cursor()
+
+  # Look up all the rules for the source and destination institutions, but only if cuny_subjects
+  # have been selected
+  source_institution_list = "('" + "', '".join(session['source_institutions']) + "')"
+  source_subject_list = "('" + "', '".join(session['source_subjects']) + "')"
+  destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
+  destination_subject_list = "('" + "', '".join(session['destination_subjects']) + "')"
+  q = """
+  select t.source_course_id as source_id,
+         c1.institution as source_institution,
+         c1.discipline || ' ' || c1.number as source_course,
+         t.destination_course_id as destination_id,
+         c2.institution as destination_institution,
+         c2.discipline || ' ' || c2.number as destination_course
+    from transfer_rules t, courses c1, courses c2
+    where
+          c1.institution in {} and c1.cuny_subject in {} and c2.institution in {} and c2.cuny_subject in {}
+      and c1.course_id = t.source_course_id
+      and c2.course_id = t.destination_course_id
+    order by source_institution, destination_institution, source_course
+  """.format(source_institution_list, source_subject_list, destination_institution_list, destination_subject_list)
+  # c.execute(q)
+  # Rule = namedtuple('Rule', [ 'source_id', 'source_institution', 'source_course',
+  #                             'destination_id', 'destination_institution', 'destination_course'])
+  # rules = [rule for rule in map(Rule._make, c.fetchall())]
+
+
   result = '<h1>Form 2 not implemented yet</h1>'
   result = """
   <h1>Evaluate Transfer Rules</h1>
   <p>Number of subjects: {}</p>
+  <p>Number of source institutions: {}</p>
+  <p>Number of source subjects: {}</p>
+  <p>Number of destination institutions: {}</p>
+  <p>Number of destination subjects: {}</p>
   <form method="post" action="" id="form-2">
     <fieldset>
       <a href="" class="restart">Restart</a>
@@ -401,7 +437,11 @@ def form_2(request, session):
       <button type="submit" id="form-2-submit">Next</button>
     </fieldset>
   </form>
-  """.format(len(session['subjects']))
+  """.format(len(session['subjects']),
+             len(session['source_institutions']),
+             len(session['source_subjects']),
+             len(session['destination_institutions']),
+             len(session['destination_subjects']))
   return render_template('transfers.html', result=Markup(result))
 
 # form_3()
