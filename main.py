@@ -8,6 +8,7 @@ import sqlite3
 from collections import namedtuple
 
 from cuny_course import CUNYCourse
+from mysession import MySession
 
 from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session
 app = Flask(__name__)
@@ -67,46 +68,13 @@ def assessment():
 #   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
 #   (This allows people to accidentally deny their work without losing it.)
 
-# CatalogInfo
-# -------------------------------------------------------------------------------------------------
-class CatalogInfo:
-  """ Catalog and related info for a CUNYfirst course.
-  """
-  def __init(self, course_id):
-    """ Get complete information for a course from cuny_catalog.db.
-    """
-    conn = sqlite3.connect('static/db/cuny_catalog.db')
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-    c.execute("select * from courses where course_id = '{}'".format(course_id))
-    course = c.fetchone()
-    if course:
-      c.execute("select * from external_subjects where ")
-      # cuny_subjects = {row['area']:row['description'] for row in c}
+#   NOTE TO SELF: See http://flask.pocoo.org/docs/0.12/patterns/jquery/ when you want to do ajax to
+#   get catalog descriptions
 
-      # c.execute("select * from careers")
-      # careers = {(row['institution'], row['career']): row['description'] for row in c}
-
-      # c.execute("select * from designations")
-      # designations = {row['designation']: row['description'] for row in c}
-
-      self.html = """
-      <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}</em>)<br/>
-      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
-      """.format(course['discipline'],
-                 course['number'].strip(),
-                 course['title'],
-                 careers[(course['institution'],course['career'])],
-                 cuny_subjects[course['cuny_subject']],
-                 float(course['hours']),
-                 float(course['credits']),
-                 course['requisites'],
-                 course['description'],
-                 designations[course['designation']])
 
 # form_0()
 # -------------------------------------------------------------------------------------------------
-def form_0():
+def form_0(request, session):
   """ Generate form_1. Source and destination institutions; user's email.
   """
   conn = sqlite3.connect('static/db/cuny_catalog.db')
@@ -152,11 +120,13 @@ def form_0():
   """
   destination_disciplines_prompt = "<fieldset><legend>Discipline/Subject(s)</legend>"
   destination_disciplines_prompt += "</fieldset>"
+
   email = ''
   try:
     email = session['email']
   except:
     pass
+
   result = """
     <form method="post" action="" id="form-0">
       <fieldset>
@@ -237,8 +207,8 @@ def form_1(request, session):
       destination_subjects[rule.destination_subject] = set()
     destination_subjects[rule.destination_subject].add((rule.destination_institution,
                                                            rule.destination_discipline))
-  session['source_subjects'] = [source_subject for source_subject in source_subjects]
-  session['destination_subjects'] = [destination_subject for destination_subject in destination_subjects]
+  # session['source_subjects'] = [source_subject for source_subject in source_subjects]
+  # session['destination_subjects'] = [destination_subject for destination_subject in destination_subjects]
 
   sending_is_singleton = False
   sending_suffix = 's’'
@@ -277,6 +247,10 @@ def form_1(request, session):
     destination_filters.add(Filter(rule.destination_subject,
                                    rule.destination_institution,
                                    rule.destination_discipline))
+  # Pass these filters on in the session
+  session['source_filters'] = [filter for filter in source_filters]
+  session['destination_filters'] = [filter for filter in destination_filters]
+
   # Table rows with checkboxes for subjects
   all_subjects = set([filter.subject for filter in source_filters])
   all_subjects |= set([filter.subject for filter in destination_filters])
@@ -396,12 +370,15 @@ def form_2(request, session):
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
 
-  # Look up all the rules for the source and destination institutions, but only if cuny_subjects
-  # have been selected
-  source_institution_list = "('" + "', '".join(session['source_institutions']) + "')"
-  source_subject_list = "('" + "', '".join(session['source_subjects']) + "')"
-  destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
-  destination_subject_list = "('" + "', '".join(session['destination_subjects']) + "')"
+  # Look up all the rules based on the filters supplied
+  source_institutions = [filter[1] for filter in session['source_filters']]
+  source_disciplines = [filter[2] for filter in session['source_filters']]
+  destination_institutions = [filter[1] for filter in session['destination_filters']]
+  destination_disciplines = [filter[2] for filter in session['destination_filters']]
+  source_institution_list = "('" + "', '".join(source_institutions) + "')"
+  source_discipline_list = "('" + "', '".join(source_disciplines) + "')"
+  destination_institution_list = "('" + "', '".join(destination_institutions) + "')"
+  destination_discipline_list = "('" + "', '".join(destination_disciplines) + "')"
   q = """
   select t.source_course_id as source_id,
          c1.institution as source_institution,
@@ -411,12 +388,12 @@ def form_2(request, session):
          c2.discipline || ' ' || c2.number as destination_course
     from transfer_rules t, courses c1, courses c2
     where
-          c1.institution in {} and c1.cuny_subject in {} and c2.institution in {} and c2.cuny_subject in {}
+          c1.institution in {} and c1.discipline in {} and c2.institution in {} and c2.discipline in {}
       and c1.course_id = t.source_course_id
       and c2.course_id = t.destination_course_id
     order by source_institution, destination_institution, source_course
-  """.format(source_institution_list, source_subject_list, destination_institution_list, destination_subject_list)
-  # c.execute(q)
+  """.format(source_institution_list, source_discipline_list, destination_institution_list, destination_discipline_list)
+  c.execute(q)
   # Rule = namedtuple('Rule', [ 'source_id', 'source_institution', 'source_course',
   #                             'destination_id', 'destination_institution', 'destination_course'])
   # rules = [rule for rule in map(Rule._make, c.fetchall())]
@@ -438,10 +415,10 @@ def form_2(request, session):
     </fieldset>
   </form>
   """.format(len(session['subjects']),
-             len(session['source_institutions']),
-             len(session['source_subjects']),
-             len(session['destination_institutions']),
-             len(session['destination_subjects']))
+             len(source_institutions),
+             len(source_disciplines),
+             len(destination_institutions),
+             len(destination_disciplines))
   return render_template('transfers.html', result=Markup(result))
 
 # form_3()
@@ -450,10 +427,17 @@ def form_3(request, session):
   result = '<h1>Confirmation page not implemented yet</h1>'
   return render_template('transfers.html', result=Markup(result))
 
-# app.route()
+# transfers()
 # -------------------------------------------------------------------------------------------------
 @app.route('/transfers/', methods=['POST', 'GET'])
 def transfers():
+  try:
+    mysession_key = session['mysession']
+    mysession = MySession(app, mysession_key)
+  except:
+    mysession = MySession(app)
+    session['mysession'] = mysession.session_key
+
   # Dispatcher for forms
   dispatcher = {
     'form_1': form_1,
@@ -462,17 +446,11 @@ def transfers():
   }
   if request.method == 'POST':
     # User has submitted a form.
-    return dispatcher.get(request.form['form'], lambda: error)(request, session)
+    return dispatcher.get(request.form['form'], lambda: error)(request, mysession)
 
-  # Form not submitted yet, so generate form_1
+  # Form not submitted yet, so generate form_0
   else:
-    return form_0()
-
-
-    # select distinct c.description, i.institution, i.discipline
-    #   from cuny_subjects c, courses i
-    #   where i.cuny_subject = c.area
-    #   order by i.institution, discipline;
+    return form_0(None, mysession)
 
 
 # COURSES PAGE
