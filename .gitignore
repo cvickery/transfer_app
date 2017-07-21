@@ -2,3 +2,5 @@
 __pycache__/
 client ID and secret.txt
 main_test.py
+
+/debugging.log

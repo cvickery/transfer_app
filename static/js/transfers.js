@@ -4,17 +4,17 @@ $(function ()
 
   var error_msg = '';
 
-  // Form #0 Validation
+  // Form #1 Validation
   // ==============================================================================================
-  $('#submit-form-0').prop('disabled', true);
+  $('#submit-form-1').prop('disabled', true).css('color', '#cccccc');
 
   $('#all-sources, #all-destinations').prop('disabled', false);
   $('#no-sources, #no-destinations').prop('disabled', false);
-  var ok_to_submit_0 = error_msg === '';
+  var ok_to_submit_1 = error_msg === '';
 
-  // validate_form_0()
+  // validate_form_1()
   // ----------------------------------------------------------------------------------------------
-  function validate_form_0()
+  function validate_form_1()
   {
     error_msg = '';
     var num_source = $('.source:checked').length;
@@ -35,26 +35,44 @@ $(function ()
     }
 
     //  Check CUNY email address
+    /*  It's an error if value is not blank, otherwise it's a warning. But in either case, the
+     *  form can't be submitted yet.
+     */
     bg_color = '#ffffff';
     if (!valid_email)
     {
-      if (error_msg === '')
+      if ($('#email-text').val() !== '')
       {
-        // Valid selections: invalid email is an error
-        bg_color = '#ff0000';
-        error_msg += '<p>You must supply a valid CUNY email address.</p>';
+        // User entered an invalid email
+        bg_color = '#ff9999'; // error
+        if (error_msg === '')
+        {
+          error_msg = '<p>You must supply a valid CUNY email address.</p>';
+        }
       }
       else
       {
-        // Invalid selections: invalid email is a warning
-        bg_color = '#ffffcc';
+        // No email yet
+        bg_color = '#ffffcc'; // warning
+        if (error_msg  === '')
+        {
+          // Valid selections with no email: prompt for it
+          error_msg = '<p>Enter your CUNY email address.</p>'
+        }
       }
     }
     $('#email-text').css('background-color', bg_color);
 
     $('#error-msg').html(error_msg);
-    ok_to_submit_0 = error_msg === '';
-    $('#submit-form-0').prop('disabled', !ok_to_submit_0);
+    ok_to_submit_1 = error_msg === '';
+    if (ok_to_submit_1)
+    {
+      $('#submit-form-1').prop('disabled', false).css('color', '#000000');
+    }
+    else
+    {
+      $('#submit-form-1').prop('disabled', true).css('color', '#cccccc');
+    }
   }
 
   // Form 0: clear or set groups of checkboxes
@@ -62,46 +80,48 @@ $(function ()
   $('#all-sources').click(function ()
   {
     $('.source').prop('checked', true);
-    validate_form_0();
+    validate_form_1();
   });
 
   $('#no-sources').click(function ()
   {
     $('.source').prop('checked', false);
-    validate_form_0();
+    validate_form_1();
   });
 
   $('#all-destinations').click(function ()
   {
     $('.destination').prop('checked', true);
-    validate_form_0();
+    validate_form_1();
   });
 
   $('#no-destinations').click(function ()
   {
     $('.destination').prop('checked', false);
-    validate_form_0();
+    validate_form_1();
   });
 
-  $('input:checkbox').change(function ()
+  $('input').change(function ()
   {
-    validate_form_0();
+    validate_form_1();
   });
 
-  // Form 0: Submit the form. Maybe.
+  // Form 1: Submit the form. Maybe.
   // ----------------------------------------------------------------------------------------------
-  var submit_button_0 = false;
-  $('#form-0').submit(function (event)
+  var submit_button_1 = false;
+  $('#form-1').submit(function (event)
   {
-    return submit_button_0;
+    console.log('form-1 submit with submit_button_1 = ' + submit_button_1)
+    return submit_button_1;
   });
 
-  $('#submit-form-0').click(function (event)
+  $('#submit-form-1').click(function (event)
   {
-    submit_button_0 = true;
+    console.log('submit-form-1 click')
+    submit_button_1 = true;
   });
 
-  // Form 1: Manage checkboxes
+  // Form 2: Manage checkboxes
   $('#all-subjects').click(function ()
   {
     $('input:checkbox').prop('checked', true);

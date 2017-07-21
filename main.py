@@ -5,6 +5,8 @@ import os
 import datetime
 import sqlite3
 
+import logging
+
 from collections import namedtuple
 
 from cuny_course import CUNYCourse
@@ -13,6 +15,19 @@ from mysession import MySession
 from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+#
+# Initialization
+Filter = namedtuple('Filter', ['subject', 'college', 'discipline'])
+
+logger = logging.getLogger('debugging')
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('debugging.log')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+fh.setFormatter(formatter)
+logger.addHandler(fh)
+logger.debug('First Message')
+logger.info('info message')
 
 #
 # Overhead URIs
@@ -72,10 +87,12 @@ def assessment():
 #   get catalog descriptions
 
 
-# form_0()
+# do_form_0()
 # -------------------------------------------------------------------------------------------------
-def form_0(request, session):
-  """ Generate form_1. Source and destination institutions; user's email.
+def do_form_0(request, session):
+  """
+      No form submittet yet.
+      Display form_1 to get aource and destination institutions; user's email.
   """
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
@@ -127,9 +144,16 @@ def form_0(request, session):
   except:
     pass
 
+  session_keys = '.'
+  if len(session):
+    session_keys = ': ' + ','.join(session.keys())
+
+  # Return Form 1
   result = """
-    <form method="post" action="" id="form-0">
-      <fieldset>
+    <h1>Form 1</h1>
+    <p>Session has {} keys{}</p>
+    <fieldset>
+    <form method="post" action="" id="form-1">
       {}
       {}
       <fieldset><legend>Your email address</legend>
@@ -139,18 +163,22 @@ def form_0(request, session):
       </div>
       <div>
         <div id="error-msg" class="error"> </div>
-        <input type="hidden" name="form" value="form_1" />
-        <button type="submit" id="submit-form-0">Next</button>
+        <input type="hidden" name="next-function" value="do_form_1" />
+        <button type="submit" id="submit-form-1">Next</button>
       </div>
       </fieldset>
     <form>
-    """.format(source_prompt, destination_prompt, email)
+    """.format(len(session), session_keys,
+               source_prompt, destination_prompt, email)
   return render_template('transfers.html', result=Markup(result))
 
-# form_1()
+# do_form_1()
 # -------------------------------------------------------------------------------------------------
-def form_1(request, session):
-  """ Generate form_2: Filter disciplines
+def do_form_1(request, session):
+  """
+      Collect source institutions, destination institutions and user's email from Form 1, and add
+      them to the session.
+      Generate Form 2: select discipline(s)
   """
   # Capture form data in user's session
   session['source_institutions'] = request.form.getlist('source')
@@ -237,7 +265,6 @@ def form_1(request, session):
   # Build filter table. For each cuny_subject found in either sending or receiving courses, list
   # all disciplines at those colleges.
   # tuples are cuny_subject, college, discipline
-  Filter = namedtuple('Filter', ['subject', 'college', 'discipline'])
   source_filters = set()
   destination_filters = set()
   for rule in rules:
@@ -334,12 +361,19 @@ def form_1(request, session):
         <td colspan="3"><em>Clear All Subjects</em></td>
       </tr>
       """
+
+  session_keys = '.'
+  if len(session):
+    session_keys = ': ' + ', '.join(session.keys())
+
   result = """
-  <h1>Filter Transfer Rules</h1>
+  <h1>Do Form 1: Select CUNY Subjects</h1>
+  <p>Session has {} keys{}</p>
+  <p>The session has {} source filters.</p>
   <p>There are {:,} rules where {}.</p>
   <p>There are {} source filters and {} destination filters.</p>
   <p>There are {} subjects: {} source subjects and {} destination subjects.</p>
-  <form method="post" action="" id="form-1">
+  <form method="post" action="" id="form-2">
     <fieldset>
       <table id="subject-filters">
         <tr>
@@ -351,19 +385,22 @@ def form_1(request, session):
         {}
       </table>
       <a href="" class="restart">Restart</a>
-      <input type="hidden" name="form" value="form_2" />
-      <button type="submit" id="form-1-submit">Next</button>
+      <input type="hidden" name="next-function" value="do_form_2" />
+      <button type="submit" id="form-2-submit">Next</button>
     </fieldset>
   </form>
-  """.format(len(rules), criterion, len(source_filters), len(destination_filters),
+  """.format(len(session), session_keys, len(session['source_filters']),
+             len(rules), criterion, len(source_filters), len(destination_filters),
              len(all_subjects), len(source_subjects), len(destination_subjects),
              sending_suffix, receiving_suffix, filter_rows)
   return render_template('transfers.html', result=Markup(result))
 
-# form_2()
+# do_form_2()
 # -------------------------------------------------------------------------------------------------
-def form_2(request, session):
-  """ Generate form_3: Collect transfer rule evaluations
+def do_form_2(request, session):
+  """
+      Process CUNY Subject list from form 2 and add to session.
+      Generate form_3: the selected transfer rules for evaluation
   """
   session['subjects'] = request.form.getlist('subject')
   conn = sqlite3.connect('static/db/cuny_catalog.db')
@@ -371,10 +408,10 @@ def form_2(request, session):
   c = conn.cursor()
 
   # Look up all the rules based on the filters supplied
-  source_institutions = [filter[1] for filter in session['source_filters']]
-  source_disciplines = [filter[2] for filter in session['source_filters']]
-  destination_institutions = [filter[1] for filter in session['destination_filters']]
-  destination_disciplines = [filter[2] for filter in session['destination_filters']]
+  source_institutions = [filter['institution'] for filter in session['source_filters']]
+  source_disciplines = [filter['discipline'] for filter in session['source_filters']]
+  destination_institutions = [filter['institution'] for filter in session['destination_filters']]
+  destination_disciplines = [filter['discipline'] for filter in session['destination_filters']]
   source_institution_list = "('" + "', '".join(source_institutions) + "')"
   source_discipline_list = "('" + "', '".join(source_disciplines) + "')"
   destination_institution_list = "('" + "', '".join(destination_institutions) + "')"
@@ -398,59 +435,80 @@ def form_2(request, session):
   #                             'destination_id', 'destination_institution', 'destination_course'])
   # rules = [rule for rule in map(Rule._make, c.fetchall())]
 
+  session_keys = '.'
+  if len(session):
+    session_keys = ': ' + ', '.join(session.keys())
 
-  result = '<h1>Form 2 not implemented yet</h1>'
   result = """
-  <h1>Evaluate Transfer Rules</h1>
+  <h1>Do Form 2: Generate List Transfer Rules</h1>
+  <p>Session has {} keys{}</p>
   <p>Number of subjects: {}</p>
   <p>Number of source institutions: {}</p>
   <p>Number of source subjects: {}</p>
   <p>Number of destination institutions: {}</p>
   <p>Number of destination subjects: {}</p>
-  <form method="post" action="" id="form-2">
+  <form method="post" action="" id="form-3">
     <fieldset>
       <a href="" class="restart">Restart</a>
-      <input type="hidden" name="form" value="form_3" />
-      <button type="submit" id="form-2-submit">Next</button>
+      <input type="hidden" name="next-function" value="do_form_3" />
+      <button type="submit" id="form-3-submit">Next</button>
     </fieldset>
   </form>
-  """.format(len(session['subjects']),
+  """.format(len(session), session_keys,
+             len(session['subjects']),
              len(source_institutions),
              len(source_disciplines),
              len(destination_institutions),
              len(destination_disciplines))
   return render_template('transfers.html', result=Markup(result))
 
-# form_3()
+# do_form_3()
 # -------------------------------------------------------------------------------------------------
-def form_3(request, session):
-  result = '<h1>Confirmation page not implemented yet</h1>'
+def do_form_3(request, session):
+
+  session_keys = '.'
+  if len(session):
+    session_keys = ': ' + ', '.join(session.keys())
+
+  result = """
+  <h1>Do Form 3: Process transfer rule evaluations not implemented yet</h1>
+  <p>Session has {} keys{}</p>
+  """.format(
+      len(session), session_keys)
   return render_template('transfers.html', result=Markup(result))
 
 # transfers()
 # -------------------------------------------------------------------------------------------------
 @app.route('/transfers/', methods=['POST', 'GET'])
 def transfers():
+  logger.debug('request.method is ' + request.method)
   try:
-    mysession_key = session['mysession']
+    logger.debug('try: access mysession_key')
+    mysession_key = session['mysession_key']
+    logger.debug('try: mysession_key is ' + mysession_key)
     mysession = MySession(app, mysession_key)
+    logger.debug('try: mysession is ' + str(mysession))
   except:
+    logger.debug('except: {}'.format(sys.exc_info()[0]))
+    logger.debug('except: create mysession')
     mysession = MySession(app)
-    session['mysession'] = mysession.session_key
+    logger.debug('except: mysession is ' + str(mysession))
+    session['mysession_key'] = mysession.session_key
+    logger.debug('except mysession_key is ' + mysession.session_key)
 
   # Dispatcher for forms
   dispatcher = {
-    'form_1': form_1,
-    'form_2': form_2,
-    'form_3': form_3,
+    'do_form_1': do_form_1,
+    'do_form_2': do_form_2,
+    'do_form_3': do_form_3,
   }
   if request.method == 'POST':
     # User has submitted a form.
-    return dispatcher.get(request.form['form'], lambda: error)(request, mysession)
+    return dispatcher.get(request.form['next-function'], lambda: error)(request, mysession)
 
-  # Form not submitted yet, so generate form_0
+  # Form not submitted yet, so call do_form_0 to generate form_1
   else:
-    return form_0(None, mysession)
+    return do_form_0(None, mysession)
 
 
 # COURSES PAGE
