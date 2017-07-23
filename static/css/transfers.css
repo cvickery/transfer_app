@@ -50,9 +50,33 @@ legend {
   padding:0.5em;
   background-color:white;
 }
+
 .institution-select {
   display:inline-block;
   width:18em;
+}
+
+td, th {
+  background-color: white;
+}
+
+#form-2>fieldset {
+  background-color:white;
+  padding:0.5em;
+}
+#form-2 th {
+  background-color:#999999;
+}
+.source-subject {
+  background-color:#eeffee;
+}
+
+.destination-subject {
+  background-color:#eeeeff;
+}
+.f2-cbox {
+  text-align: right;
+  padding-right:2em;
 }
 
 #email-text {

@@ -122,14 +122,26 @@ $(function ()
   });
 
   // Form 2: Manage checkboxes
-  $('#all-subjects').click(function ()
+  $('#all-sending-subjects-top, #all-sending-subjects-bot').click(function ()
   {
-    $('input:checkbox').prop('checked', true);
-    $('#all-subjects, #no-subjects').prop('checked', false);
+    $('.source-subject input:checkbox').prop('checked', true);
+    $('#all-sending-subjects-top, #no-sending-subjects-top, ' +
+      '#all-sending-subjects-bot, #no-sending-subjects-bot').prop('checked', false);
   });
-  $('#no-subjects').click(function ()
+  $('#no-sending-subjects-top, #no-sending-subjects-bot').click(function ()
   {
-    $('input:checkbox').prop('checked', false);
+    $('.source-subject input:checkbox').prop('checked', false);
+  });
+
+  $('#all-receiving-subjects-top, #all-receiving-subjects-bot').click(function ()
+  {
+    $('.destination-subject input:checkbox').prop('checked', true);
+    $('#all-receiving-subjects-top, #no-receiving-subjects-top, ' +
+      '#all-receiving-subjects-bot, #no-receiving-subjects-bot').prop('checked', false);
+  });
+  $('#no-receiving-subjects-top, #no-receiving-subjects-bot').click(function ()
+  {
+    $('.destination-subject input:checkbox').prop('checked', false);
   });
 
 });

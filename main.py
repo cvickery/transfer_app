@@ -18,6 +18,7 @@ app.secret_key = os.urandom(24)
 
 #
 # Initialization
+
 Filter = namedtuple('Filter', ['subject', 'college', 'discipline'])
 
 logger = logging.getLogger('debugging')
@@ -239,18 +240,18 @@ def do_form_1(request, session):
   # session['destination_subjects'] = [destination_subject for destination_subject in destination_subjects]
 
   sending_is_singleton = False
-  sending_suffix = 's’'
+  sending_heading = 'Sending Colleges’'
   receiving_is_singleton = False
-  receiving_suffix ='s’'
+  receiving_heading ='Receiving Colleges’'
   criterion = ''
   if len(session['source_institutions']) == 1:
-    criterion = 'the sending college is ' + institution_names[session['source_institutions'][0]]
     sending_is_singleton = True
-    sending_suffix = '’s'
+    criterion = 'the sending college is ' + institution_names[session['source_institutions'][0]]
+    sending_heading = '{}’s'.format(institution_names[session['source_institutions'][0]])
   if len(session['destination_institutions']) == 1:
     receiving_is_singleton = True
-    receiving_suffix = '’s'
-    if criterion != '': criterion += ' and '
+    receiving_heading = '{}’s'.format(institution_names[session['destination_institutions'][0]])
+    if sending_is_singleton: criterion += ' and '
     criterion += 'the receiving college is ' + institution_names[session['destination_institutions'][0]]
 
   c.execute("select * from cuny_subjects")
@@ -283,16 +284,17 @@ def do_form_1(request, session):
   all_subjects |= set([filter.subject for filter in destination_filters])
   all_subjects = sorted(all_subjects)
   filter_rows = ''
-  for subject in all_subjects:
+  for cuny_subject in all_subjects:
     # Sending College Disciplines
     source_disciplines = ''
     source_discipline_set = set()
     for filter in source_filters:
-      if filter.subject == subject:
+      if filter.subject == cuny_subject:
         if sending_is_singleton:
           source_discipline_set.add(filter.discipline)
         else:
           source_discipline_set.add((filter.college, filter.discipline))
+
     if sending_is_singleton:
       if len(source_discipline_set) > 1:
         source_disciplines = '<div>' +'</div><div>'.join(source_discipline_set) + '</div>'
@@ -314,7 +316,7 @@ def do_form_1(request, session):
     destination_disciplines = ''
     destination_discipline_set = set()
     for filter in destination_filters:
-      if filter.subject == subject:
+      if filter.subject == cuny_subject:
         if receiving_is_singleton:
           destination_discipline_set.add(filter.discipline)
         else:
@@ -337,30 +339,55 @@ def do_form_1(request, session):
         destination_disciplines += '<div>{}: <em>{}</em></div>'.format(institution_names[college],
                                                                        ', '.join(colleges[college]))
 
+    source_box = ''
+    if source_disciplines != '':
+      source_box = '<input type="checkbox" name="source_subject" value="{}"/>'.format(cuny_subject)
+    destination_box = ''
+    if destination_disciplines != '':
+      destination_box = '<input type="checkbox" name="destination_subject" value="{}"/>'.format(cuny_subject)
     filter_rows += """
     <tr>
-      <td><input type="checkbox" name="subject" value="{}"/></td>
-      <td>{}</td>
-      <td>{}</td>
-      <td>{}</td>
+      <td class="source-subject">{}</td>
+      <td class="source-subject f2-cbox">{}</td>
+      <td><strong>{}</strong></td>
+      <td class="destination-subject">{}</td>
+      <td class="destination-subject f2-cbox">{}</td>
     </tr>
-    """.format(subject, cuny_subjects[subject], source_disciplines, destination_disciplines)
+    """.format(source_disciplines,
+               source_box,
+               cuny_subjects[cuny_subject],
+               destination_disciplines,
+               destination_box)
 
   if len(all_subjects) > 1:
-    filter_rows += """
-      <tr>
-      <td>
-        <input type="checkbox" id="all-subjects" />
-        <label for="all-subjects"><em> all</em></label></td>
-        <td colspan="3"><em>Select All Subjects</em></td>
-      </tr>
-      <tr>
-        <td>
-          <input type="checkbox" id="no-subjects" />
-          <label for="no-subjects"><em> none</em></label></td>
-        <td colspan="3"><em>Clear All Subjects</em></td>
-      </tr>
-      """
+    shortcuts = """
+    <tr>
+      <td class="source-subject f2-cbox" colspan="2">
+        <div>
+          <label for="all-sending-subjects"><em>Select All Sending Subjects: </em></label>
+          <input type="checkbox" id="all-sending-subjects{}" />
+        </div>
+        <div>
+          <label for="no-sending-subjects"><em>Clear All Sending Subjects: </em></label>
+          <input type="checkbox" id="no-sending-subjects{}" />
+        </div>
+      </td>
+      <td> </td>
+      <td class="destination-subject f2-cbox" colspan="2">
+        <div>
+          <label for="all-receiving-subjects"><em>Select All Receiving Subjects: </em></label>
+          <input type="checkbox" id="all-receiving-subjects{}" />
+        </div>
+        <div>
+          <label for="no-receiving-subjects"><em>Clear All Receiving Subjects: </em></label>
+          <input type="checkbox" id="no-receiving-subjects{}" />
+        </div>
+      </td>
+    </tr>
+    """
+    filter_rows = shortcuts.format('-top', '-top', '-top', '-top') + \
+                  filter_rows + \
+                  shortcuts.format('-bot', '-bot', '-bot', '-bot')
 
   session_keys = '.'
   if len(session):
@@ -373,14 +400,21 @@ def do_form_1(request, session):
   <p>There are {:,} rules where {}.</p>
   <p>There are {} source filters and {} destination filters.</p>
   <p>There are {} subjects: {} source subjects and {} destination subjects.</p>
+  """.format(len(session), session_keys,
+             len(session['source_filters']),
+             len(rules), criterion,
+             len(source_filters), len(destination_filters),
+             len(all_subjects), len(source_subjects), len(destination_subjects))
+  result += """
   <form method="post" action="" id="form-2">
     <fieldset>
       <table id="subject-filters">
         <tr>
-          <th>Select</th>
+          <th class="source-subject">{} Discipline(s)</th>
+          <th class="source-subject">Select Sending</th>
           <th>CUNY Subject</th>
-          <th>Sending College{} Discipline(s)</th>
-          <th>Receiving College{} Discipline(s)</th>
+          <th class="destination-subject">{} Discipline(s)</th>
+          <th class="destination-subject">Select Receiving</th>
         </tr>
         {}
       </table>
@@ -389,10 +423,7 @@ def do_form_1(request, session):
       <button type="submit" id="form-2-submit">Next</button>
     </fieldset>
   </form>
-  """.format(len(session), session_keys, len(session['source_filters']),
-             len(rules), criterion, len(source_filters), len(destination_filters),
-             len(all_subjects), len(source_subjects), len(destination_subjects),
-             sending_suffix, receiving_suffix, filter_rows)
+  """.format(sending_heading, receiving_heading, filter_rows)
   return render_template('transfers.html', result=Markup(result))
 
 # do_form_2()
@@ -407,11 +438,15 @@ def do_form_2(request, session):
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
 
+  source_institutions = set()
+  destination_institutions = set()
   # Look up all the rules based on the filters supplied
-  source_institutions = [filter['institution'] for filter in session['source_filters']]
-  source_disciplines = [filter['discipline'] for filter in session['source_filters']]
-  destination_institutions = [filter['institution'] for filter in session['destination_filters']]
-  destination_disciplines = [filter['discipline'] for filter in session['destination_filters']]
+  for filter in session['source_filters']:
+    source_institutions.add(filter[1])
+  source_disciplines = [filter[2] for filter in session['source_filters']]
+  for filter in session['destination_filters']:
+    destination_institutions.add(filter[1])
+  destination_disciplines = [filter[2] for filter in session['destination_filters']]
   source_institution_list = "('" + "', '".join(source_institutions) + "')"
   source_discipline_list = "('" + "', '".join(source_disciplines) + "')"
   destination_institution_list = "('" + "', '".join(destination_institutions) + "')"
@@ -430,7 +465,7 @@ def do_form_2(request, session):
       and c2.course_id = t.destination_course_id
     order by source_institution, destination_institution, source_course
   """.format(source_institution_list, source_discipline_list, destination_institution_list, destination_discipline_list)
-  c.execute(q)
+  #c.execute(q)
   # Rule = namedtuple('Rule', [ 'source_id', 'source_institution', 'source_course',
   #                             'destination_id', 'destination_institution', 'destination_course'])
   # rules = [rule for rule in map(Rule._make, c.fetchall())]
@@ -477,24 +512,29 @@ def do_form_3(request, session):
       len(session), session_keys)
   return render_template('transfers.html', result=Markup(result))
 
-# transfers()
-# -------------------------------------------------------------------------------------------------
+# TRANSFERS PAGE
+# =================================================================================================
+#
 @app.route('/transfers/', methods=['POST', 'GET'])
 def transfers():
   logger.debug('request.method is ' + request.method)
   try:
-    logger.debug('try: access mysession_key')
+    logger.debug('try 1: access mysession_key')
     mysession_key = session['mysession_key']
-    logger.debug('try: mysession_key is ' + mysession_key)
+    logger.debug('try 2: mysession_key is ' + mysession_key)
     mysession = MySession(app, mysession_key)
-    logger.debug('try: mysession is ' + str(mysession))
-  except:
-    logger.debug('except: {}'.format(sys.exc_info()[0]))
-    logger.debug('except: create mysession')
+    logger.debug('try 3: mysession is ' + str(mysession))
+  except Exception as excp:
+    logger.debug('except 0: {} {}'.format(sys.exc_info()[0], excp))
+    logger.debug('except 1: create mysession')
     mysession = MySession(app)
-    logger.debug('except: mysession is ' + str(mysession))
+    logger.debug('except 2: mysession is ' + str(mysession))
     session['mysession_key'] = mysession.session_key
-    logger.debug('except mysession_key is ' + mysession.session_key)
+    logger.debug('except 3: mysession_key is ' + mysession.session_key)
+
+  logger.debug('about to ask for keys')
+  logger.debug('mysession has {} keys'.format(len(mysession.keys())))
+  logger.debug('about to dispatch')
 
   # Dispatcher for forms
   dispatcher = {
@@ -512,7 +552,7 @@ def transfers():
 
 
 # COURSES PAGE
-# -------------------------------------------------------------------------------------------------
+# =================================================================================================
 # Pick a college, and see catalog descriptions of all courses currently active there.
 @app.route('/courses/', methods=['POST', 'GET'])
 def courses():
