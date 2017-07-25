@@ -224,7 +224,7 @@ def do_form_1(request, session):
   rules = [rule for rule in map(Rule._make, c.fetchall())]
 
   # Create lists of disciplines for subjects found in the transfer rules
-  #   You want a set of institution:discipline pairs for each subject
+  #   This gives a set of institution:discipline pairs for each subject
   source_subjects = {}
   destination_subjects = {}
   for rule in rules:
@@ -433,42 +433,44 @@ def do_form_2(request, session):
       Process CUNY Subject list from form 2 and add to session.
       Generate form_3: the selected transfer rules for evaluation
   """
-  session['subjects'] = request.form.getlist('subject')
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
 
-  source_institutions = set()
-  destination_institutions = set()
-  # Look up all the rules based on the filters supplied
-  for filter in session['source_filters']:
-    source_institutions.add(filter[1])
-  source_disciplines = [filter[2] for filter in session['source_filters']]
-  for filter in session['destination_filters']:
-    destination_institutions.add(filter[1])
-  destination_disciplines = [filter[2] for filter in session['destination_filters']]
-  source_institution_list = "('" + "', '".join(source_institutions) + "')"
-  source_discipline_list = "('" + "', '".join(source_disciplines) + "')"
-  destination_institution_list = "('" + "', '".join(destination_institutions) + "')"
-  destination_discipline_list = "('" + "', '".join(destination_disciplines) + "')"
+  # Look up transfer rules where the sending course belongs to a sending institution and is one of
+  # the source subjects and the receiving course blongs to a receiving institution and is one of
+  # the receiving subjects.
+  source_institution_list = "('" + "', '".join(session['source_institutions']) + "')"
+  destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
+  source_subjects = [subject for subject in request.form.getlist('source_subject')]
+  destination_subjects = [subject for subject in request.form.getlist('destination_subject')]
+  source_subject_list = "('" + "', '".join(source_subjects)      + "')"
+  destination_subject_list = "('" + "', '".join(destination_subjects) + "')"
   q = """
-  select t.source_course_id as source_id,
-         c1.institution as source_institution,
-         c1.discipline || ' ' || c1.number as source_course,
-         t.destination_course_id as destination_id,
-         c2.institution as destination_institution,
-         c2.discipline || ' ' || c2.number as destination_course
+  select t.source_course_id as source_id, t.destination_course_id,
+    c1.course_id as source_id,
+    c1.institution||': '||c1.discipline||'-'||c1.number as source_course,
+    c2.course_id as destination_id,
+    c2.institution||': '||c2.discipline||'-'||c2.number as destination_course
     from transfer_rules t, courses c1, courses c2
     where
-          c1.institution in {} and c1.discipline in {} and c2.institution in {} and c2.discipline in {}
+          c1.institution in {}
+      and c1.cuny_subject in {}
+      and c2.institution in {}
+      and c2.cuny_subject in {}
       and c1.course_id = t.source_course_id
       and c2.course_id = t.destination_course_id
-    order by source_institution, destination_institution, source_course
-  """.format(source_institution_list, source_discipline_list, destination_institution_list, destination_discipline_list)
-  #c.execute(q)
-  # Rule = namedtuple('Rule', [ 'source_id', 'source_institution', 'source_course',
-  #                             'destination_id', 'destination_institution', 'destination_course'])
-  # rules = [rule for rule in map(Rule._make, c.fetchall())]
+    order by source_course, destination_course
+  """.format(source_institution_list,
+             source_subject_list,
+             destination_institution_list,
+             destination_subject_list)
+  logger.debug(q)
+  c.execute(q)
+  rows = c.fetchall()
+  rules = []
+  if rows != None:
+    rules = [row for row in c.fetchall()]
 
   session_keys = '.'
   if len(session):
@@ -477,11 +479,11 @@ def do_form_2(request, session):
   result = """
   <h1>Do Form 2: Generate List Transfer Rules</h1>
   <p>Session has {} keys{}</p>
-  <p>Number of subjects: {}</p>
-  <p>Number of source institutions: {}</p>
   <p>Number of source subjects: {}</p>
-  <p>Number of destination institutions: {}</p>
+  <p>Number of source institutions: {}</p>
   <p>Number of destination subjects: {}</p>
+  <p>Number of destination institutions: {}</p>
+  <p>Number of transfer rules selected: {}</p>
   <form method="post" action="" id="form-3">
     <fieldset>
       <a href="" class="restart">Restart</a>
@@ -490,11 +492,11 @@ def do_form_2(request, session):
     </fieldset>
   </form>
   """.format(len(session), session_keys,
-             len(session['subjects']),
-             len(source_institutions),
-             len(source_disciplines),
-             len(destination_institutions),
-             len(destination_disciplines))
+             len(source_subjects),
+             len(session['source_institutions']),
+             len(destination_subjects),
+             len(session['destination_institutions']),
+             len(rules))
   return render_template('transfers.html', result=Markup(result))
 
 # do_form_3()
@@ -562,7 +564,7 @@ def courses():
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
 
-    c.execute("select * from external_subjects")
+    c.execute("select * from cuny_subjects")
     cuny_subjects = {row['area']:row['description'] for row in c}
 
     c.execute("select * from careers")
@@ -599,13 +601,13 @@ def courses():
     for row in c:
       num_courses += 1
       result = result + """
-      <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}</em>)<br/>
+      <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}: {}</em>)<br/>
       {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
       """.format(row['discipline'],
                  row['number'].strip(),
                  row['title'],
                  careers[(row['institution'],row['career'])],
-                 cuny_subjects[row['cuny_subject']],
+                 row['cuny_subject'], cuny_subjects[row['cuny_subject']],
                  float(row['hours']),
                  float(row['credits']),
                  row['requisites'],
