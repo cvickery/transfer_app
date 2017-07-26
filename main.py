@@ -149,8 +149,7 @@ def do_form_0(request, session):
 
   # Return Form 1
   result = """
-    <h1>Form 1</h1>
-    <p>Session has {} keys{}</p>
+    <h1>Step 1: Select Colleges</h1>
     <fieldset>
     <form method="post" action="" id="form-1">
       {}
@@ -167,8 +166,7 @@ def do_form_0(request, session):
       </div>
       </fieldset>
     <form>
-    """.format(len(session), session_keys,
-               source_prompt, destination_prompt, email)
+    """.format(source_prompt, destination_prompt, email)
   return render_template('transfers.html', result=Markup(result))
 
 # do_form_1()
@@ -392,20 +390,16 @@ def do_form_1(request, session):
     session_keys = ': ' + ', '.join(session.keys())
 
   result = """
-  <h1>Do Form 1: Select CUNY Subjects</h1>
-  <p>Session has {} keys{}</p>
-  <p>The session has {} source filters.</p>
-  <p>There are {:,} rules where {}.</p>
-  <p>There are {} source filters and {} destination filters.</p>
+  <h1>Step 2: Select CUNY Subjects</h1>
+  <p>There are {:,} transfer rules where {}.</p>
   <p>There are {} subjects: {} source subjects and {} destination subjects.</p>
-  """.format(len(session), session_keys,
-             len(session['source_filters']),
-             len(rules), criterion,
-             len(source_filters), len(destination_filters),
+  """.format(len(rules), criterion,
              len(all_subjects), len(source_subjects), len(destination_subjects))
   result += """
   <form method="post" action="" id="form-2">
     <fieldset>
+      <a href="" class="restart">Restart</a>
+      <button type="submit">Next</button>
       <table id="subject-filters">
         <tr>
           <th class="source-subject">{} Discipline(s)</th>
@@ -418,7 +412,7 @@ def do_form_1(request, session):
       </table>
       <a href="" class="restart">Restart</a>
       <input type="hidden" name="next-function" value="do_form_2" />
-      <button type="submit" id="form-2-submit">Next</button>
+      <button type="submit">Next</button>
     </fieldset>
   </form>
   """.format(sending_heading, receiving_heading, filter_rows)
@@ -445,12 +439,13 @@ def do_form_2(request, session):
   source_subject_list = "('" + "', '".join(source_subjects)      + "')"
   destination_subject_list = "('" + "', '".join(destination_subjects) + "')"
   q = """
-  select  t.source_course_id,
-          t.destination_course_id,
-          i1.prompt as source_institution,
-          c1.discipline||'-'||c1.number as source_course,
-          i2.prompt as destination_institution,
-          c2.discipline||'-'||c2.number as destination_course
+  select  t.source_course_id,                                 -- 0 id
+          i1.prompt as source_institution,                    -- 1 institution
+          c1.discipline||'-'||c1.number as source_course,     -- 2 course
+
+          t.destination_course_id,                            -- 3 id
+          i2.prompt as destination_institution,               -- 4 institution
+          c2.discipline||'-'||c2.number as destination_course -- 5 course
    from   transfer_rules t, courses c1, courses c2, institutions i1, institutions i2
   where
           c1.institution in {}
@@ -470,6 +465,7 @@ def do_form_2(request, session):
   rules = c.fetchall()
   if rules == None: rules = []
 
+  # Rule ids: source_course_id:source_institution:dest_course_id:dest_institution
   the_list = '<table id="rules-table">'
   for rule in rules:
     the_list += """
@@ -477,18 +473,24 @@ def do_form_2(request, session):
       <td>{}</td><td>{}</td>
       <td>=></td>
       <td>{}</td><td>{}</td>
-    </tr>""".format(str(rule[0])+':'+str(rule[1]), rule[2], rule[3], rule[4], rule[5])
+    </tr>""".format(str(rule[0])+':'+rule[1]+':'+str(rule[3])+':'+rule[4],
+                    rule[1], rule[2], rule[4], rule[5])
   the_list += '</table>'
   result = """
-  <h1>Click on Rules</h1>
+  <h1>Step 3: Review Transfer Rules</h1>
   <p>Number of source subjects: {}</p>
   <p>Number of source institutions: {}</p>
   <p>Number of destination subjects: {}</p>
   <p>Number of destination institutions: {}</p>
-  <p>Number of transfer rules selected: {}</p>
+  <p>Number of transfer rules: {}</p>
   <fieldset id="rules-fieldset">
+  <p>There <span id="num-pending">are no evaluations</span> pending verification.</p>
+  <button type="text" id="send-email" disabled="disabled">
+    Send verification email to <em>{}</em>.
+  </button>
+  <p>Click on a rule to review it.</p>
     <form method="post" action="" id="evaluation-form">
-
+      //  JavaScript looks up the rules and generates a table here
     </form>
     {}
   </fieldset>
@@ -497,7 +499,9 @@ def do_form_2(request, session):
              len(session['source_institutions']),
              len(destination_subjects),
              len(session['destination_institutions']),
-             len(rules), the_list)
+             len(rules),
+             session['email'],
+             the_list)
   return render_template('transfers.html', result=Markup(result))
 
 # do_form_3()

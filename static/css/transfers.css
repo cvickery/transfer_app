@@ -132,3 +132,13 @@ td, th {
   background-color: #999;
   color:white;
 }
+
+button:disabled {
+  color:#999;
+  background-color: #eee;
+}
+
+.evaluated td {
+  background-color: #efe;
+  color: #333;
+}

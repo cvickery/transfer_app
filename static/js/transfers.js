@@ -149,40 +149,108 @@ $(function ()
   {
     $('.rule').removeClass('selected-rule');
     $(this).addClass('selected-rule');
+    // Rule ids: source_course_id:source_institution:dest_course_id:dest_institution
     var this_rule = $(this).attr('id').split(':');
     var source_id = this_rule[0];
-    var destination_id = this_rule[1];
+    var source_institution = this_rule[1];
+    var destination_id = this_rule[2];
+    var destination_institution = this_rule[3];
     var source_catalog = '';
     var destinaton_catalog = '';
     $.getJSON($SCRIPT_ROOT + '/_course', {course_id: source_id}, function (data)
     {
       source_catalog = '<div class="source-catalog"><h2>Sending Course</h2>' + data + '</div><hr/>';
     });
-      console.log('get ' + destination_id);
       $.getJSON($SCRIPT_ROOT + '/_course', {course_id: destination_id}, function (data)
       {
-        destination_catalog = '<div class="destination-catalog"><h2>Receiving Course</h2>' + data + '</div><hr/>';
-        controls =  ' <fieldset id="rule-evaluation" class="clean">' +
-                    ' <div>' +
-                    '   <input type="radio" name="verified" id="rule-cbox" value="source-ok"/>' +
-                    '     <label for="rule-cbox">Verified by sending college.</label>' +
-                    ' </div>' +
-                    ' <div>' +
-                    '   <input type="radio" name="verified" id="rule-cbox" value="source-not-ok"/>' +
-                    '     <label for="rule-cbox">Problem at sending college.</label>' +
-                    ' </div>' +
-                    ' <div>' +
-                    '   <input type="radio" name="verified" id="rule-cbox" value="dest-ok"/>' +
-                    '     <label for="rule-cbox">Verified by receivinging college.</label>' +
-                    ' </div>' +
-                    ' <div>' +
-                    '   <input type="radio" name="verified" id="rule-cbox" value="dest-not-ok"/>' +
-                    '     <label for="rule-cbox">Problem at receivinging college.</label>' +
-                    ' </div>' +
-                    ' <textarea id="comment-text" placeholder="Explain problems here." />' +
-                    ' </fieldset>';
+        destination_catalog = '<div class="destination-catalog"><h2>Receiving Course</h2>' +
+                              data + '</div><hr/>';
+        controls = `<fieldset id="rule-evaluation" class="clean">
+                      <div>
+                        <input type="radio" name="reviewed" id="src-ok"/>
+                        <label for="src-ok">Verified by ${source_institution}</label>
+                      </div>
+                      <div>
+                        <input type="radio" name="reviewed" id="src-not-ok"/>
+                        <label for="src-not-ok">Problem observed by ${source_institution}</label>
+                      </div>
+                      <div>
+                        <input type="radio" name="reviewed" id="dest-ok"/>
+                        <label for="dest-ok">
+                          Verified by ${destination_institution}
+                        </label>
+                      </div>
+                      <div>
+                        <input type="radio" name="reviewed" id="dest-not-ok"/>
+                        <label for="dest-not-ok">
+                          Problem observed by ${destination_institution}
+                        </label>
+                      </div>
+                      <div>
+                        <input type="radio" name="reviewed" id="other"/>
+                        <label for="other">Other</label>
+                      </div>
+                      <textarea id="comment-text"
+                                placeholder="Explain problem or “Other” here."
+                                minlength="12" />
+                      <input type="hidden" name="source-id" value="${source_id}" />
+                      <input type="hidden" name="destination-id" value="${destination_id}" />
+                      <button id="review-submit" type="button" disabled="disabled">Submit</button>
+                    </fieldset>`;
 
         $('#evaluation-form').html(source_catalog + destination_catalog + controls).show();
+        $('#rule-evaluation').css('background-color', '#ffffff');
+
+        // Enable form submission only if an input has changed.
+        $('input, textarea').change(function ()
+        {
+          var comment_len = $('#comment-text').val().length;
+          var ok_to_submit = ($(this).attr('id') === 'src-ok' ||
+                              $(this).attr('id') === 'dest-ok' ||
+                              comment_len > 12);
+          $('#review-submit').attr('disabled', !ok_to_submit);
+        });
+
+        // Process evaluation info if submitted
+        $('#review-submit').click(function (event)
+        {
+          var num_pending = 0;
+          var num_pending_text = $('#num-pending').text();
+          if (num_pending_text === 'are no evaluations')
+          {
+            num_pending_text = 'is one evaluation';
+          }
+          else
+          {
+            if (num_pending_text === 'is one evaluation')
+            {
+              num_pending = 2;
+            }
+            else
+            {
+              // Extract the current count from the text and increment it
+              var m = num_pending_text.match(/\d+/);
+              num_pending = parseInt(m) + 1;
+            }
+            num_pending_text = `are ${num_pending} evaluations`;
+          }
+          $('#num-pending').text(num_pending_text);
+          $('#evaluation-form').html('');
+          $('.selected-rule').addClass('evaluated');
+
+          // *** Enter form data into db here ***
+
+          // Enable verify button
+          $('#send-email').attr('disabled', false);
+
+          event.preventDefault(); // don't actually submit the form to the server.
+        });
       });
+  });
+
+  // Send email
+  $('#send-email').click(function ()
+  {
+    alert('Not implemented yet.')
   });
 });
