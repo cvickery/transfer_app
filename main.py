@@ -12,7 +12,7 @@ from collections import namedtuple
 from cuny_course import CUNYCourse
 from mysession import MySession
 
-from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session
+from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session, jsonify
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
@@ -27,8 +27,6 @@ fh = logging.FileHandler('debugging.log')
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 fh.setFormatter(formatter)
 logger.addHandler(fh)
-logger.debug('First Message')
-logger.info('info message')
 
 #
 # Overhead URIs
@@ -447,56 +445,59 @@ def do_form_2(request, session):
   source_subject_list = "('" + "', '".join(source_subjects)      + "')"
   destination_subject_list = "('" + "', '".join(destination_subjects) + "')"
   q = """
-  select t.source_course_id as source_id, t.destination_course_id,
-    c1.course_id as source_id,
-    c1.institution||': '||c1.discipline||'-'||c1.number as source_course,
-    c2.course_id as destination_id,
-    c2.institution||': '||c2.discipline||'-'||c2.number as destination_course
-    from transfer_rules t, courses c1, courses c2
-    where
+  select  t.source_course_id,
+          t.destination_course_id,
+          i1.prompt as source_institution,
+          c1.discipline||'-'||c1.number as source_course,
+          i2.prompt as destination_institution,
+          c2.discipline||'-'||c2.number as destination_course
+   from   transfer_rules t, courses c1, courses c2, institutions i1, institutions i2
+  where
           c1.institution in {}
       and c1.cuny_subject in {}
       and c2.institution in {}
       and c2.cuny_subject in {}
       and c1.course_id = t.source_course_id
       and c2.course_id = t.destination_course_id
+      and i1.code = c1.institution
+      and i2.code = c2.institution
     order by source_course, destination_course
   """.format(source_institution_list,
              source_subject_list,
              destination_institution_list,
              destination_subject_list)
-  logger.debug(q)
   c.execute(q)
-  rows = c.fetchall()
-  rules = []
-  if rows != None:
-    rules = [row for row in c.fetchall()]
+  rules = c.fetchall()
+  if rules == None: rules = []
 
-  session_keys = '.'
-  if len(session):
-    session_keys = ': ' + ', '.join(session.keys())
-
+  the_list = '<table id="rules-table">'
+  for rule in rules:
+    the_list += """
+    <tr id="{}" class="rule">
+      <td>{}</td><td>{}</td>
+      <td>=></td>
+      <td>{}</td><td>{}</td>
+    </tr>""".format(str(rule[0])+':'+str(rule[1]), rule[2], rule[3], rule[4], rule[5])
+  the_list += '</table>'
   result = """
-  <h1>Do Form 2: Generate List Transfer Rules</h1>
-  <p>Session has {} keys{}</p>
+  <h1>Click on Rules</h1>
   <p>Number of source subjects: {}</p>
   <p>Number of source institutions: {}</p>
   <p>Number of destination subjects: {}</p>
   <p>Number of destination institutions: {}</p>
   <p>Number of transfer rules selected: {}</p>
-  <form method="post" action="" id="form-3">
-    <fieldset>
-      <a href="" class="restart">Restart</a>
-      <input type="hidden" name="next-function" value="do_form_3" />
-      <button type="submit" id="form-3-submit">Next</button>
-    </fieldset>
-  </form>
-  """.format(len(session), session_keys,
-             len(source_subjects),
+  <fieldset id="rules-fieldset">
+    <form method="post" action="" id="evaluation-form">
+
+    </form>
+    {}
+  </fieldset>
+  <a href="" class="restart">Restart</a>
+  """.format(len(source_subjects),
              len(session['source_institutions']),
              len(destination_subjects),
              len(session['destination_institutions']),
-             len(rules))
+             len(rules), the_list)
   return render_template('transfers.html', result=Markup(result))
 
 # do_form_3()
@@ -519,24 +520,12 @@ def do_form_3(request, session):
 #
 @app.route('/transfers/', methods=['POST', 'GET'])
 def transfers():
-  logger.debug('request.method is ' + request.method)
   try:
-    logger.debug('try 1: access mysession_key')
     mysession_key = session['mysession_key']
-    logger.debug('try 2: mysession_key is ' + mysession_key)
     mysession = MySession(app, mysession_key)
-    logger.debug('try 3: mysession is ' + str(mysession))
   except Exception as excp:
-    logger.debug('except 0: {} {}'.format(sys.exc_info()[0], excp))
-    logger.debug('except 1: create mysession')
     mysession = MySession(app)
-    logger.debug('except 2: mysession is ' + str(mysession))
     session['mysession_key'] = mysession.session_key
-    logger.debug('except 3: mysession_key is ' + mysession.session_key)
-
-  logger.debug('about to ask for keys')
-  logger.debug('mysession has {} keys'.format(len(mysession.keys())))
-  logger.debug('about to dispatch')
 
   # Dispatcher for forms
   dispatcher = {
@@ -551,6 +540,15 @@ def transfers():
   # Form not submitted yet, so call do_form_0 to generate form_1
   else:
     return do_form_0(None, mysession)
+
+@app.route('/_course')
+def _course():
+  course_id = request.args.get('course_id', 0)
+  course = CUNYCourse(course_id)
+  note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
+  if course.is_active:
+    note = ''
+  return jsonify(course.institution + course.html + note)
 
 
 # COURSES PAGE

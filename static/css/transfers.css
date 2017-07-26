@@ -10,6 +10,10 @@ body {
   font-size: 1em;
 }
 
+.warning {
+  color: #611;
+  font-style: italic;
+}
 button, .restart {
     border: 1px solid #999;
     border-radius:0.25em;
@@ -66,13 +70,14 @@ td, th {
 }
 #form-2 th {
   background-color:#999999;
+  color:white;
 }
 .source-subject {
-  background-color:#eeffee;
+  background-color:#eeffff;
 }
 
 .destination-subject {
-  background-color:#eeeeff;
+  background-color:#eeffff;
 }
 .f2-cbox {
   text-align: right;
@@ -87,4 +92,43 @@ td, th {
   margin:-0.5em 0 1em 0;
   font-size:0.9em;
   font-style:italic;
+}
+
+#rules-fieldset {
+  position:relative;
+  background-color:white;
+  color:#333333;
+}
+
+#evaluation-form {
+  position: absolute;
+  top:0.5em;
+  right:0.5em;
+  border: 1px solid #999999;
+  border-radius: 0.5em;
+  padding: 0.5em;
+}
+
+#comment-text {
+  width: 100%;
+}
+
+#rules-table {
+  border: none;
+}
+
+#rules-table tr {
+  margin:0.1em;
+  outline: 1px solid #999999;
+  border-radius: 0.5em;
+}
+
+#rules-table td {
+  border:none;
+  padding: 0.5em;
+}
+
+.selected-rule td {
+  background-color: #999;
+  color:white;
 }

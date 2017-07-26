@@ -1,6 +1,7 @@
 $(function ()
 {
   $('#need-js').hide();
+  $('#evaluation-form').hide();
 
   var error_msg = '';
 
@@ -54,10 +55,10 @@ $(function ()
       {
         // No email yet
         bg_color = '#ffffcc'; // warning
-        if (error_msg  === '')
+        if (error_msg === '')
         {
           // Valid selections with no email: prompt for it
-          error_msg = '<p>Enter your CUNY email address.</p>'
+          error_msg = '<p>Enter your CUNY email address.</p>';
         }
       }
     }
@@ -111,13 +112,12 @@ $(function ()
   var submit_button_1 = false;
   $('#form-1').submit(function (event)
   {
-    console.log('form-1 submit with submit_button_1 = ' + submit_button_1)
+    console.log('form-1 submit with submit_button_1 = ' + submit_button_1);
     return submit_button_1;
   });
 
   $('#submit-form-1').click(function (event)
   {
-    console.log('submit-form-1 click')
     submit_button_1 = true;
   });
 
@@ -144,4 +144,45 @@ $(function ()
     $('.destination-subject input:checkbox').prop('checked', false);
   });
 
+  //  Form 2: Clickable rules
+  $('.rule').click(function (event)
+  {
+    $('.rule').removeClass('selected-rule');
+    $(this).addClass('selected-rule');
+    var this_rule = $(this).attr('id').split(':');
+    var source_id = this_rule[0];
+    var destination_id = this_rule[1];
+    var source_catalog = '';
+    var destinaton_catalog = '';
+    $.getJSON($SCRIPT_ROOT + '/_course', {course_id: source_id}, function (data)
+    {
+      source_catalog = '<div class="source-catalog"><h2>Sending Course</h2>' + data + '</div><hr/>';
+    });
+      console.log('get ' + destination_id);
+      $.getJSON($SCRIPT_ROOT + '/_course', {course_id: destination_id}, function (data)
+      {
+        destination_catalog = '<div class="destination-catalog"><h2>Receiving Course</h2>' + data + '</div><hr/>';
+        controls =  ' <fieldset id="rule-evaluation" class="clean">' +
+                    ' <div>' +
+                    '   <input type="radio" name="verified" id="rule-cbox" value="source-ok"/>' +
+                    '     <label for="rule-cbox">Verified by sending college.</label>' +
+                    ' </div>' +
+                    ' <div>' +
+                    '   <input type="radio" name="verified" id="rule-cbox" value="source-not-ok"/>' +
+                    '     <label for="rule-cbox">Problem at sending college.</label>' +
+                    ' </div>' +
+                    ' <div>' +
+                    '   <input type="radio" name="verified" id="rule-cbox" value="dest-ok"/>' +
+                    '     <label for="rule-cbox">Verified by receivinging college.</label>' +
+                    ' </div>' +
+                    ' <div>' +
+                    '   <input type="radio" name="verified" id="rule-cbox" value="dest-not-ok"/>' +
+                    '     <label for="rule-cbox">Problem at receivinging college.</label>' +
+                    ' </div>' +
+                    ' <textarea id="comment-text" placeholder="Explain problems here." />' +
+                    ' </fieldset>';
+
+        $('#evaluation-form').html(source_catalog + destination_catalog + controls).show();
+      });
+  });
 });
