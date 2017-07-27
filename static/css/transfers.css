@@ -113,7 +113,13 @@ td, th {
   width: 100%;
 }
 
+#verification-fieldset {
+  width: 40%;
+}
+
 #rules-table {
+  width:40%;
+  margin:1em;
   border: none;
 }
 

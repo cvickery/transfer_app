@@ -33,7 +33,7 @@ class CUNYCourse:
                 """.format(course['designation']))
       designation = c.fetchone()[0]
 
-      self.is_active = course['status'] == 'A'
+      self.is_active = course['course_status'] == 'A'
 
       c.execute("select name from institutions where code = '{}'".format(course['institution']))
       institution = c.fetchone()[0]

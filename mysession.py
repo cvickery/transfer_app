@@ -72,18 +72,30 @@ class MySession:
     self.connection.commit()
 
   def __str__(self):
+    self.connection = sqlite3.connect('static/db/cuny_catalog.db')
+    # self.connection.set_trace_callback(sql_logger.debug)
+    self.connection.row_factory = sqlite3.Row
+    self.cursor = self.connection.cursor()
     self.cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
     self.mydict = pickle.loads(self.cursor.fetchone()[0])
     return 'Mysession[{}] {} keys'.format(self.session_key, len(self.mydict))
 
   def __del__(self):
     if self.is_expired(self.session_key):
+      self.connection = sqlite3.connect('static/db/cuny_catalog.db')
+      # self.connection.set_trace_callback(sql_logger.debug)
+      self.connection.row_factory = sqlite3.Row
+      self.cursor = self.connection.cursor()
       self.cursor.execute("delete from sessions where session_key = ?", (self.session_key,))
       self.connection.commit()
     else:
       pass
 
   def __setitem__(self, key, value):
+    self.connection = sqlite3.connect('static/db/cuny_catalog.db')
+    # self.connection.set_trace_callback(sql_logger.debug)
+    self.connection.row_factory = sqlite3.Row
+    self.cursor = self.connection.cursor()
     self.cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
     self.mydict = pickle.loads(self.cursor.fetchone()[0])
     self.mydict[key] = value
@@ -92,11 +104,19 @@ class MySession:
     self.connection.commit()
 
   def __getitem__(self, key):
+    self.connection = sqlite3.connect('static/db/cuny_catalog.db')
+    # self.connection.set_trace_callback(sql_logger.debug)
+    self.connection.row_factory = sqlite3.Row
+    self.cursor = self.connection.cursor()
     self.cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
     self.mydict = pickle.loads(self.cursor.fetchone()[0])
     return self.mydict[key] # KeyError if key not in session
 
   def __len__(self):
+    self.connection = sqlite3.connect('static/db/cuny_catalog.db')
+    # self.connection.set_trace_callback(sql_logger.debug)
+    self.connection.row_factory = sqlite3.Row
+    self.cursor = self.connection.cursor()
     self.cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
     self.mydict = pickle.loads(self.cursor.fetchone()[0])
     return len(self.mydict)
@@ -105,11 +125,19 @@ class MySession:
     return True
 
   def keys(self):
+    self.connection = sqlite3.connect('static/db/cuny_catalog.db')
+    # self.connection.set_trace_callback(sql_logger.debug)
+    self.connection.row_factory = sqlite3.Row
+    self.cursor = self.connection.cursor()
     self.cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
     self.mydict = pickle.loads(self.cursor.fetchone()[0])
     return [key for key in self.mydict]
 
   def is_expired(self, session_key):
+    self.connection = sqlite3.connect('static/db/cuny_catalog.db')
+    # self.connection.set_trace_callback(sql_logger.debug)
+    self.connection.row_factory = sqlite3.Row
+    self.cursor = self.connection.cursor()
     self.cursor.execute("select expiration_time from sessions where session_key = ?",(session_key,))
     row = self.cursor.fetchone()
     if row == None or len(row) == 0: return True

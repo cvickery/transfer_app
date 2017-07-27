@@ -62,6 +62,7 @@ $(function ()
         }
       }
     }
+
     $('#email-text').css('background-color', bg_color);
 
     $('#error-msg').html(error_msg);
@@ -78,13 +79,13 @@ $(function ()
 
   // Form 0: clear or set groups of checkboxes
   // ----------------------------------------------------------------------------------------------
-  $('#all-sources').click(function ()
+  $('#all-sources').click(function (event)
   {
     $('.source').prop('checked', true);
     validate_form_1();
   });
 
-  $('#no-sources').click(function ()
+  $('#no-sources').click(function (event)
   {
     $('.source').prop('checked', false);
     validate_form_1();
@@ -102,6 +103,7 @@ $(function ()
     validate_form_1();
   });
 
+  // If any checkbox changes, validate the form
   $('input').change(function ()
   {
     validate_form_1();
@@ -112,7 +114,6 @@ $(function ()
   var submit_button_1 = false;
   $('#form-1').submit(function (event)
   {
-    console.log('form-1 submit with submit_button_1 = ' + submit_button_1);
     return submit_button_1;
   });
 
@@ -122,6 +123,7 @@ $(function ()
   });
 
   // Form 2: Manage checkboxes
+  // ==============================================================================================
   $('#all-sending-subjects-top, #all-sending-subjects-bot').click(function ()
   {
     $('.source-subject input:checkbox').prop('checked', true);
@@ -136,8 +138,7 @@ $(function ()
   $('#all-receiving-subjects-top, #all-receiving-subjects-bot').click(function ()
   {
     $('.destination-subject input:checkbox').prop('checked', true);
-    $('#all-receiving-subjects-top, #no-receiving-subjects-top, ' +
-      '#all-receiving-subjects-bot, #no-receiving-subjects-bot').prop('checked', false);
+    $('#no-receiving-subjects-top, #no-receiving-subjects-bot').prop('checked', false);
   });
   $('#no-receiving-subjects-top, #no-receiving-subjects-bot').click(function ()
   {
@@ -251,6 +252,6 @@ $(function ()
   // Send email
   $('#send-email').click(function ()
   {
-    alert('Not implemented yet.')
+    alert('Not implemented yet.');
   });
 });

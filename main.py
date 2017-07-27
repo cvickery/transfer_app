@@ -90,7 +90,7 @@ def assessment():
 # -------------------------------------------------------------------------------------------------
 def do_form_0(request, session):
   """
-      No form submittet yet.
+      No form submitted yet; generate the Step 1 page.
       Display form_1 to get aource and destination institutions; user's email.
   """
   conn = sqlite3.connect('static/db/cuny_catalog.db')
@@ -111,8 +111,8 @@ def do_form_0(request, session):
     """.format(n, row['code'], n, row['name'])
   source_prompt += """
     <div>
-    <button id="all-sources">Select All Sending Colleges</button>
-    <button id="no-sources">Clear All Sending Colleges</button>
+    <button type="button" id="all-sources">Select All Sending Colleges</button>
+    <button type="button"  id="no-sources">Clear All Sending Colleges</button>
     </div>
   </fieldset>
   """
@@ -129,8 +129,8 @@ def do_form_0(request, session):
     """.format(n, row['code'], n, row['name'])
   destination_prompt += """
     <div>
-    <button id="all-destinations">Select All Receiving Colleges</button>
-    <button id="no-destinations">Clear All Receiving Colleges</button>
+    <button type="button" id="all-destinations">Select All Receiving Colleges</button>
+    <button type="button"  id="no-destinations">Clear All Receiving Colleges</button>
     </div>
   </fieldset>
   """
@@ -151,21 +151,23 @@ def do_form_0(request, session):
   result = """
     <h1>Step 1: Select Colleges</h1>
     <fieldset>
-    <form method="post" action="" id="form-1">
-      {}
-      {}
-      <fieldset><legend>Your email address</legend>
-      <p>This must be a valid CUNY email address.</p>
-      <div>
-        <input type="text" name="email" id="email-text" value="{}"/>
-      </div>
-      <div>
-        <div id="error-msg" class="error"> </div>
-        <input type="hidden" name="next-function" value="do_form_1" />
-        <button type="submit" id="submit-form-1">Next</button>
-      </div>
-      </fieldset>
-    <form>
+      <form method="post" action="" id="form-1">
+        {}
+        {}
+        <fieldset>
+          <legend>Your email address</legend>
+          <p>This must be a valid CUNY email address.</p>
+          <div>
+            <input type="text" name="email" id="email-text" value="{}"/>
+          </div>
+          <div>
+            <div id="error-msg" class="error"> </div>
+            <input type="hidden" name="next-function" value="do_form_1" />
+            <button type="submit" id="submit-form-1">Next</button>
+          </div>
+        </fieldset>
+      </form>
+    </fieldset>
     """.format(source_prompt, destination_prompt, email)
   return render_template('transfers.html', result=Markup(result))
 
@@ -484,11 +486,13 @@ def do_form_2(request, session):
   <p>Number of destination institutions: {}</p>
   <p>Number of transfer rules: {}</p>
   <fieldset id="rules-fieldset">
-  <p>There <span id="num-pending">are no evaluations</span> pending verification.</p>
-  <button type="text" id="send-email" disabled="disabled">
-    Send verification email to <em>{}</em>.
-  </button>
-  <p>Click on a rule to review it.</p>
+    <fieldset id="verification-fieldset">
+    <p>There <span id="num-pending">are no evaluations</span> pending verification.</p>
+    <button type="text" id="send-email" disabled="disabled">
+      Send verification email to <em>{}</em>.
+    </button>
+  </fieldset>
+  <p>Click on a rule to evaluate it.</p>
     <form method="post" action="" id="evaluation-form">
       //  JavaScript looks up the rules and generates a table here
     </form>
@@ -585,7 +589,11 @@ def courses():
     institution_name = row['name']
     date_updated = datetime.datetime.strptime(row['date_updated'], '%Y-%m-%d').strftime('%B %d, %Y')
     num_active_courses = c.execute("""
-        select count(*) from courses where institution = '{}' and status='A'
+        select count(*) from courses
+         where institution = '{}'
+           and course_status = 'A'
+           and can_schedule = 'Y'
+           and discipline_status = 'A'
         """.format(institution_code)).fetchone()[0]
 
     result = """
@@ -595,7 +603,9 @@ def courses():
     query = """
       select * from courses
        where institution = '{}'
-         and status = 'A'
+         and course_status = 'A'
+         and can_schedule = 'Y'
+         and discipline_status = 'A'
        order by discipline, number
        """.format(institution_code)
     c.execute(query)
