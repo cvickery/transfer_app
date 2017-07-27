@@ -2,6 +2,14 @@ $(function ()
 {
   $('#need-js').hide();
   $('#evaluation-form').hide();
+  $('#verification-details').hide();
+  $('*').keyup(function (event)
+  {
+    if (event.keyCode === 27)
+    {
+      $('#evaluation-form').hide();
+    }
+  });
 
   var error_msg = '';
 
@@ -103,7 +111,7 @@ $(function ()
     validate_form_1();
   });
 
-  // If any checkbox changes, validate the form
+  // If any checkbox or the email text changes, validate the form
   $('input').change(function ()
   {
     validate_form_1();
@@ -127,8 +135,7 @@ $(function ()
   $('#all-sending-subjects-top, #all-sending-subjects-bot').click(function ()
   {
     $('.source-subject input:checkbox').prop('checked', true);
-    $('#all-sending-subjects-top, #no-sending-subjects-top, ' +
-      '#all-sending-subjects-bot, #no-sending-subjects-bot').prop('checked', false);
+    $('#no-sending-subjects-top, #no-sending-subjects-bot').prop('checked', false);
   });
   $('#no-sending-subjects-top, #no-sending-subjects-bot').click(function ()
   {
@@ -150,7 +157,7 @@ $(function ()
   {
     $('.rule').removeClass('selected-rule');
     $(this).addClass('selected-rule');
-    // Rule ids: source_course_id:source_institution:dest_course_id:dest_institution
+    // Rule ids: "source_course_id:source_institution:dest_course_id:dest_institution"
     var this_rule = $(this).attr('id').split(':');
     var source_id = this_rule[0];
     var source_institution = this_rule[1];
@@ -198,8 +205,15 @@ $(function ()
                       <input type="hidden" name="destination-id" value="${destination_id}" />
                       <button id="review-submit" type="button" disabled="disabled">Submit</button>
                     </fieldset>`;
-
-        $('#evaluation-form').html(source_catalog + destination_catalog + controls).show();
+        $('#evaluation-form').html(source_catalog + destination_catalog + controls)
+                             .show();
+        $('#evaluation-form').position(
+                             {
+                              my: 'left top',
+                              at: 'right+20px top',
+                              of: $('.selected-rule'),
+                              collision: 'fit'
+                             });
         $('#rule-evaluation').css('background-color', '#ffffff');
 
         // Enable form submission only if an input has changed.
@@ -215,6 +229,11 @@ $(function ()
         // Process evaluation info if submitted
         $('#review-submit').click(function (event)
         {
+          // *** Enter form data into db here ***
+          $('.selected-rule').addClass('evaluated');
+
+
+          // Update the evaluations pending information
           var num_pending = 0;
           var num_pending_text = $('#num-pending').text();
           if (num_pending_text === 'are no evaluations')
@@ -236,10 +255,8 @@ $(function ()
             num_pending_text = `are ${num_pending} evaluations`;
           }
           $('#num-pending').text(num_pending_text);
-          $('#evaluation-form').html('');
-          $('.selected-rule').addClass('evaluated');
-
-          // *** Enter form data into db here ***
+          $('#evaluation-form').hide();
+          $('#verification-details').show();
 
           // Enable verify button
           $('#send-email').attr('disabled', false);

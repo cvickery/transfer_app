@@ -101,12 +101,16 @@ td, th {
 }
 
 #evaluation-form {
+/* Use jQuery UI .position to place this
   position: absolute;
   top:0.5em;
   right:0.5em;
+*/
   border: 1px solid #999999;
   border-radius: 0.5em;
   padding: 0.5em;
+  width:40%;
+  background-color:#ccc;
 }
 
 #comment-text {
@@ -115,6 +119,12 @@ td, th {
 
 #verification-fieldset {
   width: 40%;
+}
+
+#verification-details {
+  font-size:0.8em;
+  font-style:italic;
+  color: #333;
 }
 
 #rules-table {
@@ -132,6 +142,7 @@ td, th {
 #rules-table td {
   border:none;
   padding: 0.5em;
+  color: #333;
 }
 
 .selected-rule td {

@@ -342,7 +342,9 @@ def do_form_1(request, session):
       source_box = '<input type="checkbox" name="source_subject" value="{}"/>'.format(cuny_subject)
     destination_box = ''
     if destination_disciplines != '':
-      destination_box = '<input type="checkbox" name="destination_subject" value="{}"/>'.format(cuny_subject)
+      destination_box = """
+        <input type="checkbox" name="destination_subject" value="{}"/>
+        """.format(cuny_subject)
     filter_rows += """
     <tr>
       <td class="source-subject">{}</td>
@@ -393,13 +395,9 @@ def do_form_1(request, session):
 
   result = """
   <h1>Step 2: Select CUNY Subjects</h1>
-  <p>There are {:,} transfer rules where {}.</p>
-  <p>There are {} subjects: {} source subjects and {} destination subjects.</p>
-  """.format(len(rules), criterion,
-             len(all_subjects), len(source_subjects), len(destination_subjects))
-  result += """
   <form method="post" action="" id="form-2">
     <fieldset>
+      <div>There are {:,} transfer rules where {}.</div>
       <a href="" class="restart">Restart</a>
       <button type="submit">Next</button>
       <table id="subject-filters">
@@ -417,7 +415,7 @@ def do_form_1(request, session):
       <button type="submit">Next</button>
     </fieldset>
   </form>
-  """.format(sending_heading, receiving_heading, filter_rows)
+  """.format(len(rules), criterion, sending_heading, receiving_heading, filter_rows)
   return render_template('transfers.html', result=Markup(result))
 
 # do_form_2()
@@ -480,14 +478,15 @@ def do_form_2(request, session):
   the_list += '</table>'
   result = """
   <h1>Step 3: Review Transfer Rules</h1>
-  <p>Number of source subjects: {}</p>
-  <p>Number of source institutions: {}</p>
-  <p>Number of destination subjects: {}</p>
-  <p>Number of destination institutions: {}</p>
-  <p>Number of transfer rules: {}</p>
   <fieldset id="rules-fieldset">
+    <div>There are {:,} transfer rules.</div>
     <fieldset id="verification-fieldset">
-    <p>There <span id="num-pending">are no evaluations</span> pending verification.</p>
+    <p>
+      There <span id="num-pending">are no evaluations</span> pending verification.
+      <span id="verification-details"><br/>You will need to respond to an email we will send to your
+      CUNY email account in order for your evaluations to be recorded.
+      </span>
+    </p>
     <button type="text" id="send-email" disabled="disabled">
       Send verification email to <em>{}</em>.
     </button>
@@ -499,11 +498,7 @@ def do_form_2(request, session):
     {}
   </fieldset>
   <a href="" class="restart">Restart</a>
-  """.format(len(source_subjects),
-             len(session['source_institutions']),
-             len(destination_subjects),
-             len(session['destination_institutions']),
-             len(rules),
+  """.format(len(rules),
              session['email'],
              the_list)
   return render_template('transfers.html', result=Markup(result))

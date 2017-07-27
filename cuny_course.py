@@ -7,7 +7,7 @@ class CUNYCourse:
   """ Catalog and related info for a CUNYfirst course.
   """
   def __init__(self, course_id):
-    """ Get complete information for a course from courses.db.
+    """ Get complete information for a course from cuny_catalog.db.
     """
     m = re.search('\s*(\d+)\s*$', str(course_id))
     if m == None:
@@ -39,9 +39,24 @@ class CUNYCourse:
       institution = c.fetchone()[0]
       self.institution = institution
 
+      c.execute("""
+                select a.attribute_name, a.attribute_value, a.description
+                from attributes a, course_attributes c
+                where c.course_id = {}
+                  and c.name = a.attribute_name
+                  and c.value = a.attribute_value
+                """.format(course_id))
+      the_attributes = [row[2] for row in c.fetchall()]
+      self.attributes = ''
+      if the_attributes == None or len(the_attributes) == 0:
+        pass
+      else:
+        for attribute in the_attributes:
+          self.attributes += '<div class="catalog-entry"><strong>Attribute:</strong> {}</div>\n'.format(attribute)
+
       self.html = """
       <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}</em>)<br/>
-      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
+      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>{}
       """.format(course['discipline'],
                  course['number'].strip(),
                  course['title'],
@@ -51,7 +66,9 @@ class CUNYCourse:
                  float(course['credits']),
                  course['requisites'],
                  course['description'],
-                 designation)
+                 designation,
+                 self.attributes)
+
     else:
       self.html = '<p class="catalog-entry">{} Not in CUNY Catalog</p>'.format(course_id)
       self.is_active = False
