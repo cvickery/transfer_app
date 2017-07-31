@@ -456,7 +456,7 @@ def do_form_2(request, session):
       and c2.course_id = t.destination_course_id
       and i1.code = c1.institution
       and i2.code = c2.institution
-    order by source_course, destination_course
+    order by lower(source_institution), source_course, lower(destination_institution), destination_course
   """.format(source_institution_list,
              source_subject_list,
              destination_institution_list,

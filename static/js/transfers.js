@@ -165,57 +165,64 @@ $(function ()
     var destination_institution = this_rule[3];
     var source_catalog = '';
     var destinaton_catalog = '';
-    $.getJSON($SCRIPT_ROOT + '/_course', {course_id: source_id}, function (data)
+
+    source_request = $.getJSON($SCRIPT_ROOT + '/_course', {course_id: source_id});
+    dest_request = $.getJSON($SCRIPT_ROOT + '/_course', {course_id: destination_id});
+    source_request.done(function (data, text_status)
     {
+      console.log(text_status);
       source_catalog = '<div class="source-catalog"><h2>Sending Course</h2>' + data + '</div><hr/>';
     });
-      $.getJSON($SCRIPT_ROOT + '/_course', {course_id: destination_id}, function (data)
-      {
-        destination_catalog = '<div class="destination-catalog"><h2>Receiving Course</h2>' +
-                              data + '</div><hr/>';
-        controls = `<fieldset id="rule-evaluation" class="clean">
-                      <div>
-                        <input type="radio" name="reviewed" id="src-ok"/>
-                        <label for="src-ok">Verified by ${source_institution}</label>
-                      </div>
-                      <div>
-                        <input type="radio" name="reviewed" id="src-not-ok"/>
-                        <label for="src-not-ok">Problem observed by ${source_institution}</label>
-                      </div>
-                      <div>
-                        <input type="radio" name="reviewed" id="dest-ok"/>
-                        <label for="dest-ok">
-                          Verified by ${destination_institution}
-                        </label>
-                      </div>
-                      <div>
-                        <input type="radio" name="reviewed" id="dest-not-ok"/>
-                        <label for="dest-not-ok">
-                          Problem observed by ${destination_institution}
-                        </label>
-                      </div>
-                      <div>
-                        <input type="radio" name="reviewed" id="other"/>
-                        <label for="other">Other</label>
-                      </div>
-                      <textarea id="comment-text"
-                                placeholder="Explain problem or “Other” here."
-                                minlength="12" />
-                      <input type="hidden" name="source-id" value="${source_id}" />
-                      <input type="hidden" name="destination-id" value="${destination_id}" />
-                      <button id="review-submit" type="button" disabled="disabled">Submit</button>
-                    </fieldset>`;
-        $('#evaluation-form').html(source_catalog + destination_catalog + controls)
-                             .show();
-        $('#evaluation-form').position(
-                             {
-                              my: 'left top',
-                              at: 'right+20px top',
-                              of: $('.selected-rule'),
-                              collision: 'fit'
-                             });
-        $('#rule-evaluation').css('background-color', '#ffffff');
-
+    dest_request.done(function (data, text_status)
+    {
+      console.log(text_status);
+      destination_catalog = '<div class="destination-catalog"><h2>Receiving Course</h2>' +
+                            data + '</div><hr/>';
+    });
+    $.when(source_request, dest_request).done(function (source_request, dest_request)
+    {
+      controls = `<fieldset id="rule-evaluation" class="clean">
+                    <div>
+                      <input type="radio" name="reviewed" id="src-ok"/>
+                      <label for="src-ok">Verified by ${source_institution}</label>
+                    </div>
+                    <div>
+                      <input type="radio" name="reviewed" id="src-not-ok"/>
+                      <label for="src-not-ok">Problem observed by ${source_institution}</label>
+                    </div>
+                    <div>
+                      <input type="radio" name="reviewed" id="dest-ok"/>
+                      <label for="dest-ok">
+                        Verified by ${destination_institution}
+                      </label>
+                    </div>
+                    <div>
+                      <input type="radio" name="reviewed" id="dest-not-ok"/>
+                      <label for="dest-not-ok">
+                        Problem observed by ${destination_institution}
+                      </label>
+                    </div>
+                    <div>
+                      <input type="radio" name="reviewed" id="other"/>
+                      <label for="other">Other</label>
+                    </div>
+                    <textarea id="comment-text"
+                              placeholder="Explain problem or “Other” here."
+                              minlength="12" />
+                    <input type="hidden" name="source-id" value="${source_id}" />
+                    <input type="hidden" name="destination-id" value="${destination_id}" />
+                    <button id="review-submit" type="button" disabled="disabled">Submit</button>
+                  </fieldset>`;
+      $('#evaluation-form').html(source_catalog + destination_catalog + controls)
+                           .show();
+      $('#evaluation-form').position(
+                           {
+                            my: 'left top',
+                            at: 'right+20px top',
+                            of: $('.selected-rule'),
+                            collision: 'fit'
+                           });
+      $('#rule-evaluation').css('background-color', '#ffffff');
         // Enable form submission only if an input has changed.
         $('input, textarea').change(function ()
         {
@@ -264,6 +271,7 @@ $(function ()
           event.preventDefault(); // don't actually submit the form to the server.
         });
       });
+    });
   });
 
   // Send email
@@ -271,4 +279,3 @@ $(function ()
   {
     alert('Not implemented yet.');
   });
-});
