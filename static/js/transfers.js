@@ -157,12 +157,15 @@ $(function ()
   {
     $('.rule').removeClass('selected-rule');
     $(this).addClass('selected-rule');
+    var rule_id = $(this)[0];
     // Rule ids: "source_course_id:source_institution:dest_course_id:dest_institution"
     var this_rule = $(this).attr('id').split(':');
     var source_id = this_rule[0];
     var source_institution = this_rule[1];
     var destination_id = this_rule[2];
     var destination_institution = this_rule[3];
+
+    var dismiss_bar = '<div id="dismiss-bar">×</div>'
     var source_catalog = '';
     var destinaton_catalog = '';
 
@@ -170,12 +173,12 @@ $(function ()
     dest_request = $.getJSON($SCRIPT_ROOT + '/_course', {course_id: destination_id});
     source_request.done(function (data, text_status)
     {
-      console.log(text_status);
+//      console.log(`source status: ${text_status}`);
       source_catalog = '<div class="source-catalog"><h2>Sending Course</h2>' + data + '</div><hr/>';
     });
     dest_request.done(function (data, text_status)
     {
-      console.log(text_status);
+//      console.log(`destination status: ${text_status}`);
       destination_catalog = '<div class="destination-catalog"><h2>Receiving Course</h2>' +
                             data + '</div><hr/>';
     });
@@ -213,16 +216,18 @@ $(function ()
                     <input type="hidden" name="destination-id" value="${destination_id}" />
                     <button id="review-submit" type="button" disabled="disabled">Submit</button>
                   </fieldset>`;
-      $('#evaluation-form').html(source_catalog + destination_catalog + controls)
+
+      $('#evaluation-form').html(dismiss_bar + source_catalog + destination_catalog + controls)
                            .show();
-      $('#evaluation-form').position(
-                           {
-                            my: 'left top',
-                            at: 'right+20px top',
-                            of: $('.selected-rule'),
-                            collision: 'fit'
-                           });
-      $('#rule-evaluation').css('background-color', '#ffffff');
+      var evaluation_form = document.getElementById('evaluation-form');
+      var eval_form_rect = evaluation_form.getBoundingClientRect();
+      evaluation_form.style.position = 'fixed';
+      evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
+      evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
+      $('#dismiss-bar').click(function ()
+      {
+        $('#evaluation-form').hide();
+      });
         // Enable form submission only if an input has changed.
         $('input, textarea').change(function ()
         {

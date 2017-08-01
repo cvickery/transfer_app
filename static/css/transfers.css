@@ -127,6 +127,19 @@ td, th {
   color: #333;
 }
 
+#dismiss-bar {
+  width: 100%;
+  text-align:right;
+  color: #333;
+  padding: 0 1em 0 0;
+  font-size: 1.1em;
+}
+
+#rule-evaluation {
+  background-color:white;
+  color:#333;
+}
+
 #rules-table {
   width:50%;
   margin:1em;

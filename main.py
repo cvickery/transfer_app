@@ -150,6 +150,11 @@ def do_form_0(request, session):
   # Return Form 1
   result = """
     <h1>Step 1: Select Colleges</h1>
+    <p>
+      <a
+        href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE/edit?usp=sharing">
+        Instructions
+      </a>
     <fieldset>
       <form method="post" action="" id="form-1">
         {}
