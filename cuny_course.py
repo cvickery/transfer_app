@@ -62,9 +62,11 @@ class CUNYCourse:
           self.attributes += '<div class="catalog-entry"><strong>Attribute:</strong> {}</div>\n'.format(attribute)
 
       self.html = """
-      <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}</em>)<br/>
+      <p class="catalog-entry" title="course id: {}"><strong>{} {}: {}</strong> (<em>{}; {}</em>)
+      <br/>
       {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>{}
-      """.format(course['discipline'],
+      """.format(course['course_id'],
+                 course['discipline'],
                  course['number'].strip(),
                  course['title'],
                  career,

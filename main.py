@@ -12,7 +12,8 @@ from collections import namedtuple
 from cuny_course import CUNYCourse
 from mysession import MySession
 
-from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session, jsonify
+from flask import Flask, url_for, render_template, make_response,\
+                  redirect, send_file, Markup, request, session, jsonify
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 # email server
@@ -148,14 +149,11 @@ def do_form_0(request, session):
   destination_disciplines_prompt += "</fieldset>"
 
   email = ''
-  try:
-    email = session['email']
-  except:
-    pass
-
-  session_keys = '.'
-  if len(session):
-    session_keys = ': ' + ','.join(session.keys())
+  if request.cookies.get('email') != None:
+    email = request.cookies.get('email')
+  remember_me = ''
+  if request.cookies.get('remember-me') != None:
+    remember_me = 'checked="checked"'
 
   # Return Form 1
   result = """
@@ -171,9 +169,13 @@ def do_form_0(request, session):
         {}
         <fieldset>
           <legend>Your email address</legend>
-          <p>This must be a valid CUNY email address.</p>
+          <label for="email-text">Enter a valid CUNY email address:</label>
           <div>
             <input type="text" name="email" id="email-text" value="{}"/>
+            <div>
+              <input type="checkbox" name="remember-me" id="remember-me" {}/>
+              <label for="remember-me"><em>Remember me on this computer.</em></label>
+            </div>
           </div>
           <div>
             <div id="error-msg" class="error"> </div>
@@ -183,7 +185,7 @@ def do_form_0(request, session):
         </fieldset>
       </form>
     </fieldset>
-    """.format(source_prompt, destination_prompt, email)
+    """.format(source_prompt, destination_prompt, email, remember_me)
   return render_template('transfers.html', result=Markup(result))
 
 # do_form_1()
@@ -197,7 +199,6 @@ def do_form_1(request, session):
   # Capture form data in user's session
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
-  session['email'] = request.form.get('email')
 
   # Get filter info
   conn = sqlite3.connect('static/db/cuny_catalog.db')
@@ -404,9 +405,14 @@ def do_form_1(request, session):
                   filter_rows + \
                   shortcuts.format('-bot', '-bot', '-bot', '-bot')
 
-  session_keys = '.'
-  if len(session):
-    session_keys = ': ' + ', '.join(session.keys())
+  # set or clear email-related cookes based on form data
+  email = request.form.get('email')
+  session['email'] = email # always valid for this session
+  # The email cookie expires now or later, depending on state of "remember me"
+  expire_time = datetime.datetime.now()
+  remember_me = request.form.get('remember-me')
+  if remember_me == 'on':
+    expire_time = expire_time + datetime.timedelta(days=90)
 
   result = """
   <h1>Step 2: Select CUNY Subjects</h1>
@@ -431,7 +437,12 @@ def do_form_1(request, session):
     </fieldset>
   </form>
   """.format(len(rules), criterion, sending_heading, receiving_heading, filter_rows)
-  return render_template('transfers.html', result=Markup(result))
+
+  response = make_response(render_template('transfers.html', result=Markup(result)))
+  response.set_cookie('email', email, expires=expire_time)
+  response.set_cookie('remember-me', 'on', expires=expire_time)
+
+  return response
 
 # do_form_2()
 # -------------------------------------------------------------------------------------------------
@@ -485,11 +496,11 @@ def do_form_2(request, session):
   for rule in rules:
     the_list += """
     <tr id="{}" class="rule">
-      <td>{}</td><td>{}</td>
+      <td>{}</td><td title="course id: {}">{}</td>
       <td>=></td>
-      <td>{}</td><td>{}</td>
-    </tr>""".format(str(rule[0])+':'+rule[1]+':'+str(rule[3])+':'+rule[4],
-                    rule[1], rule[2], rule[4], rule[5])
+      <td>{}</td><td title="course id: {}">{}</td>
+    </tr>""".format(str(rule[0]) + ':' + rule[1] + ':' + str(rule[3]) + ':' + rule[4],
+                    rule[1], rule[0], rule[2], rule[4], rule[3], rule[5])
   the_list += '</table>'
   num_rules = 'are no transfer rules'
   if len(rules) == 1: num_rules = 'is one transfer rule'
@@ -560,7 +571,7 @@ def transfers():
 
   # Form not submitted yet, so call do_form_0 to generate form_1
   else:
-    return do_form_0(None, mysession)
+    return do_form_0(request, mysession)
 
 @app.route('/_course')
 def _course():
@@ -569,7 +580,8 @@ def _course():
   note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
   if course.is_active:
     note = ''
-  return jsonify({'institution': course.institution,
+  return jsonify({'course_id': course.course_id,
+                 'institution': course.institution,
                  'department': course.department,
                  'html': course.html,
                  'note': note})

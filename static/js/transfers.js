@@ -165,7 +165,7 @@ $(function ()
     var destination_id = this_rule[2];
     var destination_institution = this_rule[3];
 
-    var dismiss_bar = '<div id="dismiss-bar">×</div>'
+    var dismiss_bar = '<div id="dismiss-bar">×</div>';
     var source_catalog = '';
     var destinaton_catalog = '';
 
@@ -174,16 +174,18 @@ $(function ()
     source_request.done(function (data, text_status)
     {
 //      console.log(`source status: ${text_status}`);
-      source_catalog = '<div class="source-catalog"><h2>Sending Course</h2>' +
-        data.institution + ' / ' + data.department + data.html + data.note
-        '</div><hr/>';
+      source_catalog = `<div class="source-catalog">
+        <h2>Sending Course</h2>
+        ${data.institution}  / ${data.department} ${data.html} ${data.note}
+        </div><hr/>`;
     });
     dest_request.done(function (data, text_status)
     {
 //      console.log(`destination status: ${text_status}`);
-      destination_catalog = '<div class="destination-catalog"><h2>Receiving Course</h2>' +
-        data.institution + ' / ' + data.department + data.html + data.note
-        '</div><hr/>';
+      destination_catalog = `<div class="destination-catalog">
+        <h2>Receiving Course</h2>
+        ${data.institution}  / ${data.department} ${data.html} ${data.note}
+        </div><hr/>`;
     });
     $.when(source_request, dest_request).done(function (source_request, dest_request)
     {
