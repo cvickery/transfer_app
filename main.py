@@ -15,6 +15,16 @@ from mysession import MySession
 from flask import Flask, url_for, render_template, redirect, send_file, Markup, request, session, jsonify
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+# email server
+app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+
+# administrator list
+ADMINS = ['your-gmail-username@gmail.com']
 
 #
 # Initialization
@@ -481,10 +491,13 @@ def do_form_2(request, session):
     </tr>""".format(str(rule[0])+':'+rule[1]+':'+str(rule[3])+':'+rule[4],
                     rule[1], rule[2], rule[4], rule[5])
   the_list += '</table>'
+  num_rules = 'are no transfer rules'
+  if len(rules) == 1: num_rules = 'is one transfer rule'
+  if len(rules) > 1: num_rules = 'are {:,} transfer rules'.format(len(rules))
   result = """
   <h1>Step 3: Review Transfer Rules</h1>
   <fieldset id="rules-fieldset">
-    <div>There are {:,} transfer rules.</div>
+    <div>There {} selected.</div>
     <fieldset id="verification-fieldset">
     <p>
       There <span id="num-pending">are no evaluations</span> pending verification.
@@ -503,7 +516,7 @@ def do_form_2(request, session):
     {}
   </fieldset>
   <a href="" class="restart">Restart</a>
-  """.format(len(rules),
+  """.format(num_rules,
              session['email'],
              the_list)
   return render_template('transfers.html', result=Markup(result))
@@ -556,7 +569,10 @@ def _course():
   note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
   if course.is_active:
     note = ''
-  return jsonify(course.institution + course.html + note)
+  return jsonify({'institution': course.institution,
+                 'department': course.department,
+                 'html': course.html,
+                 'note': note})
 
 
 # COURSES PAGE

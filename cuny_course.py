@@ -33,7 +33,14 @@ class CUNYCourse:
                 """.format(course['designation']))
       designation = c.fetchone()[0]
 
+      c.execute("""
+                select description from cuny_departments where department = '{}'
+                """.format(course['department']))
+      department = c.fetchone()[0]
+      self.department = department
+
       self.is_active = course['course_status'] == 'A'
+
 
       c.execute("select name from institutions where code = '{}'".format(course['institution']))
       institution = c.fetchone()[0]
@@ -83,3 +90,5 @@ class CUNYCourse:
     return self.is_active
   def institution(self):
     return self.institution
+  def department(self):
+    return self.department

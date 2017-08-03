@@ -101,16 +101,31 @@ td, th {
 }
 
 #evaluation-form {
-/* Use jQuery UI .position to place this
-  position: absolute;
-  top:0.5em;
-  right:0.5em;
-*/
   border: 1px solid #999999;
   border-radius: 0.5em;
   padding: 0.5em;
   width:40%;
   background-color:#ccc;
+}
+
+#dismiss-bar {
+  width: 100%;
+  text-align:right;
+  color: #333;
+  padding: 0.5em 0.5em 0 0;
+  font-size: 1.1em;
+  cursor:default;
+  position:relative;
+  top: -0.5em;
+  left: -0.5em;
+}
+
+#dismiss-bar:hover {
+  color: #900;
+}
+
+.source-catalog h2 {
+  margin-top: 0;
 }
 
 #comment-text {
@@ -125,14 +140,6 @@ td, th {
   font-size:0.8em;
   font-style:italic;
   color: #333;
-}
-
-#dismiss-bar {
-  width: 100%;
-  text-align:right;
-  color: #333;
-  padding: 0 1em 0 0;
-  font-size: 1.1em;
 }
 
 #rule-evaluation {
@@ -153,11 +160,22 @@ td, th {
 }
 
 #rules-table td {
-  border:none;
+  border: none;
   padding: 0.5em;
   color: #333;
 }
 
+#rules-table td:nth-child(1),
+#rules-table td:nth-child(2),
+#rules-table td:nth-child(4),
+#rules-table td:nth-child(5) {
+  width:22%;
+}
+
+#rules-table td:nth-child(3) {
+  text-align: center;
+  font-weight: bold;
+}
 .selected-rule td {
   background-color: #999;
   color:white;
