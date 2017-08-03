@@ -159,10 +159,11 @@ def do_form_0(request, session):
   result = """
     <h1>Step 1: Select Colleges</h1>
     <p>
+      This is the first step of a web application for reviewing course transfer rules at CUNY.<br/>
+      Background information and instuctions are available in the
       <a
         href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE/edit?usp=sharing">
-        Instructions
-      </a>
+        CUNY Transfer Rules Evaluation</a> document.
     <fieldset>
       <form method="post" action="" id="form-1">
         {}
