@@ -107,10 +107,13 @@ def do_form_0(request, session):
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
-  c.execute("select * from institutions order by code")
+  c.execute("select * from institutions order by lower(name)")
   institution_list = c.fetchall()
 
-  source_prompt = '<fieldset id="sending-field"><legend>Sending College(s)</legend>'
+  source_prompt = """
+    <fieldset id="sending-field"><legend>Sending College(s)</legend>
+    <div id="source-college-list">
+    """
   n = 0
   for row in institution_list:
     n += 1
@@ -121,14 +124,18 @@ def do_form_0(request, session):
         </div>
     """.format(n, row['code'], n, row['name'])
   source_prompt += """
-    <div>
+  </div>
+  <div>
     <button type="button" id="all-sources">Select All Sending Colleges</button>
     <button type="button"  id="no-sources">Clear All Sending Colleges</button>
     </div>
   </fieldset>
   """
 
-  destination_prompt = '<fieldset id="receiving-field"><legend>Receiving College(s)</legend>'
+  destination_prompt = """
+    <fieldset id="receiving-field"><legend>Receiving College(s)</legend>
+    <div id="destination-college-list">
+    """
   n = 0
   for row in institution_list:
     n += 1
@@ -139,6 +146,7 @@ def do_form_0(request, session):
         </div>
     """.format(n, row['code'], n, row['name'])
   destination_prompt += """
+    </div>
     <div>
     <button type="button" id="all-destinations">Select All Receiving Colleges</button>
     <button type="button"  id="no-destinations">Clear All Receiving Colleges</button>
@@ -166,8 +174,8 @@ def do_form_0(request, session):
         CUNY Transfer Rules Evaluation</a> document.
     <fieldset>
       <form method="post" action="" id="form-1">
-        {}
-        {}
+          {}
+          {}
         <fieldset>
           <legend>Your email address</legend>
           <label for="email-text">Enter a valid CUNY email address:</label>

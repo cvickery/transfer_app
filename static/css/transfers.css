@@ -64,6 +64,10 @@ td, th {
   background-color: white;
 }
 
+#source-college-list, #destination-college-list {
+  column-width: 15em;
+}
+
 #form-2>fieldset {
   background-color:white;
   padding:0.5em;
