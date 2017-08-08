@@ -14,8 +14,10 @@ from mysession import MySession
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, session, jsonify
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
 # email server
 app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
 app.config['MAIL_PORT'] = 465
@@ -531,7 +533,7 @@ def do_form_2(request, session):
   </fieldset>
   <p>Click on a rule to evaluate it.</p>
     <form method="post" action="" id="evaluation-form">
-      //  JavaScript looks up the rules and generates a table here
+      Waiting for rules to finish loading ...
     </form>
     {}
   </fieldset>
@@ -582,6 +584,9 @@ def transfers():
   else:
     return do_form_0(request, mysession)
 
+# /_COURSE
+# =================================================================================================
+# This route is for AJAX access to course catalog information.
 @app.route('/_course')
 def _course():
   course_id = request.args.get('course_id', 0)
@@ -595,6 +600,39 @@ def _course():
                  'html': course.html,
                  'note': note})
 
+# /_SESSIONS
+# =================================================================================================
+# This route is intended as a utility for pruning dead "mysessiob" entries from the db. A periodic
+# script can access this url to prevent db bloat when millions of people start using the app. Until
+# then, it's just here in case it's needed.
+@app.route('/_sessions')
+def _sessions():
+  conn = sqlite3.connect('static/db/cuny_catalog.db')
+  conn.row_factory = sqlite3.Row
+  c = conn.cursor()
+  c.execute('pragma foreign_keys = 1') # NOTE TO SELF FOR DOING INSERTS LATER
+  q = 'select session_key, expiration_time from sessions'
+  c.execute(q)
+  result = '<table>'
+  now = datetime.datetime.now()
+  num_expired = 0
+  for row in c.fetchall():
+    ts = datetime.datetime.fromtimestamp(row['expiration_time'])
+    ts_str = ts.strftime('%Y-%m-%d %H:%M:%S')
+    status = 'active'
+    if ts < now:
+      status = 'expired'
+      num_expired += 1
+    result += '<tr><td>{}</td><td>{}</td><td>{}</td></tr>'.format(row['session_key'],
+                                                                  ts_str,
+                                                                  status)
+  msg = '<p>There were no expired sessions to delete.</p>'
+  if num_expired > 0:
+    c.execute("delete from sessions where expiration_time < {}".format(now.timestamp()))
+    conn.commit()
+    if num_expired == 1: msg = '<p>Deleted one expired session.</p>'
+    else: msg = '<p>Deleted {} expired sessions.</p>'.format(num_expired)
+  return result + '</table>' + msg
 
 # COURSES PAGE
 # =================================================================================================

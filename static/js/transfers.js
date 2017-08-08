@@ -12,6 +12,7 @@ $(function ()
   });
 
   var error_msg = '';
+  var pending_evaluations = [];
 
   // Form #1 Validation
   // ==============================================================================================
@@ -191,27 +192,27 @@ $(function ()
     {
       controls = `<fieldset id="rule-evaluation" class="clean">
                     <div>
-                      <input type="radio" name="reviewed" id="src-ok"/>
+                      <input type="radio" name="reviewed" id="src-ok" value="src-ok"/>
                       <label for="src-ok">Verified by ${source_institution}</label>
                     </div>
                     <div>
-                      <input type="radio" name="reviewed" id="src-not-ok"/>
+                      <input type="radio" name="reviewed" id="src-not-ok" value="src-not-ok"/>
                       <label for="src-not-ok">Problem observed by ${source_institution}</label>
                     </div>
                     <div>
-                      <input type="radio" name="reviewed" id="dest-ok"/>
+                      <input type="radio" name="reviewed" id="dest-ok" value=="dest-ok"/>
                       <label for="dest-ok">
                         Verified by ${destination_institution}
                       </label>
                     </div>
                     <div>
-                      <input type="radio" name="reviewed" id="dest-not-ok"/>
+                      <input type="radio" name="reviewed" id="dest-not-ok" value="dest-not-ok"/>
                       <label for="dest-not-ok">
                         Problem observed by ${destination_institution}
                       </label>
                     </div>
                     <div>
-                      <input type="radio" name="reviewed" id="other"/>
+                      <input type="radio" name="reviewed" id="other" value"other"/>
                       <label for="other">Other</label>
                     </div>
                     <textarea id="comment-text"
@@ -247,11 +248,18 @@ $(function ()
         $('#review-submit').click(function (event)
         {
           // *** Enter form data into db here ***
+          pending_evaluations.push(
+          {
+            event_type: $('input[name=reviewed]:checked').val(),
+            comment_text: $('#comment-text').val(),
+            rule_source_id: source_id,
+            rule_destination_id: destination_id
+          });
           $('.selected-rule').addClass('evaluated');
 
 
           // Update the evaluations pending information
-          var num_pending = 0;
+          var num_pending = pending_evaluations.length;
           var num_pending_text = $('#num-pending').text();
           if (num_pending_text === 'are no evaluations')
           {
@@ -277,16 +285,16 @@ $(function ()
 
           // Enable verify button
           $('#send-email').attr('disabled', false);
-
-          // Send email
-          $('#send-email').click(function ()
-          {
-            alert('Not implemented yet.');
-          });
-
           event.preventDefault(); // don't actually submit the form to the server.
         });
       });
     });
+          // Send email
+          $('#send-email').click(function (event)
+          {
+            console.log(pending_evaluations);
+          });
+
+
   });
 
