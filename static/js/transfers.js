@@ -1,3 +1,9 @@
+/* This script handles all 3+ steps of the transfer review application.
+ * as such, it should probably be broken up into separate scripts to avoid cross-step code
+ * pollution. One reason it works is that there is no consequences for hooking code to elements
+ * that don't actually exist in a particular step's DOM.
+ * For now it continues its monolithic megopoly.
+ */
 $(function ()
 {
   $('#need-js').hide();
@@ -12,6 +18,7 @@ $(function ()
   });
 
   var error_msg = '';
+  var dismiss_bar = '<div id="dismiss-bar">×</div>';
   var pending_evaluations = [];
 
   // Form #1 Validation
@@ -166,7 +173,6 @@ $(function ()
     var destination_id = this_rule[2];
     var destination_institution = this_rule[3];
 
-    var dismiss_bar = '<div id="dismiss-bar">×</div>';
     var source_catalog = '';
     var destinaton_catalog = '';
 
@@ -257,7 +263,6 @@ $(function ()
           });
           $('.selected-rule').addClass('evaluated');
 
-
           // Update the evaluations pending information
           var num_pending = pending_evaluations.length;
           var num_pending_text = $('#num-pending').text();
@@ -289,12 +294,44 @@ $(function ()
         });
       });
     });
-          // Send email
-          $('#send-email').click(function (event)
-          {
-            console.log(pending_evaluations);
-          });
 
-
+    // Send email button click
+    // --------------------------------------------------------------------------------------------
+    /* Generate a form for reviewing the evaluations so the user can delete items they don't
+     * intend. Then submit the form to a web page that actually enters the items into the "pending"
+     * table and sends email to the user.
+     */
+    $('#send-email').click(function (event)
+    {
+      console.log(pending_evaluations);
+      var email_address = $('#email-address').text();
+      var the_form = `
+        <fieldset>
+          <h2>Instructions</h2><p>These are your instructions.</p>
+          <form method="POST" action="">
+        `;
+      for (evaluation in pending_evaluations)
+      {
+        the_form += 'hello';
+      }
+      the_form += '<input type="hidden" value="${email_address}" />';
+      the_form += `
+          <input type="hidden" name="next-function" value="do_form_3" />
+          <button type="submit">Submit These Evaluations</button>
+          </form></fieldset>
+        `;
+      $('#evaluation-form').html(dismiss_bar + the_form)
+                           .show();
+      var evaluation_form = document.getElementById('evaluation-form');
+      var eval_form_rect = evaluation_form.getBoundingClientRect();
+      evaluation_form.style.position = 'fixed';
+      evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
+      evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
+      $('#dismiss-bar').click(function ()
+      {
+        $('#evaluation-form').hide();
+      });
+      alert('Not fully implemented yet');
+    });
   });
 

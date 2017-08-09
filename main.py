@@ -469,8 +469,12 @@ def do_form_2(request, session):
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
   # the source subjects and the receiving course blongs to a receiving institution and is one of
   # the receiving subjects.
-  source_institution_list = "('" + "', '".join(session['source_institutions']) + "')"
-  destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
+  try:
+    source_institution_list = "('" + "', '".join(session['source_institutions']) + "')"
+    destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
+  except:
+    # the session is expired or invalid. Got back to Step 1.
+    return render_template('transfers.html')
   source_subjects = [subject for subject in request.form.getlist('source_subject')]
   destination_subjects = [subject for subject in request.form.getlist('destination_subject')]
   source_subject_list = "('" + "', '".join(source_subjects)      + "')"
@@ -493,7 +497,8 @@ def do_form_2(request, session):
       and c2.course_id = t.destination_course_id
       and i1.code = c1.institution
       and i2.code = c2.institution
-    order by lower(source_institution), source_course, lower(destination_institution), destination_course
+    order by lower(source_institution), source_course,
+             lower(destination_institution), destination_course
   """.format(source_institution_list,
              source_subject_list,
              destination_institution_list,
@@ -528,7 +533,7 @@ def do_form_2(request, session):
       </span>
     </p>
     <button type="text" id="send-email" disabled="disabled">
-      Send verification email to <em>{}</em>.
+      Send verification email to <em id="email-address">{}</em>.
     </button>
   </fieldset>
   <p>Click on a rule to evaluate it.</p>
