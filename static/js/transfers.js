@@ -165,7 +165,9 @@ $(function ()
   {
     $('.rule').removeClass('selected-rule');
     $(this).addClass('selected-rule');
-    var rule_id = $(this)[0];
+    var rule_str = '';
+    $(this).find('td').each(function (index) {rule_str += $(this).text() + ' '});
+
     // Rule ids: "source_course_id:source_institution:dest_course_id:dest_institution"
     var this_rule = $(this).attr('id').split(':');
     var source_id = this_rule[0];
@@ -206,7 +208,7 @@ $(function ()
                       <label for="src-not-ok">Problem observed by ${source_institution}</label>
                     </div>
                     <div>
-                      <input type="radio" name="reviewed" id="dest-ok" value=="dest-ok"/>
+                      <input type="radio" name="reviewed" id="dest-ok" value="dest-ok"/>
                       <label for="dest-ok">
                         Verified by ${destination_institution}
                       </label>
@@ -259,7 +261,8 @@ $(function ()
             event_type: $('input[name=reviewed]:checked').val(),
             comment_text: $('#comment-text').val(),
             rule_source_id: source_id,
-            rule_destination_id: destination_id
+            rule_destination_id: destination_id,
+            rule_str: rule_str
           });
           $('.selected-rule').addClass('evaluated');
 
@@ -312,7 +315,13 @@ $(function ()
         `;
       for (evaluation in pending_evaluations)
       {
-        the_form += 'hello';
+        console.log(pending_evaluations[evaluation]);
+        var the_rule = pending_evaluations[evaluation].rule_source_id + ':' +
+                       pending_evaluations[evaluation].rule_destination_id;
+        the_form += `<div id="eval-rule-${the_rule}" class="eval-rule">
+          <button id="del-rule-${the_rule}">Delete</button>
+          <span id="rule-${the_rule}">${pending_evaluations[evaluation].rule_str}</span>
+          </div>`
       }
       the_form += '<input type="hidden" value="${email_address}" />';
       the_form += `

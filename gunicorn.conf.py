@@ -19,3 +19,8 @@ secure_scheme_headers = {'X-APPENGINE-HTTPS': 'on'}
   instance plus one. You can specify this in gunicorn.conf.py as:
 """
 workers = multiprocessing.cpu_count() * 2 + 1
+
+"""
+  Trying an async model to deal with 502 errors.
+"""
+worker_class = 'gevent'

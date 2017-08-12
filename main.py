@@ -35,11 +35,13 @@ ADMINS = ['your-gmail-username@gmail.com']
 Filter = namedtuple('Filter', ['subject', 'college', 'discipline'])
 
 logger = logging.getLogger('debugging')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)
 fh = logging.FileHandler('debugging.log')
+sh = logging.StreamHandler()
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 fh.setFormatter(formatter)
-logger.addHandler(fh)
+#logger.addHandler(fh)
+logger.addHandler(sh)
 
 #
 # Overhead URIs
@@ -106,6 +108,7 @@ def do_form_0(request, session):
       No form submitted yet; generate the Step 1 page.
       Display form_1 to get aource and destination institutions; user's email.
   """
+  # logger.debug('do_form_0({})'.format(session))
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
@@ -207,6 +210,7 @@ def do_form_1(request, session):
       them to the session.
       Generate Form 2: select discipline(s)
   """
+  # logger.debug('do_form_1({})'.format(session))
   # Capture form data in user's session
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
@@ -462,6 +466,7 @@ def do_form_2(request, session):
       Process CUNY Subject list from form 2 and add to session.
       Generate form_3: the selected transfer rules for evaluation
   """
+  # logger.debug('do_form_2({})'.format(session))
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
@@ -551,7 +556,7 @@ def do_form_2(request, session):
 # do_form_3()
 # -------------------------------------------------------------------------------------------------
 def do_form_3(request, session):
-
+  # logger.debug('do_form_3({})'.format(session))
   session_keys = '.'
   if len(session):
     session_keys = ': ' + ', '.join(session.keys())
@@ -568,12 +573,21 @@ def do_form_3(request, session):
 #
 @app.route('/transfers/', methods=['POST', 'GET'])
 def transfers():
+  """ (Re-)establish user's session and dispatch to appropriate function depending on which form,
+      if any, the user submitted.
+  """
+  # logger.debug(request.method)
   try:
+    # If the user has a mysession_key in the browser session, use that.
     mysession_key = session['mysession_key']
-    mysession = MySession(app, mysession_key)
+    mysession = MySession(mysession_key)
   except Exception as excp:
-    mysession = MySession(app)
+    # Otherwise, create a new mysession and save the key in the browser session.
+    mysession = MySession()
     session['mysession_key'] = mysession.session_key
+
+  # logger.debug('Pre-dispatch: browser session[mysession_key] is {}'.format(session['mysession_key']))
+  # logger.debug('Pre-dispatch: mysession is {}'.format(mysession))
 
   # Dispatcher for forms
   dispatcher = {
@@ -583,6 +597,7 @@ def transfers():
   }
   if request.method == 'POST':
     # User has submitted a form.
+    # logger.debug('dispatcher will call {}'.format(request.form['next-function']))
     return dispatcher.get(request.form['next-function'], lambda: error)(request, mysession)
 
   # Form not submitted yet, so call do_form_0 to generate form_1
