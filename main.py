@@ -13,7 +13,7 @@ from cuny_course import CUNYCourse
 from mysession import MySession
 
 from flask import Flask, url_for, render_template, make_response,\
-                  redirect, send_file, Markup, request, session, jsonify
+                  redirect, send_file, Markup, request, jsonify
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -35,14 +35,14 @@ ADMINS = ['your-gmail-username@gmail.com']
 Filter = namedtuple('Filter', ['subject', 'college', 'discipline'])
 
 logger = logging.getLogger('debugging')
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler('debugging.log')
 sh = logging.StreamHandler()
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 fh.setFormatter(formatter)
 #logger.addHandler(fh)
 logger.addHandler(sh)
-
+logger.debug('Debug: App Start')
 #
 # Overhead URIs
 @app.route('/favicon.ico')
@@ -108,7 +108,7 @@ def do_form_0(request, session):
       No form submitted yet; generate the Step 1 page.
       Display form_1 to get aource and destination institutions; user's email.
   """
-  # logger.debug('do_form_0({})'.format(session))
+  logger.debug('do_form_0({})'.format(session))
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
@@ -200,7 +200,12 @@ def do_form_0(request, session):
       </form>
     </fieldset>
     """.format(source_prompt, destination_prompt, email, remember_me)
-  return render_template('transfers.html', result=Markup(result))
+
+  response = make_response(render_template('transfers.html', result=Markup(result)))
+  response.set_cookie('mysession',
+                      session.session_key)
+
+  return response
 
 # do_form_1()
 # -------------------------------------------------------------------------------------------------
@@ -210,7 +215,7 @@ def do_form_1(request, session):
       them to the session.
       Generate Form 2: select discipline(s)
   """
-  # logger.debug('do_form_1({})'.format(session))
+  logger.debug('do_form_1({})'.format(session))
   # Capture form data in user's session
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
@@ -423,6 +428,7 @@ def do_form_1(request, session):
   # set or clear email-related cookes based on form data
   email = request.form.get('email')
   session['email'] = email # always valid for this session
+  logger.debug('session[email] is {}'.format(session['email']))
   # The email cookie expires now or later, depending on state of "remember me"
   expire_time = datetime.datetime.now()
   remember_me = request.form.get('remember-me')
@@ -466,7 +472,7 @@ def do_form_2(request, session):
       Process CUNY Subject list from form 2 and add to session.
       Generate form_3: the selected transfer rules for evaluation
   """
-  # logger.debug('do_form_2({})'.format(session))
+  logger.debug('do_form_2({})'.format(session))
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
@@ -479,7 +485,7 @@ def do_form_2(request, session):
     destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
   except:
     # the session is expired or invalid. Got back to Step 1.
-    return render_template('transfers.html')
+    return render_template('transfers.html', result=Markup('{}'.format(session)))
   source_subjects = [subject for subject in request.form.getlist('source_subject')]
   destination_subjects = [subject for subject in request.form.getlist('destination_subject')]
   source_subject_list = "('" + "', '".join(source_subjects)      + "')"
@@ -556,7 +562,7 @@ def do_form_2(request, session):
 # do_form_3()
 # -------------------------------------------------------------------------------------------------
 def do_form_3(request, session):
-  # logger.debug('do_form_3({})'.format(session))
+  logger.debug('do_form_3({})'.format(session))
   session_keys = '.'
   if len(session):
     session_keys = ': ' + ', '.join(session.keys())
@@ -573,21 +579,15 @@ def do_form_3(request, session):
 #
 @app.route('/transfers/', methods=['POST', 'GET'])
 def transfers():
-  """ (Re-)establish user's session and dispatch to appropriate function depending on which form,
+  """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
       if any, the user submitted.
   """
-  # logger.debug(request.method)
-  try:
-    # If the user has a mysession_key in the browser session, use that.
-    mysession_key = session['mysession_key']
-    mysession = MySession(mysession_key)
-  except Exception as excp:
-    # Otherwise, create a new mysession and save the key in the browser session.
-    mysession = MySession()
-    session['mysession_key'] = mysession.session_key
+  logger.debug('*** {} /transfers/ ***'.format(request.method))
+  logger.debug(request.headers)
+  mysession = MySession(request.cookies.get('mysession'))
 
-  # logger.debug('Pre-dispatch: browser session[mysession_key] is {}'.format(session['mysession_key']))
-  # logger.debug('Pre-dispatch: mysession is {}'.format(mysession))
+  logger.debug('Pre-dispatch: mysession_key] is {}'.format(mysession.session_key))
+  logger.debug('Pre-dispatch: mysession is {}'.format(mysession))
 
   # Dispatcher for forms
   dispatcher = {
@@ -597,7 +597,7 @@ def transfers():
   }
   if request.method == 'POST':
     # User has submitted a form.
-    # logger.debug('dispatcher will call {}'.format(request.form['next-function']))
+    logger.debug('dispatcher will call {}'.format(request.form['next-function']))
     return dispatcher.get(request.form['next-function'], lambda: error)(request, mysession)
 
   # Form not submitted yet, so call do_form_0 to generate form_1
