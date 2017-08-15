@@ -2,6 +2,8 @@ import logging
 import sys
 import os
 
+import json
+import uuid
 import datetime
 import sqlite3
 
@@ -375,23 +377,27 @@ def do_form_1(request, session):
 
     source_box = ''
     if source_disciplines != '':
-      source_box = '<input type="checkbox" name="source_subject" value="{}"/>'.format(cuny_subject)
+      source_box = """
+        <input type="checkbox" id="source-subject-{}" name="source_subject" value="{}"/>
+        """.format(cuny_subject, cuny_subject)
     destination_box = ''
     if destination_disciplines != '':
       destination_box = """
-        <input type="checkbox" name="destination_subject" value="{}"/>
-        """.format(cuny_subject)
+        <input type="checkbox" id="destination-subject-{}" name="destination_subject" value="{}"/>
+        """.format(cuny_subject, cuny_subject)
     filter_rows += """
     <tr>
-      <td class="source-subject">{}</td>
+      <td class="source-subject"><label for="source-subject-{}">{}</label></td>
       <td class="source-subject f2-cbox">{}</td>
       <td><strong>{}</strong></td>
-      <td class="destination-subject">{}</td>
+      <td class="destination-subject"><label for="destination-subject-{}">{}</label></td>
       <td class="destination-subject f2-cbox">{}</td>
     </tr>
-    """.format(source_disciplines,
+    """.format(cuny_subject,
+               source_disciplines,
                source_box,
                cuny_subjects[cuny_subject],
+               cuny_subject,
                destination_disciplines,
                destination_box)
 
@@ -544,12 +550,12 @@ def do_form_2(request, session):
       </span>
     </p>
     <button type="text" id="send-email" disabled="disabled">
-      Send verification email to <em id="email-address">{}</em>.
+      Review your evaluations before sending verification email to <em id="email-address">{}</em>.
     </button>
   </fieldset>
   <p>Click on a rule to evaluate it.</p>
     <form method="post" action="" id="evaluation-form">
-      Waiting for rules to finish loading ...
+      Please wait for rules to finish loading ...
     </form>
     {}
   </fieldset>
@@ -563,15 +569,41 @@ def do_form_2(request, session):
 # -------------------------------------------------------------------------------------------------
 def do_form_3(request, session):
   logger.debug('do_form_3({})'.format(session))
-  session_keys = '.'
-  if len(session):
-    session_keys = ': ' + ', '.join(session.keys())
-
-  result = """
-  <h1>Do Form 3: Process transfer rule evaluations not implemented yet</h1>
-  <p>Session has {} keys{}</p>
-  """.format(
-      len(session), session_keys)
+  evaluations = json.loads(request.form['evaluations'])
+  kept_evaluations = [evaluation for evaluation in evaluations if not evaluation['is_omitted']]
+  email = session['email']
+  if len(kept_evaluations) == 0:
+    result = '<h1>There are no evaluations to confirm.</h1>'
+  else:
+    message_tail = 'evaluation'
+    if len(kept_evaluations) > 1:
+      count = len(kept_evaluations)
+      if count < 13:
+        count = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+                'eleven', 'twelve'][count - 2]
+      message_tail = '{} evaluations'.format(count)
+    # Insert these evaluations into the pending_evaluations table.
+    token = str(uuid.uuid4())
+    evaluations = json.dumps(kept_evaluations)
+    q = "insert into pending_evaluations (token, evaluations) values(?, ?)"
+    conn = sqlite3.connect('static/db/cuny_catalog.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute(q, (token, evaluations))
+    conn.commit()
+    # Send email with the token for verification
+    #
+    result = """
+    <h1>Step 4: Respond to Email</h1>
+    <p>
+      We have sent an email to {}. Click on the 'Confirm' button in that email to confirm that you
+      actually wish to submit your {}.
+    </p>
+    <p class="error">Under development: no email actually sent.</p>
+    <p>
+      Thank you for your work!
+    </p>
+    """.format(email, message_tail)
   return render_template('transfers.html', result=Markup(result))
 
 # TRANSFERS PAGE

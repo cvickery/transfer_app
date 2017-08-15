@@ -160,16 +160,21 @@ $(function ()
     $('.destination-subject input:checkbox').prop('checked', false);
   });
 
-  //  Form 2: Clickable rules
+  //  Form 3: Clickable rules
   $('.rule').click(function (event)
   {
     $('.rule').removeClass('selected-rule');
     $(this).addClass('selected-rule');
     var rule_str = '';
-    $(this).find('td').each(function (index) {rule_str += $(this).text() + ' '});
+    $(this).find('td').each(function (index)
+    {
+      rule_str += $(this).text() + ' ';
+    });
 
     // Rule ids: "source_course_id:source_institution:dest_course_id:dest_institution"
     var this_rule = $(this).attr('id').split(':');
+    // Rule index: "source_course_id:dest_course_id"
+    var rule_index = this_rule[0] + ':' + this_rule[2];
     var source_id = this_rule[0];
     var source_institution = this_rule[1];
     var destination_id = this_rule[2];
@@ -226,12 +231,17 @@ $(function ()
                     <textarea id="comment-text"
                               placeholder="Explain problem or “Other” here."
                               minlength="12" />
+                    <input type="hidden" name="src_institution"
+                           value="${source_institution}" />
+                    <input type="hidden" name="dest_institution"
+                           value="${destination_institution}" />
                     <input type="hidden" name="source-id" value="${source_id}" />
                     <input type="hidden" name="destination-id" value="${destination_id}" />
                     <button id="review-submit" type="button" disabled="disabled">Submit</button>
                   </fieldset>`;
 
       $('#evaluation-form').html(dismiss_bar + source_catalog + destination_catalog + controls)
+                           .css('width', '40%')
                            .show();
       var evaluation_form = document.getElementById('evaluation-form');
       var eval_form_rect = evaluation_form.getBoundingClientRect();
@@ -255,14 +265,17 @@ $(function ()
         // Process evaluation info if submitted
         $('#review-submit').click(function (event)
         {
-          // *** Enter form data into db here ***
           pending_evaluations.push(
           {
             event_type: $('input[name=reviewed]:checked').val(),
-            comment_text: $('#comment-text').val(),
+            source_institution: $('input[name=src_institution]').val(),
+            destination_institution: $('input[name=dest_institution]').val(),
+            comment_text: $('#comment-text').val().replace("'", "’"),
             rule_source_id: source_id,
             rule_destination_id: destination_id,
-            rule_str: rule_str
+            rule_index: rule_index,
+            rule_str: rule_str,
+            is_omitted: false
           });
           $('.selected-rule').addClass('evaluated');
 
@@ -291,46 +304,104 @@ $(function ()
           $('#evaluation-form').hide();
           $('#verification-details').show();
 
-          // Enable verify button
+          // Enable review/send-email button
           $('#send-email').attr('disabled', false);
           event.preventDefault(); // don't actually submit the form to the server.
         });
       });
     });
 
-    // Send email button click
+    // Review and send email button click
     // --------------------------------------------------------------------------------------------
-    /* Generate a form for reviewing the evaluations so the user can delete items they don't
+    /* Generate a form for reviewing the evaluations so the user can omit items they don't
      * intend. Then submit the form to a web page that actually enters the items into the "pending"
      * table and sends email to the user.
      */
     $('#send-email').click(function (event)
     {
-      console.log(pending_evaluations);
       var email_address = $('#email-address').text();
       var the_form = `
-        <fieldset>
-          <h2>Instructions</h2><p>These are your instructions.</p>
-          <form method="POST" action="">
+        <fieldset id="review-form">
+          <h2>Review Your Evaluations</h2><p>Use the buttons to omit (or include) items.</p>
+          <div id='evaluations-list'>
         `;
       for (evaluation in pending_evaluations)
       {
-        console.log(pending_evaluations[evaluation]);
         var the_rule = pending_evaluations[evaluation].rule_source_id + ':' +
                        pending_evaluations[evaluation].rule_destination_id;
+        var institution = 'Unknown';
+        var go_nogo = 'Unknown';
+        switch (pending_evaluations[evaluation].event_type)
+        {
+          case 'src-ok':
+            institution = pending_evaluations[evaluation].source_institution;
+            go_nogo = 'OK';
+            break;
+          case 'dest-ok':
+            institution = pending_evaluations[evaluation].destination_institution;
+            go_nogo = 'OK';
+            break;
+          case 'src-not-ok':
+            institution = pending_evaluations[evaluation].source_institution + ': ';
+            go_nogo = pending_evaluations[evaluation].comment_text;
+            break;
+          case 'dest-not-ok':
+            institution = pending_evaluations[evaluation].destination_institution + ': ';
+            go_nogo = pending_evaluations[evaluation].comment_text;
+            break;
+          default:
+            institution = 'Other: ';
+            go_nogo = pending_evaluations[evaluation].comment_text;
+            break;
+
+        }
         the_form += `<div id="eval-rule-${the_rule}" class="eval-rule">
-          <button id="del-rule-${the_rule}">Delete</button>
-          <span id="rule-${the_rule}">${pending_evaluations[evaluation].rule_str}</span>
-          </div>`
+          <button type="button" id="omit-eval-${the_rule}" class="omit-button">Omit</button>
+          <span id="rule-${the_rule}">${pending_evaluations[evaluation].rule_str}</span><br/>
+          ${institution} ${go_nogo}
+          </div>`;
       }
-      the_form += '<input type="hidden" value="${email_address}" />';
+      the_form += '</div><input type="hidden" value="${email_address}" />';
       the_form += `
           <input type="hidden" name="next-function" value="do_form_3" />
+          <input type="hidden" id="hidden-evaluations" name="evaluations" value="Not Set" />
           <button type="submit">Submit These Evaluations</button>
-          </form></fieldset>
+          </fieldset>
         `;
       $('#evaluation-form').html(dismiss_bar + the_form)
+                           .css('width', '90%')
                            .show();
+      $('.omit-button').click(function ()
+      {
+        // extract the button's rule-index and use it to gray out the div containing it and to mark
+        // the evaluation as disabled.
+        var rule_index = $(this).attr('id').split('-')[2];
+        var omit_div_id = 'eval-rule-' + rule_index.replace(':', '\\:');
+        for (evaluation in pending_evaluations)
+        {
+          if (pending_evaluations[evaluation].rule_index == rule_index)
+          {
+            if (pending_evaluations[evaluation].is_omitted)
+            {
+              $('#' + omit_div_id).removeClass('omitted');
+              pending_evaluations[evaluation].is_omitted = false;
+              $(this).text('Included');
+            }
+            else
+            {
+              $('#' + omit_div_id).addClass('omitted');
+              pending_evaluations[evaluation].is_omitted = true;
+              $(this).text('Omitted');
+            }
+            break;
+          }
+        }
+      });
+
+      $('#evaluation-form').submit(function ()
+      {
+        $('input[name="evaluations"]').val(JSON.stringify(pending_evaluations));
+      });
       var evaluation_form = document.getElementById('evaluation-form');
       var eval_form_rect = evaluation_form.getBoundingClientRect();
       evaluation_form.style.position = 'fixed';
@@ -340,7 +411,6 @@ $(function ()
       {
         $('#evaluation-form').hide();
       });
-      alert('Not fully implemented yet');
     });
   });
 

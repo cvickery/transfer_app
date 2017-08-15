@@ -66,6 +66,7 @@ td, th {
 
 #source-college-list, #destination-college-list {
   column-width: 15em;
+  column-rule: 1px solid #ccc;
 }
 
 #form-2>fieldset {
@@ -191,6 +192,27 @@ button:disabled {
 }
 
 .evaluated td {
-  background-color: #efe;
+  background-color: #eee;
   color: #333;
+}
+
+#review-form {
+  font-size: 0.8em;
+  padding: 0.5em;
+}
+
+.omit-button {
+  padding: 0.1em;
+  margin:0;
+  font-variant: all-petit-caps;
+}
+
+#evaluations-list {
+  column-width: 30em;
+  column-rule: 1px solid #ccc;
+}
+
+.omitted {
+  color:#999;
+  background-color:#eee;
 }

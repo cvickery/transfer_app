@@ -72,7 +72,7 @@ class MySession:
     logger.debug('__init__(---, {})'.format(session_key))
 
     connection = sqlite3.connect('static/db/cuny_catalog.db')
-    # connection.set_trace_callback(sql_logger.debug)
+    connection.set_trace_callback(sql_logger.debug)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
 
@@ -105,6 +105,7 @@ class MySession:
   def __str__(self):
     logger.debug('__str__({})'.format(self.session_key))
     connection = sqlite3.connect('static/db/cuny_catalog.db')
+    connection.set_trace_callback(sql_logger.debug)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
@@ -116,7 +117,7 @@ class MySession:
     logger.debug('__del__({})'.format(self.session_key))
     if self.is_expired(self.session_key):
       connection = sqlite3.connect('static/db/cuny_catalog.db')
-      # connection.set_trace_callback(sql_logger.debug)
+      connection.set_trace_callback(sql_logger.debug)
       connection.row_factory = sqlite3.Row
       cursor = connection.cursor()
       cursor.execute("delete from sessions where session_key = ?", (self.session_key,))
@@ -128,7 +129,7 @@ class MySession:
   def __setitem__(self, key, value):
     logger.debug('__setitem__({}, {}, {}'.format(self.session_key, key, value))
     connection = sqlite3.connect('static/db/cuny_catalog.db')
-    # connection.set_trace_callback(sql_logger.debug)
+    connection.set_trace_callback(sql_logger.debug)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
@@ -144,7 +145,7 @@ class MySession:
   def __getitem__(self, key):
     logger.debug('__getitem__({}, {})'.format(self.session_key, key))
     connection = sqlite3.connect('static/db/cuny_catalog.db')
-    # connection.set_trace_callback(sql_logger.debug)
+    connection.set_trace_callback(sql_logger.debug)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
@@ -155,7 +156,7 @@ class MySession:
   def __len__(self):
     logger.debug('__len__({}'.format(self.session_key))
     connection = sqlite3.connect('static/db/cuny_catalog.db')
-    # connection.set_trace_callback(sql_logger.debug)
+    connection.set_trace_callback(sql_logger.debug)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
@@ -171,7 +172,7 @@ class MySession:
   def keys(self):
     logger.debug('keys({})'.format(self.session_key))
     connection = sqlite3.connect('static/db/cuny_catalog.db')
-    # connection.set_trace_callback(sql_logger.debug)
+    connection.set_trace_callback(sql_logger.debug)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = ?", (self.session_key,))
@@ -184,7 +185,7 @@ class MySession:
     if session_key == None: return true
 
     connection = sqlite3.connect('static/db/cuny_catalog.db')
-    # connection.set_trace_callback(sql_logger.debug)
+    connection.set_trace_callback(sql_logger.debug)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
     cursor.execute("select expiration_time from sessions where session_key = ?",(session_key,))
@@ -200,7 +201,7 @@ class MySession:
   def touch(self):
     logger.debug('touch({})'.format(self.session_key))
     connection = sqlite3.connect('static/db/cuny_catalog.db')
-    # connection.set_trace_callback(sql_logger.debug)
+    connection.set_trace_callback(sql_logger.debug)
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
     cursor.execute("""
