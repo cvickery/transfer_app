@@ -4,7 +4,7 @@ import os
 
 import json
 import uuid
-import datetime
+import datetime, time
 import sqlite3
 
 import logging
@@ -110,7 +110,7 @@ def do_form_0(request, session):
       No form submitted yet; generate the Step 1 page.
       Display form_1 to get aource and destination institutions; user's email.
   """
-  logger.debug('do_form_0({})'.format(session))
+  logger.debug('*** do_form_0({})'.format(session))
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
@@ -217,7 +217,7 @@ def do_form_1(request, session):
       them to the session.
       Generate Form 2: select discipline(s)
   """
-  logger.debug('do_form_1({})'.format(session))
+  logger.debug('*** do_form_1({})'.format(session))
   # Capture form data in user's session
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
@@ -258,7 +258,7 @@ def do_form_1(request, session):
                               'destination_id', 'destination_institution', 'destination_discipline',
                               'destination_course', 'destination_subject'])
   rules = [rule for rule in map(Rule._make, c.fetchall())]
-
+  logger.debug('    There are {} rules'.format(len(rules)))
   # Create lists of disciplines for subjects found in the transfer rules
   #   This gives a set of institution:discipline pairs for each subject
   source_subjects = {}
@@ -458,7 +458,7 @@ def do_form_1(request, session):
         </tr>
         {}
       </table>
-      <a href="" class="restart">Restart</a>
+      <a href="/transfers/" class="restart">Restart</a>
       <input type="hidden" name="next-function" value="do_form_2" />
       <button type="submit">Next</button>
     </fieldset>
@@ -478,7 +478,7 @@ def do_form_2(request, session):
       Process CUNY Subject list from form 2 and add to session.
       Generate form_3: the selected transfer rules for evaluation
   """
-  logger.debug('do_form_2({})'.format(session))
+  logger.debug('*** do_form_2({})'.format(session))
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
   c = conn.cursor()
@@ -559,7 +559,7 @@ def do_form_2(request, session):
     </form>
     {}
   </fieldset>
-  <a href="" class="restart">Restart</a>
+  <a href="/transfers/" class="restart">Restart</a>
   """.format(num_rules,
              session['email'],
              the_list)
@@ -568,7 +568,7 @@ def do_form_2(request, session):
 # do_form_3()
 # -------------------------------------------------------------------------------------------------
 def do_form_3(request, session):
-  logger.debug('do_form_3({})'.format(session))
+  logger.debug('*** do_form_3({})'.format(session))
   evaluations = json.loads(request.form['evaluations'])
   kept_evaluations = [evaluation for evaluation in evaluations if not evaluation['is_omitted']]
   email = session['email']
@@ -585,12 +585,13 @@ def do_form_3(request, session):
     # Insert these evaluations into the pending_evaluations table.
     token = str(uuid.uuid4())
     evaluations = json.dumps(kept_evaluations)
-    q = "insert into pending_evaluations (token, evaluations) values(?, ?)"
+    q = "insert into pending_evaluations values(?, ?, ?)"
     conn = sqlite3.connect('static/db/cuny_catalog.db')
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute(q, (token, evaluations))
+    c.execute(q, (token, evaluations, time.time()))
     conn.commit()
+    conn.close()
     # Send email with the token for verification
     #
     result = """
@@ -603,6 +604,8 @@ def do_form_3(request, session):
     <p>
       Thank you for your work!
     </p>
+    <a href="/transfers/" class="restart">Restart</a>
+
     """.format(email, message_tail)
   return render_template('transfers.html', result=Markup(result))
 
@@ -634,6 +637,13 @@ def transfers():
 
   # Form not submitted yet, so call do_form_0 to generate form_1
   else:
+    # clear institutions, subjects, and rules from the session before restarting
+    mysession.remove('source_institutions')
+    mysession.remove('destination_institutions')
+    mysession.remove('source_filters')
+    mysession.remove('destination_filters')
+    keys = mysession.keys()
+    logger.debug('  len(keys): {}\n  keys: {}'.format(len(keys), keys))
     return do_form_0(request, mysession)
 
 # /_COURSE

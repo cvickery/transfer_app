@@ -197,7 +197,7 @@ button:disabled {
 }
 
 #review-form {
-  font-size: 0.8em;
+  font-size: 1em;
   padding: 0.5em;
 }
 
@@ -208,10 +208,14 @@ button:disabled {
 }
 
 #evaluations-list {
-  column-width: 30em;
+  column-width: 25em;
   column-rule: 1px solid #ccc;
+  overflow-y:scroll;
 }
 
+.eval-rule {
+  padding: 0.5em 1em;
+}
 .omitted {
   color:#999;
   background-color:#eee;

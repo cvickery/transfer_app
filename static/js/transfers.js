@@ -18,7 +18,7 @@ $(function ()
   });
 
   var error_msg = '';
-  var dismiss_bar = '<div id="dismiss-bar">×</div>';
+  var dismiss_bar = '<div id="dismiss-bar" class="dismiss">×</div>';
   var pending_evaluations = [];
 
   // Form #1 Validation
@@ -237,7 +237,8 @@ $(function ()
                            value="${destination_institution}" />
                     <input type="hidden" name="source-id" value="${source_id}" />
                     <input type="hidden" name="destination-id" value="${destination_id}" />
-                    <button id="review-submit" type="button" disabled="disabled">Submit</button>
+                    <button id="review-submit" type="button" disabled="disabled">OK</button>
+                    <button class="dismiss" type="button">Cancel</button>
                   </fieldset>`;
 
       $('#evaluation-form').html(dismiss_bar + source_catalog + destination_catalog + controls)
@@ -248,7 +249,7 @@ $(function ()
       evaluation_form.style.position = 'fixed';
       evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
       evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
-      $('#dismiss-bar').click(function ()
+      $('.dismiss').click(function ()
       {
         $('#evaluation-form').hide();
       });
@@ -357,8 +358,7 @@ $(function ()
         }
         the_form += `<div id="eval-rule-${the_rule}" class="eval-rule">
           <button type="button" id="omit-eval-${the_rule}" class="omit-button">Omit</button>
-          <span id="rule-${the_rule}">${pending_evaluations[evaluation].rule_str}</span><br/>
-          ${institution} ${go_nogo}
+          <span id="rule-${the_rule}">${pending_evaluations[evaluation].rule_str}<br/>${institution} ${go_nogo}</span>
           </div>`;
       }
       the_form += '</div><input type="hidden" value="${email_address}" />';
@@ -366,6 +366,7 @@ $(function ()
           <input type="hidden" name="next-function" value="do_form_3" />
           <input type="hidden" id="hidden-evaluations" name="evaluations" value="Not Set" />
           <button type="submit">Submit These Evaluations</button>
+          <button type="button" class="dismiss">Cancel</button>
           </fieldset>
         `;
       $('#evaluation-form').html(dismiss_bar + the_form)
@@ -407,7 +408,7 @@ $(function ()
       evaluation_form.style.position = 'fixed';
       evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
       evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
-      $('#dismiss-bar').click(function ()
+      $('.dismiss').click(function ()
       {
         $('#evaluation-form').hide();
       });
