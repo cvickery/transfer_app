@@ -45,6 +45,22 @@ fh.setFormatter(formatter)
 #logger.addHandler(fh)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
+
+sql_logger = logging.getLogger('sqlite3')
+sql_logger.setLevel(logging.DEBUG)
+sfh = logging.FileHandler('debugging.log')
+ssh = logging.StreamHandler()
+sformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+sfh.setFormatter(sformatter)
+ssh.setFormatter(sformatter)
+#sql_logger.addHandler(sfh)
+sql_logger.addHandler(ssh)
+
+sqlite3.enable_callback_tracebacks(True)
+logger.debug('       sqlite3.version {}'.format(sqlite3.version))
+logger.debug('       sqlite3.sqlite_version {}'.format(sqlite3.sqlite_version))
+
+
 #
 # Overhead URIs
 @app.route('/favicon.ico')
@@ -219,19 +235,23 @@ def do_form_1(request, session):
   """
   logger.debug('*** do_form_1({})'.format(session))
   # Capture form data in user's session
+  source_institutions = request.form.getlist('source')
+  source_institutions.append('fake')
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
 
   # Get filter info
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
-  c = conn.cursor()
+  conn.set_trace_callback(sql_logger.debug)
+  cursor = conn.cursor()
 
   # Get source and destination institiution names
-  c.execute("select * from institutions order by code")
-  institution_names = {row['code']: row['name'] for row in c}
+  cursor.execute("select * from institutions order by code")
+  institution_names = {row['code']: row['name'] for row in cursor}
 
   # Look up all the rules for the source and destination institutions
+
   source_institution_list = "('" + "', '".join(session['source_institutions']) + "')"
   destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
   q = """
@@ -252,13 +272,13 @@ def do_form_1(request, session):
       and c2.course_id = t.destination_course_id
     order by source_institution, destination_institution, source_course
   """.format(source_institution_list, destination_institution_list)
-  c.execute(q)
-  Rule = namedtuple('Rule', [ 'source_id', 'source_institution', 'source_discipline',
+  cursor.execute(q)
+  Rule = namedtuple('Rule', ['source_id', 'source_institution', 'source_discipline',
                               'source_course', 'source_subject',
                               'destination_id', 'destination_institution', 'destination_discipline',
                               'destination_course', 'destination_subject'])
-  rules = [rule for rule in map(Rule._make, c.fetchall())]
-  logger.debug('    There are {} rules'.format(len(rules)))
+  rules = [rule for rule in map(Rule._make, cursor.fetchall())]
+  logger.debug('--- do_form_1(): There are {:,} rules'.format(len(rules)))
   # Create lists of disciplines for subjects found in the transfer rules
   #   This gives a set of institution:discipline pairs for each subject
   source_subjects = {}
@@ -272,8 +292,6 @@ def do_form_1(request, session):
       destination_subjects[rule.destination_subject] = set()
     destination_subjects[rule.destination_subject].add((rule.destination_institution,
                                                            rule.destination_discipline))
-  # session['source_subjects'] = [source_subject for source_subject in source_subjects]
-  # session['destination_subjects'] = [destination_subject for destination_subject in destination_subjects]
 
   sending_is_singleton = False
   sending_heading = 'Sending Colleges’'
@@ -290,15 +308,16 @@ def do_form_1(request, session):
     if sending_is_singleton: criterion += ' and '
     criterion += 'the receiving college is ' + institution_names[session['destination_institutions'][0]]
 
-  c.execute("select * from cuny_subjects")
-  cuny_subjects = {row['area']:row['description'] for row in c}
+  cursor.execute("select * from cuny_subjects")
+  cuny_subjects = {row['area']:row['description'] for row in cursor}
 
-  c.execute("select * from careers")
-  careers = {(row['institution'], row['career']): row['description'] for row in c}
+  cursor.execute("select * from careers")
+  careers = {(row['institution'], row['career']): row['description'] for row in cursor}
 
-  c.execute("select * from designations")
-  designations = {row['designation']: row['description'] for row in c}
+  cursor.execute("select * from designations")
+  designations = {row['designation']: row['description'] for row in cursor}
 
+  logger.debug('--- do_form_1() db queries complete')
   # Build filter table. For each cuny_subject found in either sending or receiving courses, list
   # all disciplines at those colleges.
   # tuples are cuny_subject, college, discipline
@@ -306,14 +325,15 @@ def do_form_1(request, session):
   destination_filters = set()
   for rule in rules:
     source_filters.add(Filter(rule.source_subject,
-                              rule.source_institution,
-                              rule.source_discipline))
+                                 rule.source_institution,
+                                 rule.source_discipline))
     destination_filters.add(Filter(rule.destination_subject,
-                                   rule.destination_institution,
-                                   rule.destination_discipline))
+                                      rule.destination_institution,
+                                      rule.destination_discipline))
+
   # Pass these filters on in the session
-  session['source_filters'] = [filter for filter in source_filters]
-  session['destination_filters'] = [filter for filter in destination_filters]
+  # session['source_filters'] = [filter for filter in source_filters]
+  # session['destination_filters'] = [filter for filter in destination_filters]
 
   # Table rows with checkboxes for subjects
   all_subjects = set([filter.subject for filter in source_filters])
@@ -434,7 +454,7 @@ def do_form_1(request, session):
   # set or clear email-related cookes based on form data
   email = request.form.get('email')
   session['email'] = email # always valid for this session
-  logger.debug('session[email] is {}'.format(session['email']))
+  logger.debug('--- do_form_1(): session[email] is {}'.format(session['email']))
   # The email cookie expires now or later, depending on state of "remember me"
   expire_time = datetime.datetime.now()
   remember_me = request.form.get('remember-me')
@@ -464,11 +484,10 @@ def do_form_1(request, session):
     </fieldset>
   </form>
   """.format(len(rules), criterion, sending_heading, receiving_heading, filter_rows)
-
   response = make_response(render_template('transfers.html', result=Markup(result)))
   response.set_cookie('email', email, expires=expire_time)
   response.set_cookie('remember-me', 'on', expires=expire_time)
-
+  logger.debug('--- returning from do_form_1()')
   return response
 
 # do_form_2()
@@ -609,6 +628,16 @@ def do_form_3(request, session):
     """.format(email, message_tail)
   return render_template('transfers.html', result=Markup(result))
 
+# confirmation()
+# -------------------------------------------------------------------------------------------------
+def confirmation(request, session):
+  result = """
+  <h1>Confirmation</h1>
+  <p class="error">Confirmation processing not implemented yet.</p>
+    """
+  return render_template('transfers.html', result=Markup(result))
+
+
 # TRANSFERS PAGE
 # =================================================================================================
 #
@@ -621,18 +650,16 @@ def transfers():
   logger.debug(request.headers)
   mysession = MySession(request.cookies.get('mysession'))
 
-  logger.debug('Pre-dispatch: mysession_key] is {}'.format(mysession.session_key))
-  logger.debug('Pre-dispatch: mysession is {}'.format(mysession))
-
   # Dispatcher for forms
   dispatcher = {
     'do_form_1': do_form_1,
     'do_form_2': do_form_2,
     'do_form_3': do_form_3,
+    'confirmation': confirmation
   }
+
   if request.method == 'POST':
     # User has submitted a form.
-    logger.debug('dispatcher will call {}'.format(request.form['next-function']))
     return dispatcher.get(request.form['next-function'], lambda: error)(request, mysession)
 
   # Form not submitted yet, so call do_form_0 to generate form_1
@@ -643,7 +670,6 @@ def transfers():
     mysession.remove('source_filters')
     mysession.remove('destination_filters')
     keys = mysession.keys()
-    logger.debug('  len(keys): {}\n  keys: {}'.format(len(keys), keys))
     return do_form_0(request, mysession)
 
 # /_COURSE

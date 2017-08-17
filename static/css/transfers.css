@@ -152,6 +152,11 @@ td, th {
   color:#333;
 }
 
+.ok-cancel {
+  display:inline-block;
+  width: 15em;
+}
+
 #rules-table {
   width:50%;
   margin:1em;

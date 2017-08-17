@@ -237,8 +237,8 @@ $(function ()
                            value="${destination_institution}" />
                     <input type="hidden" name="source-id" value="${source_id}" />
                     <input type="hidden" name="destination-id" value="${destination_id}" />
-                    <button id="review-submit" type="button" disabled="disabled">OK</button>
-                    <button class="dismiss" type="button">Cancel</button>
+                    <button class="ok-cancel" id="review-submit" type="button" disabled="disabled">OK</button>
+                    <button class="ok-cancel dismiss" type="button">Cancel</button>
                   </fieldset>`;
 
       $('#evaluation-form').html(dismiss_bar + source_catalog + destination_catalog + controls)
@@ -365,8 +365,8 @@ $(function ()
       the_form += `
           <input type="hidden" name="next-function" value="do_form_3" />
           <input type="hidden" id="hidden-evaluations" name="evaluations" value="Not Set" />
-          <button type="submit">Submit These Evaluations</button>
-          <button type="button" class="dismiss">Cancel</button>
+          <button class="ok-cancel" type="submit">Submit These Evaluations</button>
+          <button class="ok-cancel dismiss" type="button">Cancel</button>
           </fieldset>
         `;
       $('#evaluation-form').html(dismiss_bar + the_form)
