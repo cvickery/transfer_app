@@ -56,7 +56,7 @@ ssh.setFormatter(sformatter)
 #sql_logger.addHandler(sfh)
 sql_logger.addHandler(ssh)
 
-sqlite3.enable_callback_tracebacks(True)
+sqlite3.enable_callback_tracebacks(False)
 logger.debug('       sqlite3.version {}'.format(sqlite3.version))
 logger.debug('       sqlite3.sqlite_version {}'.format(sqlite3.sqlite_version))
 
@@ -243,7 +243,6 @@ def do_form_1(request, session):
   # Get filter info
   conn = sqlite3.connect('static/db/cuny_catalog.db')
   conn.row_factory = sqlite3.Row
-  conn.set_trace_callback(sql_logger.debug)
   cursor = conn.cursor()
 
   # Get source and destination institiution names
@@ -252,7 +251,7 @@ def do_form_1(request, session):
 
   # Look up all the rules for the source and destination institutions
 
-  source_institution_list = "('" + "', '".join(session['source_institutions']) + "')"
+  source_institution_list = "('" + "', '".join(source_institutionspython) + "')"
   destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
   q = """
   select t.source_course_id as source_id,
@@ -272,13 +271,15 @@ def do_form_1(request, session):
       and c2.course_id = t.destination_course_id
     order by source_institution, destination_institution, source_course
   """.format(source_institution_list, destination_institution_list)
+  logger.debug('    About to execute query:\n{}'.format(q))
   cursor.execute(q)
   Rule = namedtuple('Rule', ['source_id', 'source_institution', 'source_discipline',
                               'source_course', 'source_subject',
                               'destination_id', 'destination_institution', 'destination_discipline',
                               'destination_course', 'destination_subject'])
   rules = [rule for rule in map(Rule._make, cursor.fetchall())]
-  logger.debug('--- do_form_1(): There are {:,} rules'.format(len(rules)))
+  logger.debug('--- do_form_1(): query returned {:,} rules'.format(len(rules)))
+
   # Create lists of disciplines for subjects found in the transfer rules
   #   This gives a set of institution:discipline pairs for each subject
   source_subjects = {}
@@ -317,7 +318,6 @@ def do_form_1(request, session):
   cursor.execute("select * from designations")
   designations = {row['designation']: row['description'] for row in cursor}
 
-  logger.debug('--- do_form_1() db queries complete')
   # Build filter table. For each cuny_subject found in either sending or receiving courses, list
   # all disciplines at those colleges.
   # tuples are cuny_subject, college, discipline
@@ -454,7 +454,6 @@ def do_form_1(request, session):
   # set or clear email-related cookes based on form data
   email = request.form.get('email')
   session['email'] = email # always valid for this session
-  logger.debug('--- do_form_1(): session[email] is {}'.format(session['email']))
   # The email cookie expires now or later, depending on state of "remember me"
   expire_time = datetime.datetime.now()
   remember_me = request.form.get('remember-me')

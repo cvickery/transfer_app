@@ -10,9 +10,5 @@ runtime_config:
 # Attempts to control 502 Gateway Errors by disabling or reducing the frequency of health checks
 # have not been successful. The default is to enable them once a second.
 
-# health_check:
-#   enable_health_check: False
-#   check_interval_sec: 5
-#   timeout_sec: 4
-#   unhealthy_threshold: 2
-#   healthy_threshold: 2
+health_check:
+  check_interval_sec: 10
