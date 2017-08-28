@@ -5,6 +5,8 @@ import os
 import json
 import uuid
 import datetime, time
+import psycopg2
+import psycopg2.extras
 import sqlite3
 
 import logging
@@ -45,20 +47,6 @@ fh.setFormatter(formatter)
 #logger.addHandler(fh)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
-
-sql_logger = logging.getLogger('sqlite3')
-sql_logger.setLevel(logging.DEBUG)
-sfh = logging.FileHandler('debugging.log')
-ssh = logging.StreamHandler()
-sformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-sfh.setFormatter(sformatter)
-ssh.setFormatter(sformatter)
-#sql_logger.addHandler(sfh)
-sql_logger.addHandler(ssh)
-
-sqlite3.enable_callback_tracebacks(False)
-logger.debug('       sqlite3.version {}'.format(sqlite3.version))
-logger.debug('       sqlite3.sqlite_version {}'.format(sqlite3.sqlite_version))
 
 
 #
@@ -191,7 +179,7 @@ def do_form_0(request, session):
     <h1>Step 1: Select Colleges</h1>
     <p>
       This is the first step of a web application for reviewing course transfer rules at CUNY.<br/>
-      Background information and instuctions are available in the
+      Background information and instructions are available in the
       <a
         href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE/edit?usp=sharing">
         CUNY Transfer Rules Evaluation</a> document.
@@ -251,7 +239,7 @@ def do_form_1(request, session):
 
   # Look up all the rules for the source and destination institutions
 
-  source_institution_list = "('" + "', '".join(source_institutionspython) + "')"
+  source_institution_list = "('" + "', '".join(source_institutions) + "')"
   destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
   q = """
   select t.source_course_id as source_id,
@@ -728,14 +716,15 @@ def _sessions():
 def courses():
   num_courses = 0
   if request.method == 'POST':
-    conn = sqlite3.connect('static/db/cuny_catalog.db')
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
+    # conn = sqlite3.connect('static/db/cuny_catalog.db')
+    # conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect('dbname=cuny_courses')
+    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     c.execute("select * from cuny_subjects")
     cuny_subjects = {row['area']:row['description'] for row in c}
 
-    c.execute("select * from careers")
+    c.execute("select * from cuny_careers")
     careers = {(row['institution'], row['career']): row['description'] for row in c}
 
     c.execute("select * from designations")
@@ -745,18 +734,19 @@ def courses():
     c.execute("""
               select name, date_updated
                 from institutions
-               where code ='{}'
-               """.format(institution_code))
+               where code = %s
+               """, [institution_code])
     row = c.fetchone()
     institution_name = row['name']
-    date_updated = datetime.datetime.strptime(row['date_updated'], '%Y-%m-%d').strftime('%B %d, %Y')
-    num_active_courses = c.execute("""
+    date_updated = row['date_updated'].strftime('%B %d, %Y')
+    c.execute("""
         select count(*) from courses
-         where institution = '{}'
+         where institution = %s
            and course_status = 'A'
            and can_schedule = 'Y'
            and discipline_status = 'A'
-        """.format(institution_code)).fetchone()[0]
+        """, [institution_code])
+    num_active_courses = c.fetchone()[0]
 
     result = """
       <h1>{} Courses</h1><p class='subtitle'>{:,} active courses as of {}</p>
@@ -791,9 +781,10 @@ def courses():
   # Form not submitted yet or institution has no courses
   if num_courses == 0:
     prompt = '<fieldset><legend>Select a College</legend>'
-    conn = sqlite3.connect('static/db/cuny_catalog.db')
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
+    # conn = sqlite3.connect('static/db/cuny_catalog.db')
+    # conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect('dbname=cuny_courses')
+    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     c.execute("select * from institutions order by code")
     n = 0
     for row in c:
