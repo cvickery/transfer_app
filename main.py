@@ -1,12 +1,15 @@
 import logging
 import sys
 import os
+import re
+import socket
 
 import json
 import uuid
 import datetime, time
 import psycopg2
 import psycopg2.extras
+
 import sqlite3
 
 import logging
@@ -23,10 +26,10 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # email server
-app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
-app.config['MAIL_PORT'] = 465
+app.config['MAIL_SERVER'] = 'smtp.qc.cuny.edu'
+app.config['MAIL_PORT'] = 25
 app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 
@@ -47,6 +50,41 @@ fh.setFormatter(formatter)
 #logger.addHandler(fh)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
+
+# Use pg_connect to access local (testing) db or the master copy
+def pg_connect(str):
+  """ Connect to local db, use proxy, or connect directly.
+      If USE_LOCAL_DB is set, connect that db locally (default user, etc.)
+      Otherwise, use /cloudsql... with PGPORT, which will be 5431 if the proxy server
+      is running.
+  """
+  dbname = os.environ.get('USE_LOCAL_DB')
+  if dbname != None:
+    return psycopg2.connect('dbname={}'.format(dbname))
+
+  # Extract the dbname from the connection string and set up for deployed GAE access
+  dbname = re.search('dbname=(\w*)', str).group(1)
+  port = 5432
+  host = '/cloudsql/provost-access-148820:us-east1:cuny-courses'
+  user = 'postgres'
+  password = 'cuny-postgres'
+  # if port 5431 is bound, the proxy is running, and the connection string refers to localhost on
+  # that port
+  s = socket.socket()
+  try:
+    c = s.bind(('localhost', 5431))
+  except:
+    # Unable to bind: proxy must be running
+    host = 'localhost'
+    port = 5431
+  s.close()
+  conn_str = 'dbname={} host={} port={} user={} password={}'.format(
+      dbname,
+      host,
+      port,
+      user,
+      password)
+  return psycopg2.connect(conn_str)
 
 
 #
@@ -718,7 +756,7 @@ def courses():
   if request.method == 'POST':
     # conn = sqlite3.connect('static/db/cuny_catalog.db')
     # conn.row_factory = sqlite3.Row
-    conn = psycopg2.connect('dbname=cuny_courses')
+    conn = pg_connect('dbname=cuny_courses')
     c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     c.execute("select * from cuny_subjects")
@@ -783,7 +821,7 @@ def courses():
     prompt = '<fieldset><legend>Select a College</legend>'
     # conn = sqlite3.connect('static/db/cuny_catalog.db')
     # conn.row_factory = sqlite3.Row
-    conn = psycopg2.connect('dbname=cuny_courses')
+    conn = pg_connect('dbname=cuny_courses')
     c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     c.execute("select * from institutions order by code")
     n = 0

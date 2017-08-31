@@ -12,3 +12,6 @@ runtime_config:
 
 health_check:
   check_interval_sec: 10
+
+beta_settings:
+    cloud_sql_instances: provost-access-148820:us-east1:cuny-courses
