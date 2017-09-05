@@ -7,9 +7,8 @@ import socket
 import json
 import uuid
 import datetime, time
-import psycopg2
-import psycopg2.extras
 
+from pgconnection import pgconnection
 import sqlite3
 
 import logging
@@ -51,40 +50,6 @@ fh.setFormatter(formatter)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
 
-# Use pg_connect to access local (testing) db or the master copy
-def pg_connect(str):
-  """ Connect to local db, use proxy, or connect directly.
-      If USE_LOCAL_DB is set, connect that db locally (default user, etc.)
-      Otherwise, use /cloudsql... with PGPORT, which will be 5431 if the proxy server
-      is running.
-  """
-  dbname = os.environ.get('USE_LOCAL_DB')
-  if dbname != None:
-    return psycopg2.connect('dbname={}'.format(dbname))
-
-  # Extract the dbname from the connection string and set up for deployed GAE access
-  dbname = re.search('dbname=(\w*)', str).group(1)
-  port = 5432
-  host = '/cloudsql/provost-access-148820:us-east1:cuny-courses'
-  user = 'postgres'
-  password = 'cuny-postgres'
-  # if port 5431 is bound, the proxy is running, and the connection string refers to localhost on
-  # that port
-  s = socket.socket()
-  try:
-    c = s.bind(('localhost', 5431))
-  except:
-    # Unable to bind: proxy must be running
-    host = 'localhost'
-    port = 5431
-  s.close()
-  conn_str = 'dbname={} host={} port={} user={} password={}'.format(
-      dbname,
-      host,
-      port,
-      user,
-      password)
-  return psycopg2.connect(conn_str)
 
 
 #
@@ -756,8 +721,8 @@ def courses():
   if request.method == 'POST':
     # conn = sqlite3.connect('static/db/cuny_catalog.db')
     # conn.row_factory = sqlite3.Row
-    conn = pg_connect('dbname=cuny_courses')
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    conn = pgconnection('dbname=cuny_courses')
+    c = conn.cursor()
 
     c.execute("select * from cuny_subjects")
     cuny_subjects = {row['area']:row['description'] for row in c}
@@ -821,8 +786,8 @@ def courses():
     prompt = '<fieldset><legend>Select a College</legend>'
     # conn = sqlite3.connect('static/db/cuny_catalog.db')
     # conn.row_factory = sqlite3.Row
-    conn = pg_connect('dbname=cuny_courses')
-    c = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    conn = pgconnection('dbname=cuny_courses')
+    c = conn.cursor()
     c.execute("select * from institutions order by code")
     n = 0
     for row in c:
