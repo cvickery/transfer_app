@@ -45,7 +45,7 @@ class pgconnection:
         port,
         user,
         password)
-    self._connectiion = psycopg2.connect(conn_str)
+    self._connection = psycopg2.connect(conn_str)
 
   # Connection shims
   def commit(self):
