@@ -22,5 +22,7 @@ workers = multiprocessing.cpu_count() * 2 + 1
 
 """
   Trying an async model to deal with 502 errors.
+  502 Errors were (probably) due to use of sqlite and should disappear with the adoption of
+  postgres for the database. However, the async model should do no harm and is retained.
 """
 worker_class = 'gevent'

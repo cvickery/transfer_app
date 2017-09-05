@@ -8,10 +8,14 @@ runtime_config:
   python_version: 3
 
 # Attempts to control 502 Gateway Errors by disabling or reducing the frequency of health checks
-# have not been successful. The default is to enable them once a second.
+# have not been successful. The default is to enable them once a second. Because the app will be
+# low-demand, cutting back on the health check frequency should reduce demands on the system with
+# negligible impact on reliability.
 
 health_check:
   check_interval_sec: 10
 
+# This beta setting is necessary for the db hostname parameter to be able to handle a URI in the
+# form “/cloudsql/...” where ... is the instance given here:
 beta_settings:
     cloud_sql_instances: provost-access-148820:us-east1:cuny-courses
