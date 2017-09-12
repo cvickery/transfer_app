@@ -14,7 +14,7 @@ class CUNYCourse:
       raise ValueError('"{}" is not a valid course_id'.format(course_id))
     self.course_id = m.group(1)
 
-    conn = pgconnection('db_name=cuny_courses')
+    conn = pgconnection('dbname=cuny_courses')
     c = conn.cursor()
     c.execute("select * from courses where course_id = '{}'".format(course_id))
     course = c.fetchone()
