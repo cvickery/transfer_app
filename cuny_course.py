@@ -1,4 +1,4 @@
-import sqlite3
+from pgconnection import pgconnection
 import re
 
 # CUNYCourse
@@ -14,8 +14,7 @@ class CUNYCourse:
       raise ValueError('"{}" is not a valid course_id'.format(course_id))
     self.course_id = m.group(1)
 
-    conn = sqlite3.connect('static/db/cuny_catalog.db')
-    conn.row_factory = sqlite3.Row
+    conn = pgconnection('db_name=cuny_courses')
     c = conn.cursor()
     c.execute("select * from courses where course_id = '{}'".format(course_id))
     course = c.fetchone()
@@ -24,7 +23,7 @@ class CUNYCourse:
       cuny_subject = c.fetchone()[1]
 
       c.execute("""
-                select description from careers where institution = '{}' and career = '{}'
+                select description from cuny_careers where institution = '{}' and career = '{}'
                 """.format(course['institution'], course['career']))
       career = c.fetchone()[0]
 

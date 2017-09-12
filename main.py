@@ -9,7 +9,6 @@ import uuid
 import datetime, time
 
 from pgconnection import pgconnection
-import sqlite3
 
 import logging
 
@@ -118,8 +117,7 @@ def do_form_0(request, session):
       Display form_1 to get aource and destination institutions; user's email.
   """
   logger.debug('*** do_form_0({})'.format(session))
-  conn = sqlite3.connect('static/db/cuny_catalog.db')
-  conn.row_factory = sqlite3.Row
+  conn = pgconnection('dbname=cuny_courses')
   c = conn.cursor()
   c.execute("select * from institutions order by lower(name)")
   institution_list = c.fetchall()
@@ -225,15 +223,13 @@ def do_form_1(request, session):
       Generate Form 2: select discipline(s)
   """
   logger.debug('*** do_form_1({})'.format(session))
+
   # Capture form data in user's session
-  source_institutions = request.form.getlist('source')
-  source_institutions.append('fake')
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
 
   # Get filter info
-  conn = sqlite3.connect('static/db/cuny_catalog.db')
-  conn.row_factory = sqlite3.Row
+  conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
   # Get source and destination institiution names
@@ -242,8 +238,8 @@ def do_form_1(request, session):
 
   # Look up all the rules for the source and destination institutions
 
-  source_institution_list = "('" + "', '".join(source_institutions) + "')"
-  destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
+  source_institution_params = ', '.join('%s' for i in session['source_institutions'])
+  destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
   q = """
   select t.source_course_id as source_id,
          c1.institution as source_institution,
@@ -257,13 +253,13 @@ def do_form_1(request, session):
          c2.cuny_subject as destination_subject
     from transfer_rules t, courses c1, courses c2
     where
-          c1.institution in {} and c2.institution in {}
+          c1.institution in ({}) and c2.institution in ({})
       and c1.course_id = t.source_course_id
       and c2.course_id = t.destination_course_id
     order by source_institution, destination_institution, source_course
-  """.format(source_institution_list, destination_institution_list)
+  """.format(source_institution_params, destination_institution_params)
   logger.debug('    About to execute query:\n{}'.format(q))
-  cursor.execute(q)
+  cursor.execute(q, session['source_institutions'] + session['destination_institutions'])
   Rule = namedtuple('Rule', ['source_id', 'source_institution', 'source_discipline',
                               'source_course', 'source_subject',
                               'destination_id', 'destination_institution', 'destination_discipline',
@@ -303,7 +299,7 @@ def do_form_1(request, session):
   cursor.execute("select * from cuny_subjects")
   cuny_subjects = {row['area']:row['description'] for row in cursor}
 
-  cursor.execute("select * from careers")
+  cursor.execute("select * from cuny_careers")
   careers = {(row['institution'], row['career']): row['description'] for row in cursor}
 
   cursor.execute("select * from designations")
@@ -488,23 +484,20 @@ def do_form_2(request, session):
       Generate form_3: the selected transfer rules for evaluation
   """
   logger.debug('*** do_form_2({})'.format(session))
-  conn = sqlite3.connect('static/db/cuny_catalog.db')
-  conn.row_factory = sqlite3.Row
+  conn = pgconnection('dbname=cuny_courses')
   c = conn.cursor()
 
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
   # the source subjects and the receiving course blongs to a receiving institution and is one of
   # the receiving subjects.
   try:
-    source_institution_list = "('" + "', '".join(session['source_institutions']) + "')"
-    destination_institution_list = "('" + "', '".join(session['destination_institutions']) + "')"
+    source_institution_params = ', '.join('%s' for i in session['source_institutions'])
+    destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
   except:
-    # the session is expired or invalid. Got back to Step 1.
+    # the session is expired or invalid. Go back to Step 1.
     return render_template('transfers.html', result=Markup('{}'.format(session)))
-  source_subjects = [subject for subject in request.form.getlist('source_subject')]
-  destination_subjects = [subject for subject in request.form.getlist('destination_subject')]
-  source_subject_list = "('" + "', '".join(source_subjects)      + "')"
-  destination_subject_list = "('" + "', '".join(destination_subjects) + "')"
+  source_subject_params = ', '.join('%s' for s in request.form.getlist('source_subject'))
+  destination_subject_params = ', '.join('%s' for s in request.form.getlist('destination_subject'))
   q = """
   select  t.source_course_id,                                 -- 0 id
           i1.prompt as source_institution,                    -- 1 institution
@@ -515,21 +508,25 @@ def do_form_2(request, session):
           c2.discipline||'-'||c2.number as destination_course -- 5 course
    from   transfer_rules t, courses c1, courses c2, institutions i1, institutions i2
   where
-          c1.institution in {}
-      and c1.cuny_subject in {}
-      and c2.institution in {}
-      and c2.cuny_subject in {}
+          c1.institution in ({})
+      and c1.cuny_subject in ({})
+      and c2.institution in ({})
+      and c2.cuny_subject in ({})
       and c1.course_id = t.source_course_id
       and c2.course_id = t.destination_course_id
       and i1.code = c1.institution
       and i2.code = c2.institution
-    order by lower(source_institution), source_course,
-             lower(destination_institution), destination_course
-  """.format(source_institution_list,
-             source_subject_list,
-             destination_institution_list,
-             destination_subject_list)
-  c.execute(q)
+    order by lower(i1.prompt), source_course,
+             lower(i2.prompt), destination_course
+  """.format(source_institution_params,
+             source_subject_params,
+             destination_institution_params,
+             destination_subject_params)
+  logger.debug('do_form_2() about to execute\n{}'.format(q))
+  c.execute(q, session['source_institutions'] +
+               request.form.getlist('source_subject') +
+               session['destination_institutions'] +
+               request.form.getlist('destination_subject'))
   rules = c.fetchall()
   if rules == None: rules = []
 
@@ -594,9 +591,8 @@ def do_form_3(request, session):
     # Insert these evaluations into the pending_evaluations table.
     token = str(uuid.uuid4())
     evaluations = json.dumps(kept_evaluations)
-    q = "insert into pending_evaluations values(?, ?, ?)"
-    conn = sqlite3.connect('static/db/cuny_catalog.db')
-    conn.row_factory = sqlite3.Row
+    q = "insert into pending_evaluations values(%s, %s, %s)"
+    conn = pgconnection('dbname=cuny_courses')
     c = conn.cursor()
     c.execute(q, (token, evaluations, time.time()))
     conn.commit()
@@ -685,10 +681,8 @@ def _course():
 # then, it's just here in case it's needed.
 @app.route('/_sessions')
 def _sessions():
-  conn = sqlite3.connect('static/db/cuny_catalog.db')
-  conn.row_factory = sqlite3.Row
+  conn = pgconnection('dbname=cuny_courses')
   c = conn.cursor()
-  c.execute('pragma foreign_keys = 1') # NOTE TO SELF FOR DOING INSERTS LATER
   q = 'select session_key, expiration_time from sessions'
   c.execute(q)
   result = '<table>'
@@ -719,8 +713,7 @@ def _sessions():
 def courses():
   num_courses = 0
   if request.method == 'POST':
-    # conn = sqlite3.connect('static/db/cuny_catalog.db')
-    # conn.row_factory = sqlite3.Row
+    # conn = pgconnection('dbname=cuny_courses')
     conn = pgconnection('dbname=cuny_courses')
     c = conn.cursor()
 
@@ -784,8 +777,7 @@ def courses():
   # Form not submitted yet or institution has no courses
   if num_courses == 0:
     prompt = '<fieldset><legend>Select a College</legend>'
-    # conn = sqlite3.connect('static/db/cuny_catalog.db')
-    # conn.row_factory = sqlite3.Row
+    # conn = pgconnection('dbname=cuny_courses')
     conn = pgconnection('dbname=cuny_courses')
     c = conn.cursor()
     c.execute("select * from institutions order by code")
