@@ -50,7 +50,6 @@ fh.setFormatter(formatter)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
 
-
 #
 # Overhead URIs
 @app.route('/favicon.ico')
@@ -258,14 +257,12 @@ def do_form_1(request, session):
       and c2.course_id = t.destination_course_id
     order by source_institution, destination_institution, source_course
   """.format(source_institution_params, destination_institution_params)
-  logger.debug('    About to execute query:\n{}'.format(q))
   cursor.execute(q, session['source_institutions'] + session['destination_institutions'])
   Rule = namedtuple('Rule', ['source_id', 'source_institution', 'source_discipline',
                               'source_course', 'source_subject',
                               'destination_id', 'destination_institution', 'destination_discipline',
                               'destination_course', 'destination_subject'])
   rules = [rule for rule in map(Rule._make, cursor.fetchall())]
-  logger.debug('--- do_form_1(): query returned {:,} rules'.format(len(rules)))
 
   # Create lists of disciplines for subjects found in the transfer rules
   #   This gives a set of institution:discipline pairs for each subject
@@ -473,7 +470,6 @@ def do_form_1(request, session):
   response = make_response(render_template('transfers.html', result=Markup(result)))
   response.set_cookie('email', email, expires=expire_time)
   response.set_cookie('remember-me', 'on', expires=expire_time)
-  logger.debug('--- returning from do_form_1()')
   return response
 
 # do_form_2()
@@ -522,7 +518,6 @@ def do_form_2(request, session):
              source_subject_params,
              destination_institution_params,
              destination_subject_params)
-  logger.debug('do_form_2() about to execute\n{}'.format(q))
   c.execute(q, session['source_institutions'] +
                request.form.getlist('source_subject') +
                session['destination_institutions'] +
@@ -556,7 +551,7 @@ def do_form_2(request, session):
       </span>
     </p>
     <button type="text" id="send-email" disabled="disabled">
-      Review your evaluations before sending verification email to <em id="email-address">{}</em>.
+      Review your evaluations before sending a confirmation email to <em id="email-address">{}</em>.
     </button>
   </fieldset>
   <p>Click on a rule to evaluate it.</p>
@@ -676,7 +671,6 @@ def format_pending(item):
   """ Generate a table row that describes pending evaluations.
       TODO: add a column with checkboxex for evaluations to be purged, if an administration user is logged in.
   """
-  logger.debug(item)
   evaluations = json.loads(item['evaluations'])
   suffix = 's'
   if len(evaluations) == 1:
@@ -718,7 +712,6 @@ def transfers():
       if any, the user submitted.
   """
   logger.debug('*** {} /transfers/ ***'.format(request.method))
-  logger.debug(request.headers)
   mysession = MySession(request.cookies.get('mysession'))
 
   # Dispatcher for forms
