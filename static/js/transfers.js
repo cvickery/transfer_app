@@ -254,14 +254,16 @@ $(function ()
         $('#evaluation-form').hide();
       });
         // Enable form submission only if an input has changed.
-        $('input, textarea').change(function ()
+        $('input').change(setup_ok_to_submit);
+        $('textarea').keyup(setup_ok_to_submit);
+        function setup_ok_to_submit()
         {
           var comment_len = $('#comment-text').val().length;
           var ok_to_submit = ($(this).attr('id') === 'src-ok' ||
                               $(this).attr('id') === 'dest-ok' ||
                               comment_len > 12);
           $('#review-submit').attr('disabled', !ok_to_submit);
-        });
+        }
 
         // Process evaluation info if submitted
         $('#review-submit').click(function (event)
@@ -315,7 +317,7 @@ $(function ()
     // Review and send email button click
     // --------------------------------------------------------------------------------------------
     /* Generate a form for reviewing the evaluations so the user can omit items they don't
-     * intend. Then submit the form to a web page that actually enters the items into the "pending"
+     * intend. Then submit the form to a web page that actually enters the items into the pending_evaluations
      * table and sends email to the user.
      */
     $('#send-email').click(function (event)

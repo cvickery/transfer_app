@@ -1,7 +1,7 @@
 """ Attempting to reinvent the wheel for Flask sessions.
 
     The issue is the size of the session, with too many replacement options to learn. Can I roll my
-    own in a reasonable amount of time%s
+    own in a reasonable amount of time?
 
     Plan: sessions is a table in the cuny_courses db. Key-value pairs. Unique keys from
     urandom. Blobs for value. I want the following operations to work, where key is not the db

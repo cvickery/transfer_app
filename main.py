@@ -16,6 +16,7 @@ from collections import namedtuple
 
 from cuny_course import CUNYCourse
 from mysession import MySession
+from sendtoken import send_token
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
@@ -50,7 +51,6 @@ logger.addHandler(sh)
 logger.debug('Debug: App Start')
 
 
-
 #
 # Overhead URIs
 @app.route('/favicon.ico')
@@ -65,7 +65,7 @@ def error():
   result = "<h1>Error</h1>"
   return render_template('transfers.html', result=Markup(result))
 
-#
+
 # QC Applications
 # =================================================================================================
 # Index: Require user to sign in using  QC email address, and provide a menu of applications.
@@ -589,23 +589,56 @@ def do_form_3(request, session):
                 'eleven', 'twelve'][count - 2]
       message_tail = '{} evaluations'.format(count)
     # Insert these evaluations into the pending_evaluations table.
-    token = str(uuid.uuid4())
-    evaluations = json.dumps(kept_evaluations)
-    q = "insert into pending_evaluations values(%s, %s, %s)"
     conn = pgconnection('dbname=cuny_courses')
     c = conn.cursor()
-    c.execute(q, (token, evaluations, time.time()))
+    token = str(uuid.uuid4())
+    evaluations = json.dumps(kept_evaluations)
+    q = "insert into pending_evaluations (token, email, evaluations) values(%s, %s, %s)"
+    c.execute(q, (token, email, evaluations))
     conn.commit()
     conn.close()
-    # Send email with the token for verification
-    #
+
+    # Sentence templates
+    evaluation_dict = dict()
+    evaluation_dict['ok'] = '{} OK'
+    evaluation_dict['not-ok'] = '{} NOT OK: {}'
+    evaluation_dict['other'] = 'Other: {}'
+
+    # Send confirmation email
+    evaluation_rows = ''
+    for evaluation in kept_evaluations:
+      event_type = evaluation['event_type']
+      if event_type == 'src-ok':
+        description = evaluation_dict['ok'].format(evaluation['source_institution'])
+      elif event_type == 'dest-ok':
+        description = evaluation_dict['ok'].format(evaluation['destination_institution'])
+      elif event_type == 'src-not-ok':
+        description = evaluation_dict['not-ok'].format(evaluation['source_institution'], evaluation['comment_text'])
+      elif event_type == 'dest-not-ok':
+        description = evaluation_dict['not-ok'].format(evaluation['destination_institution'], evaluation['comment_text'])
+      else:
+        description = evaluation_dict['other'].format(evaluation['comment_text'])
+
+      evaluation_rows += """
+        <tr>
+          <td style="border: 1px solid black; padding:0.5em;">{}</td>
+          <td style="border: 1px solid black; padding:0.5em;">{}</td>
+        </tr>
+        """.format(evaluation['rule_str'], description)
+
+    fqdn = socket.getfqdn()
+    url =  'https://' + fqdn + '/confirmation/' + token
+    if fqdn == 'babbage.cs.qc.cuny.edu' or fqdn.endswith('.local'):
+      url = 'http://localhost:5000/confirmation/' + token
+
+    send_token(email, url, evaluation_rows)
+
     result = """
     <h1>Step 4: Respond to Email</h1>
     <p>
-      We have sent an email to {}. Click on the 'Confirm' button in that email to confirm that you
-      actually wish to submit your {}.
+      Check your email at {}.<br/>Click on the 'activate these evaluations' button in that email to
+      confirm that you actually wish to have your {} recorded.
     </p>
-    <p class="error">Under development: no email actually sent.</p>
     <p>
       Thank you for your work!
     </p>
@@ -614,13 +647,65 @@ def do_form_3(request, session):
     """.format(email, message_tail)
   return render_template('transfers.html', result=Markup(result))
 
-# confirmation()
+# PENDING PAGE
 # -------------------------------------------------------------------------------------------------
-def confirmation(request, session):
+@app.route('/pending')
+def pending():
+  """ Display pending evaluations.
+      TODO: Implement login option so defined users can manage this table.
+  """
+  conn = pgconnection('dbname=cuny_courses')
+  c = conn.cursor()
+  c.execute("select email, evaluations, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered from pending_evaluations")
+  rows = ''
+  for pending in c.fetchall():
+    rows += format_pending(pending)
+  if rows == '':
+    table = '<h2>There are no pending evaluations.</h2>'
+  else:
+    table = '<table>{}</table>'.format(rows)
   result = """
-  <h1>Confirmation</h1>
+  <h1>Pending Evaluations</h1>
+  {}
+  """.format(table)
+  return render_template('transfers.html', result=Markup(result))
+
+# format_pending()
+# -------------------------------------------------------------------------------------------------
+def format_pending(item):
+  """ Generate a table row that describes pending evaluations.
+      TODO: add a column with checkboxex for evaluations to be purged, if an administration user is logged in.
+  """
+  logger.debug(item)
+  evaluations = json.loads(item['evaluations'])
+  suffix = 's'
+  if len(evaluations) == 1:
+    suffix = ''
+  return """<tr><td>{} evaluation{} by {} on {}</td></tr>
+  """.format(len(evaluations), suffix, item['email'], item['when_entered'])
+
+# CONFIRMATION PAGE
+# -------------------------------------------------------------------------------------------------
+@app.route('/confirmation/<token>', methods=['GET'])
+def confirmation(token):
+  # Make sure the token is received and is in the pending table.
+  conn = pgconnection('dbname=cuny_courses')
+  c = conn.cursor()
+  q = 'select * from pending_evaluations where token = %s'
+  c.execute(q, (token,))
+  rows = c.fetchall()
+  msg = ''
+  if len(rows) == 0:
+    msg = '<p class="error">No pending evaluations found.</p>'
+  if len(rows) > 1:
+    msg = '<p class="error">Program Error: multiple pending_evaluations.</p>'
+  if len(rows) == 1:
+    pass
+  result = """
+
+  <h1>Confirmation {}</h1>
   <p class="error">Confirmation processing not implemented yet.</p>
-    """
+    """.format(token)
   return render_template('transfers.html', result=Markup(result))
 
 
@@ -641,7 +726,6 @@ def transfers():
     'do_form_1': do_form_1,
     'do_form_2': do_form_2,
     'do_form_3': do_form_3,
-    'confirmation': confirmation
   }
 
   if request.method == 'POST':
@@ -705,6 +789,7 @@ def _sessions():
     if num_expired == 1: msg = '<p>Deleted one expired session.</p>'
     else: msg = '<p>Deleted {} expired sessions.</p>'.format(num_expired)
   return result + '</table>' + msg
+
 
 # COURSES PAGE
 # =================================================================================================
@@ -800,7 +885,6 @@ def courses():
     <form>
     """.format(prompt)
   return render_template('courses.html', result=Markup(result))
-
 
 
 @app.errorhandler(500)

@@ -5,9 +5,9 @@ import smtplib
 from email.message import EmailMessage
 from email.headerregistry import Address
 
-def send_token(token, url, email, evaluations='<tr><td>None</td></tr>'):
+def send_token(email, url, evaluation_rows='<tr><td>None</td></tr>'):
   """
-      Send an email with a link to verfiy evaluations to someone.
+      Send email with a link to confirm evaluations.
   """
   parsed_url = urlparse(url)
   msg = EmailMessage()
@@ -34,7 +34,7 @@ def send_token(token, url, email, evaluations='<tr><td>None</td></tr>'):
         Clicking the link below will open a confirmation page at
         {}.
       </h2>
-        <a  href="{}?token={}"
+        <a  href="{}"
             style="font-weight: bold;
                    font-variant:small-caps;
                    padding:0.5em;
@@ -44,6 +44,6 @@ def send_token(token, url, email, evaluations='<tr><td>None</td></tr>'):
         </a>
     </body>
   </html>
-  """.format(evaluations, parsed_url.netloc, parsed_url.geturl(), token), subtype="html")
+  """.format(evaluation_rows, parsed_url.netloc, parsed_url.geturl()), subtype="html")
   with smtplib.SMTP('localhost') as s:
     s.send_message(msg)
