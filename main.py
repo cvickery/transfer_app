@@ -20,6 +20,7 @@ from sendtoken import send_token
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
+from flask_mail import Mail
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -31,9 +32,8 @@ app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-
-# administrator list
-ADMINS = ['your-gmail-username@gmail.com']
+app.config['MAIL_DEFAULT_SENDER'] = 'confirmation.email@provost-access-148820.appspotmail.com'
+mail = Mail(app)
 
 #
 # Initialization
@@ -626,7 +626,7 @@ def do_form_3(request, session):
     if fqdn == 'babbage.cs.qc.cuny.edu' or fqdn.endswith('.local'):
       url = 'http://localhost:5000/confirmation/' + token
 
-    send_token(email, url, evaluation_rows)
+    send_token(mail, email, url, evaluation_rows)
 
     result = """
     <h1>Step 4: Respond to Email</h1>
