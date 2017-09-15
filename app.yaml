@@ -18,4 +18,4 @@ health_check:
 # This beta setting is necessary for the db hostname parameter to be able to handle a URI in the
 # form “/cloudsql/...” where ... is the instance given here:
 beta_settings:
-    cloud_sql_instances: provost-access-148820:us-east1:cuny-coursesgoogle-api-python-client
+    cloud_sql_instances: provost-access-148820:us-east1:cuny-courses

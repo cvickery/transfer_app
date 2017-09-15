@@ -7,8 +7,7 @@ def send_token(mail, email, url, evaluation_rows='<tr><td>None</td></tr>'):
   """
   parsed_url = urlparse(url)
 
-  msg = Message(subject='Link for confirming your evaluations', recipients=[email],
-                sender='confirmation.email@provost-access-148820.appspotmail.com')
+  msg = Message(subject='Link for confirming your evaluations', recipients=[email])
 
   msg.body = 'You need to view this message as HTML'
   msg.html = """

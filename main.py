@@ -25,11 +25,11 @@ from flask_mail import Mail
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# email server
-app.config['MAIL_SERVER'] = 'smtp.qc.cuny.edu'
+# email setup
 app.config['MAIL_PORT'] = 25
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER')
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = 'confirmation.email@provost-access-148820.appspotmail.com'
@@ -446,6 +446,12 @@ def do_form_1(request, session):
 
   result = """
   <h1>Step 2: Select CUNY Subjects</h1>
+  <p>
+    Disciplines are grouped by CUNY subject area.<br/>
+    Select at least one sending subject area and at least one receiving subject area.<br/>
+    The next step will show all transfer rules for courses in the corresponding pairs of
+    disciplines.
+  </p>
   <form method="post" action="" id="form-2">
     <fieldset>
       <div>There are {:,} transfer rules where {}.</div>
@@ -492,8 +498,14 @@ def do_form_2(request, session):
   except:
     # the session is expired or invalid. Go back to Step 1.
     return render_template('transfers.html', result=Markup('{}'.format(session)))
-  source_subject_params = ', '.join('%s' for s in request.form.getlist('source_subject'))
-  destination_subject_params = ', '.join('%s' for s in request.form.getlist('destination_subject'))
+
+  source_subject_list = request.form.getlist('source_subject')
+  destination_subject_list = request.form.getlist('destination_subject')
+  if len(source_subject_list) < 1 or len(destination_subject_list) < 1:
+    return(render_template('transfers.html', result=Markup(
+                           '<h1 class="error">Missing sending or receiving subject.</h1>')))
+  source_subject_params = ', '.join('%s' for s in source_subject_list)
+  destination_subject_params = ', '.join('%s' for s in destination_subject_list)
   q = """
   select  t.source_course_id,                                 -- 0 id
           i1.prompt as source_institution,                    -- 1 institution
@@ -519,9 +531,9 @@ def do_form_2(request, session):
              destination_institution_params,
              destination_subject_params)
   c.execute(q, session['source_institutions'] +
-               request.form.getlist('source_subject') +
+               source_subject_list +
                session['destination_institutions'] +
-               request.form.getlist('destination_subject'))
+               destination_subject_list)
   rules = c.fetchall()
   if rules == None: rules = []
 
