@@ -20,20 +20,19 @@ from sendtoken import send_token
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
-from flask_mail import Mail
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # email setup
-app.config['MAIL_PORT'] = 25
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_SERVER'] = 'smtp.qc.cuny.edu'
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-app.config['MAIL_DEFAULT_SENDER'] = 'confirmation.email@provost-access-148820.appspotmail.com'
-mail = Mail(app)
+# app.config['MAIL_PORT'] = 587 # 25
+# app.config['MAIL_USE_TLS'] = True # False
+# app.config['MAIL_USE_SSL'] = False
+# app.config['MAIL_SERVER'] = 'mymail.qc.cuny.edu' # 'smtp.sendgrid.net'
+# app.config['MAIL_USERNAME'] = 'poffice@qc.cuny.edu' # os.environ.get('MAIL_USERNAME')
+# app.config['MAIL_PASSWORD'] = 'pofficeSendGrid1'
+# app.config['MAIL_DEFAULT_SENDER'] = 'poffice@qc.cuny.edu' # 'confirmation.email@provost-access-148820.appspotmail.com'
+# mail = Mail(app)
 
 #
 # Initialization
@@ -638,20 +637,22 @@ def do_form_3(request, session):
     if fqdn == 'babbage.cs.qc.cuny.edu' or fqdn.endswith('.local'):
       url = 'http://localhost:5000/confirmation/' + token
 
-    send_token(mail, email, url, evaluation_rows)
+    response = send_token(email, url, evaluation_rows)
+    if response.status_code != 202:
+      result = 'Error sending email: {}'.format(response.body)
+    else:
+      result = """
+      <h1>Step 4: Respond to Email</h1>
+      <p>
+        Check your email at {}.<br/>Click on the 'activate these evaluations' button in that email to
+        confirm that you actually wish to have your {} recorded.
+      </p>
+      <p>
+        Thank you for your work!
+      </p>
+      <a href="/transfers/" class="restart">Restart</a>
 
-    result = """
-    <h1>Step 4: Respond to Email</h1>
-    <p>
-      Check your email at {}.<br/>Click on the 'activate these evaluations' button in that email to
-      confirm that you actually wish to have your {} recorded.
-    </p>
-    <p>
-      Thank you for your work!
-    </p>
-    <a href="/transfers/" class="restart">Restart</a>
-
-    """.format(email, message_tail)
+      """.format(email, message_tail)
   return render_template('transfers.html', result=Markup(result))
 
 # PENDING PAGE
