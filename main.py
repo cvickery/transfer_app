@@ -632,10 +632,11 @@ def do_form_3(request, session):
         </tr>
         """.format(evaluation['rule_str'], description)
 
-    fqdn = socket.getfqdn()
-    url =  'https://' + fqdn + '/confirmation/' + token
-    if fqdn == 'babbage.cs.qc.cuny.edu' or fqdn.endswith('.local'):
-      url = 'http://localhost:5000/confirmation/' + token
+    hostname = os.environ.get('HOSTNAME')
+    if hostname == None: hostname = 'https://provost-access-148820.appspot.com'
+    if hostname == 'babbage.cs.qc.cuny.edu' or hostname.endswith('.local'):
+      hostname = 'http://localhost:5000'
+    url = hostname + '/confirmation/' + token
 
     response = send_token(email, url, evaluation_rows)
     if response.status_code != 202:
