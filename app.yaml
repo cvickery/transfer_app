@@ -19,3 +19,7 @@ health_check:
 # form “/cloudsql/...” where ... is the instance given here:
 beta_settings:
     cloud_sql_instances: provost-access-148820:us-east1:cuny-courses
+
+env_variables:
+    SENDGRID_API_KEY: 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
+    SENDGRID_SENDER: poffice@qc.cuny.edu
