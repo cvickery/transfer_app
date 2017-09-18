@@ -633,13 +633,11 @@ def do_form_3(request, session):
         """.format(evaluation['rule_str'], description)
 
     hostname = os.environ.get('HOSTNAME')
-    logger.debug('os says HOSTNAME is {}'.format(hostname))
-    if hostname == 'babbage.cs.qc.cuny.edu' or hostname.endswith('.local'):
+    if hostname == 'babbage.cs.qc.cuny.edu' or (hostname and hostname.endswith('.local')):
       hostname = 'http://localhost:5000'
     else:
       hostname = 'https://provost-access-148820.appspot.com'
     url = hostname + '/confirmation/' + token
-    logger.debug('url is "{}"'.format(url))
 
     response = send_token(email, url, evaluation_rows)
     if response.status_code != 202:
