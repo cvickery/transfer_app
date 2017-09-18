@@ -1,5 +1,4 @@
 import os
-from urllib.parse import urlparse
 import sendgrid
 from sendgrid.helpers import mail
 
@@ -8,7 +7,6 @@ def send_token(email, url, evaluation_rows='<tr><td>None</td></tr>'):
       Send email with a link to confirm evaluations.
   """
   sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
-  parsed_url = urlparse(url)
 
   to_email = mail.Email(email)
   from_email = mail.Email('Tranfer.Evaluations@provost-access-148820.appspotmail.com')
