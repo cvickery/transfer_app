@@ -27,7 +27,7 @@ def send_token(email, url, evaluation_rows='<tr><td>None</td></tr>'):
     {}
   </table>
   <h2>
-    The link below will activate your evaluation{} abd open a confirmation page at {}.
+    The link below will activate your evaluation{} and open a confirmation page at {}.
   </h2>
   <a  href="{}"
       style="font-weight: bold;
