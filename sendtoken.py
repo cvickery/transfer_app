@@ -14,6 +14,8 @@ def send_token(email, url, evaluation_rows='<tr><td>None</td></tr>'):
   from_email = mail.Email('Tranfer.Evaluations@provost-access-148820.appspotmail.com')
   subject = 'Link for confirming your evaluations'
   text_body = mail.Content('text/plain', 'You need to view this message as HTML')
+  suffix = 's'
+  if evaluation_rows.count('<tr>') == 1: suffix = ''
   html_body = mail.Content('text/html',"""
   <p>
     Use the button below to confirm that you have evaluated the following transfer rules and
@@ -25,8 +27,7 @@ def send_token(email, url, evaluation_rows='<tr><td>None</td></tr>'):
     {}
   </table>
   <h2>
-    Clicking the link below will open a confirmation page at
-    {}.
+    The link below will activate your evaluation{} abd open a confirmation page at {}.
   </h2>
   <a  href="{}"
       style="font-weight: bold;
@@ -34,9 +35,13 @@ def send_token(email, url, evaluation_rows='<tr><td>None</td></tr>'):
              padding:0.5em;
              font-size: 1.3em;"
              border-radius=0.25em;>
-    activate these evaluations
+    activate evaluation{}
   </a>
-  """.format(evaluation_rows, parsed_url.netloc, parsed_url.geturl()))
+  """.format(evaluation_rows,
+             suffix,
+             parsed_url.netloc.replace('.', '․'),
+             parsed_url.geturl(),
+             suffix))
   message = mail.Mail(from_email, subject, to_email, html_body)
   response = sg.client.mail.send.post(request_body=message.get())
   return response
