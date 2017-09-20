@@ -196,6 +196,9 @@ button:disabled {
   background-color: #eee;
 }
 
+#send-email:enabled {
+  border: 2px solid black;
+}
 .evaluated td {
   background-color: #eee;
   color: #333;

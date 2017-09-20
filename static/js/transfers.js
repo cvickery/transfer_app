@@ -13,6 +13,7 @@ $(function ()
   {
     if (event.keyCode === 27)
     {
+      $('.rule').removeClass('selected-rule');
       $('#evaluation-form').hide();
     }
   });
@@ -243,7 +244,8 @@ $(function ()
 
       $('#evaluation-form').html(dismiss_bar + source_catalog + destination_catalog + controls)
                            .css('width', '40%')
-                           .show();
+                           .show()
+                           .draggable();
       var evaluation_form = document.getElementById('evaluation-form');
       var eval_form_rect = evaluation_form.getBoundingClientRect();
       evaluation_form.style.position = 'fixed';
@@ -251,6 +253,7 @@ $(function ()
       evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
       $('.dismiss').click(function ()
       {
+        $('.rule').removeClass('selected-rule');
         $('#evaluation-form').hide();
       });
         // Enable form submission only if an input has changed.

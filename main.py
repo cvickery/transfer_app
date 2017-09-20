@@ -17,22 +17,13 @@ from collections import namedtuple
 from cuny_course import CUNYCourse
 from mysession import MySession
 from sendtoken import send_token
+from evaluations import process_pending
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-
-# email setup
-# app.config['MAIL_PORT'] = 587 # 25
-# app.config['MAIL_USE_TLS'] = True # False
-# app.config['MAIL_USE_SSL'] = False
-# app.config['MAIL_SERVER'] = 'mymail.qc.cuny.edu' # 'smtp.sendgrid.net'
-# app.config['MAIL_USERNAME'] = 'poffice@qc.cuny.edu' # os.environ.get('MAIL_USERNAME')
-# app.config['MAIL_PASSWORD'] = 'pofficeSendGrid1'
-# app.config['MAIL_DEFAULT_SENDER'] = 'poffice@qc.cuny.edu' # 'confirmation.email@provost-access-148820.appspotmail.com'
-# mail = Mail(app)
 
 #
 # Initialization
