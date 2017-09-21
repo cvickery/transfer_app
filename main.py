@@ -686,6 +686,7 @@ def format_pending(item):
 
 # CONFIRMATION PAGE
 # -------------------------------------------------------------------------------------------------
+# This is the handler for clicks in the confirmation email.
 @app.route('/confirmation/<token>', methods=['GET'])
 def confirmation(token):
   # Make sure the token is received and is in the pending table.
@@ -696,28 +697,29 @@ def confirmation(token):
   rows = c.fetchall()
   msg = ''
   if len(rows) == 0:
-    msg = '<p class="error">No pending evaluations found.</p>'
+    msg = '<p class="error">This evaluation report has either expired or already been recorded.</p>'
   if len(rows) > 1:
     msg = '<p class="error">Program Error: multiple pending_evaluations.</p>'
   if len(rows) == 1:
-    pass
+    msg = process_pending(rows[0])
   result = """
 
-  <h1>Confirmation {}</h1>
-  <p class="error">Confirmation processing not implemented yet.</p>
-    """.format(token)
+  <h1>Confirmation</h1>
+  <p>Evaluation Report ID: {}</p>
+  {}
+    """.format(token, msg)
   return render_template('transfers.html', result=Markup(result))
 
 
 # TRANSFERS PAGE
 # =================================================================================================
 #
-@app.route('/transfers/', methods=['POST', 'GET'])
+@app.route('/review_transfers/', methods=['POST', 'GET'])
 def transfers():
   """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
       if any, the user submitted.
   """
-  logger.debug('*** {} /transfers/ ***'.format(request.method))
+  logger.debug('*** {} /review_transfers/ ***'.format(request.method))
   mysession = MySession(request.cookies.get('mysession'))
 
   # Dispatcher for forms
@@ -766,7 +768,7 @@ def _course():
 def _sessions():
   conn = pgconnection('dbname=cuny_courses')
   c = conn.cursor()
-  q = 'select session_key, expiration_time from sessions'
+  q = 'select session_key, expiration_time from sessions order by expiration_time'
   c.execute(q)
   result = '<table>'
   now = datetime.datetime.now()

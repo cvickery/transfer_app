@@ -226,7 +226,7 @@ $(function ()
                       </label>
                     </div>
                     <div>
-                      <input type="radio" name="reviewed" id="other" value"other"/>
+                      <input type="radio" name="reviewed" id="other" value="other"/>
                       <label for="other">Other</label>
                     </div>
                     <textarea id="comment-text"
@@ -276,9 +276,9 @@ $(function ()
             event_type: $('input[name=reviewed]:checked').val(),
             source_institution: $('input[name=src_institution]').val(),
             destination_institution: $('input[name=dest_institution]').val(),
-            comment_text: $('#comment-text').val().replace("'", "’"),
-            rule_source_id: source_id,
-            rule_destination_id: destination_id,
+            comment_text: $('#comment-text').val().replace('\'', '’'),
+            rule_src_id: source_id,
+            rule_dest_id: destination_id,
             rule_index: rule_index,
             rule_str: rule_str,
             is_omitted: false
@@ -333,8 +333,8 @@ $(function ()
         `;
       for (evaluation in pending_evaluations)
       {
-        var the_rule = pending_evaluations[evaluation].rule_source_id + ':' +
-                       pending_evaluations[evaluation].rule_destination_id;
+        var the_rule = pending_evaluations[evaluation].rule_src_id + ':' +
+                       pending_evaluations[evaluation].rule_dest_id;
         var institution = 'Unknown';
         var go_nogo = 'Unknown';
         switch (pending_evaluations[evaluation].event_type)
@@ -376,7 +376,7 @@ $(function ()
         `;
       $('#evaluation-form').html(dismiss_bar + the_form)
                            .css('width', '90%')
-                           .show();
+                           .show().draggable();
       $('.omit-button').click(function ()
       {
         // extract the button's rule-index and use it to gray out the div containing it and to mark
