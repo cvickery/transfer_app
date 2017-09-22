@@ -711,6 +711,19 @@ def confirmation(token):
   return render_template('transfers.html', result=Markup(result))
 
 
+# EVALUATION HISTORY PAGE
+# -------------------------------------------------------------------------------------------------
+# Display the history of evaluation events for a rule.
+@app.route('/history/<rule>', methods=['GET'])
+def history(rule):
+  """ Look up all events for the rule, and report back to the visitor.
+  """
+  result = """<h1>Evaluation History</h1>
+  <p class="error">Not implemented yet</p>
+  """
+  return render_template('transfers.html', result=Markup(result))
+
+
 # TRANSFERS PAGE
 # =================================================================================================
 #

@@ -84,6 +84,10 @@ def process_pending(row):
       # Generate a summary of this evaluation
       old_status_str = status_string(old_status)
       new_status_str = status_string(new_status)
+      # Convert to event-history link for the rule
+      new_status_str = """
+      <a href="/history/{}" target="_blank">{}</a>""".format(evaluation['rule_index'],
+                                                             new_status_str)
       summaries += """
       <tr>
         <td title="{} => {}">{}</td>
@@ -109,7 +113,8 @@ def process_pending(row):
   <p>Recorded {} evaluation{} made by <em>{}</em> on {}.</p>
     <table>
       <tr>
-      <th>Rule</th><th>Action</th><th>Note</th><th>Previous Status</th><th>New Status</th>
+      <th>Rule</th><th>Action</th><th>Note</th><th>Previous Status</th>
+      <th>New Status<br/>(Link to Evaluation History)</th>
       </tr>
       {}
     </table>
