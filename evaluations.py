@@ -33,7 +33,7 @@ def process_pending(row):
   email = row['email']
   when_entered = row['when_entered']
   summaries = ''
-  conn = pgconnection('dbname=CUNY_COURSES')
+  conn = pgconnection('dbname=cuny_courses')
   with conn.cursor() as curr:
 
     event_type_bits = dict()
