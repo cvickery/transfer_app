@@ -44,6 +44,15 @@ table, td, th {
     border-collapse:collapse;
 }
 
+td a {
+  display: block;
+  text-decoration:none;
+}
+
+td a:hover {
+  background-color: #ccc;
+}
+
 fieldset fieldset {
   margin-top:1em;
   background-color:white;
