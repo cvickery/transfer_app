@@ -14,7 +14,17 @@ def status_string(status):
   """
     Generate a string summarizing all bits that are set in status.
   """
+  global status_messages
   if status == 0: return 'Not Evaluated'
+
+  if status_messages == None:
+    conn = pgconnection('dbname=cuny_courses')
+    with conn.cursor() as curr:
+      status_messages = dict()
+      curr.execute('select * from transfer_rule_status')
+      for row in curr.fetchall():
+        status_messages[row['value']] = row['description']
+
   strings = []
   bit = 1
   for i in range(16):
@@ -122,3 +132,46 @@ def process_pending(row):
                suffix,
                email,
                when_entered.strftime('%B %d, %Y at %I:%M %p'), summaries)
+
+# rule_history()
+# -------------------------------------------------------------------------------------------------
+def rule_history(rule):
+  """ Generate HTML for the evaluation history of a transfer rule.
+  """
+  conn = pgconnection('dbname=cuny_courses')
+  curr = conn.cursor()
+  try:
+    source_course_id, destination_course_id = rule.split(':')
+  except ValueError:
+    return """
+    <h1 class="error">“{}” is not a valid transfer rule. Must be <em>nnn</em>:<em>nnn</em></h1>
+    """.format(rule)
+  curr.execute("""
+    select status from transfer_rules where source_course_id = %s and destination_course_id = %s
+    """, (source_course_id, destination_course_id))
+  rows = curr.fetchall()
+  if len(rows) == 0:
+    return '<h1 class="error">{} is not a recognized transfer rule.</h1>'.format(rule)
+  status = rows[0]['status']
+  status_str = status_string(status)
+
+  # Get the institutions, disciplines, numbers, and titles of the two courses
+  description = '<span class="error">[Rule description will go here]</span>'
+  result = '<h2>Rule: {}</h2>'.format(description)
+  result += '<h2>Status: {}</h2><h2>Evaluation History</h2>'.format(status_str)
+  # Get all the events for the transfer rule
+  if status == 0:
+    result += '<p>This rule has not been evaluated yet.</p>'
+  else:
+    result += '<table><tr><th>What</th><th>Comment</th><th>Who</th><th>When</th></tr>'
+    q = 'select * from events where src_id = %s and dest_id = %s order by event_time'
+    curr.execute(q, (source_course_id, destination_course_id))
+    for row in curr.fetchall():
+      result += """
+      <tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>
+      """.format(row['event_type'],
+                 row['what'],
+                 row['who'],
+                 row['event_time'].strftime('%B %d, %Y at %I:%M %p'))
+    result += '</table>'
+  return result

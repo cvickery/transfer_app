@@ -17,7 +17,7 @@ from collections import namedtuple
 from cuny_course import CUNYCourse
 from mysession import MySession
 from sendtoken import send_token
-from evaluations import process_pending
+from evaluations import process_pending, rule_history
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
@@ -718,9 +718,7 @@ def confirmation(token):
 def history(rule):
   """ Look up all events for the rule, and report back to the visitor.
   """
-  result = """<h1>Evaluation History</h1>
-  <p class="error">Not implemented yet</p>
-  """
+  result = rule_history(rule)
   return render_template('transfers.html', result=Markup(result))
 
 
