@@ -164,6 +164,9 @@ $(function ()
   //  Form 3: Clickable rules
   $('.rule').click(function (event)
   {
+    // clicks in the prior evaluations column do not select a rule.
+    if (event.originalEvent.path[0].nodeName === 'A') return;
+
     $('.rule').removeClass('selected-rule');
     $(this).addClass('selected-rule');
     var rule_str = '';

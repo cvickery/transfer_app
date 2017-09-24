@@ -17,7 +17,7 @@ from collections import namedtuple
 from cuny_course import CUNYCourse
 from mysession import MySession
 from sendtoken import send_token
-from evaluations import process_pending, rule_history
+from evaluations import process_pending, rule_history, status_string
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
@@ -457,7 +457,7 @@ def do_form_1(request, session):
         </tr>
         {}
       </table>
-      <a href="/transfers/" class="restart">Restart</a>
+      <a href="/review_transfers/" class="restart">Restart</a>
       <input type="hidden" name="next-function" value="do_form_2" />
       <button type="submit">Next</button>
     </fieldset>
@@ -497,13 +497,14 @@ def do_form_2(request, session):
   source_subject_params = ', '.join('%s' for s in source_subject_list)
   destination_subject_params = ', '.join('%s' for s in destination_subject_list)
   q = """
-  select  t.source_course_id,                                 -- 0 id
-          i1.prompt as source_institution,                    -- 1 institution
-          c1.discipline||'-'||c1.number as source_course,     -- 2 course
+  select  t.source_course_id,                                   -- 0 id
+          i1.prompt as source_institution,                      -- 1 institution
+          c1.discipline||'-'||c1.number as source_course,       -- 2 course
 
-          t.destination_course_id,                            -- 3 id
-          i2.prompt as destination_institution,               -- 4 institution
-          c2.discipline||'-'||c2.number as destination_course -- 5 course
+          t.destination_course_id,                              -- 3 id
+          i2.prompt as destination_institution,                 -- 4 institution
+          c2.discipline||'-'||c2.number as destination_course,  -- 5 course
+          t.status                                              -- 6 rule status
    from   transfer_rules t, courses c1, courses c2, institutions i1, institutions i2
   where
           c1.institution in ({})
@@ -528,15 +529,30 @@ def do_form_2(request, session):
   if rules == None: rules = []
 
   # Rule ids: source_course_id:source_institution:dest_course_id:dest_institution
-  the_list = '<table id="rules-table">'
+  the_list = """
+    <table id="rules-table">
+      <tr>
+        <th colspan="5">Rule</th>
+        <th>Previous Evaluations</th>
+      </tr>"""
   for rule in rules:
+    previous = 'None'
+    if rule['status'] != 0:
+      previous = """
+        <a href="/history/{}:{}" target="_blank">{}</a>""".format(rule[0],
+                                                                  rule[3],
+                                                                  status_string(rule['status']))
     the_list += """
     <tr id="{}" class="rule">
-      <td>{}</td><td title="course id: {}">{}</td>
+      <td>{}</td>
+      <td title="course id: {}">{}</td>
       <td>=></td>
-      <td>{}</td><td title="course id: {}">{}</td>
+      <td>{}</td>
+      <td title="course id: {}">{}</td>
+      <td>{}</td>
     </tr>""".format(str(rule[0]) + ':' + rule[1] + ':' + str(rule[3]) + ':' + rule[4],
-                    rule[1], rule[0], rule[2], rule[4], rule[3], rule[5])
+                    rule[1], rule[0], rule[2], rule[4], rule[3], rule[5],
+                    previous)
   the_list += '</table>'
   num_rules = 'are no transfer rules'
   if len(rules) == 1: num_rules = 'is one transfer rule'
@@ -562,7 +578,7 @@ def do_form_2(request, session):
     </form>
     {}
   </fieldset>
-  <a href="/transfers/" class="restart">Restart</a>
+  <a href="/review_transfers/" class="restart">Restart</a>
   """.format(num_rules,
              session['email'],
              the_list)
@@ -610,9 +626,11 @@ def do_form_3(request, session):
       elif event_type == 'dest-ok':
         description = evaluation_dict['ok'].format(evaluation['destination_institution'])
       elif event_type == 'src-not-ok':
-        description = evaluation_dict['not-ok'].format(evaluation['source_institution'], evaluation['comment_text'])
+        description = evaluation_dict['not-ok'].format(evaluation['source_institution'],
+                                                       evaluation['comment_text'])
       elif event_type == 'dest-not-ok':
-        description = evaluation_dict['not-ok'].format(evaluation['destination_institution'], evaluation['comment_text'])
+        description = evaluation_dict['not-ok'].format(evaluation['destination_institution'],
+                                                       evaluation['comment_text'])
       else:
         description = evaluation_dict['other'].format(evaluation['comment_text'])
 
@@ -643,7 +661,7 @@ def do_form_3(request, session):
       <p>
         Thank you for your work!
       </p>
-      <a href="/transfers/" class="restart">Restart</a>
+      <a href="/review_transfers/" class="restart">Restart</a>
 
       """.format(email, message_tail)
   return render_template('transfers.html', result=Markup(result))
@@ -657,7 +675,9 @@ def pending():
   """
   conn = pgconnection('dbname=cuny_courses')
   c = conn.cursor()
-  c.execute("select email, evaluations, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered from pending_evaluations")
+  c.execute("""
+    select email, evaluations, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
+      from pending_evaluations""")
   rows = ''
   for pending in c.fetchall():
     rows += format_pending(pending)
@@ -675,7 +695,6 @@ def pending():
 # -------------------------------------------------------------------------------------------------
 def format_pending(item):
   """ Generate a table row that describes pending evaluations.
-      TODO: add a column with checkboxex for evaluations to be purged, if an administration user is logged in.
   """
   evaluations = json.loads(item['evaluations'])
   suffix = 's'

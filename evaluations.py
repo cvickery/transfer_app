@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 
 from pgconnection import pgconnection
+from cuny_course import CUNYCourse
 
 event_type_bits = None
 status_messages = None
@@ -155,15 +156,48 @@ def rule_history(rule):
   status = rows[0]['status']
   status_str = status_string(status)
 
+  source_course = CUNYCourse(source_course_id)
+  if not source_course.is_active:
+    source_course.html += """
+      <div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>"""
+  destination_course = CUNYCourse(destination_course_id)
+  if not destination_course.is_active:
+    destination_course.html += """
+      <div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>"""
+
   # Get the institutions, disciplines, numbers, and titles of the two courses
-  description = '<span class="error">[Rule description will go here]</span>'
-  result = '<h2>Rule: {}</h2>'.format(description)
-  result += '<h2>Status: {}</h2><h2>Evaluation History</h2>'.format(status_str)
+  result = """
+  <h1>Transfer Rule Evaluation Details</h1>
+  <h2>Sending Course</h2>
+  <div>
+    <h3>Course ID:  {:06d}</h3>
+    <h3>Institution: {}</h3>
+    <h3>Department: {}</h3>
+    <h3>Catalog:</h3>{}
+  </div>
+
+  <h2>Receiving Course</h2>
+  <div>
+    <h3>Course ID {:06d}</h3>
+    <h3>Institution: {}</h3>
+    <h3>Department: {}</h3>
+    <h3>Catalog:</h3>{}
+  </div>
+  """.format(
+    int(source_course.course_id), source_course.institution, source_course.department,
+    source_course.html,
+    int(destination_course.course_id), destination_course.institution, destination_course.department,
+    destination_course.html)
+  result += """
+    <h2>Transfer Rule Status</h2>
+    <div><h3>{}</h3></div>
+    <h2>Evaluation History</h2>
+    """.format(status_str)
   # Get all the events for the transfer rule
   if status == 0:
-    result += '<p>This rule has not been evaluated yet.</p>'
+    result += '<div class="warning">This rule has not been evaluated yet.</div>'
   else:
-    result += '<table><tr><th>What</th><th>Comment</th><th>Who</th><th>When</th></tr>'
+    result += '<div><table><tr><th>What</th><th>Comment</th><th>Who</th><th>When</th></tr>'
     q = 'select * from events where src_id = %s and dest_id = %s order by event_time'
     curr.execute(q, (source_course_id, destination_course_id))
     for row in curr.fetchall():
@@ -173,5 +207,5 @@ def rule_history(rule):
                  row['what'],
                  row['who'],
                  row['event_time'].strftime('%B %d, %Y at %I:%M %p'))
-    result += '</table>'
+    result += '</table></div>'
   return result
