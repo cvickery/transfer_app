@@ -107,9 +107,11 @@ def do_form_0(request, session):
   """
   logger.debug('*** do_form_0({})'.format(session))
   conn = pgconnection('dbname=cuny_courses')
-  c = conn.cursor()
-  c.execute("select * from institutions order by lower(name)")
-  institution_list = c.fetchall()
+  cursor = conn.cursor()
+  cursor.execute("select * from institutions order by lower(name)")
+  institution_list = cursor.fetchall()
+  cursor.close()
+  conn.close()
 
   source_prompt = """
     <fieldset id="sending-field"><legend>Sending College(s)</legend>
@@ -291,6 +293,9 @@ def do_form_1(request, session):
 
   cursor.execute("select * from designations")
   designations = {row['designation']: row['description'] for row in cursor}
+
+  cursor.close()
+  conn.close()
 
   # Build filter table. For each cuny_subject found in either sending or receiving courses, list
   # all disciplines at those colleges.
@@ -477,7 +482,7 @@ def do_form_2(request, session):
   """
   logger.debug('*** do_form_2({})'.format(session))
   conn = pgconnection('dbname=cuny_courses')
-  c = conn.cursor()
+  cursor = conn.cursor()
 
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
   # the source subjects and the receiving course blongs to a receiving institution and is one of
@@ -521,12 +526,15 @@ def do_form_2(request, session):
              source_subject_params,
              destination_institution_params,
              destination_subject_params)
-  c.execute(q, session['source_institutions'] +
+  cursor.execute(q, session['source_institutions'] +
                source_subject_list +
                session['destination_institutions'] +
                destination_subject_list)
-  rules = c.fetchall()
+  rules = cursor.fetchall()
   if rules == None: rules = []
+
+  cursor.close()
+  conn.close()
 
   # Rule ids: source_course_id:source_institution:dest_course_id:dest_institution
   the_list = """
@@ -603,11 +611,11 @@ def do_form_3(request, session):
       message_tail = '{} evaluations'.format(count)
     # Insert these evaluations into the pending_evaluations table.
     conn = pgconnection('dbname=cuny_courses')
-    c = conn.cursor()
+    cursor = conn.cursor()
     token = str(uuid.uuid4())
     evaluations = json.dumps(kept_evaluations)
     q = "insert into pending_evaluations (token, email, evaluations) values(%s, %s, %s)"
-    c.execute(q, (token, email, evaluations))
+    cursor.execute(q, (token, email, evaluations))
     conn.commit()
     conn.close()
 
@@ -674,13 +682,16 @@ def pending():
       TODO: Implement login option so defined users can manage this table.
   """
   conn = pgconnection('dbname=cuny_courses')
-  c = conn.cursor()
-  c.execute("""
+  cursor = conn.cursor()
+  cursor.execute("""
     select email, evaluations, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
       from pending_evaluations""")
   rows = ''
-  for pending in c.fetchall():
+  for pending in cursor.fetchall():
     rows += format_pending(pending)
+  cursor.close()
+  conn.close()
+
   if rows == '':
     table = '<h2>There are no pending evaluations.</h2>'
   else:
@@ -710,10 +721,13 @@ def format_pending(item):
 def confirmation(token):
   # Make sure the token is received and is in the pending table.
   conn = pgconnection('dbname=cuny_courses')
-  c = conn.cursor()
+  cursor = conn.cursor()
   q = 'select * from pending_evaluations where token = %s'
-  c.execute(q, (token,))
-  rows = c.fetchall()
+  cursor.execute(q, (token,))
+  rows = cursor.fetchall()
+  cursor.close()
+  conn.close()
+
   msg = ''
   if len(rows) == 0:
     msg = '<p class="error">This evaluation report has either expired or already been recorded.</p>'
@@ -797,13 +811,13 @@ def _course():
 @app.route('/_sessions')
 def _sessions():
   conn = pgconnection('dbname=cuny_courses')
-  c = conn.cursor()
+  ccursor = conn.cursor()
   q = 'select session_key, expiration_time from sessions order by expiration_time'
-  c.execute(q)
+  cursor.execute(q)
   result = '<table>'
   now = datetime.datetime.now()
   num_expired = 0
-  for row in c.fetchall():
+  for row in cursor.fetchall():
     ts = datetime.datetime.fromtimestamp(row['expiration_time'])
     ts_str = ts.strftime('%Y-%m-%d %H:%M:%S')
     status = 'active'
@@ -815,8 +829,11 @@ def _sessions():
                                                                   status)
   msg = '<p>There were no expired sessions to delete.</p>'
   if num_expired > 0:
-    c.execute("delete from sessions where expiration_time < {}".format(now.timestamp()))
+    cursor.execute("delete from sessions where expiration_time < {}".format(now.timestamp()))
     conn.commit()
+    cursor.close()
+    conn.close()
+
     if num_expired == 1: msg = '<p>Deleted one expired session.</p>'
     else: msg = '<p>Deleted {} expired sessions.</p>'.format(num_expired)
   return result + '</table>' + msg
@@ -827,38 +844,37 @@ def _sessions():
 # Pick a college, and see catalog descriptions of all courses currently active there.
 @app.route('/courses/', methods=['POST', 'GET'])
 def courses():
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
   num_courses = 0
   if request.method == 'POST':
-    # conn = pgconnection('dbname=cuny_courses')
-    conn = pgconnection('dbname=cuny_courses')
-    c = conn.cursor()
 
-    c.execute("select * from cuny_subjects")
-    cuny_subjects = {row['area']:row['description'] for row in c}
+    cursor.execute("select * from cuny_subjects")
+    cuny_subjects = {row['area']:row['description'] for row in cursor}
 
-    c.execute("select * from cuny_careers")
-    careers = {(row['institution'], row['career']): row['description'] for row in c}
+    cursor.execute("select * from cuny_careers")
+    careers = {(row['institution'], row['career']): row['description'] for row in cursor}
 
-    c.execute("select * from designations")
-    designations = {row['designation']: row['description'] for row in c}
+    cursor.execute("select * from designations")
+    designations = {row['designation']: row['description'] for row in cursor}
 
     institution_code = request.form['inst']
-    c.execute("""
+    cursor.execute("""
               select name, date_updated
                 from institutions
                where code = %s
                """, [institution_code])
-    row = c.fetchone()
+    row = cursor.fetchone()
     institution_name = row['name']
     date_updated = row['date_updated'].strftime('%B %d, %Y')
-    c.execute("""
+    cursor.execute("""
         select count(*) from courses
          where institution = %s
            and course_status = 'A'
            and can_schedule = 'Y'
            and discipline_status = 'A'
         """, [institution_code])
-    num_active_courses = c.fetchone()[0]
+    num_active_courses = cursor.fetchone()[0]
 
     result = """
       <h1>{} Courses</h1><p class='subtitle'>{:,} active courses as of {}</p>
@@ -872,9 +888,9 @@ def courses():
          and discipline_status = 'A'
        order by discipline, number
        """.format(institution_code)
-    c.execute(query)
+    cursor.execute(query)
 
-    for row in c:
+    for row in cursor:
       num_courses += 1
       result = result + """
       <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}: {}</em>)<br/>
@@ -893,12 +909,9 @@ def courses():
   # Form not submitted yet or institution has no courses
   if num_courses == 0:
     prompt = '<fieldset><legend>Select a College</legend>'
-    # conn = pgconnection('dbname=cuny_courses')
-    conn = pgconnection('dbname=cuny_courses')
-    c = conn.cursor()
-    c.execute("select * from institutions order by code")
+    cursor.execute("select * from institutions order by code")
     n = 0
-    for row in c:
+    for row in cursor:
       n += 1
       prompt = prompt + """
       <div class='institution-select'>
@@ -915,6 +928,8 @@ def courses():
       </div>
     <form>
     """.format(prompt)
+  cursor.close()
+  conn.close()
   return render_template('courses.html', result=Markup(result))
 
 

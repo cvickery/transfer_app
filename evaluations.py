@@ -20,12 +20,12 @@ def status_string(status):
 
   if status_messages == None:
     conn = pgconnection('dbname=cuny_courses')
-    with conn.cursor() as curr:
+    with conn.cursor() as cursor:
       status_messages = dict()
-      curr.execute('select * from transfer_rule_status')
-      for row in curr.fetchall():
+      cursor.execute('select * from transfer_rule_status')
+      for row in cursor.fetchall():
         status_messages[row['value']] = row['description']
-
+    conn.close()
   strings = []
   bit = 1
   for i in range(16):
@@ -45,16 +45,16 @@ def process_pending(row):
   when_entered = row['when_entered']
   summaries = ''
   conn = pgconnection('dbname=cuny_courses')
-  with conn.cursor() as curr:
+  with conn.cursor() as cursor:
 
     event_type_bits = dict()
-    curr.execute('select * from event_types')
-    for row in curr.fetchall():
+    cursor.execute('select * from event_types')
+    for row in cursor.fetchall():
       event_type_bits[row['abbr']] = row['bitmask']
 
     status_messages = dict()
-    curr.execute('select * from transfer_rule_status')
-    for row in curr.fetchall():
+    cursor.execute('select * from transfer_rule_status')
+    for row in cursor.fetchall():
       status_messages[row['value']] = row['description']
 
     for evaluation in evaluations:
@@ -67,17 +67,17 @@ def process_pending(row):
       q = """
       insert into events (event_type, src_id, dest_id, who, what, event_time)
                          values (%s, %s, %s, %s, %s, %s)"""
-      curr.execute(q, (event_type, src_id, dest_id, email, what, when_entered))
+      cursor.execute(q, (event_type, src_id, dest_id, email, what, when_entered))
 
       # Update the evaluation state for this rule.
       source_course_id = evaluation['rule_src_id']
       destination_course_id = evaluation['rule_dest_id']
-      curr.execute("""
+      cursor.execute("""
         select * from transfer_rules
          where source_course_id = %s
            and destination_course_id = %s
         """, (source_course_id, destination_course_id))
-      rows = curr.fetchall()
+      rows = cursor.fetchall()
       if len(rows) != 1:
         summaries = """
         <tr><td class="error">Found {} transfer rules for {}:{}</td></tr>
@@ -90,7 +90,7 @@ def process_pending(row):
         where source_course_id = %s
           and destination_course_id = %s
         """
-      curr.execute(q, (new_status, source_course_id, destination_course_id))
+      cursor.execute(q, (new_status, source_course_id, destination_course_id))
 
       # Generate a summary of this evaluation
       old_status_str = status_string(old_status)
@@ -114,10 +114,12 @@ def process_pending(row):
                  evaluation['comment_text'],
                  old_status_str, new_status_str)
     # Remove record from pending_evaluations
-    curr.execute('delete from pending_evaluations where token = %s', (token, ))
+    cursor.execute('delete from pending_evaluations where token = %s', (token, ))
 
   conn.commit()
+  cursor.close()
   conn.close()
+
   suffix = 's'
   if len(evaluations) == 1: suffix = ''
   return """
@@ -140,17 +142,17 @@ def rule_history(rule):
   """ Generate HTML for the evaluation history of a transfer rule.
   """
   conn = pgconnection('dbname=cuny_courses')
-  curr = conn.cursor()
+  cursor = conn.cursor()
   try:
     source_course_id, destination_course_id = rule.split(':')
   except ValueError:
     return """
     <h1 class="error">“{}” is not a valid transfer rule. Must be <em>nnn</em>:<em>nnn</em></h1>
     """.format(rule)
-  curr.execute("""
+  cursor.execute("""
     select status from transfer_rules where source_course_id = %s and destination_course_id = %s
     """, (source_course_id, destination_course_id))
-  rows = curr.fetchall()
+  rows = cursor.fetchall()
   if len(rows) == 0:
     return '<h1 class="error">{} is not a recognized transfer rule.</h1>'.format(rule)
   status = rows[0]['status']
@@ -199,8 +201,8 @@ def rule_history(rule):
   else:
     result += '<div><table><tr><th>What</th><th>Comment</th><th>Who</th><th>When</th></tr>'
     q = 'select * from events where src_id = %s and dest_id = %s order by event_time'
-    curr.execute(q, (source_course_id, destination_course_id))
-    for row in curr.fetchall():
+    cursor.execute(q, (source_course_id, destination_course_id))
+    for row in cursor.fetchall():
       result += """
       <tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>
       """.format(row['event_type'],
@@ -208,4 +210,6 @@ def rule_history(rule):
                  row['who'],
                  row['event_time'].strftime('%B %d, %Y at %I:%M %p'))
     result += '</table></div>'
+  cursor.close()
+  conn.close()
   return result
