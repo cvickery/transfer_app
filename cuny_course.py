@@ -15,50 +15,53 @@ class CUNYCourse:
     self.course_id = m.group(1)
 
     conn = pgconnection('dbname=cuny_courses')
-    c = conn.cursor()
-    c.execute("select * from courses where course_id = '{}'".format(course_id))
-    course = c.fetchone()
+    cursor = conn.cursor()
+    cursor.execute("select * from courses where course_id = '{}'".format(course_id))
+    course = cursor.fetchone()
     if course:
-      c.execute("select * from cuny_subjects where area = '{}'".format(course['cuny_subject']))
-      cuny_subject = c.fetchone()[1]
+      cursor.execute("select * from cuny_subjects where area = '{}'".format(course['cuny_subject']))
+      cuny_subject = cursor.fetchone()[1]
 
-      c.execute("""
+      cursor.execute("""
                 select description from cuny_careers where institution = '{}' and career = '{}'
                 """.format(course['institution'], course['career']))
-      career = c.fetchone()[0]
+      career = cursor.fetchone()[0]
 
-      c.execute("""
+      cursor.execute("""
                 select description from designations where designation = '{}'
                 """.format(course['designation']))
-      designation = c.fetchone()[0]
+      designation = cursor.fetchone()[0]
 
-      c.execute("""
+      cursor.execute("""
                 select description from cuny_departments where department = '{}'
                 """.format(course['department']))
-      department = c.fetchone()[0]
+      department = cursor.fetchone()[0]
       self.department = department
 
       self.is_active = course['course_status'] == 'A'
 
 
-      c.execute("select name from institutions where code = '{}'".format(course['institution']))
-      institution = c.fetchone()[0]
+      cursor.execute("select name from institutions where code = '{}'".format(course['institution']))
+      institution = cursor.fetchone()[0]
       self.institution = institution
 
-      c.execute("""
+      cursor.execute("""
                 select a.attribute_name, a.attribute_value, a.description
                 from attributes a, course_attributes c
                 where c.course_id = {}
                   and c.name = a.attribute_name
                   and c.value = a.attribute_value
                 """.format(course_id))
-      the_attributes = [row[2] for row in c.fetchall()]
+      the_attributes = [row[2] for row in cursor.fetchall()]
       self.attributes = ''
       if the_attributes == None or len(the_attributes) == 0:
         pass
       else:
         for attribute in the_attributes:
-          self.attributes += '<div class="catalog-entry"><strong>Attribute:</strong> {}</div>\n'.format(attribute)
+          self.attributes += """
+            <div class="catalog-entry"><strong>Attribute:</strong> {}</div>\n""".format(attribute)
+      cursor.close()
+      conn.close()
 
       self.html = """
       <p class="catalog-entry" title="course id: {}"><strong>{} {}: {}</strong> (<em>{}; {}</em>)
