@@ -7,19 +7,6 @@ entrypoint: gunicorn -c gunicorn.conf.py -b :$PORT main:app
 runtime_config:
   python_version: 3
 
-# Attempts to control 502 Gateway Errors by disabling or reducing the frequency of health checks
-# have not been successful. The default is to enable them once a second. Because the app will be
-# low-demand, cutting back on the health check frequency should reduce demands on the system with
-# negligible impact on reliability.
-
-# 2017-09-19 With the introduction of split health checkes into Liveliness and Readiness checks,
-# the single health_check configuration becomes irrelevant. The default values for those checks
-# no url to be notified when they occur; having them occur every 4 seconds, etc. seem okay and
-# are not configured here.
-#
-# health_check:
-#   check_interval_sec: 10
-
 # This beta setting is necessary for the db hostname parameter to be able to handle a URI in the
 # form “/cloudsql/...” where ... is the instance given here:
 beta_settings:

@@ -12,3 +12,5 @@ main_test.py
 /static/db/cuny_catalog.db
 
 /env/
+
+/gcloud_info.txt
