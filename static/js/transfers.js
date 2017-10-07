@@ -165,7 +165,7 @@ $(function ()
   $('.rule').click(function (event)
   {
     // clicks in the prior evaluations column do not select a rule.
-    if (event.originalEvent.path[0].nodeName === 'A') return;
+    if (event.target.nodeName === 'A') return;
 
     $('.rule').removeClass('selected-rule');
     $(this).addClass('selected-rule');
