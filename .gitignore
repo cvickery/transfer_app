@@ -14,3 +14,9 @@ main_test.py
 /env/
 
 /gcloud_info.txt
+
+/qbcc-ph.json
+
+/rules.html
+
+/templates/transfers.html.bak
