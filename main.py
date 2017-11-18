@@ -18,6 +18,7 @@ from cuny_course import CUNYCourse
 from mysession import MySession
 from sendtoken import send_token
 from evaluations import process_pending, rule_history, status_string
+from extract_groups import extract_groups
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
@@ -426,9 +427,9 @@ def do_form_1(request, session):
       </td>
     </tr>
     """
-    filter_rows = shortcuts.format('-top', '-top', '-top', '-top') + \
-                  filter_rows + \
-                  shortcuts.format('-bot', '-bot', '-bot', '-bot')
+    filter_rows = shortcuts.format('-top', '-top', '-top', '-top') + '</thead><tbody>' +\
+                  filter_rows #+ \
+                  # shortcuts.format('-bot', '-bot', '-bot', '-bot')
 
   # set or clear email-related cookes based on form data
   email = request.form.get('email')
@@ -452,7 +453,8 @@ def do_form_1(request, session):
       <div>There are {:,} transfer rules where {}.</div>
       <a href="" class="restart">Restart</a>
       <button type="submit">Next</button>
-      <table id="subject-filters">
+      <table id="subject-filters" class="scrollable">
+        <thead>
         <tr>
           <th class="source-subject">{} Discipline(s)</th>
           <th class="source-subject">Select Sending</th>
@@ -461,6 +463,7 @@ def do_form_1(request, session):
           <th class="destination-subject">Select Receiving</th>
         </tr>
         {}
+        </body>
       </table>
       <a href="/review_transfers/" class="restart">Restart</a>
       <input type="hidden" name="next-function" value="do_form_2" />
@@ -494,6 +497,7 @@ def do_form_2(request, session):
     # the session is expired or invalid. Go back to Step 1.
     return render_template('transfers.html', result=Markup('{}'.format(session)))
 
+  # Prepare the query to get the set of rules that match the institutions ans subjects provided.
   source_subject_list = request.form.getlist('source_subject')
   destination_subject_list = request.form.getlist('destination_subject')
   if len(source_subject_list) < 1 or len(destination_subject_list) < 1:
@@ -502,15 +506,33 @@ def do_form_2(request, session):
   source_subject_params = ', '.join('%s' for s in source_subject_list)
   destination_subject_params = ', '.join('%s' for s in destination_subject_list)
   q = """
-  select  t.source_course_id,                                   -- 0 id
-          i1.prompt as source_institution,                      -- 1 institution
-          c1.discipline||'-'||c1.number as source_course,       -- 2 course
-
-          t.destination_course_id,                              -- 3 id
-          i2.prompt as destination_institution,                 -- 4 institution
-          c2.discipline||'-'||c2.number as destination_course,  -- 5 course
-          t.status                                              -- 6 rule status
-   from   transfer_rules t, courses c1, courses c2, institutions i1, institutions i2
+  select  t.source_course_id,                                   -- 0
+          t.rule_priority,                                      -- 1
+          t.rule_group,                                         -- 2
+          t.min_source_units as min_credits,                                  -- 3
+          t.max_source_units as max_credits,                                  -- 4
+          t.min_gpa,                                            -- 3          -- 5
+          t.max_gpa,                                            -- 4          -- 6
+          t.transfer_credits,
+          substring(c1.institution from '[^\d]+') as source_institution,      -- 8
+          i1.prompt as source_institution_name,                 -- 5          -- 7
+          c1.discipline as source_discipline,                   -- 6          -- 9
+          d1.description as source_discipline_name,
+          c1.number as source_course_number,                    -- 7          -- 10
+          t.destination_course_id,                              -- 8          -- 11
+          substring(c2.institution from '[^\d]+') as destination_institution, -- 13
+          i2.prompt as destination_institution_name,                 -- 9     -- 12
+          c2.discipline as destination_discipline,              -- 10         -- 14
+          d2.description as destination_discipline_name,
+          c2.number as destination_course_number,               -- 11         -- 15
+          t.status                                              -- 12         -- 16
+   from   transfer_rules t,
+          disciplines d1,
+          disciplines d2,
+          courses c1,
+          courses c2,
+          institutions i1,
+          institutions i2
   where
           c1.institution in ({})
       and c1.cuny_subject in ({})
@@ -520,8 +542,13 @@ def do_form_2(request, session):
       and c2.course_id = t.destination_course_id
       and i1.code = c1.institution
       and i2.code = c2.institution
-    order by lower(i1.prompt), source_course,
-             lower(i2.prompt), destination_course
+      and d1.institution = c1.institution
+      and d1.discipline = c1.discipline
+      and d2.institution = c2.institution
+      and d2.discipline = c2.discipline
+    order by lower(i1.prompt), lower(c1.discipline),
+             to_number(substring(c1.number from '\d+\.?\d*'), '000000.000'),
+             lower(i2.prompt)
   """.format(source_institution_params,
              source_subject_params,
              destination_institution_params,
@@ -535,33 +562,39 @@ def do_form_2(request, session):
 
   cursor.close()
   conn.close()
+  # Need to create rule groups, by priority here
+  # logger.debug(json.dumps(rules))
+  rules_table = extract_groups(rules)
 
-  # Rule ids: source_course_id:source_institution:dest_course_id:dest_institution
-  the_list = """
-    <table id="rules-table">
-      <tr>
-        <th colspan="5">Rule</th>
-        <th>Previous Evaluations</th>
-      </tr>"""
-  for rule in rules:
-    previous = 'None'
-    if rule['status'] != 0:
-      previous = """
-        <a href="/history/{}:{}" target="_blank">{}</a>""".format(rule[0],
-                                                                  rule[3],
-                                                                  status_string(rule['status']))
-    the_list += """
-    <tr id="{}" class="rule">
-      <td>{}</td>
-      <td title="course id: {}">{}</td>
-      <td>=></td>
-      <td>{}</td>
-      <td title="course id: {}">{}</td>
-      <td>{}</td>
-    </tr>""".format(str(rule[0]) + ':' + rule[1] + ':' + str(rule[3]) + ':' + rule[4],
-                    rule[1], rule[0], rule[2], rule[4], rule[3], rule[5],
-                    previous)
-  the_list += '</table>'
+  # # Rule ids: source_course_id:source_institution:dest_course_id:dest_institution
+  # the_list = """
+  #   <table id="rules-table" class="scrollable">
+  #     <thead>
+  #       <tr>
+  #         <th colspan="5">Rule</th>
+  #         <th>Previous Evaluations</th>
+  #       </tr>
+  #     </thead>
+  #     <tbody>"""
+  # for rule in rules:
+  #   previous = 'None'
+  #   if rule['status'] != 0:
+  #     previous = """
+  #       <a href="/history/{}:{}" target="_blank">{}</a>""".format(rule[0],
+  #                                                                 rule[3],
+  #                                                                 status_string(rule['status']))
+  #   the_list += """
+  #   <tr id="{}" class="rule">
+  #     <td>{}</td>
+  #     <td title="course id: {}">{}</td>
+  #     <td>=></td>
+  #     <td>{}</td>
+  #     <td title="course id: {}">{}</td>
+  #     <td>{}</td>
+  #   </tr>""".format(str(rule[0]) + ':' + rule[6] + ':' + str(rule[8]) + ':' + rule[9],
+  #                   rule[6], rule[0], rule[7], rule[9], rule[8], rule[10],
+  #                   previous)
+  # the_list += '</tbody></table>'
   num_rules = 'are no transfer rules'
   if len(rules) == 1: num_rules = 'is one transfer rule'
   if len(rules) > 1: num_rules = 'are {:,} transfer rules'.format(len(rules))
@@ -589,7 +622,7 @@ def do_form_2(request, session):
   <a href="/review_transfers/" class="restart">Restart</a>
   """.format(num_rules,
              session['email'],
-             the_list)
+             rules_table)
   return render_template('transfers.html', result=Markup(result))
 
 # do_form_3()

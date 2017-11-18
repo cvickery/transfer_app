@@ -4,16 +4,13 @@ import json
 import re
 import argparse
 
-parser = argparse.ArgumentParser('Testing transfer rule groups')
-parser.add_argument('--debug', '-d', action='store_true', default=False)
-args = parser.parse_args()
-
-fp = open('qbcc-ph.json', 'r')
-records = json.load(fp)
-fp.close()
+DEBUG = False
 
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
-def grade(min_gpa, max_gpa):
+
+# _grade()
+# -------------------------------------------------------------------------------------------------
+def _grade(min_gpa, max_gpa):
   """ Convert numerical gpa range to description of required grade in letter-grade form
         below <letter> (when max < 4.0) (should check min < 0.7)
         <letter> or better (when min is > 0.7) (should check max >= 4.0)
@@ -38,16 +35,37 @@ def grade(min_gpa, max_gpa):
   letter = letters[int(round(max_gpa * 3))]
   return 'below ' + letter
 
+# _course_list()
+# -------------------------------------------------------------------------------------------------
+def _course_list(courses):
+  """ Given a set of Course namedtuples, generate a display string for the contents of a
+      table cell. Enclose segments of the string with spans giving course ids as title elements;
+      update the global row_id_str with each course_id.
+      Grade requirements and discipline abbreviations appear each time they change.
+  """
+  global row_id_str
+  # Sort the courss by grade requirement, discipline and course number
+  courses = sorted(courses, key=(courses.grade, courses.discipline, courses.number))
+  return 'hello'
+
 # The values in one row of the db query
 QueryRecord = namedtuple('QueryRecord', """
-                          source_course_id priority rule_group
+                          source_course_id
+                          priority rule_group
                           min_credits max_credits min_gpa max_gpa
+                          transfer_credits
+                          source_institution
                           source_institution_name
-                          source_institution source_discipline source_course_number
+                          source_discipline
+                          source_discipline_name
+                          source_course_number
                           destination_course_id
+                          destination_institution
                           destination_institution_name
-                          destination_institution destination_discipline
-                          destination_course_number rule_status""")
+                          destination_discipline
+                          destination_discipline_name
+                          destination_course_number
+                          rule_status""")
 
 # After the user has selected source and destination colleges, and source/destination
 # disciplines, there is an array of records, which need to be sorted into rule groups.
@@ -64,124 +82,183 @@ GroupKey =namedtuple('GroupKey',"""
 # redundant across members of the group, so the issue is to sort out the common properties from the
 # redundant properties.
 GroupRecord = namedtuple('GroupRecord', """
-                          source_course_id source_discipline source_course_number
-                          rule_priority min_credits max_credits grade
-                          destination_course_id destination_discipline destination_course_number
+                          source_course_id
+                          source_discipline
+                          source_discipline_name
+                          source_course_number
+                          rule_priority
+                          min_credits max_credits transfer_credits
+                          grade
+                          destination_course_id
+                          destination_discipline
+                          destination_discipline_name
+                          destination_course_number
                           rule_status
                           """)
 # Course
-Course = namedtuple('Course', 'course_id discipline course_number min_credits max_credits')
+Course = namedtuple('Course', """
+                    course_id
+                    discipline
+                    discipline_name
+                    course_number
+                    grade
+                    min_credits
+                    max_credits
+                    transfer_credits""")
 
-html = """
-<head>
-  <title>Testing Transfer Rule Groups</title>
-  <style>
-    table {border-collapse: collapse;}
-    td, th {border: 1px solid #ccc; padding:0.25em;}
-  </style>
-</head>
-<body>
-"""
-table = '<table>\n'
-groups = dict()
-for record in records:
-  qr = QueryRecord._make(record)
-  key = GroupKey._make((qr.source_institution,
-                        qr.source_discipline,
-                        qr.rule_group,
-                        qr.destination_institution))
-  value = GroupRecord._make((qr.source_course_id,
-                            qr.source_discipline,
-                            qr.source_course_number.strip(),
-                            qr.priority,
-                            qr.min_credits, qr.max_credits,
-                            grade(qr.min_gpa, qr.max_gpa),
-                            qr.destination_course_id,
-                            qr.destination_discipline,
-                            qr.destination_course_number.strip(),
-                            qr.rule_status))
-  if key in groups.keys():
-    groups[key].append(value)
-  else:
-    groups[key] = [value]
 
-# Need to sort groups by the first source course in the group, not just by source institution
-# and source discipline.
-if args.debug: print('found {} groups'.format(len(groups)))
-for key in groups.keys():
-  source_courses = set()
-  grade = set()
-  destination_courses = set()
-  rule_status = set()
-  if args.debug: print('{} ['.format(key), end='')
-  first = True
-  for record in groups[key]:
-    if args.debug:
-      if not first:
-        print(', ', end='')
-      first = False
-      print(record, end='')
+def extract_groups(records):
+  """ Generate HTML table with information about each rule group.
+  """
+  table = '<table>\n'
+  groups = dict()
 
-    source_courses.add(Course._make((record.source_course_id,
-                                     record.source_discipline,
-                                     record.source_course_number,
-                                     record.min_credits,
-                                     record.max_credits)))
-    grade.add(record.grade)
-    destination_courses.add(Course._make((record.destination_course_id,
-                                          record.destination_discipline,
-                                          record.destination_course_number,
-                                          record.min_credits,
-                                          record.max_credits)))
-    rule_status.add(record.rule_status)
-  if args.debug: print(']')
+  # Process each row of the db query into arrays of courses matched to rule groups.
+  # Min and max credits are retained, but will be discarded below because they seem to be
+  # irrelevant.
+  # Min and max GPA are converted to letter grade requirement text.
+  for record in records:
+    qr = QueryRecord._make(record)
+    key = GroupKey._make((qr.source_institution,
+                          qr.source_discipline,
+                          qr.rule_group,
+                          qr.destination_institution))
+    value = GroupRecord._make((qr.source_course_id,
+                              qr.source_discipline,
+                              qr.source_discipline_name,
+                              qr.source_course_number.strip(),
+                              qr.priority,
+                              qr.min_credits, qr.max_credits,
+                              qr.transfer_credits,
+                              _grade(qr.min_gpa, qr.max_gpa),
+                              qr.destination_course_id,
+                              qr.destination_discipline,
+                              qr.destination_discipline_name,
+                              qr.destination_course_number.strip(),
+                              qr.rule_status))
+    if key in groups.keys():
+      groups[key].append(value)
+    else:
+      groups[key] = [value]
 
-  assert len(grade) == 1, "Multiple grade requirements for rule group"
-  assert len(rule_status) == 1, "Multiple status values for rule group"
+  # Generate a HTML table row for each group
+  # The db query should have produced the keys in institution/discipline/course order. If not, they
+  # would have to be sorted here.
+  if DEBUG: print('found {} groups'.format(len(groups)))
+  for key in groups.keys():
+    source_courses = set()
+    destination_courses = set()
+    rule_status = set()
+    first = True
 
-  row_id_str = ''
+    if DEBUG: print('{} ['.format(key), end='')
+    for rule_part in groups[key]:
+      if DEBUG:
+        if not first:
+          print(', ', end='')
+        first = False
+        print(rule_part, end='')
 
-  source_discipline = key.source_discipline
-  for n in source_courses:
-    assert (n.discipline == source_discipline), "Mixed disciplines in source course set."
-  # Peek at first destination discipline
-  destination_course = destination_courses.pop()
-  destination_courses.add(destination_course)
-  destination_discipline = destination_course.discipline
-  for n in destination_courses:
-    assert (n.discipline == destination_discipline), "Mixed disciplines in destination course set."
-  source_courses_str = '{}-{}'.format(key.source_discipline,
-               '/'.join(['<span title="{}">{}</span>'.format(n.course_id, n.course_number)
-               for n in sorted(source_courses,
-               key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))]))
-  row_id_str = ':'.join(['{}'.format(n.course_id) for n in sorted(source_courses,
-               key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))])
-  destination_courses_str = '{}-{}'.format(destination_discipline,
-               '/'.join(['<span title="{}">{}</span>'.format(n.course_id, n.course_number)
-               for n in sorted(destination_courses,
-               key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))]))
-  row_id_str += '-'
-  row_id_str += ':'.join(['{}'.format(n.course_id) for n in sorted(destination_courses,
-               key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))])
-  row = """ <tr id="{}">
-              <td title="{}">{}</td>
-              <td>{}</td>
-              <td>=></td>
-              <td title="{}">{}</td>
-              <td>{}</td>
-              <td>{}</td>
-            </tr>"""\
-          .format(row_id_str,
-                  qr.source_institution_name,
-                  qr.source_institution,
-                  source_courses_str,
-                  qr.destination_institution_name,
-                  qr.destination_institution,
-                  destination_courses_str,
-                  record.rule_status)
-  table += '  {}\n'.format(row)
+      # Populate the sets of source and destination courses for this group
+      source_courses.add(Course._make((rule_part.source_course_id,
+                                       rule_part.source_discipline,
+                                       rule_part.destination_discipline_name,
+                                       rule_part.source_course_number,
+                                       rule_part.grade,
+                                       rule_part.min_credits,
+                                       rule_part.max_credits,
+                                       rule_part.transfer_credits)))
+      destination_courses.add(Course._make((rule_part.destination_course_id,
+                                            rule_part.destination_discipline,
+                                            rule_part.destination_discipline_name,
+                                            rule_part.destination_course_number,
+                                            rule_part.grade,
+                                            rule_part.min_credits,
+                                            rule_part.max_credits,
+                                            rule_part.transfer_credits)))
+      rule_status.add(rule_part.rule_status)
+    if DEBUG: print(']')
 
-table += '\n</table>'
-html = '{}{}\n</body>'.format(html, table)
-with open('rules.html', 'w') as r:
-  r.write(html)
+    # The id for the row will be a colon-separated list of course_ids, with source and destinations
+    # separated by a hyphen
+    row_id_str = ''
+    source_course_list = _course_list(source_courses)
+    row_id_str += '-'
+    destination_course_list = _course_list(destination_courses)
+
+    # source_discipline = key.source_discipline
+    # for n in source_courses:
+    #   assert (n.discipline == source_discipline), "Mixed disciplines in source course set."
+    # # Peek at first destination discipline
+    # destination_course = destination_courses.pop()
+    # destination_courses.add(destination_course)
+    # destination_discipline = destination_course.discipline
+    # for n in destination_courses:
+    #   assert (n.discipline == destination_discipline), "Mixed disciplines in destination course set."
+    # row_id_str = ':'.join(['{}'.format(n.course_id) for n in sorted(source_courses,
+    #              key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))])
+    # row_id_str += '-'
+    # row_id_str += ':'.join(['{}'.format(n.course_id) for n in sorted(destination_courses,
+    #              key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))])
+
+    # source_courses_str = '{}-{}'.format(key.source_discipline,
+    #              '/'.join(['<span title="course_id {}">{}</span>'.format(n.course_id,
+    #                                                                      n.course_number)
+    #              for n in sorted(source_courses,
+    #              key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))]))
+
+    # destination_courses_str = '<span title="{}">{}</span>-{}'.format(destination_discipline,
+    #              '/'.join(['<span title="course_id {}">{}</span>'.format(n.course_id,
+    #                                                                      n.course_number)
+
+    #              for n in sorted(destination_courses,
+    #              key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))]))
+
+
+    row = """ <tr id="{}">
+                <td title="{}">{}</td>
+                <td>{} in {}</td>
+                <td>=></td>
+                <td title="{}">{}</td>
+                <td>{}</td>
+                <td>{}</td>
+              </tr>"""\
+            .format(row_id_str,
+                    qr.source_institution_name,
+                    qr.source_institution,
+                    grade.pop(),
+                    source_courses_str,
+                    qr.destination_institution_name,
+                    qr.destination_institution,
+                    destination_courses_str,
+                    record.rule_status)
+    table += '  {}\n'.format(row)
+
+  table += '\n</table>'
+  return table
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser('Testing transfer rule groups')
+  parser.add_argument('--debug', '-d', action='store_true', default=False)
+  args = parser.parse_args()
+
+  if args.debug: DEBUG = true
+
+  fp = open('qbcc-ph.json', 'r')
+  records = json.load(fp)
+  fp.close()
+  table = extract_groups(records)
+  html = """
+  <head>
+    <title>Testing Transfer Rule Groups</title>
+    <style>
+      table {border-collapse: collapse;}
+      td, th {border: 1px solid #ccc; padding:0.25em;}
+    </style>
+  </head>
+  <body>
+    {}
+  </body>
+  """.format(table)
+  with open('rules.html', 'w') as r:
+    r.write(html)
