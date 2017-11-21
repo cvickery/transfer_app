@@ -44,21 +44,6 @@ table, td, th {
     border-collapse:collapse;
 }
 
-/* If a table has thead and tbody, the body will be
- * scrollable. JavaScript should set the
- * height of the tbody, and will have to adjust the
- * widths of the thead columns and the widths of
- * the tbody columns so they match.
- * thead, tbody {
- *   display:block;
- *   border:1px solid black;
- * }
- * tbody {
- *   overflow-y: scroll;
- *   height: 800px;
- * }
- */
-
 td a {
   display: block;
   text-decoration:none;
@@ -215,9 +200,15 @@ td, th {
   text-align: center;
   font-weight: bold;
 }
-.selected-rule td {
+
+tr.selected-rule td {
   background-color: #999;
   color:white;
+}
+
+.credit-mismatch td {
+  background-color: #fcc;
+  color:black;
 }
 
 button:disabled {

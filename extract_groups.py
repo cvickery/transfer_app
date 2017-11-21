@@ -35,6 +35,7 @@ def _grade(min_gpa, max_gpa):
   letter = letters[int(round(max_gpa * 3))]
   return 'below ' + letter
 
+row_id_str = ''
 # _course_list()
 # -------------------------------------------------------------------------------------------------
 def _course_list(courses, is_source):
@@ -58,6 +59,7 @@ def _course_list(courses, is_source):
   string = ''
 
   for course in courses:
+    row_id_str += '{}:'.format(course.course_id)
     if is_source:
       if course.grade != grade:
         if grade != '': string = string.strip('/') + '; '
@@ -67,7 +69,8 @@ def _course_list(courses, is_source):
     if discipline != course.discipline:
       if discipline != '': string = string.strip('/') +'; '
       discipline = course.discipline
-      string = string.strip('/') + discipline + '-'
+      discipline_str = '<apan title="{}">{}</apan>'.format(course.discipline_name, course.discipline)
+      string = string.strip('/') + discipline_str + '-'
 
     if catalog_number != course.catalog_number:
       if not is_source and abs(float(course.course_credits) - float(course.transfer_credits)) > 0.1:
@@ -75,7 +78,9 @@ def _course_list(courses, is_source):
       else:
         note = ''
       catalog_number = course.catalog_number
-      string += '{}{}/'.format(course.catalog_number, note)
+      string += '<span title="course id: {}">{}{}</span>/'.format(course.course_id,
+                                                                  course.catalog_number,
+                                                                  note)
       course_credits += float(course.course_credits)
       transfer_credits += float(course.transfer_credits)
 
@@ -83,10 +88,10 @@ def _course_list(courses, is_source):
   suffix = 's'
   if is_source:
     if course_credits < 2.0 and course_credits > 0: suffix = ''
-    return '{} [{} credit{}]'.format(string, course_credits, suffix)
+    return ('{} [{} credit{}]'.format(string, course_credits, suffix), course_credits)
   else:
     if transfer_credits < 2.0 and transfer_credits > 0: suffix = ''
-    return '{} [{} credit{}]'.format(string, transfer_credits, suffix)
+    return ('{} [{} credit{}]'.format(string, transfer_credits, suffix), transfer_credits)
 
 
 # The values in one row of the db query
@@ -233,40 +238,15 @@ def extract_groups(records):
     # The id for the row will be a colon-separated list of course_ids, with source and destinations
     # separated by a hyphen
     row_id_str = ''
-    source_course_list = _course_list(source_courses, True)
-    row_id_str += '-'
-    destination_course_list = _course_list(destination_courses, False)
+    source_course_list, source_credits = _course_list(source_courses, True)
+    row_id_str = row_id_str.strip(':') + '-'
+    destination_course_list, destination_credits = _course_list(destination_courses, False)
+    row_id_str = row_id_str.strip(':')
+    row_class = ''
+    if source_credits != destination_credits:
+      row_class = ' class="credit-mismatch"'
 
-    # source_discipline = key.source_discipline
-    # for n in source_courses:
-    #   assert (n.discipline == source_discipline), "Mixed disciplines in source course set."
-    # # Peek at first destination discipline
-    # destination_course = destination_courses.pop()
-    # destination_courses.add(destination_course)
-    # destination_discipline = destination_course.discipline
-    # for n in destination_courses:
-    #   assert (n.discipline == destination_discipline), "Mixed disciplines in destination course set."
-    # row_id_str = ':'.join(['{}'.format(n.course_id) for n in sorted(source_courses,
-    #              key=lambda t: float(re.match('\d+\.?\d*', t.catalog_number).group(0)))])
-    # row_id_str += '-'
-    # row_id_str += ':'.join(['{}'.format(n.course_id) for n in sorted(destination_courses,
-    #              key=lambda t: float(re.match('\d+\.?\d*', t.catalog_number).group(0)))])
-
-    # source_courses_str = '{}-{}'.format(key.source_discipline,
-    #              '/'.join(['<span title="course_id {}">{}</span>'.format(n.course_id,
-    #                                                                      n.catalog_number)
-    #              for n in sorted(source_courses,
-    #              key=lambda t: float(re.match('\d+\.?\d*', t.catalog_number).group(0)))]))
-
-    # destination_courses_str = '<span title="{}">{}</span>-{}'.format(destination_discipline,
-    #              '/'.join(['<span title="course_id {}">{}</span>'.format(n.course_id,
-    #                                                                      n.catalog_number)
-
-    #              for n in sorted(destination_courses,
-    #              key=lambda t: float(re.match('\d+\.?\d*', t.catalog_number).group(0)))]))
-
-
-    row = """ <tr id="{}">
+    row = """ <tr id="{}"{}>
                 <td title="{}">{}</td>
                 <td>{}</td>
                 <td>=></td>
@@ -274,7 +254,7 @@ def extract_groups(records):
                 <td>{}</td>
                 <td>{}</td>
               </tr>"""\
-            .format(row_id_str,
+            .format(row_id_str, row_class,
                     qr.source_institution_name,
                     qr.source_institution,
                     source_course_list,
