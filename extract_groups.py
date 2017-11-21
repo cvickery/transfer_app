@@ -37,34 +37,78 @@ def _grade(min_gpa, max_gpa):
 
 # _course_list()
 # -------------------------------------------------------------------------------------------------
-def _course_list(courses):
+def _course_list(courses, is_source):
   """ Given a set of Course namedtuples, generate a display string for the contents of a
       table cell. Enclose segments of the string with spans giving course ids as title elements;
       update the global row_id_str with each course_id.
       Grade requirements and discipline abbreviations appear each time they change.
+      If is_source, show grade requirements and sum of course credits
+      If not, show sum of transfer_credits
   """
   global row_id_str
   # Sort the courss by grade requirement, discipline and course number
-  courses = sorted(courses, key=(courses.grade, courses.discipline, courses.number))
-  return 'hello'
+  courses = sorted(courses, key=lambda c: (c.grade, c.discipline, int(c.catalog_number)))
+
+  transfer_credits = 0.0
+  course_credits = 0.0
+  grade = ''
+  discipline = ''
+  catalog_number = ''
+  grade = ''
+  string = ''
+
+  for course in courses:
+    if is_source:
+      if course.grade != grade:
+        if grade != '': string = string.strip('/') + '; '
+        grade = course.grade
+        string = string.strip('/') + ' {} in '.format(grade)
+
+    if discipline != course.discipline:
+      if discipline != '': string = string.strip('/') +'; '
+      discipline = course.discipline
+      string = string.strip('/') + discipline + '-'
+
+    if catalog_number != course.catalog_number:
+      if not is_source and abs(float(course.course_credits) - float(course.transfer_credits)) > 0.1:
+        note = '({:.1f} cr.)'.format(float(course.transfer_credits))
+      else:
+        note = ''
+      catalog_number = course.catalog_number
+      string += '{}{}/'.format(course.catalog_number, note)
+      course_credits += float(course.course_credits)
+      transfer_credits += float(course.transfer_credits)
+
+  string = string.strip('/')
+  suffix = 's'
+  if is_source:
+    if course_credits < 2.0 and course_credits > 0: suffix = ''
+    return '{} [{} credit{}]'.format(string, course_credits, suffix)
+  else:
+    if transfer_credits < 2.0 and transfer_credits > 0: suffix = ''
+    return '{} [{} credit{}]'.format(string, transfer_credits, suffix)
+
 
 # The values in one row of the db query
+# -------------------------------------------------------------------------------------------------
 QueryRecord = namedtuple('QueryRecord', """
                           source_course_id
+                          destination_course_id
                           priority rule_group
-                          min_credits max_credits min_gpa max_gpa
+                          min_gpa max_gpa
                           transfer_credits
                           source_institution
                           source_institution_name
                           source_discipline
                           source_discipline_name
-                          source_course_number
-                          destination_course_id
+                          source_catalog_number
+                          source_course_credits
                           destination_institution
                           destination_institution_name
                           destination_discipline
                           destination_discipline_name
-                          destination_course_number
+                          destination_catalog_number
+                          destination_course_credits
                           rule_status""")
 
 # After the user has selected source and destination colleges, and source/destination
@@ -74,6 +118,7 @@ QueryRecord = namedtuple('QueryRecord', """
 # and gpas.
 
 # Group key: combination of properties that identiy a group
+# -------------------------------------------------------------------------------------------------
 GroupKey =namedtuple('GroupKey',"""
                       source_institution source_discipline rule_group destination_institution
                      """)
@@ -81,29 +126,32 @@ GroupKey =namedtuple('GroupKey',"""
 # Group record: properties for one course-pair in a group. Some of this information is
 # redundant across members of the group, so the issue is to sort out the common properties from the
 # redundant properties.
+# -------------------------------------------------------------------------------------------------
 GroupRecord = namedtuple('GroupRecord', """
                           source_course_id
                           source_discipline
                           source_discipline_name
-                          source_course_number
+                          source_catalog_number
+                          source_course_credits
                           rule_priority
-                          min_credits max_credits transfer_credits
+                          transfer_credits
                           grade
                           destination_course_id
                           destination_discipline
                           destination_discipline_name
-                          destination_course_number
+                          destination_catalog_number
+                          destination_course_credits
                           rule_status
                           """)
 # Course
+# -------------------------------------------------------------------------------------------------
 Course = namedtuple('Course', """
                     course_id
                     discipline
                     discipline_name
-                    course_number
+                    catalog_number
+                    course_credits
                     grade
-                    min_credits
-                    max_credits
                     transfer_credits""")
 
 
@@ -126,15 +174,16 @@ def extract_groups(records):
     value = GroupRecord._make((qr.source_course_id,
                               qr.source_discipline,
                               qr.source_discipline_name,
-                              qr.source_course_number.strip(),
+                              qr.source_catalog_number.strip(),
+                              qr.source_course_credits,
                               qr.priority,
-                              qr.min_credits, qr.max_credits,
                               qr.transfer_credits,
                               _grade(qr.min_gpa, qr.max_gpa),
                               qr.destination_course_id,
                               qr.destination_discipline,
                               qr.destination_discipline_name,
-                              qr.destination_course_number.strip(),
+                              qr.destination_catalog_number.strip(),
+                              qr.destination_course_credits,
                               qr.rule_status))
     if key in groups.keys():
       groups[key].append(value)
@@ -163,28 +212,30 @@ def extract_groups(records):
       source_courses.add(Course._make((rule_part.source_course_id,
                                        rule_part.source_discipline,
                                        rule_part.destination_discipline_name,
-                                       rule_part.source_course_number,
+                                       rule_part.source_catalog_number,
+                                       rule_part.source_course_credits,
                                        rule_part.grade,
-                                       rule_part.min_credits,
-                                       rule_part.max_credits,
                                        rule_part.transfer_credits)))
       destination_courses.add(Course._make((rule_part.destination_course_id,
                                             rule_part.destination_discipline,
                                             rule_part.destination_discipline_name,
-                                            rule_part.destination_course_number,
+                                            rule_part.destination_catalog_number,
+                                            rule_part.destination_course_credits,
                                             rule_part.grade,
-                                            rule_part.min_credits,
-                                            rule_part.max_credits,
                                             rule_part.transfer_credits)))
       rule_status.add(rule_part.rule_status)
     if DEBUG: print(']')
 
+    # All parts of the rule group must have the same reveiw_status. Failure indicates a bug.
+    assert len(rule_status) == 1, 'Rule group with mixed review_status values'
+    rule_status = rule_status.pop()
+
     # The id for the row will be a colon-separated list of course_ids, with source and destinations
     # separated by a hyphen
     row_id_str = ''
-    source_course_list = _course_list(source_courses)
+    source_course_list = _course_list(source_courses, True)
     row_id_str += '-'
-    destination_course_list = _course_list(destination_courses)
+    destination_course_list = _course_list(destination_courses, False)
 
     # source_discipline = key.source_discipline
     # for n in source_courses:
@@ -196,28 +247,28 @@ def extract_groups(records):
     # for n in destination_courses:
     #   assert (n.discipline == destination_discipline), "Mixed disciplines in destination course set."
     # row_id_str = ':'.join(['{}'.format(n.course_id) for n in sorted(source_courses,
-    #              key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))])
+    #              key=lambda t: float(re.match('\d+\.?\d*', t.catalog_number).group(0)))])
     # row_id_str += '-'
     # row_id_str += ':'.join(['{}'.format(n.course_id) for n in sorted(destination_courses,
-    #              key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))])
+    #              key=lambda t: float(re.match('\d+\.?\d*', t.catalog_number).group(0)))])
 
     # source_courses_str = '{}-{}'.format(key.source_discipline,
     #              '/'.join(['<span title="course_id {}">{}</span>'.format(n.course_id,
-    #                                                                      n.course_number)
+    #                                                                      n.catalog_number)
     #              for n in sorted(source_courses,
-    #              key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))]))
+    #              key=lambda t: float(re.match('\d+\.?\d*', t.catalog_number).group(0)))]))
 
     # destination_courses_str = '<span title="{}">{}</span>-{}'.format(destination_discipline,
     #              '/'.join(['<span title="course_id {}">{}</span>'.format(n.course_id,
-    #                                                                      n.course_number)
+    #                                                                      n.catalog_number)
 
     #              for n in sorted(destination_courses,
-    #              key=lambda t: float(re.match('\d+\.?\d*', t.course_number).group(0)))]))
+    #              key=lambda t: float(re.match('\d+\.?\d*', t.catalog_number).group(0)))]))
 
 
     row = """ <tr id="{}">
                 <td title="{}">{}</td>
-                <td>{} in {}</td>
+                <td>{}</td>
                 <td>=></td>
                 <td title="{}">{}</td>
                 <td>{}</td>
@@ -226,12 +277,11 @@ def extract_groups(records):
             .format(row_id_str,
                     qr.source_institution_name,
                     qr.source_institution,
-                    grade.pop(),
-                    source_courses_str,
+                    source_course_list,
                     qr.destination_institution_name,
                     qr.destination_institution,
-                    destination_courses_str,
-                    record.rule_status)
+                    destination_course_list,
+                    rule_status)
     table += '  {}\n'.format(row)
 
   table += '\n</table>'

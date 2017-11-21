@@ -236,12 +236,12 @@ def do_form_1(request, session):
   select t.source_course_id as source_id,
          c1.institution as source_institution,
          c1.discipline as source_discipline,
-         c1.discipline || ' ' || c1.number as source_course,
+         c1.discipline || ' ' || c1.catalog_number as source_course,
          c1.cuny_subject as source_subject,
          t.destination_course_id as destination_id,
          c2.institution as destination_institution,
          c2.discipline as destination_discipline,
-         c2.discipline || ' ' || c2.number as destination_course,
+         c2.discipline || ' ' || c2.catalog_number as destination_course,
          c2.cuny_subject as destination_subject
     from transfer_rules t, courses c1, courses c2
     where
@@ -506,26 +506,27 @@ def do_form_2(request, session):
   source_subject_params = ', '.join('%s' for s in source_subject_list)
   destination_subject_params = ', '.join('%s' for s in destination_subject_list)
   q = """
-  select  t.source_course_id,                                   -- 0
-          t.rule_priority,                                      -- 1
-          t.rule_group,                                         -- 2
-          t.min_source_units as min_credits,                                  -- 3
-          t.max_source_units as max_credits,                                  -- 4
-          t.min_gpa,                                            -- 3          -- 5
-          t.max_gpa,                                            -- 4          -- 6
+  select
+          t.source_course_id,
+          t.destination_course_id,
+          t.rule_priority,
+          t.rule_group,
+          t.min_gpa,
+          t.max_gpa,
           t.transfer_credits,
-          substring(c1.institution from '[^\d]+') as source_institution,      -- 8
-          i1.prompt as source_institution_name,                 -- 5          -- 7
-          c1.discipline as source_discipline,                   -- 6          -- 9
+          substring(c1.institution from '[^\d]+') as source_institution,
+          i1.prompt as source_institution_name,
+          c1.discipline as source_discipline,
           d1.description as source_discipline_name,
-          c1.number as source_course_number,                    -- 7          -- 10
-          t.destination_course_id,                              -- 8          -- 11
-          substring(c2.institution from '[^\d]+') as destination_institution, -- 13
-          i2.prompt as destination_institution_name,                 -- 9     -- 12
-          c2.discipline as destination_discipline,              -- 10         -- 14
+          c1.catalog_number as source_catalog_number,
+          c1.credits as source_course_credits,
+          substring(c2.institution from '[^\d]+') as destination_institution,
+          i2.prompt as destination_institution_name,
+          c2.discipline as destination_discipline,
           d2.description as destination_discipline_name,
-          c2.number as destination_course_number,               -- 11         -- 15
-          t.status                                              -- 12         -- 16
+          c2.catalog_number as destination_catalog_number,
+          c2.credits as destination_course_credits,
+          t.status
    from   transfer_rules t,
           disciplines d1,
           disciplines d2,
@@ -547,7 +548,7 @@ def do_form_2(request, session):
       and d2.institution = c2.institution
       and d2.discipline = c2.discipline
     order by lower(i1.prompt), lower(c1.discipline),
-             to_number(substring(c1.number from '\d+\.?\d*'), '000000.000'),
+             to_number(substring(c1.catalog_number from '\d+\.?\d*'), '000000.000'),
              lower(i2.prompt)
   """.format(source_institution_params,
              source_subject_params,
@@ -788,7 +789,7 @@ def history(rule):
   return render_template('transfers.html', result=Markup(result))
 
 
-# TRANSFERS PAGE
+# REVIEW_TRANSFERS PAGE
 # =================================================================================================
 #
 @app.route('/review_transfers/', methods=['POST', 'GET'])
