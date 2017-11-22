@@ -35,7 +35,6 @@ def _grade(min_gpa, max_gpa):
   letter = letters[int(round(max_gpa * 3))]
   return 'below ' + letter
 
-row_id_str = ''
 # _course_list()
 # -------------------------------------------------------------------------------------------------
 def _course_list(courses, is_source):
@@ -46,7 +45,7 @@ def _course_list(courses, is_source):
       If is_source, show grade requirements and sum of course credits
       If not, show sum of transfer_credits
   """
-  global row_id_str
+  row_id_str = ''
   # Sort the courss by grade requirement, discipline and course number
   courses = sorted(courses, key=lambda c: (c.grade, c.discipline, int(c.catalog_number)))
 
@@ -85,13 +84,16 @@ def _course_list(courses, is_source):
       transfer_credits += float(course.transfer_credits)
 
   string = string.strip('/')
+  row_id_str = row_id_str.strip(':')
   suffix = 's'
   if is_source:
     if course_credits < 2.0 and course_credits > 0: suffix = ''
-    return ('{} [{} credit{}]'.format(string, course_credits, suffix), course_credits)
+    return ('{} [{} credit{}]'.format(string, course_credits, suffix),
+                              course_credits, row_id_str)
   else:
     if transfer_credits < 2.0 and transfer_credits > 0: suffix = ''
-    return ('{} [{} credit{}]'.format(string, transfer_credits, suffix), transfer_credits)
+    return ('{} [{} credit{}]'.format(string, transfer_credits, suffix),
+                              transfer_credits, row_id_str)
 
 
 # The values in one row of the db query
@@ -237,16 +239,15 @@ def extract_groups(records):
 
     # The id for the row will be a colon-separated list of course_ids, with source and destinations
     # separated by a hyphen
-    row_id_str = ''
-    source_course_list, source_credits = _course_list(source_courses, True)
-    row_id_str = row_id_str.strip(':') + '-'
-    destination_course_list, destination_credits = _course_list(destination_courses, False)
-    row_id_str = row_id_str.strip(':')
-    row_class = ''
+    source_course_list, source_credits, id_str = _course_list(source_courses, True)
+    row_id_str = id_str + '-'
+    destination_course_list, destination_credits, id_str = _course_list(destination_courses, False)
+    row_id_str += id_str
+    row_class = 'rule'
     if source_credits != destination_credits:
-      row_class = ' class="credit-mismatch"'
+      row_class = 'rule credit-mismatch'
 
-    row = """ <tr id="{}"{}>
+    row = """ <tr id="{}" class="{}">
                 <td title="{}">{}</td>
                 <td>{}</td>
                 <td>=></td>
