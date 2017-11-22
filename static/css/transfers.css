@@ -14,6 +14,10 @@ body {
   color: #611;
   font-style: italic;
 }
+
+h1 {
+  margin:0;
+}
 button, .restart {
     border: 1px solid #999;
     border-radius:0.25em;
@@ -78,10 +82,15 @@ td, th {
   column-rule: 1px solid #ccc;
 }
 
-#form-2>fieldset {
-  background-color:white;
-  padding:0.5em;
+#subject-table {
+  display:block;
+  border:none;
+  padding:0;
+  margin:0.5em 0 0 0.5em;
+  height: 70vh;
+  overflow:scroll;
 }
+
 #form-2 th {
   background-color:#999999;
   color:white;

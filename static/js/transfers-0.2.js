@@ -5,116 +5,13 @@
  * For now it continues its monolithic megopoly.
  */
 
-// cell_widths()
-// -----------------------------------------------------------------------------------------------
-/* Calculate the widths of all the columns in (the first row of) a thead or tbody.
- * Ignores #text nodes.
- *  row_group is the thead or tbody element
- *  cell_info is an array with a cell_width and col_span attributes for td/th elements only.
- * Return row_width after updating the cell_info array.
- */
-function cell_widths(row_group, cell_info)
-{
-  console.log('cell_widths()', row_group, cell_info);
-  // find the first row in the row_group
-  for (var row = 0; row < row_group.childNodes.length; row++)
-  {
-    if (row_group.childNodes[row].nodeName === 'TR')
-    {
-      cell_info.row = row_group.childNodes[row];
-      cell_info.row_width = 0;
-      // find all the TD/TH cells in the row and update widths
-      var cells = row_group.childNodes[row].childNodes;
-      var col = 0;
-      for (var cell in cells)
-      {
-        if (cells[cell].nodeName === 'TD' || cells[cell].nodeName === 'TH')
-        {
-          var box = cells[cell].getBoundingClientRect();
-          cell_info.cells[col] = {cell: cells[cell],
-                                  cell_width: box.width,
-                                  col_span: cells[cell].colSpan};
-          cell_info.row_width += box.width;
-          col++;
-        }
-      }
-      return;
-    }
-  }
-}
-
-// adjust_cols()
-// -----------------------------------------------------------------------------------------------
-/* Adjust the widths of the columns in the shorter row group to match the widths of the columns in
- * the wider row group.
- */
-// function adjust_cols(source, dest)
-// {
-//   console.log(source, dest);
-//   //  Assume that the source has all the cols, but dest might have col_groups.
-//   dest_col = 0;
-//   source_col = 0;
-//   while (source_col < source.cells.length)
-//   {
-//     dest_width = 0;
-//     var limit = source_col + dest.cells[dest_col].col_span;
-//     while (source_col < limit)
-//     {
-//       console.log(`Source col: ${source_col}; Dest col: ${dest_col}; Dest colspan: ${dest.cells[dest_col].col_span}`);
-//       dest_width += source.cells[source_col].cell_width;
-//       source_col++;
-//     }
-//     console.log(`  Set dest col ${dest_col} width to ${dest_width}`);
-//     // dest.cells[dest_col].cell.scope = 'col';
-//     // dest.cells[dest_col].cell.style.display = 'inline-block';
-//     // dest.cells[dest_col].cell.style.width = dest_width + 'px';
-//     dest_col++;
-//   }
-// }
-
 $(function ()
 {
   $('#need-js').hide();
   $('#evaluation-form').hide();
   $('#verification-details').hide();
-  /* If there are tables with thead and tbody elements, the tbody is scrollable (via css)
-   * here, the widths of the header and body columns are made to match, and the height of the
-   * tbody is adjusted to maximize real estate.
-   */
-  // $('thead').each(function s(index, element)
-  // {
-  //   //  Found a thead, make sure the table has a tbody too
-  //   var thead = element;
-  //   var tbody = element.nextSibling;
-  //   while (tbody)
-  //   {
-  //     if (tbody.nodeName === 'TBODY')
-  //     {
-  //       console.log(thead, tbody);
-  //       var head_info = {cells:[]};
-  //       var body_info = {cells:[]};
-  //       cell_widths(thead, head_info);
-  //       cell_widths(tbody, body_info);
-  //       console.log('Head: ', head_info);
-  //       console.log('Body: ', body_info);
-  //       if (head_info.row_width > body_info.row_width)
-  //       {
-  //         adjust_cols(head_info, body_info);
-  //       }
-  //       else if (head_info.row_width < body_info.row_width)
-  //       {
-  //         adjust_cols(body_info, head_info);
-  //       }
-  //       else
-  //       {
-  //         console.log('No adjustments needed.');
-  //       }
-  //       break;
-  //     }
-  //     tbody = tbody.nextSibling;
-  //   }
-  // });
 
+  // Global action: escape key hides dialogs, currently only the evaluation-panel in form 2.
   $('*').keyup(function (event)
   {
     if (event.keyCode === 27)
@@ -128,8 +25,11 @@ $(function ()
   var dismiss_bar = '<div id="dismiss-bar" class="dismiss">×</div>';
   var pending_evaluations = [];
 
-  // Form #1 Validation
+  // Form #1 Processing and validation
   // ==============================================================================================
+  /* Presented with a lists of all institutions, user has to select one sender and 1+ receivers or
+   * vice-versa. Must supply a valid CUNY email address.
+   */
   $('#submit-form-1').prop('disabled', true).css('color', '#cccccc');
 
   $('#all-sources, #all-destinations').prop('disabled', false);
@@ -200,7 +100,7 @@ $(function ()
     }
   }
 
-  // Form 0: clear or set groups of checkboxes
+  // Form 1: clear or set groups of checkboxes
   // ----------------------------------------------------------------------------------------------
   $('#all-sources').click(function (event)
   {
@@ -245,29 +145,47 @@ $(function ()
     submit_button_1 = true;
   });
 
-  // Form 2: Manage checkboxes
+  // Form 2 Validation and Processing
   // ==============================================================================================
-  $('#all-sending-subjects-top, #all-sending-subjects-bot').click(function ()
+  /* Given a list of sending and receiving offered disciplines, grouped by CUNY subject names, the
+   * The user must select at least one discipline group from the sending column and at least one
+   * from the receiving column. Convenience boxes let the user clear or select all items in a
+   * column.
+   */
+
+  // Form 2: Manage checkboxes
+  // ----------------------------------------------------------------------------------------------
+  $('#all-sending-subjects').click(function ()
   {
     $('.source-subject input:checkbox').prop('checked', true);
-    $('#no-sending-subjects-top, #no-sending-subjects-bot').prop('checked', false);
+    $('#no-sending-subjects').prop('checked', false);
   });
-  $('#no-sending-subjects-top, #no-sending-subjects-bot').click(function ()
+  $('#no-sending-subjects').click(function ()
   {
     $('.source-subject input:checkbox').prop('checked', false);
   });
 
-  $('#all-receiving-subjects-top, #all-receiving-subjects-bot').click(function ()
+  $('#all-receiving-subjects').click(function ()
   {
     $('.destination-subject input:checkbox').prop('checked', true);
-    $('#no-receiving-subjects-top, #no-receiving-subjects-bot').prop('checked', false);
+    $('#no-receiving-subjects').prop('checked', false);
   });
-  $('#no-receiving-subjects-top, #no-receiving-subjects-bot').click(function ()
+  $('#no-receiving-subjects').click(function ()
   {
     $('.destination-subject input:checkbox').prop('checked', false);
   });
 
-  //  Form 3: Clickable rules
+  //  Form 2: Hide instructions
+  // ----------------------------------------------------------------------------------------------
+  $('.instructions').click(function()
+  {
+    $(this).hide();
+  });
+
+
+
+  //  Form 3 Validation and Processing
+  //  =============================================================================================
   $('.rule').click(function (event)
   {
     // clicks in the prior evaluations column do not select a rule.

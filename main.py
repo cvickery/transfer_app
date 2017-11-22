@@ -212,7 +212,7 @@ def do_form_1(request, session):
   """
       Collect source institutions, destination institutions and user's email from Form 1, and add
       them to the session.
-      Generate Form 2: select discipline(s)
+      Generate Form 2 to select discipline(s)
   """
   logger.debug('*** do_form_1({})'.format(session))
 
@@ -265,11 +265,11 @@ def do_form_1(request, session):
     if rule.source_subject not in source_subjects:
       source_subjects[rule.source_subject] = set()
     source_subjects[rule.source_subject].add((rule.source_institution,
-                                                 rule.source_discipline))
+                                              rule.source_discipline))
     if rule.destination_subject not in destination_subjects:
       destination_subjects[rule.destination_subject] = set()
     destination_subjects[rule.destination_subject].add((rule.destination_institution,
-                                                           rule.destination_discipline))
+                                                        rule.destination_discipline))
 
   sending_is_singleton = False
   sending_heading = 'Sending Colleges’'
@@ -403,35 +403,33 @@ def do_form_1(request, session):
 
   if len(all_subjects) > 1:
     shortcuts = """
+    <table>
     <tr>
       <td class="source-subject f2-cbox" colspan="2">
         <div>
           <label for="all-sending-subjects"><em>Select All Sending Subjects: </em></label>
-          <input type="checkbox" id="all-sending-subjects{}" />
+          <input type="checkbox" id="all-sending-subjects" />
         </div>
         <div>
           <label for="no-sending-subjects"><em>Clear All Sending Subjects: </em></label>
-          <input type="checkbox" id="no-sending-subjects{}" />
+          <input type="checkbox" id="no-sending-subjects" />
         </div>
       </td>
-      <td> </td>
       <td class="destination-subject f2-cbox" colspan="2">
         <div>
           <label for="all-receiving-subjects"><em>Select All Receiving Subjects: </em></label>
-          <input type="checkbox" id="all-receiving-subjects{}" />
+          <input type="checkbox" id="all-receiving-subjects" />
         </div>
         <div>
           <label for="no-receiving-subjects"><em>Clear All Receiving Subjects: </em></label>
-          <input type="checkbox" id="no-receiving-subjects{}" />
+          <input type="checkbox" id="no-receiving-subjects" />
         </div>
       </td>
     </tr>
+    </table>
     """
-    filter_rows = shortcuts.format('-top', '-top', '-top', '-top') + '</thead><tbody>' +\
-                  filter_rows #+ \
-                  # shortcuts.format('-bot', '-bot', '-bot', '-bot')
 
-  # set or clear email-related cookes based on form data
+  # set or clear email-related cookies based on form data
   email = request.form.get('email')
   session['email'] = email # always valid for this session
   # The email cookie expires now or later, depending on state of "remember me"
@@ -442,19 +440,21 @@ def do_form_1(request, session):
 
   result = """
   <h1>Step 2: Select CUNY Subjects</h1>
-  <p>
+  <div class="instructions">
+    There are {:,} transfer rules where {}.<br/>
     Disciplines are grouped by CUNY subject area.<br/>
     Select at least one sending subject area and at least one receiving subject area.<br/>
     The next step will show all transfer rules for courses in the corresponding pairs of
-    disciplines.
-  </p>
+    disciplines.<br/>
+    <em>Click on these instructions to remove them.</em>
+  </div>
   <form method="post" action="" id="form-2">
-    <fieldset>
-      <div>There are {:,} transfer rules where {}.</div>
-      <a href="" class="restart">Restart</a>
-      <button type="submit">Next</button>
-      <table id="subject-filters" class="scrollable">
-        <thead>
+    <a href="/review_transfers/" class="restart">Restart</a>
+    <button type="submit">Next</button>
+    <input type="hidden" name="next-function" value="do_form_2" />
+    {}
+    <table id="subject-table">
+      <thead>
         <tr>
           <th class="source-subject">{} Discipline(s)</th>
           <th class="source-subject">Select Sending</th>
@@ -462,15 +462,13 @@ def do_form_1(request, session):
           <th class="destination-subject">{} Discipline(s)</th>
           <th class="destination-subject">Select Receiving</th>
         </tr>
-        {}
-        </body>
-      </table>
-      <a href="/review_transfers/" class="restart">Restart</a>
-      <input type="hidden" name="next-function" value="do_form_2" />
-      <button type="submit">Next</button>
-    </fieldset>
+      </thead>
+      <tbody>
+      {}
+      </tbody>
+    </table>
   </form>
-  """.format(len(rules), criterion, sending_heading, receiving_heading, filter_rows)
+  """.format(len(rules), criterion, shortcuts, sending_heading, receiving_heading, filter_rows)
   response = make_response(render_template('transfers.html', result=Markup(result)))
   response.set_cookie('email', email, expires=expire_time)
   response.set_cookie('remember-me', 'on', expires=expire_time)
@@ -567,35 +565,6 @@ def do_form_2(request, session):
   # logger.debug(json.dumps(rules))
   rules_table = extract_groups(rules)
 
-  # # Rule ids: source_course_id:source_institution:dest_course_id:dest_institution
-  # the_list = """
-  #   <table id="rules-table" class="scrollable">
-  #     <thead>
-  #       <tr>
-  #         <th colspan="5">Rule</th>
-  #         <th>Previous Evaluations</th>
-  #       </tr>
-  #     </thead>
-  #     <tbody>"""
-  # for rule in rules:
-  #   previous = 'None'
-  #   if rule['status'] != 0:
-  #     previous = """
-  #       <a href="/history/{}:{}" target="_blank">{}</a>""".format(rule[0],
-  #                                                                 rule[3],
-  #                                                                 status_string(rule['status']))
-  #   the_list += """
-  #   <tr id="{}" class="rule">
-  #     <td>{}</td>
-  #     <td title="course id: {}">{}</td>
-  #     <td>=></td>
-  #     <td>{}</td>
-  #     <td title="course id: {}">{}</td>
-  #     <td>{}</td>
-  #   </tr>""".format(str(rule[0]) + ':' + rule[6] + ':' + str(rule[8]) + ':' + rule[9],
-  #                   rule[6], rule[0], rule[7], rule[9], rule[8], rule[10],
-  #                   previous)
-  # the_list += '</tbody></table>'
   num_rules = 'are no transfer rules'
   if len(rules) == 1: num_rules = 'is one transfer rule'
   if len(rules) > 1: num_rules = 'are {:,} transfer rules'.format(len(rules))
