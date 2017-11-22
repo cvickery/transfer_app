@@ -95,10 +95,6 @@ def assessment():
 #   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
 #   (This allows people to accidentally deny their work without losing it.)
 
-#   NOTE TO SELF: See http://flask.pocoo.org/docs/0.12/patterns/jquery/ when you want to do ajax to
-#   get catalog descriptions
-
-
 # do_form_0()
 # -------------------------------------------------------------------------------------------------
 def do_form_0(request, session):
@@ -486,7 +482,7 @@ def do_form_2(request, session):
   cursor = conn.cursor()
 
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
-  # the source subjects and the receiving course blongs to a receiving institution and is one of
+  # the source subjects and the receiving course belongs to a receiving institution and is one of
   # the receiving subjects.
   try:
     source_institution_params = ', '.join('%s' for i in session['source_institutions'])

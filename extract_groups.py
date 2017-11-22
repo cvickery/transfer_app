@@ -4,6 +4,7 @@ import json
 import re
 import argparse
 
+from evaluations import status_string, rule_history
 DEBUG = False
 
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
@@ -127,7 +128,7 @@ QueryRecord = namedtuple('QueryRecord', """
 # Group key: combination of properties that identiy a group
 # -------------------------------------------------------------------------------------------------
 GroupKey =namedtuple('GroupKey',"""
-                      source_institution source_discipline rule_group destination_institution
+                      source_institution source_discipline rule_group
                      """)
 
 # Group record: properties for one course-pair in a group. Some of this information is
@@ -176,8 +177,7 @@ def extract_groups(records):
     qr = QueryRecord._make(record)
     key = GroupKey._make((qr.source_institution,
                           qr.source_discipline,
-                          qr.rule_group,
-                          qr.destination_institution))
+                          qr.rule_group))
     value = GroupRecord._make((qr.source_course_id,
                               qr.source_discipline,
                               qr.source_discipline_name,
@@ -247,6 +247,11 @@ def extract_groups(records):
     if source_credits != destination_credits:
       row_class = 'rule credit-mismatch'
 
+    # If the rule has been evaluated, the last column is a link to the review history. But if it
+    # hasn't been evaluated yet, the last column is just the text that says so.
+    status_cell = status_string(rule_status)
+    if rule_status != 0:
+      status_cell = '<a href="/history/{}" target="_blank">status_cell</a>'.format(key)
     row = """ <tr id="{}" class="{}">
                 <td title="{}">{}</td>
                 <td>{}</td>
@@ -262,7 +267,7 @@ def extract_groups(records):
                     qr.destination_institution_name,
                     qr.destination_institution,
                     destination_course_list,
-                    rule_status)
+                    status_cell)
     table += '  {}\n'.format(row)
 
   table += '\n</table>'
