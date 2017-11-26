@@ -97,14 +97,19 @@ td, th {
 }
 .source-subject {
   background-color:#eeffff;
+  text-align: right;
+}
+
+.source-subject.f2-cbox {
+  text-align: left;
+}
+
+.destination-subject.f2-cbox {
+  text-align: right;
 }
 
 .destination-subject {
   background-color:#eeffff;
-}
-.f2-cbox {
-  text-align: right;
-  padding-right:2em;
 }
 
 #email-text {
