@@ -143,12 +143,12 @@ def rule_history(rule):
   """
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  try:
-    source_course_id, destination_course_id = rule.split(':')
-  except ValueError:
-    return """
-    <h1 class="error">“{}” is not a valid transfer rule. Must be <em>nnn</em>:<em>nnn</em></h1>
-    """.format(rule)
+  return """
+  <h1 class="error">Unable to provide evaluation history for transfer rule “{}” at this time.</h1>
+  <p>
+    Under development.
+  </p>
+         """.format(rule)
   cursor.execute("""
     select status from transfer_rules where source_course_id = %s and destination_course_id = %s
     """, (source_course_id, destination_course_id))
@@ -175,7 +175,7 @@ def rule_history(rule):
     <h3>Course ID:  {:06d}</h3>
     <h3>Institution: {}</h3>
     <h3>Department: {}</h3>
-    <h3>Catalog:</h3>{}
+    <h3>Catalog Number:</h3>{}
   </div>
 
   <h2>Receiving Course</h2>
@@ -183,7 +183,7 @@ def rule_history(rule):
     <h3>Course ID {:06d}</h3>
     <h3>Institution: {}</h3>
     <h3>Department: {}</h3>
-    <h3>Catalog:</h3>{}
+    <h3>Catalog Number:</h3>{}
   </div>
   """.format(
     int(source_course.course_id), source_course.institution, source_course.department,

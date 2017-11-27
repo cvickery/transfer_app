@@ -82,38 +82,48 @@ td, th {
   column-rule: 1px solid #ccc;
 }
 
-#subject-table {
-  display:block;
-  border:none;
-  padding:0;
-  margin:0.5em 0 0 0.5em;
+#email-text {
+  width:25em;
+}
+
+#f2-shortcuts {
+  margin: 0 auto;
+}
+#f2-shortcuts td {
+  text-align: right;
+}
+
+#subject-table-div {
+  margin: 0.5em auto;
+  padding: 0;
   height: 70vh;
-  overflow:scroll;
+  width: 80%;
+  overflow: scroll;
 }
 
 #form-2 th {
   background-color:#999999;
   color:white;
 }
+
 .source-subject {
   background-color:#eeffff;
   text-align: right;
 }
 
+.f2-cbox:parent {
+  background-color: white;
+}
 .source-subject.f2-cbox {
   text-align: left;
-}
-
-.destination-subject.f2-cbox {
-  text-align: right;
 }
 
 .destination-subject {
   background-color:#eeffff;
 }
 
-#email-text {
-  width:25em;
+.destination-subject.f2-cbox {
+  text-align: right;
 }
 
 .subtitle {

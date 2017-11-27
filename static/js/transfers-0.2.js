@@ -25,7 +25,7 @@ $(function ()
   var dismiss_bar = '<div id="dismiss-bar" class="dismiss">×</div>';
   var pending_evaluations = [];
 
-  // Form #1 Processing and validation
+  // Form #1 Select Colleges
   // ==============================================================================================
   /* Presented with a lists of all institutions, user has to select one sender and 1+ receivers or
    * vice-versa. Must supply a valid CUNY email address.
@@ -145,7 +145,7 @@ $(function ()
     submit_button_1 = true;
   });
 
-  // Form 2 Validation and Processing
+  // Form 2 Select Disciplines
   // ==============================================================================================
   /* Given a list of sending and receiving offered disciplines, grouped by CUNY subject names, the
    * The user must select at least one discipline group from the sending column and at least one
@@ -155,6 +155,8 @@ $(function ()
 
   // Form 2: Manage checkboxes
   // ----------------------------------------------------------------------------------------------
+
+  $('.f2-cbox').has('input').css('background-color', 'white');
   $('#all-sending-subjects').click(function ()
   {
     $('.source-subject input:checkbox').prop('checked', true);
