@@ -3,6 +3,7 @@ body {
   border: 1em;
   padding: 1em;
   background-color: #eff;
+  color:#333;
 }
 
 .error {
@@ -75,6 +76,7 @@ legend {
 
 td, th {
   background-color: white;
+  color:#333;
 }
 
 #source-college-list, #destination-college-list {
@@ -89,6 +91,7 @@ td, th {
 #f2-shortcuts {
   margin: 0 auto;
 }
+
 #f2-shortcuts td {
   text-align: right;
 }
@@ -101,29 +104,26 @@ td, th {
   overflow: scroll;
 }
 
-#form-2 th {
-  background-color:#999999;
-  color:white;
+#form-2 th, #rules-table th {
+  background-color:#eee;
+  color:#333;
 }
 
 .source-subject {
-  background-color:#eeffff;
+  background-color:#eff;
   text-align: right;
 }
 
 .f2-cbox:parent {
   background-color: white;
 }
-.source-subject.f2-cbox {
-  text-align: left;
-}
 
 .destination-subject {
   background-color:#eeffff;
 }
 
-.destination-subject.f2-cbox {
-  text-align: right;
+.f2-cbox {
+  text-align: center;
 }
 
 .subtitle {
@@ -170,10 +170,6 @@ td, th {
   width: 100%;
 }
 
-#verification-fieldset {
-  width: 40%;
-}
-
 #verification-details {
   font-size:0.8em;
   font-style:italic;
@@ -190,10 +186,43 @@ td, th {
   width: 15em;
 }
 
+#verification-fieldset {
+  width: 50vw;
+}
+
+#rules-table-div {
+  margin: 0.5em auto;
+  padding: 0;
+  height: 70vh;
+  width:72vw;
+  overflow:scroll;
+}
+
 #rules-table {
-  width:70%;
-  margin:1em;
+  width:70vw;
   border: none;
+}
+
+#rules-table th:nth-child(1) {
+  border-right: none;
+}
+
+#rules-table th:nth-child(2),
+#rules-table th:nth-child(3),
+#rules-table th:nth-child(4) {
+  border-left: none;
+  border-right:none;
+}
+
+#rules-table th:nth-child(5) {
+  border-left: none;
+}
+
+#rules-table th:nth-child(1),
+#rules-table th:nth-child(2),
+#rules-table th:nth-child(4),
+#rules-table th:nth-child(5) {
+  text-align:left;
 }
 
 #rules-table tr {
@@ -213,11 +242,9 @@ td, th {
   background-color: white;
 }
 
-#rules-table td:nth-child(1),
 #rules-table td:nth-child(2),
-#rules-table td:nth-child(4),
 #rules-table td:nth-child(5) {
-  width:22%;
+  min-width:20%;
 }
 
 #rules-table td:nth-child(3) {
@@ -230,7 +257,7 @@ tr.selected-rule td {
   color:white;
 }
 
-.credit-mismatch td {
+.credit-mismatch, .credit-mismatch td {
   background-color: #fcc;
   color:black;
 }

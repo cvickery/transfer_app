@@ -18,7 +18,7 @@ from cuny_course import CUNYCourse
 from mysession import MySession
 from sendtoken import send_token
 from evaluations import process_pending, rule_history, status_string
-from extract_groups import extract_groups
+from format_groups import format_groups
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
@@ -105,8 +105,11 @@ def do_form_0(request, session):
   logger.debug('*** do_form_0({})'.format(session))
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute("select * from institutions order by lower(name)")
-  institution_list = cursor.fetchall()
+
+  # Look up institiution names; pass it on in the session
+  cursor.execute("select code, name from institutions order by lower(name)")
+  institution_names = {row['code']: row['name'] for row in cursor}
+  session['institution_names'] = institution_names
   cursor.close()
   conn.close()
 
@@ -115,14 +118,14 @@ def do_form_0(request, session):
     <div id="source-college-list">
     """
   n = 0
-  for row in institution_list:
+  for code in institution_names:
     n += 1
     source_prompt += """
         <div class='institution-select'>
           <input type="checkbox" name="source" class="source" id="source-{}" value="{}">
           <label for="source-{}">{}</label>
         </div>
-    """.format(n, row['code'], n, row['name'])
+    """.format(n, code, n, institution_names[code])
   source_prompt += """
   </div>
   <div>
@@ -137,14 +140,14 @@ def do_form_0(request, session):
     <div id="destination-college-list">
     """
   n = 0
-  for row in institution_list:
+  for code in institution_names:
     n += 1
     destination_prompt += """
         <div class='institution-select'>
           <input type="checkbox" name="destination" class="destination" id="dest-{}" value="{}">
           <label for="dest-{}">{}</label>
         </div>
-    """.format(n, row['code'], n, row['name'])
+    """.format(n, code, n, institution_names[code])
   destination_prompt += """
     </div>
     <div>
@@ -153,8 +156,6 @@ def do_form_0(request, session):
     </div>
   </fieldset>
   """
-  destination_disciplines_prompt = "<fieldset><legend>Discipline/Subject(s)</legend>"
-  destination_disciplines_prompt += "</fieldset>"
 
   email = ''
   if request.cookies.get('email') != None:
@@ -212,18 +213,17 @@ def do_form_1(request, session):
   """
   logger.debug('*** do_form_1({})'.format(session))
 
-  # Capture form data in user's session
+  # Add institutions selected to user's session
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
+
+  # Get the list of institution names, looked up in do_form_0(), from the session
+  institution_names = session['institution_names']
 
   # Database lookups
   # ----------------
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-
-  # Look up source and destination institiution names
-  cursor.execute("select * from institutions order by code")
-  institution_names = {row['code']: row['name'] for row in cursor}
 
   # The CUNY Subjects table, for getting subject descriptions from their abbreviations
   cursor.execute("select * from cuny_subjects order by subject")
@@ -347,7 +347,11 @@ def do_form_1(request, session):
     destination_box = ''
     if destination_disciplines_str != '':
       destination_box = """
-        <input type="checkbox" id="destination-subject-{}" name="destination_subject" value="{}"/>
+        <input  type="checkbox"
+                checked="checked"
+                id="destination-subject-{}"
+                name="destination_subject"
+                value="{}"/>
         """.format(subject, subject)
     selection_rows += """
     <tr>
@@ -384,7 +388,7 @@ def do_form_1(request, session):
       <td class="destination-subject f2-cbox" colspan="2">
         <div>
           <label for="all-receiving-subjects"><em>Select All Receiving Disciplines: </em></label>
-          <input type="checkbox" id="all-receiving-subjects" />
+          <input type="checkbox" id="all-receiving-subjects" checked="checked" />
         </div>
         <div>
           <label for="no-receiving-subjects"><em>Clear All Receiving Disciplines: </em></label>
@@ -457,6 +461,7 @@ def do_form_2(request, session):
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
   # the source subjects and the receiving course belongs to a receiving institution and is one of
   # the receiving subjects.
+
   try:
     source_institution_params = ', '.join('%s' for i in session['source_institutions'])
     destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
@@ -470,100 +475,175 @@ def do_form_2(request, session):
   if len(source_subject_list) < 1 or len(destination_subject_list) < 1:
     return(render_template('transfers.html', result=Markup(
                            '<h1 class="error">Missing sending or receiving subject.</h1>')))
+
   source_subject_params = ', '.join('%s' for s in source_subject_list)
   destination_subject_params = ', '.join('%s' for s in destination_subject_list)
+
   q = """
-  # select
-  #         t.source_course_id,
-  #         t.destination_course_id,
-  #         t.rule_priority,
-  #         t.rule_group,
-  #         t.min_gpa,
-  #         t.max_gpa,
-  #         t.transfer_credits,
-  #         substring(c1.institution from '[^\d]+') as source_institution,
-  #         i1.prompt as source_institution_name,
-  #         c1.discipline as source_discipline,
-  #         d1.description as source_discipline_name,
-  #         c1.catalog_number as source_catalog_number,
-  #         c1.credits as source_course_credits,
-  #         substring(c2.institution from '[^\d]+') as destination_institution,
-  #         i2.prompt as destination_institution_name,
-  #         c2.discipline as destination_discipline,
-  #         d2.description as destination_discipline_name,
-  #         c2.catalog_number as destination_catalog_number,
-  #         c2.credits as destination_course_credits,
-  #         t.status
-  #  from   transfer_rules t,
-  #         disciplines d1,
-  #         disciplines d2,
-  #         courses c1,
-  #         courses c2,
-  #         institutions i1,
-  #         institutions i2
-  # where
-  #         c1.institution in ({})
-  #     and c1.cuny_subject in ({})
-  #     and c2.institution in ({})
-  #     and c2.cuny_subject in ({})
-  #     and c1.course_id = t.source_course_id
-  #     and c2.course_id = t.destination_course_id
-  #     and i1.code = c1.institution
-  #     and i2.code = c2.institution
-  #     and d1.discipline = c1.discipline
-  #     and d1.institution = c1.institution
-  #     and d2.institution = c2.institution
-  #     and d2.discipline = c2.discipline
-  #   order by lower(i1.prompt), lower(c1.discipline),
-  #            to_number(substring(c1.catalog_number from '\d+\.?\d*'), '000000.000'),
-  #            lower(i2.prompt)
+  select r.id as rule_id,
+         r.source_institution,
+         s.course_id,
+         r.discipline,
+         d.description as discipline_name,
+         substring(c.catalog_number from '\d+') as catalog_number,
+         c.credits,
+         s.min_gpa,
+         s.max_gpa,
+         r.group_number,
+         r.destination_institution,
+         r.status
+    from  rule_groups r,
+          source_courses s,
+          courses c,
+          disciplines d
+   where  r.source_institution in ({})
+     and  r.discipline in (select discipline
+                                 from disciplines where institution in ({})
+                                  and cuny_subject in ({})
+                       )
+     and  d.institution = r.source_institution
+     and  d.discipline = r.discipline
+     and  r.destination_institution in ({})
+     and  c.course_id = s.course_id
+     and  r.id = s.rule_group
+     and  c.institution = r.source_institution
+     and  c.discipline = r.discipline
+  order by  r.source_institution, r.discipline, group_number, r.destination_institution
 
-# I want the list of source courses and the list of destination courses for each rule.
-  """.format(source_institution_params,
+  """.format(source_institution_params, source_institution_params,
              source_subject_params,
-             destination_institution_params,
-             destination_subject_params)
-  cursor.execute(q, session['source_institutions'] +
-               source_subject_list +
-               session['destination_institutions'] +
-               destination_subject_list)
-  rules = cursor.fetchall()
-  if rules == None: rules = []
+             destination_institution_params)
+  cursor.execute(q, session['source_institutions'] + session['source_institutions'] +
+                  source_subject_list +
+                  session['destination_institutions'])
+  Record = namedtuple('Record', [d[0] for d in cursor.description])
+  records = map(Record._make, cursor.fetchall())
 
+  if records == None: records = []
+
+
+  # Now create something that lets you process the groups of rules in first-course-number order.
+  # ********************************************************************************************
+  # For each group, get institution, discipline, group_number, first course number. Then go through
+  # that list, picking out all courses in the group, and querying to get all destination courses
+  # too.
+  # A group is keyed by source institution, source discipline, first catalog number, group number,
+  # and destination institution. There are two (ordered) lists: source courses and destination
+  # courses. Elements in both courses lists are course id, discipline, discipline name, course
+  # number (numeric
+  # part only), and credits. In addition, courses in the source list have the grade requirement,
+  # whereas the courses in the destination list have the number of transfer credits.
+
+  Group_Key = namedtuple('Group_Key',
+                         """
+                          source_institution
+                          source_discipline
+                          group_number
+                          destination_institution
+                          status
+                         """)
+  Group_Record = namedtuple('Group_Record',
+                            """
+                              source_courses
+                              destination_courses
+                            """)
+  Source_Course = namedtuple('Source_Course',
+                             """
+                              course_id
+                              discipline
+                              discipline_name
+                              catalog_number
+                              credits
+                              min_gpa
+                              max_gpa
+                             """)
+  Destination_Course = namedtuple('Destination_Course',
+                                  """
+                                    course_id
+                                    discipline
+                                    discipline_name
+                                    catalog_number
+                                    credits
+                                    transfer_credits
+                                  """)
+  groups = dict()
+  for record in records:
+    key = Group_Key(record.source_institution,
+                    record.discipline,
+                    record.group_number,
+                    record.destination_institution,
+                    record.status)
+    if key not in groups.keys():
+      groups[key] = Group_Record([], [])
+    groups[key].source_courses.append(Source_Course(record.course_id,
+                                                    record.discipline,
+                                                    record.discipline_name,
+                                                    float(record.catalog_number),
+                                                    float(record.credits),
+                                                    float(record.min_gpa),
+                                                    float(record.max_gpa)))
+    if len(groups[key].destination_courses) == 0:
+      q = """
+          select dest.course_id,
+                 c.discipline,
+                 discp.description,
+                 substring(c.catalog_number from '\d+\.?\d*') as catalog_number,
+                 c.credits,
+                 dest.transfer_credits
+            from destination_courses dest, courses c, disciplines discp
+           where dest.rule_group = {}
+             and c.course_id = dest.course_id
+             and discp.institution = c.institution
+             and discp.discipline = c.discipline
+           """.format(record.rule_id)
+      cursor.execute(q)
+      groups[key].destination_courses.extend([y for y in
+                                              map(Destination_Course._make, cursor.fetchall())])
+      assert len(groups[key].destination_courses) > 0, 'Empty destination course list'
   cursor.close()
   conn.close()
-  # Need to create rule groups, by priority here
-  # logger.debug(json.dumps(rules))
-  rules_table = extract_groups(rules)
+
+  for group in groups:
+    groups[group].source_courses.sort(key=lambda c: c.catalog_number)
+    # logger.debug('key: {}\n  source_courses: {}\n  dest_courses: {}'.format(group,
+    #                                                           groups[group].source_courses,
+    #                                                           groups[group].destination_courses))
 
   num_rules = 'are no transfer rules'
-  if len(rules) == 1: num_rules = 'is one transfer rule'
-  if len(rules) > 1: num_rules = 'are {:,} transfer rules'.format(len(rules))
+  if len(groups) == 1: num_rules = 'is one transfer rule'
+  if len(groups) > 1: num_rules = 'are {:,} transfer rules'.format(len(groups))
+
+  rules_table = format_groups(groups, session)
+
   result = """
   <h1>Step 3: Review Transfer Rules</h1>
-  <fieldset id="rules-fieldset">
-    <div>There {} selected.</div>
+    <div class="instructions">
+      There {}.<br/>
+      <span class="credit-mismatch">Highlighted rows</span> indicate that the number of credits taken
+      do not match the number of credits transferred. Hover over the “=>” to see the numbers of
+      credits taken and transferred.<br/>
+      Credits in parentheses give the number of credits transferred where that does not match the
+      nominal number of credits for a course.<br/>
+      <em>You may click on these instructions to hide them.</em><br/>
+      Click on a rule to evaluate it.<br/>
+      <p><a href="/review_transfers/" class="restart">Restart</a></p>
+    </div>
     <fieldset id="verification-fieldset">
-    <p>
-      There <span id="num-pending">are no evaluations</span> pending verification.
-      <span id="verification-details"><br/>You will need to respond to an email we will send to your
-      CUNY email account in order for your evaluations to be recorded.
-      </span>
-    </p>
-    <button type="text" id="send-email" disabled="disabled">
-      Review your evaluations before sending a confirmation email to <em id="email-address">{}</em>.
-    </button>
-  </fieldset>
-  <p>Click on a rule to evaluate it.</p>
-    <form method="post" action="" id="evaluation-form">
-      Please wait for rules to finish loading ...
-    </form>
+        <span id="num-pending">You have no pending evaluations yet.</span>
+        <span id="verification-details"><br/>Click below to review your evaluations. You will be
+        able to omit ones you don’t want to send if you wish.
+        </span>
+      <button type="text" id="send-email" disabled="disabled">
+        Click Here to review your evaluations before submitting them.
+      </button>
+      <form method="post" action="" id="evaluation-form">
+        Please wait for rules to finish loading ...
+      </form>
+    </fieldset>
+    <div id="rules-table-div">
     {}
-  </fieldset>
-  <a href="/review_transfers/" class="restart">Restart</a>
-  """.format(num_rules,
-             session['email'],
-             rules_table)
+    </div>
+  """.format(num_rules, rules_table)
   return render_template('transfers.html', result=Markup(result))
 
 # do_form_3()
