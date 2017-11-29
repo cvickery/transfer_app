@@ -201,6 +201,7 @@ td, th {
 #rules-table {
   width:70vw;
   border: none;
+  border-left: 1px solid black;
 }
 
 #rules-table th:nth-child(1) {

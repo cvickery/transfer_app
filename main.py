@@ -472,6 +472,8 @@ def do_form_2(request, session):
   # Prepare the query to get the set of rules that match the institutions ans subjects provided.
   source_subject_list = request.form.getlist('source_subject')
   destination_subject_list = request.form.getlist('destination_subject')
+
+  # JavaScript could prevent the need for this, but it doesn't (yet):
   if len(source_subject_list) < 1 or len(destination_subject_list) < 1:
     return(render_template('transfers.html', result=Markup(
                            '<h1 class="error">Missing sending or receiving subject.</h1>')))
@@ -482,36 +484,19 @@ def do_form_2(request, session):
   q = """
   select r.id as rule_id,
          r.source_institution,
-         s.course_id,
          r.discipline,
-         d.description as discipline_name,
-         substring(c.catalog_number from '\d+') as catalog_number,
-         c.credits,
-         s.min_gpa,
-         s.max_gpa,
          r.group_number,
          r.destination_institution,
          r.status
-    from  rule_groups r,
-          source_courses s,
-          courses c,
-          disciplines d
+    from  rule_groups r
    where  r.source_institution in ({})
      and  r.discipline in (select discipline
-                                 from disciplines where institution in ({})
-                                  and cuny_subject in ({})
-                       )
-     and  d.institution = r.source_institution
-     and  d.discipline = r.discipline
+                             from disciplines where institution in ({})
+                              and cuny_subject in ({}))
      and  r.destination_institution in ({})
-     and  c.course_id = s.course_id
-     and  r.id = s.rule_group
-     and  c.institution = r.source_institution
-     and  c.discipline = r.discipline
   order by  r.source_institution, r.discipline, group_number, r.destination_institution
 
-  """.format(source_institution_params, source_institution_params,
-             source_subject_params,
+  """.format(source_institution_params, source_institution_params, source_subject_params,
              destination_institution_params)
   cursor.execute(q, session['source_institutions'] + session['source_institutions'] +
                   source_subject_list +
@@ -534,19 +519,15 @@ def do_form_2(request, session):
   # part only), and credits. In addition, courses in the source list have the grade requirement,
   # whereas the courses in the destination list have the number of transfer credits.
 
-  Group_Key = namedtuple('Group_Key',
+  Group_Info = namedtuple('Group_Info',
                          """
                           source_institution
                           source_discipline
-                          group_number
+                          source_courses
                           destination_institution
+                          destination_courses
                           status
                          """)
-  Group_Record = namedtuple('Group_Record',
-                            """
-                              source_courses
-                              destination_courses
-                            """)
   Source_Course = namedtuple('Source_Course',
                              """
                               course_id
@@ -566,66 +547,76 @@ def do_form_2(request, session):
                                     credits
                                     transfer_credits
                                   """)
-  groups = dict()
+  groups = []
   for record in records:
-    key = Group_Key(record.source_institution,
-                    record.discipline,
-                    record.group_number,
-                    record.destination_institution,
-                    record.status)
-    if key not in groups.keys():
-      groups[key] = Group_Record([], [])
-    groups[key].source_courses.append(Source_Course(record.course_id,
-                                                    record.discipline,
-                                                    record.discipline_name,
-                                                    float(record.catalog_number),
-                                                    float(record.credits),
-                                                    float(record.min_gpa),
-                                                    float(record.max_gpa)))
-    if len(groups[key].destination_courses) == 0:
-      q = """
-          select dest.course_id,
-                 c.discipline,
-                 discp.description,
-                 substring(c.catalog_number from '\d+\.?\d*') as catalog_number,
-                 c.credits,
-                 dest.transfer_credits
-            from destination_courses dest, courses c, disciplines discp
-           where dest.rule_group = {}
-             and c.course_id = dest.course_id
-             and discp.institution = c.institution
-             and discp.discipline = c.discipline
-           """.format(record.rule_id)
-      cursor.execute(q)
-      groups[key].destination_courses.extend([y for y in
-                                              map(Destination_Course._make, cursor.fetchall())])
-      assert len(groups[key].destination_courses) > 0, 'Empty destination course list'
+    # Get lists of source and destination courses for this rule group
+    q = """
+        select  sc.course_id,
+                c.discipline,
+                d.description as discipline_name,
+                c.catalog_number,
+                c.credits,
+                sc.min_gpa,
+                sc.max_gpa
+         from   source_courses sc, disciplines d, courses c
+         where  rule_group = {}
+           and  c.course_id = sc.course_id
+           and  d.institution = c.institution
+           and  d.discipline = c.discipline
+         order by c.institution,
+                  c.discipline,
+                  sc.max_gpa desc,
+                  substring(c.catalog_number from '\d+\.?\d*')::float
+         """.format(record.rule_id)
+    cursor.execute(q)
+    source_courses = [c for c in map(Source_Course._make, cursor.fetchall())]
+
+    q = """
+        select  dc.course_id,
+                c.discipline,
+                d.description as discipline_name,
+                c.catalog_number,
+                c.credits,
+                dc.transfer_credits
+          from  destination_courses dc, disciplines d, courses c
+         where  rule_group = {}
+           and  c.course_id = dc.course_id
+           and  d.institution = c.institution
+           and  d.discipline = c.discipline
+         order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
+         """.format(record.rule_id)
+    cursor.execute(q)
+    destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
+
+    groups.append(Group_Info(record.source_institution,
+                             record.discipline,
+                             source_courses,
+                             record.destination_institution,
+                             destination_courses,
+                             record.status))
   cursor.close()
   conn.close()
-
-  for group in groups:
-    groups[group].source_courses.sort(key=lambda c: c.catalog_number)
-    # logger.debug('key: {}\n  source_courses: {}\n  dest_courses: {}'.format(group,
-    #                                                           groups[group].source_courses,
-    #                                                           groups[group].destination_courses))
 
   num_rules = 'are no transfer rules'
   if len(groups) == 1: num_rules = 'is one transfer rule'
   if len(groups) > 1: num_rules = 'are {:,} transfer rules'.format(len(groups))
 
+  groups.sort(key=lambda g: (g.source_institution,
+                             g.source_discipline,
+                             g.source_courses[0].catalog_number))
   rules_table = format_groups(groups, session)
 
   result = """
   <h1>Step 3: Review Transfer Rules</h1>
     <div class="instructions">
       There {}.<br/>
-      <span class="credit-mismatch">Highlighted rows</span> indicate that the number of credits taken
-      do not match the number of credits transferred. Hover over the “=>” to see the numbers of
-      credits taken and transferred.<br/>
+      <span class="credit-mismatch">Highlighted rows</span> indicate that the number of credits
+      taken does not match the number of credits transferred. Hover over the “=>” to see the numbers
+      of credits.<br/>
       Credits in parentheses give the number of credits transferred where that does not match the
       nominal number of credits for a course.<br/>
-      <em>You may click on these instructions to hide them.</em><br/>
       Click on a rule to evaluate it.<br/>
+      <em>You may click on these instructions to hide them.</em><br/>
       <p><a href="/review_transfers/" class="restart">Restart</a></p>
     </div>
     <fieldset id="verification-fieldset">

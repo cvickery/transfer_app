@@ -63,10 +63,9 @@ def format_groups(groups, session):
     catalog_number = ''
     grade = ''
     source_course_list = ''
-    for course in groups[group].source_courses:
+    for course in group.source_courses:
 
       course_grade = _grade(course.min_gpa, course.max_gpa)
-      course_catalog_number = '{}'.format(course.catalog_number).replace('.', '').strip('0')
 
       if course_grade != grade:
         if grade != '': source_course_list = source_course_list.strip('/') + '; '
@@ -80,10 +79,10 @@ def format_groups(groups, session):
                                                              course.discipline)
         source_course_list = source_course_list.strip('/') + discipline_str + '-'
 
-      if catalog_number != course_catalog_number:
-        catalog_number = course_catalog_number
+      if catalog_number != course.catalog_number:
+        catalog_number = course.catalog_number
         source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
-                                                                    course_catalog_number)
+                                                                    course.catalog_number)
         source_credits += float(course.credits)
     source_course_list = source_course_list.strip('/')
 
@@ -93,8 +92,8 @@ def format_groups(groups, session):
     destination_credits = 0.0
     discipline = ''
     destination_course_list = ''
-    for course in groups[group].destination_courses:
-      course_catalog_number = '{}'.format(course.catalog_number).replace('.', '').strip(' ')
+    for course in group.destination_courses:
+      course_catalog_number = course.catalog_number
       row_id_str += '{}:'.format(course.course_id)
       if discipline != course.discipline:
         if discipline != '': destination_course_list = destination_course_list.strip('/') +'; '
