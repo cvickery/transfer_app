@@ -75,14 +75,14 @@ def format_groups(groups, session):
       if discipline != course.discipline:
         if discipline != '': source_course_list = source_course_list.strip('/') +'; '
         discipline = course.discipline
-        discipline_str = '<apan title="{}">{}</apan>'.format(course.discipline_name,
+        discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                              course.discipline)
         source_course_list = source_course_list.strip('/') + discipline_str + '-'
-
+        print(':{}:'.format(source_course_list))
       if catalog_number != course.catalog_number:
         catalog_number = course.catalog_number
         source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
-                                                                    course.catalog_number)
+                                                                              course.catalog_number)
         source_credits += float(course.credits)
     source_course_list = source_course_list.strip('/')
 
@@ -100,16 +100,15 @@ def format_groups(groups, session):
         discipline = course.discipline
         discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                              course.discipline)
-        destination_course_list = destination_course_list.strip('/') + discipline_str + '-'
+        destination_course_list = destination_course_list.strip('/ ') + discipline_str + '-'
 
       if abs(float(course.credits) - course.transfer_credits) > 0.09:
         course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
-      print(':{}:'.format(course_catalog_number))
       destination_course_list += \
             '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
       destination_credits += float(course.transfer_credits)
 
-    destination_course_list = destination_course_list.strip('/ ')
+    destination_course_list = destination_course_list.strip('/')
 
     row_id_str = row_id_str.strip(':')
     row_class = 'rule'

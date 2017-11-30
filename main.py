@@ -559,7 +559,7 @@ def do_form_2(request, session):
         select  sc.course_id,
                 c.discipline,
                 d.description as discipline_name,
-                c.catalog_number,
+                trim(c.catalog_number),
                 c.credits,
                 sc.min_gpa,
                 sc.max_gpa
@@ -580,7 +580,7 @@ def do_form_2(request, session):
         select  dc.course_id,
                 c.discipline,
                 d.description as discipline_name,
-                c.catalog_number,
+                trim(c.catalog_number),
                 c.credits,
                 dc.transfer_credits
           from  destination_courses dc, disciplines d, courses c
