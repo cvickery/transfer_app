@@ -371,6 +371,11 @@ def do_form_1(request, session):
                subject, destination_disciplines_str)
     num_rows += 1
 
+  shortcuts = """
+              <h2 class="error">
+                There are no disciplines that match the combination of colleges you selected.
+              </h2>
+              """
   if num_rows > 1:
     shortcuts = """
     <table id="f2-shortcuts">
