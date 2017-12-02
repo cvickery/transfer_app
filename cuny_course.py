@@ -19,7 +19,8 @@ class CUNYCourse:
     cursor.execute("select * from courses where course_id = '{}'".format(course_id))
     course = cursor.fetchone()
     if course:
-      cursor.execute("select * from cuny_subjects where area = '{}'".format(course['cuny_subject']))
+      cursor.execute("""
+                select * from cuny_subjects where subject = '{}'""".format(course['cuny_subject']))
       cuny_subject = cursor.fetchone()[1]
 
       cursor.execute("""
@@ -69,7 +70,7 @@ class CUNYCourse:
       {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>{}
       """.format(course['course_id'],
                  course['discipline'],
-                 course['number'].strip(),
+                 course['catalog_number'].strip(),
                  course['title'],
                  career,
                  cuny_subject,

@@ -31,10 +31,13 @@ def _grade(min_gpa, max_gpa):
         0.7 D-       2.1
   """
   if max_gpa >= 4.0:
-    letter = letters[int(round(min_gpa * 3))]
-    return letter + ' or above'
+    if min_gpa > 1.0:
+      letter = letters[int(round(min_gpa * 3))]
+      return letter + ' or above in'
+    else:
+      return 'pass'
   letter = letters[int(round(max_gpa * 3))]
-  return 'below ' + letter
+  return 'below ' + letter + ' in'
 
 # format_groups()
 # -------------------------------------------------------------------------------------------------
@@ -46,15 +49,28 @@ def format_groups(groups, session):
     <table id="rules-table">
       <thead>
         <tr>
-        <th>Sending</th><th>Courses</th><th></th><th>Receiving</th><th>Courses</th><th>Evaluation</th>
+          <th>Sending</th>
+          <th>Courses</th>
+          <th></th>
+          <th>Receiving</th>
+          <th>Courses</th><th>Evaluation</th>
         </tr>
       </thead>
       <tbody>
       """
   for group in groups:
-    # The id for the row will be a colon-separated list of course_ids, with source and destinations
-    # separated by a hyphen
-    row_id_str = ''
+    # The id for the row will be:
+    #   Rule group ID
+    #   hyphen
+    #   Source institution name
+    #   hyphen
+    #   Colon-separated list of source course_ids
+    #   hyphen
+    #   Destination institution name
+    #   hyphen
+    #   Colon-separated list of destination courses_ids
+    row_id_str = '{}-{}-'.format(group.rule_id,
+                                 institution_names[group.source_institution].replace(' ', '_'))
 
     # Build the source part of the rule group
     source_credits = 0.0
@@ -64,13 +80,13 @@ def format_groups(groups, session):
     grade = ''
     source_course_list = ''
     for course in group.source_courses:
+      row_id_str += '{}:'.format(course.course_id)
 
       course_grade = _grade(course.min_gpa, course.max_gpa)
-
       if course_grade != grade:
         if grade != '': source_course_list = source_course_list.strip('/') + '; '
         grade = course_grade
-        source_course_list = source_course_list.strip('/') + ' {} in '.format(grade)
+        source_course_list = source_course_list.strip('/') + ' {} '.format(grade)
 
       if discipline != course.discipline:
         if discipline != '': source_course_list = source_course_list.strip('/') +'; '
@@ -78,7 +94,6 @@ def format_groups(groups, session):
         discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                              course.discipline)
         source_course_list = source_course_list.strip('/') + discipline_str + '-'
-        print(':{}:'.format(source_course_list))
       if catalog_number != course.catalog_number:
         catalog_number = course.catalog_number
         source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
@@ -86,7 +101,9 @@ def format_groups(groups, session):
         source_credits += float(course.credits)
     source_course_list = source_course_list.strip('/')
 
-    row_id_str = row_id_str + '-'
+    row_id_str = row_id_str.strip(':')
+    row_id_str = row_id_str + \
+                 '-{}-'.format(institution_names[group.destination_institution].replace(' ', '_'))
 
     # Build the destination part of the rule group
     destination_credits = 0.0

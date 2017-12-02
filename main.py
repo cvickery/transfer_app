@@ -187,9 +187,9 @@ def do_form_0(request, session):
               <label for="remember-me"><em>Remember me on this computer.</em></label>
             </div>
           </div>
+          <div id="error-msg" class="error"> </div>
+          <input type="hidden" name="next-function" value="do_form_1" />
           <div>
-            <div id="error-msg" class="error"> </div>
-            <input type="hidden" name="next-function" value="do_form_1" />
             <button type="submit" id="submit-form-1">Next</button>
           </div>
         </fieldset>
@@ -419,6 +419,8 @@ def do_form_1(request, session):
     There are {:,} disciplines where {}.<br/>
     Disciplines are grouped by CUNY subject area.<br/>
     Select at least one sending discipline and at least one receiving discipline.<br/>
+    By default, all receiving disciplines are selected to account for all possible equivalencies,
+    including electives and blanket credit.<br/>
     The next step will show all transfer rules for courses in the corresponding pairs of
     disciplines.<br/>
     <em>Click on these instructions to remove them.</em>
@@ -428,7 +430,7 @@ def do_form_1(request, session):
     <button type="submit">Next</button>
     <input type="hidden" name="next-function" value="do_form_2" />
     {}
-    <div id="subject-table-div">
+    <div id="subject-table-div" class="selection-table-div">
       <table id="subject-table">
         <thead>
           <tr>
@@ -526,6 +528,7 @@ def do_form_2(request, session):
 
   Group_Info = namedtuple('Group_Info',
                          """
+                          rule_id
                           source_institution
                           source_discipline
                           source_courses
@@ -593,7 +596,8 @@ def do_form_2(request, session):
     cursor.execute(q)
     destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
 
-    groups.append(Group_Info(record.source_institution,
+    groups.append(Group_Info(record.rule_id,
+                             record.source_institution,
                              record.discipline,
                              source_courses,
                              record.destination_institution,
@@ -636,7 +640,7 @@ def do_form_2(request, session):
         Please wait for rules to finish loading ...
       </form>
     </fieldset>
-    <div id="rules-table-div">
+    <div id="rules-table-div" class="selection-table-div">
     {}
     </div>
   """.format(num_rules, rules_table)
@@ -845,21 +849,27 @@ def transfers():
     keys = mysession.keys()
     return do_form_0(request, mysession)
 
-# /_COURSE
+# /_COURSES
 # =================================================================================================
 # This route is for AJAX access to course catalog information.
-@app.route('/_course')
-def _course():
-  course_id = request.args.get('course_id', 0)
-  course = CUNYCourse(course_id)
-  note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
-  if course.is_active:
-    note = ''
-  return jsonify({'course_id': course.course_id,
-                 'institution': course.institution,
-                 'department': course.department,
-                 'html': course.html,
-                 'note': note})
+#
+# The request object has a course_ids field, which is a colon-separated list of course_ids.
+# Looks up each course, and returns a list of html-displayable objects.
+@app.route('/_courses')
+def _courses():
+  return_list = []
+  course_ids = request.args.get('course_ids', 0)
+  for course_id in course_ids.split(':'):
+    course = CUNYCourse(course_id)
+    note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
+    if course.is_active:
+      note = ''
+    return_list.append({'course_id': course.course_id,
+                         'institution': course.institution,
+                         'department': course.department,
+                         'html': course.html,
+                         'note': note})
+  return jsonify(return_list)
 
 # /_SESSIONS
 # =================================================================================================

@@ -181,7 +181,9 @@ $(function ()
   // ----------------------------------------------------------------------------------------------
   $('.instructions').click(function()
   {
+    var this_height = $(this).height();
     $(this).hide();
+    $('.selection-table-div').height($('.selection-table-div').height() + this_height);
   });
 
 
@@ -205,19 +207,25 @@ $(function ()
     });
 
     // Rule ids: "source_course_id:source_institution:dest_course_id:dest_institution"
-    var this_rule = $(this).attr('id').split(':');
-    // Rule index: "source_course_id:dest_course_id"
-    var rule_index = this_rule[0] + ':' + this_rule[2];
-    var source_id = this_rule[0];
-    var source_institution = this_rule[1];
-    var destination_id = this_rule[2];
-    var destination_institution = this_rule[3];
+    // New Row IDs: rule_id; hyphen;
+    //              source institution name; hyphen;
+    //              colon-separated list of source course IDs, hyphen,
+    //              destination institution name; hyphen;
+    //              colon-separated list of destination course IDs.
+    //
+    var first_parse = $(this).attr('id').split('-');
+    console.log(first_parse);
+    var rule_id = first_parse[0];
+    var source_institution = first_parse[1].replace(/_/g, ' ');
+    var source_course_ids = first_parse[2].split(':');
+    var destination_institution = first_parse[3].replace(/_/g, ' ');
+    var destination_course_ids = first_parse[4].split(':');
 
     var source_catalog = '';
     var destinaton_catalog = '';
 
-    source_request = $.getJSON($SCRIPT_ROOT + '/_course', {course_id: source_id});
-    dest_request = $.getJSON($SCRIPT_ROOT + '/_course', {course_id: destination_id});
+    source_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[2]});
+    dest_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[4]});
     source_request.done(function (data, text_status)
     {
 //      console.log(`source status: ${text_status}`);
@@ -236,6 +244,7 @@ $(function ()
     });
     $.when(source_request, dest_request).done(function (source_request, dest_request)
     {
+      // TODO: YOU ARE HERE *******************************************************************
       controls = `<fieldset id="rule-evaluation" class="clean">
                     <div>
                       <input type="radio" name="reviewed" id="src-ok" value="src-ok"/>
