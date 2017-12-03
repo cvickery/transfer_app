@@ -214,8 +214,11 @@ $(function ()
     //              colon-separated list of destination course IDs.
     //
     var row_id = $(this).attr('id');
-    var row_html = document.getElementById(row_id).innerHTML;
-    var rule_table = `<table><tr>${row_html}</tr></table>`;
+    var row_element = document.getElementById(row_id);
+    var row_class = row_element.className;
+    var row_html = row_element.innerHTML.replace(/ id=".*"/,'');
+    row_html = `<tr class="${row_class}">${row_html}</tr>`;
+    var rule_table = `<table>${row_html}</table>`;
 
     var first_parse = row_id.split('-');
     var rule_id = first_parse[0];
@@ -277,6 +280,8 @@ $(function ()
                     <button class="ok-cancel" id="review-submit" type="button" disabled="disabled">OK</button>
                     <button class="ok-cancel dismiss" type="button">Cancel</button>
                   </div>`;
+
+    // Display the evaluation form even if the catalog entries haven't loaded yet
     $('#evaluation-form').html(dismiss_bar +
                                rule_table +
                                source_catalog_div +
@@ -286,107 +291,102 @@ $(function ()
                            .draggable();
 
 
-
-
     source_request.done(function (data, text_status)
     {
-//      console.log(`source status: ${text_status}`);
+      // console.log(`source status: ${text_status}`);
       var html_str = '';
       for (var i = 0; i < data.length; i++)
       {
-        html_str += `${data[i].html} ${data[i].note} <hr/>`
+        html_str += `${data[i].html} ${data[i].note} <hr/>`;
       }
       $('#source-catalog-info').html(html_str);
     });
+
     dest_request.done(function (data, text_status)
     {
-      //      console.log(`destination status: ${text_status}`);
+      // console.log(`destination status: ${text_status}`);
       var html_str = '';
       for (var i = 0; i < data.length; i++)
       {
-        html_str += `${data[i].html} ${data[i].note} <hr/>`
+        html_str += `${data[i].html} ${data[i].note} <hr/>`;
       }
       $('#destination-catalog-info').html(html_str);
     });
-    $.when(source_request, dest_request).done(function (source_request, dest_request)
+
+    var evaluation_form = document.getElementById('evaluation-form');
+    var eval_form_rect = evaluation_form.getBoundingClientRect();
+    evaluation_form.style.position = 'fixed';
+    evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
+    evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
+    $('.dismiss').click(function ()
     {
-
-      var evaluation_form = document.getElementById('evaluation-form');
-      var eval_form_rect = evaluation_form.getBoundingClientRect();
-      evaluation_form.style.position = 'fixed';
-      evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
-      evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
-      $('.dismiss').click(function ()
-      {
-        $('.rule').removeClass('selected-rule');
-        $('#evaluation-form').hide();
-      });
-        // Enable form submission only if an input has changed.
-        $('input').change(setup_ok_to_submit);
-        $('textarea').keyup(setup_ok_to_submit);
-        function setup_ok_to_submit()
-        {
-          var comment_len = $('#comment-text').val().length;
-          var ok_to_submit = ($(this).attr('id') === 'src-ok' ||
-                              $(this).attr('id') === 'dest-ok' ||
-                              comment_len > 12);
-          $('#review-submit').attr('disabled', !ok_to_submit);
-        }
-
-        // Process evaluation info if submitted
-        $('#review-submit').click(function (event)
-        {
-          pending_evaluations.push(
-          {
-            event_type: $('input[name=reviewed]:checked').val(),
-            source_institution: $('input[name=src_institution]').val(),
-            destination_institution: $('input[name=dest_institution]').val(),
-            comment_text: $('#comment-text').val().replace('\'', '’'),
-            rule_src_id: source_id,
-            rule_dest_id: destination_id,
-            rule_index: rule_index,
-            rule_str: rule_str,
-            is_omitted: false
-          });
-          $('.selected-rule').addClass('evaluated');
-
-          // Update the evaluations pending information
-          var num_pending = pending_evaluations.length;
-          var num_pending_text = $('#num-pending').text();
-          if (num_pending_text === 'are no evaluations')
-          {
-            num_pending_text = 'is one evaluation';
-          }
-          else
-          {
-            if (num_pending_text === 'is one evaluation')
-            {
-              num_pending = 2;
-            }
-            else
-            {
-              // Extract the current count from the text and increment it
-              var m = num_pending_text.match(/\d+/);
-              num_pending = parseInt(m) + 1;
-            }
-            num_pending_text = `are ${num_pending} evaluations`;
-          }
-          $('#num-pending').text(num_pending_text);
-          $('#evaluation-form').hide();
-          $('#verification-details').show();
-
-          // Enable review/send-email button
-          $('#send-email').attr('disabled', false);
-          event.preventDefault(); // don't actually submit the form to the server.
-        });
-      });
+      $('.rule').removeClass('selected-rule');
+      $('#evaluation-form').hide();
     });
+
+    // Enable form submission only if an input has changed.
+    $('input').change(setup_ok_to_submit);
+    $('textarea').keyup(setup_ok_to_submit);
+    function setup_ok_to_submit()
+    {
+      var comment_len = $('#comment-text').val().length;
+      var ok_to_submit = ($(this).attr('id') === 'src-ok' ||
+                          $(this).attr('id') === 'dest-ok' ||
+                          comment_len > 12);
+      $('#review-submit').attr('disabled', !ok_to_submit);
+    }
+
+    // Process evaluation info if submitted
+    $('#review-submit').click(function (event)
+    {
+      pending_evaluations.push(
+      {
+        event_type: $('input[name=reviewed]:checked').val(),
+        source_institution: $('input[name=src_institution]').val(),
+        destination_institution: $('input[name=dest_institution]').val(),
+        comment_text: $('#comment-text').val().replace('\'', '’'),
+        rule_id: rule_id,
+        rule_str: row_html,
+        is_omitted: false
+      });
+      $('.selected-rule').addClass('evaluated');
+
+      // Update the evaluations pending information
+      var num_pending = pending_evaluations.length;
+      var num_pending_text = $('#num-pending').text();
+      if (num_pending_text === 'are no evaluations')
+      {
+        num_pending_text = 'is one evaluation';
+      }
+      else
+      {
+        if (num_pending_text === 'is one evaluation')
+        {
+          num_pending = 2;
+        }
+        else
+        {
+          // Extract the current count from the text and increment it
+          var m = num_pending_text.match(/\d+/);
+          num_pending = parseInt(m) + 1;
+        }
+        num_pending_text = `are ${num_pending} evaluations`;
+      }
+      $('#num-pending').text(num_pending_text);
+      $('#evaluation-form').hide();
+      $('#verification-details').show();
+
+      // Enable review/send-email button
+      $('#send-email').attr('disabled', false);
+      event.preventDefault(); // don't actually submit the form to the server.
+    });
+  });
 
     // Review and send email button click
     // --------------------------------------------------------------------------------------------
     /* Generate a form for reviewing the evaluations so the user can omit items they don't
-     * intend. Then submit the form to a web page that actually enters the items into the pending_evaluations
-     * table and sends email to the user.
+     * intend. Then submit the form to a web page that actually enters the items into the
+     * pending_evaluations table and sends email to the user.
      */
     $('#send-email').click(function (event)
     {
@@ -398,6 +398,7 @@ $(function ()
         `;
       for (evaluation in pending_evaluations)
       {
+        // *** TODO *** Rework this against the evaluations page. rule_id is unique now.
         var the_rule = pending_evaluations[evaluation].rule_src_id + ':' +
                        pending_evaluations[evaluation].rule_dest_id;
         var institution = 'Unknown';
