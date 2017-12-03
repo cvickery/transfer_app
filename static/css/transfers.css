@@ -132,8 +132,49 @@ td, th {
   border: 1px solid #999999;
   border-radius: 0.5em;
   padding: 0.5em;
-  width:40%;
+  width:80vw;
   background-color:#ccc;
+}
+
+#evaluation-form table {
+  margin: 0 auto;
+  border: 1px solid #3f3;
+}
+#evaluation-form td {
+  font-style: italic;
+  font-size: 0.9em;
+  padding: 0.25em;
+  border:none;
+}
+
+#evaluation-form td:last-child {
+  border-left: 1px solid #333;
+}
+
+#source-catalog-div {
+  max-height:30vh;
+  width: 45%;
+  padding: 0.5em;
+  float:left;
+  overflow:scroll;
+}
+
+#destination-catalog-div {
+  max-height:30vh;
+  width: 45%;
+  padding: 0.5em;
+  float:left;
+  overflow:scroll;
+}
+
+#evaluation-controls-div {
+  width: 50%;
+  margin: 0.5em auto 0;
+  padding:0.5em;
+  clear:both;
+  border-radius: 0.5em;
+  background-color:#eee;
+  color: #666;
 }
 
 #dismiss-bar {
@@ -152,8 +193,9 @@ td, th {
   color: #900;
 }
 
-.source-catalog h2 {
-  margin-top: 0;
+h2 {
+  font-size:1.2em;
+  margin: 0 auto;
 }
 
 #comment-text {

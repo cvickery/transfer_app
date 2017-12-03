@@ -213,39 +213,35 @@ $(function ()
     //              destination institution name; hyphen;
     //              colon-separated list of destination course IDs.
     //
-    var first_parse = $(this).attr('id').split('-');
-    console.log(first_parse);
+    var row_id = $(this).attr('id');
+    var row_html = document.getElementById(row_id).innerHTML;
+    var rule_table = `<table><tr>${row_html}</tr></table>`;
+
+    var first_parse = row_id.split('-');
     var rule_id = first_parse[0];
     var source_institution = first_parse[1].replace(/_/g, ' ');
     var source_course_ids = first_parse[2].split(':');
     var destination_institution = first_parse[3].replace(/_/g, ' ');
     var destination_course_ids = first_parse[4].split(':');
+    var source_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[2]});
+    var dest_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[4]});
 
-    var source_catalog = '';
-    var destinaton_catalog = '';
+    var source_suffix = (source_course_ids.length !== 1) ? 's' : '';
+    var source_catalog_div = `<div id="source-catalog-div">
+                              <h2>${source_institution} Course${source_suffix}</h2>
+                              <div id="source-catalog-info">
+                                <p>Waiting for catalog entries ...</p>
+                                </div>
+                            </div>`;
+    var destination_suffix = (destination_course_ids.length !== 1) ? 's' : '';
+    var destination_catalog_div = `<div id="destination-catalog-div">
+                                  <h2>${destination_institution} Course${destination_suffix}</h2>
+                                  <div id="destination-catalog-info">
+                                    <p>Waiting for catalog entries ...</p>
+                                    </div>
+                                </div>`;
 
-    source_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[2]});
-    dest_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[4]});
-    source_request.done(function (data, text_status)
-    {
-//      console.log(`source status: ${text_status}`);
-      source_catalog = `<div class="source-catalog">
-        <h2>Sending Course</h2>
-        ${data.institution}  / ${data.department} ${data.html} ${data.note}
-        </div><hr/>`;
-    });
-    dest_request.done(function (data, text_status)
-    {
-//      console.log(`destination status: ${text_status}`);
-      destination_catalog = `<div class="destination-catalog">
-        <h2>Receiving Course</h2>
-        ${data.institution}  / ${data.department} ${data.html} ${data.note}
-        </div><hr/>`;
-    });
-    $.when(source_request, dest_request).done(function (source_request, dest_request)
-    {
-      // TODO: YOU ARE HERE *******************************************************************
-      controls = `<fieldset id="rule-evaluation" class="clean">
+    var controls = `<div id="evaluation-controls-div" class="clean">
                     <div>
                       <input type="radio" name="reviewed" id="src-ok" value="src-ok"/>
                       <label for="src-ok">Verified by ${source_institution}</label>
@@ -277,16 +273,44 @@ $(function ()
                            value="${source_institution}" />
                     <input type="hidden" name="dest_institution"
                            value="${destination_institution}" />
-                    <input type="hidden" name="source-id" value="${source_id}" />
-                    <input type="hidden" name="destination-id" value="${destination_id}" />
+                    <input type="hidden" name="rule-id" value="${rule_id}" />
                     <button class="ok-cancel" id="review-submit" type="button" disabled="disabled">OK</button>
                     <button class="ok-cancel dismiss" type="button">Cancel</button>
-                  </fieldset>`;
-
-      $('#evaluation-form').html(dismiss_bar + source_catalog + destination_catalog + controls)
-                           .css('width', '40%')
+                  </div>`;
+    $('#evaluation-form').html(dismiss_bar +
+                               rule_table +
+                               source_catalog_div +
+                               destination_catalog_div +
+                               controls)
                            .show()
                            .draggable();
+
+
+
+
+    source_request.done(function (data, text_status)
+    {
+//      console.log(`source status: ${text_status}`);
+      var html_str = '';
+      for (var i = 0; i < data.length; i++)
+      {
+        html_str += `${data[i].html} ${data[i].note} <hr/>`
+      }
+      $('#source-catalog-info').html(html_str);
+    });
+    dest_request.done(function (data, text_status)
+    {
+      //      console.log(`destination status: ${text_status}`);
+      var html_str = '';
+      for (var i = 0; i < data.length; i++)
+      {
+        html_str += `${data[i].html} ${data[i].note} <hr/>`
+      }
+      $('#destination-catalog-info').html(html_str);
+    });
+    $.when(source_request, dest_request).done(function (source_request, dest_request)
+    {
+
       var evaluation_form = document.getElementById('evaluation-form');
       var eval_form_rect = evaluation_form.getBoundingClientRect();
       evaluation_form.style.position = 'fixed';
