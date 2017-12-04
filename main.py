@@ -423,7 +423,7 @@ def do_form_1(request, session):
     including electives and blanket credit.<br/>
     The next step will show all transfer rules for courses in the corresponding pairs of
     disciplines.<br/>
-    <em>Click on these instructions to remove them.</em>
+    <em>Click on these instructions to hide them.</em>
   </div>
   <form method="post" action="" id="form-2">
     <a href="/review_transfers/" class="restart">Restart</a>
@@ -619,25 +619,24 @@ def do_form_2(request, session):
   <h1>Step 3: Review Transfer Rules</h1>
     <div class="instructions">
       There {}.<br/>
-      <span class="credit-mismatch">Highlighted rows</span> indicate that the number of credits
-      taken does not match the number of credits transferred. Hover over the “=>” to see the numbers
-      of credits.<br/>
+      Rules that are <span class="credit-mismatch">highlighted like this</span> have a different
+      number of credits taken from the number of credits transferred.
+      Hover over the “=>” to see the numbers of credits.<br/>
       Credits in parentheses give the number of credits transferred where that does not match the
       nominal number of credits for a course.<br/>
+      Rules that are <span class="evaluated">highlighted like this</span> are ones that you have
+      evaluated but not yet reviewed.<br/>
       Click on a rule to evaluate it.<br/>
-      <em>You may click on these instructions to hide them.</em><br/>
-      <p><a href="/review_transfers/" class="restart">Restart</a></p>
+      <em>Click on these instructions to hide them.</em><br/>
     </div>
+    <p><a href="/review_transfers/" class="restart">Restart</a></p>
     <fieldset id="verification-fieldset">
-        <span id="num-pending">You have no pending evaluations yet.</span>
-        <span id="verification-details"><br/>Click below to review your evaluations. You will be
-        able to omit ones you don’t want to send if you wish.
-        </span>
+        <span id="num-pending">You have no evaluations to review yet.</span><br/>
       <button type="text" id="send-email" disabled="disabled">
         Click Here to review your evaluations before submitting them.
       </button>
       <form method="post" action="" id="evaluation-form">
-        Please wait for rules to finish loading ...
+        Waiting for rules to finish loading ...
       </form>
     </fieldset>
     <div id="rules-table-div" class="selection-table-div">

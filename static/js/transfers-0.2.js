@@ -9,7 +9,6 @@ $(function ()
 {
   $('#need-js').hide();
   $('#evaluation-form').hide();
-  $('#verification-details').hide();
 
   // Global action: escape key hides dialogs, currently only the evaluation-panel in form 2.
   $('*').keyup(function (event)
@@ -179,7 +178,7 @@ $(function ()
 
   //  Form 2: Hide instructions
   // ----------------------------------------------------------------------------------------------
-  $('.instructions').click(function()
+  $('.instructions').click(function ()
   {
     var this_height = $(this).height();
     $(this).hide();
@@ -190,6 +189,8 @@ $(function ()
 
   //  Form 3 Validation and Processing
   //  =============================================================================================
+  /*  Clicking on a rule in the rules table brings up the evaluation form.
+   */
   $('.rule').click(function (event)
   {
     // clicks in the prior evaluations column do not select a rule.
@@ -214,11 +215,14 @@ $(function ()
     //              colon-separated list of destination course IDs.
     //
     var row_id = $(this).attr('id');
-    var row_element = document.getElementById(row_id);
-    var row_class = row_element.className;
-    var row_html = row_element.innerHTML.replace(/ id=".*"/,'');
-    row_html = `<tr class="${row_class}">${row_html}</tr>`;
-    var rule_table = `<table>${row_html}</table>`;
+    var evaluation_row = document.getElementById(row_id);
+    var evaluation_row_class = evaluation_row.className
+                                             .replace(/selected-rule/, '')
+                                             .replace(/evaluated/, '');
+    var evaluation_row_html = `<tr class="${evaluation_row_class}">
+                                 ${evaluation_row.innerHTML.replace(/ id=".*"/,'')}
+                               </tr>`;
+    var evaluation_rule_table = `<table>${evaluation_row_html}</table>`;
 
     var first_parse = row_id.split('-');
     var rule_id = first_parse[0];
@@ -283,14 +287,14 @@ $(function ()
 
     // Display the evaluation form even if the catalog entries haven't loaded yet
     $('#evaluation-form').html(dismiss_bar +
-                               rule_table +
+                               evaluation_rule_table +
                                source_catalog_div +
                                destination_catalog_div +
                                controls)
                            .show()
                            .draggable();
 
-
+    // Populate the source catalog entries in the evaluation form when they arrive
     source_request.done(function (data, text_status)
     {
       // console.log(`source status: ${text_status}`);
@@ -302,6 +306,7 @@ $(function ()
       $('#source-catalog-info').html(html_str);
     });
 
+    // Populate the destination catalog entries in the evaluation form when they arrive
     dest_request.done(function (data, text_status)
     {
       // console.log(`destination status: ${text_status}`);
@@ -313,11 +318,17 @@ $(function ()
       $('#destination-catalog-info').html(html_str);
     });
 
-    var evaluation_form = document.getElementById('evaluation-form');
-    var eval_form_rect = evaluation_form.getBoundingClientRect();
-    evaluation_form.style.position = 'fixed';
-    evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
-    evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
+    /* The following lines would position the evaluation form over the rules table.
+     * Omitting them pushes the rules table down while the evaluation form is active, which seems
+     * fine to me.
+     */
+    // var evaluation_form = document.getElementById('evaluation-form');
+    // var eval_form_rect = evaluation_form.getBoundingClientRect();
+    // evaluation_form.style.position = 'fixed';
+    // evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
+    // evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
+
+    // Click to dismiss the evaluation form.
     $('.dismiss').click(function ()
     {
       $('.rule').removeClass('selected-rule');
@@ -336,7 +347,7 @@ $(function ()
       $('#review-submit').attr('disabled', !ok_to_submit);
     }
 
-    // Process evaluation info if submitted
+    // Present the Review Panel when user clicks to submit evaluations.
     $('#review-submit').click(function (event)
     {
       pending_evaluations.push(
@@ -346,35 +357,27 @@ $(function ()
         destination_institution: $('input[name=dest_institution]').val(),
         comment_text: $('#comment-text').val().replace('\'', '’'),
         rule_id: rule_id,
-        rule_str: row_html,
+        rule_str: evaluation_row_html,
         is_omitted: false
       });
       $('.selected-rule').addClass('evaluated');
 
       // Update the evaluations pending information
-      var num_pending = pending_evaluations.length;
-      var num_pending_text = $('#num-pending').text();
-      if (num_pending_text === 'are no evaluations')
+      var num_pending_text = '';
+      switch (pending_evaluations.length)
       {
-        num_pending_text = 'is one evaluation';
-      }
-      else
-      {
-        if (num_pending_text === 'is one evaluation')
-        {
-          num_pending = 2;
-        }
-        else
-        {
-          // Extract the current count from the text and increment it
-          var m = num_pending_text.match(/\d+/);
-          num_pending = parseInt(m) + 1;
-        }
-        num_pending_text = `are ${num_pending} evaluations`;
+        case 0:
+          num_pending_text = 'You have no evaluations to review yet.';
+          break;
+        case 1:
+          num_pending_text = 'You have one evaluation to review.';
+          break;
+        default:
+          num_pending_text = `You have ${pending_evaluations.length} evaluations to review.`;
       }
       $('#num-pending').text(num_pending_text);
       $('#evaluation-form').hide();
-      $('#verification-details').show();
+      $('.selected-rule').removeClass('selected-rule')
 
       // Enable review/send-email button
       $('#send-email').attr('disabled', false);
@@ -391,16 +394,28 @@ $(function ()
     $('#send-email').click(function (event)
     {
       var email_address = $('#email-address').text();
-      var the_form = `
-        <fieldset id="review-form">
-          <h2>Review Your Evaluations</h2><p>Use the buttons to omit (or include) items.</p>
-          <div id='evaluations-list'>
+      var review_form = `
+        <div id="review-form">
+          <h2>Review Your Evaluations</h2>
+          <p>Un-check the Include button if you don’t want to submit an item.</p>
+          <div id="evaluations-table-div">
+          <table id='evaluations-table'>
+            <tr>
+              <th>Include?</th>
+              <th>Rule</th>
+              <th colspan="2">Your Evaluation</th>
+            </tr>
         `;
       for (evaluation in pending_evaluations)
       {
         // *** TODO *** Rework this against the evaluations page. rule_id is unique now.
-        var the_rule = pending_evaluations[evaluation].rule_src_id + ':' +
-                       pending_evaluations[evaluation].rule_dest_id;
+        // *** TODO *** Decide how you want to handle repeated evaluation rows
+        // *** TODO *** Decide whether you are going to delete rows that are dropped, or just gray
+        //              them out.
+        var the_rule = pending_evaluations[evaluation].rule_id;
+        var rule_str = pending_evaluations[evaluation].rule_str
+                                                      .replace(/<td class=".*">/g, '<td>')
+                                                      .replace(/<tr class=".*">/, '<tr>');
         var institution = 'Unknown';
         var go_nogo = 'Unknown';
         switch (pending_evaluations[evaluation].event_type)
@@ -427,22 +442,43 @@ $(function ()
             break;
 
         }
-        the_form += `<div id="eval-rule-${the_rule}" class="eval-rule">
-          <button type="button" id="omit-eval-${the_rule}" class="omit-button">Omit</button>
-          <span id="rule-${the_rule}">${pending_evaluations[evaluation].rule_str}<br/>${institution} ${go_nogo}</span>
-          </div>`;
+        review_form += `
+          <tr class="eval-rule rule-id-${the_rule}">
+            <td>
+              <input type="checkbox"
+                     class="include-button"
+                     checked="checked"/>
+            </td>
+            <td>
+              <table>
+                <tr>
+                ${rule_str}
+                </tr>
+              </table>
+            </td>
+            <td>
+              ${institution}
+            </td>
+            <td>
+              ${go_nogo}
+            </td>
+          </tr>`;
       }
-      the_form += '</div><input type="hidden" value="${email_address}" />';
-      the_form += `
+      review_form += `
+          </table>
+        </div>
+        <div class='controls'>
+          <input type="hidden" value="${email_address}" />
           <input type="hidden" name="next-function" value="do_form_3" />
           <input type="hidden" id="hidden-evaluations" name="evaluations" value="Not Set" />
           <button class="ok-cancel" type="submit">Submit These Evaluations</button>
           <button class="ok-cancel dismiss" type="button">Cancel</button>
-          </fieldset>
-        `;
-      $('#evaluation-form').html(dismiss_bar + the_form)
-                           .css('width', '90%')
-                           .show().draggable();
+        </div>
+      </div>`;
+      $('#evaluation-form').html(dismiss_bar + review_form)
+                           .show()
+                           .draggable();
+
       $('.omit-button').click(function ()
       {
         // extract the button's rule-index and use it to gray out the div containing it and to mark
@@ -482,6 +518,7 @@ $(function ()
       $('.dismiss').click(function ()
       {
         $('#evaluation-form').hide();
+        $('.selected-rule').removeClass('selected-rule')
       });
     });
   });

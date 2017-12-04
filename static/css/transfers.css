@@ -16,6 +16,14 @@ body {
   font-style: italic;
 }
 
+.instructions {
+  margin:0.5em;
+  padding:0.5em;
+  width:50vw;
+  background-color: #fff;
+  color: #666;
+  border-radius:0.5em;
+}
 h1 {
   margin:0;
   font-size:1.4em;
@@ -47,21 +55,6 @@ fieldset {
     border-radius:0.5em;
 }
 
-table, td, th {
-    border: 1px solid black;
-    padding:0.5em;
-    border-collapse:collapse;
-}
-
-td a {
-  display: block;
-  text-decoration:none;
-}
-
-td a:hover {
-  background-color: #ccc;
-}
-
 fieldset fieldset {
   margin-top:1em;
   background-color:white;
@@ -73,14 +66,29 @@ legend {
   background-color:white;
 }
 
-.institution-select {
-  display:inline-block;
-  width:18em;
+table, td, th {
+    border: 1px solid black;
+    padding:0.5em;
+    border-collapse:collapse;
 }
 
 td, th {
   background-color: white;
   color:#333;
+}
+
+td a {
+  display: block;
+  text-decoration:none;
+}
+
+td a:hover {
+  background-color: #ccc;
+}
+
+.institution-select {
+  display:inline-block;
+  width:18em;
 }
 
 #source-college-list, #destination-college-list {
@@ -100,8 +108,8 @@ td, th {
   text-align: right;
 }
 
-#form-2 th, #rules-table th {
-  background-color:#eee;
+#subject-table th, #rules-table th {
+  background-color:#bbb;
   color:#333;
 }
 
@@ -138,19 +146,7 @@ td, th {
 }
 
 #evaluation-form table {
-  margin: 0 auto;
-  border: 1px solid #3f3;
-}
-
-#evaluation-form td {
-  font-style: italic;
-  font-size: 0.9em;
-  padding: 0.25em;
-  border:none;
-}
-
-#evaluation-form td:last-child {
-  border-left: 1px solid #333;
+  margin:auto;
 }
 
 #source-catalog-div {
@@ -177,8 +173,33 @@ td, th {
   padding:0.5em;
   clear:both;
   border-radius: 0.5em;
-  background-color:#eee;
-  color: #444;
+  background-color:#fff;
+  color: #666;
+}
+
+
+#evaluations-table td:first-child {
+  text-align: center;
+}
+
+#evaluation-table div.controls {
+  margin:1em 0 0 0;
+  text-align: center;
+}
+
+#evaluations-table table {
+  margin:0;
+}
+
+.eval-rule td {
+  font-size:0.9em;
+  padding: 0.1em 0.5em;
+}
+
+.eval-rule table, .eval-rule table td {
+  margin:0;
+  border: none;
+  font-style: italic;
 }
 
 #dismiss-bar {
@@ -208,17 +229,6 @@ h2 {
 
 #comment-text {
   width: 100%;
-}
-
-#verification-details {
-  font-size:0.8em;
-  font-style:italic;
-  color: #333;
-}
-
-#rule-evaluation {
-  background-color:white;
-  color:#333;
 }
 
 .ok-cancel {
@@ -310,9 +320,10 @@ button:disabled {
 #send-email:enabled {
   border: 2px solid black;
 }
-.evaluated td {
+
+.evaluated, .evaluated td {
   background-color: #eee;
-  color: #333;
+  color: #000;
 }
 
 #review-form {
@@ -324,12 +335,6 @@ button:disabled {
   padding: 0.1em;
   margin:0;
   font-variant: all-petit-caps;
-}
-
-#evaluations-list {
-  column-width: 25em;
-  column-rule: 1px solid #ccc;
-  overflow-y:scroll;
 }
 
 .eval-rule {
