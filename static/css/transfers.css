@@ -28,6 +28,12 @@ h1 {
   margin:0;
   font-size:1.4em;
 }
+
+h2 {
+  font-size:1.2em;
+  margin: 0 auto;
+}
+
 button, .restart {
     border: 1px solid #999;
     border-radius:0.25em;
@@ -177,7 +183,6 @@ td a:hover {
   color: #666;
 }
 
-
 #evaluations-table td:first-child {
   text-align: center;
 }
@@ -220,11 +225,6 @@ td a:hover {
 #dismiss-bar:hover {
   background-color:#bbb;
   color: #e00;
-}
-
-h2 {
-  font-size:1.2em;
-  margin: 0 auto;
 }
 
 #comment-text {
@@ -340,9 +340,10 @@ button:disabled {
 .eval-rule {
   padding: 0.5em 1em;
 }
-.omitted {
-  color:#999;
-  background-color:#eee;
+
+.omitted td  {
+  color: #ccc;
+  background-color: white;
 }
 
 h2 + div {

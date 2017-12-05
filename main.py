@@ -632,7 +632,7 @@ def do_form_2(request, session):
     <p><a href="/review_transfers/" class="restart">Restart</a></p>
     <fieldset id="verification-fieldset">
         <span id="num-pending">You have no evaluations to review yet.</span><br/>
-      <button type="text" id="send-email" disabled="disabled">
+        <button type="text" id="send-email" disabled="disabled">
         Click Here to review your evaluations before submitting them.
       </button>
       <form method="post" action="" id="evaluation-form">
@@ -650,7 +650,7 @@ def do_form_2(request, session):
 def do_form_3(request, session):
   logger.debug('*** do_form_3({})'.format(session))
   evaluations = json.loads(request.form['evaluations'])
-  kept_evaluations = [evaluation for evaluation in evaluations if not evaluation['is_omitted']]
+  kept_evaluations = [evaluation for evaluation in evaluations if evaluation['include']]
   email = session['email']
   if len(kept_evaluations) == 0:
     result = '<h1>There are no evaluations to confirm.</h1>'
@@ -662,7 +662,8 @@ def do_form_3(request, session):
         count = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
                 'eleven', 'twelve'][count - 2]
       message_tail = '{} evaluations'.format(count)
-    # Insert these evaluations into the pending_evaluations table.
+
+    # Insert these evaluations into the pending_evaluations table of the db.
     conn = pgconnection('dbname=cuny_courses')
     cursor = conn.cursor()
     token = str(uuid.uuid4())

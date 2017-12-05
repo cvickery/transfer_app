@@ -220,7 +220,7 @@ $(function ()
                                              .replace(/selected-rule/, '')
                                              .replace(/evaluated/, '');
     var evaluation_row_html = `<tr class="${evaluation_row_class}">
-                                 ${evaluation_row.innerHTML.replace(/ id=".*"/,'')}
+                                 ${evaluation_row.innerHTML.replace(/ id=".*"/, '')}
                                </tr>`;
     var evaluation_rule_table = `<table>${evaluation_row_html}</table>`;
 
@@ -281,7 +281,10 @@ $(function ()
                     <input type="hidden" name="dest_institution"
                            value="${destination_institution}" />
                     <input type="hidden" name="rule-id" value="${rule_id}" />
-                    <button class="ok-cancel" id="review-submit" type="button" disabled="disabled">OK</button>
+                    <button class="ok-cancel"
+                            id="evaluation-submit"
+                            type="button"
+                            disabled="disabled">OK</button>
                     <button class="ok-cancel dismiss" type="button">Cancel</button>
                   </div>`;
 
@@ -344,13 +347,13 @@ $(function ()
       var ok_to_submit = ($(this).attr('id') === 'src-ok' ||
                           $(this).attr('id') === 'dest-ok' ||
                           comment_len > 12);
-      $('#review-submit').attr('disabled', !ok_to_submit);
+      $('#evaluation-submit').attr('disabled', !ok_to_submit);
     }
 
-    // Present the Review Panel when user clicks to submit evaluations.
-    $('#review-submit').click(function (event)
+    // Add or update an evaluation when user submits one.
+    $('#evaluation-submit').click(function (event)
     {
-      pending_evaluations.push(
+      var evaluation =
       {
         event_type: $('input[name=reviewed]:checked').val(),
         source_institution: $('input[name=src_institution]').val(),
@@ -358,8 +361,26 @@ $(function ()
         comment_text: $('#comment-text').val().replace('\'', '’'),
         rule_id: rule_id,
         rule_str: evaluation_row_html,
-        is_omitted: false
-      });
+        include: true
+      };
+      // If there is already an evaluation for this rule ...
+      var new_evaluation = true;
+      for (var i = 0; i < pending_evaluations.length; i++)
+      {
+        if (evaluation.rule_id === pending_evaluations[i].rule_id &&
+            evaluation.event_type === pending_evaluations[i].event_type)
+        {
+          // ... the only thing that could be different is the comment
+          pending_evaluations[i].comment_text = evaluation.comment_text;
+          new_evaluation = false;
+          break;
+        }
+      }
+      if (new_evaluation)
+      {
+        pending_evaluations.push(evaluation);
+      }
+
       $('.selected-rule').addClass('evaluated');
 
       // Update the evaluations pending information
@@ -377,7 +398,7 @@ $(function ()
       }
       $('#num-pending').text(num_pending_text);
       $('#evaluation-form').hide();
-      $('.selected-rule').removeClass('selected-rule')
+      $('.selected-rule').removeClass('selected-rule');
 
       // Enable review/send-email button
       $('#send-email').attr('disabled', false);
@@ -406,12 +427,10 @@ $(function ()
               <th colspan="2">Your Evaluation</th>
             </tr>
         `;
+      review_form_rows = [];
       for (evaluation in pending_evaluations)
       {
         // *** TODO *** Rework this against the evaluations page. rule_id is unique now.
-        // *** TODO *** Decide how you want to handle repeated evaluation rows
-        // *** TODO *** Decide whether you are going to delete rows that are dropped, or just gray
-        //              them out.
         var the_rule = pending_evaluations[evaluation].rule_id;
         var rule_str = pending_evaluations[evaluation].rule_str
                                                       .replace(/<td class=".*">/g, '<td>')
@@ -442,28 +461,28 @@ $(function ()
             break;
 
         }
-        review_form += `
-          <tr class="eval-rule rule-id-${the_rule}">
-            <td>
-              <input type="checkbox"
-                     class="include-button"
-                     checked="checked"/>
-            </td>
-            <td>
-              <table>
-                <tr>
-                ${rule_str}
-                </tr>
-              </table>
-            </td>
-            <td>
-              ${institution}
-            </td>
-            <td>
-              ${go_nogo}
-            </td>
-          </tr>`;
+        review_form += `<tr id="evaluation-${evaluation}">
+                          <td>
+                            <input type="checkbox"
+                                   class="include-button"
+                                   checked="checked"/>
+                          </td>
+                          <td>
+                            <table>
+                              <tr>
+                                ${rule_str}
+                              </tr>
+                            </table>
+                          </td>
+                          <td>
+                            ${institution}
+                          </td>
+                          <td>
+                            ${go_nogo}
+                          </td>
+                        </tr>`;
       }
+
       review_form += `
           </table>
         </div>
@@ -471,41 +490,50 @@ $(function ()
           <input type="hidden" value="${email_address}" />
           <input type="hidden" name="next-function" value="do_form_3" />
           <input type="hidden" id="hidden-evaluations" name="evaluations" value="Not Set" />
-          <button class="ok-cancel" type="submit">Submit These Evaluations</button>
+          <button class="ok-cancel" type="submit" id="review-submit">Submit These Evaluations</button>
           <button class="ok-cancel dismiss" type="button">Cancel</button>
         </div>
       </div>`;
+
+      // Re-use the evaluation-form div for the evaluations-review form
       $('#evaluation-form').html(dismiss_bar + review_form)
                            .show()
                            .draggable();
 
-      $('.omit-button').click(function ()
+      // When an include button is clicked
+      $('.include-button').click(function (event)
       {
-        // extract the button's rule-index and use it to gray out the div containing it and to mark
-        // the evaluation as disabled.
-        var rule_index = $(this).attr('id').split('-')[2];
-        var omit_div_id = 'eval-rule-' + rule_index.replace(':', '\\:');
-        for (evaluation in pending_evaluations)
+        var row = $(this).parent().parent();
+        var index = row.attr('id').split('-')[1];
+        // Is the evaluation being omitted, or re-included?
+        if ($(this).is(':checked'))
         {
-          if (pending_evaluations[evaluation].rule_index == rule_index)
+          pending_evaluations[index].include = true;
+          row.removeClass('omitted');
+          $('#review-submit').removeAttr('disabled');
+        }
+        else
+        {
+          pending_evaluations[index].include = false;
+          row.addClass('omitted');
+          var any_included = false;
+          for (var i = 0; i < pending_evaluations.length; i++)
           {
-            if (pending_evaluations[evaluation].is_omitted)
+            if (pending_evaluations[i].include)
             {
-              $('#' + omit_div_id).removeClass('omitted');
-              pending_evaluations[evaluation].is_omitted = false;
-              $(this).text('Included');
+              any_included = true;
+              break;
             }
-            else
-            {
-              $('#' + omit_div_id).addClass('omitted');
-              pending_evaluations[evaluation].is_omitted = true;
-              $(this).text('Omitted');
-            }
-            break;
+          }
+          if (!any_included)
+          {
+            $('#review-submit').attr('disabled', 'disabled');
           }
         }
       });
 
+      // Submit the evaluations. This will invoke do_form(), which will sent the verification
+      // email.
       $('#evaluation-form').submit(function ()
       {
         $('input[name="evaluations"]').val(JSON.stringify(pending_evaluations));
@@ -518,7 +546,7 @@ $(function ()
       $('.dismiss').click(function ()
       {
         $('#evaluation-form').hide();
-        $('.selected-rule').removeClass('selected-rule')
+        $('.selected-rule').removeClass('selected-rule');
       });
     });
   });
