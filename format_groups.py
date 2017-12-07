@@ -35,7 +35,7 @@ def _grade(min_gpa, max_gpa):
       letter = letters[int(round(min_gpa * 3))]
       return letter + ' or above in'
     else:
-      return 'pass'
+      return 'Pass'
   letter = letters[int(round(max_gpa * 3))]
   return 'below ' + letter + ' in'
 
@@ -70,7 +70,7 @@ def format_groups(groups, session):
     #   hyphen
     #   Colon-separated list of destination courses_ids
     row_id_str = '{}-{}-'.format(group.rule_id,
-                                 institution_names[group.source_institution].replace(' ', '_'))
+                                 re.sub('\d*', '', group.source_institution))
 
     # Build the source part of the rule group
     source_credits = 0.0
@@ -103,7 +103,7 @@ def format_groups(groups, session):
 
     row_id_str = row_id_str.strip(':')
     row_id_str = row_id_str + \
-                 '-{}-'.format(institution_names[group.destination_institution].replace(' ', '_'))
+                 '-{}-'.format(re.sub('\d*', '', group.destination_institution))
 
     # Build the destination part of the rule group
     destination_credits = 0.0
@@ -136,7 +136,8 @@ def format_groups(groups, session):
     # hasn't been evaluated yet, the last column is just the text that says so.
     status_cell = status_string(group.status)
     if group.status != 0:
-      status_cell = '<a href="/history/{}" target="_blank">status_cell</a>'.format(key)
+      status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(group.rule_id,
+                                                                          status_cell)
     row = """ <tr id="{}" class="{}">
                 <td title="{}">{}</td>
                 <td>{}</td>
@@ -149,7 +150,7 @@ def format_groups(groups, session):
                     institution_names[group.source_institution],
                     re.search('\D+', group.source_institution).group(0),
                     source_course_list,
-                    '{}=>{}'.format(source_credits,destination_credits),
+                    '{} cr. :: {} cr.'.format(source_credits,destination_credits),
                     institution_names[group.destination_institution],
                     re.search('\D+', group.destination_institution).group(0),
                     destination_course_list,

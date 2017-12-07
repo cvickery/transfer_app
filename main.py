@@ -650,7 +650,7 @@ def do_form_2(request, session):
 def do_form_3(request, session):
   logger.debug('*** do_form_3({})'.format(session))
   evaluations = json.loads(request.form['evaluations'])
-  kept_evaluations = [evaluation for evaluation in evaluations if evaluation['include']]
+  kept_evaluations = [e for e in evaluations if e['include']]
   email = session['email']
   if len(kept_evaluations) == 0:
     result = '<h1>There are no evaluations to confirm.</h1>'
@@ -673,14 +673,21 @@ def do_form_3(request, session):
     conn.commit()
     conn.close()
 
-    # Sentence templates
+    # Description message templates
     evaluation_dict = dict()
-    evaluation_dict['ok'] = '{} OK'
-    evaluation_dict['not-ok'] = '{} NOT OK: {}'
+    evaluation_dict['ok'] = '{}: OK'
+    evaluation_dict['not-ok'] = '{}: {}'
     evaluation_dict['other'] = 'Other: {}'
 
-    # Send confirmation email
-    evaluation_rows = ''
+    # Generate description messages
+    style_str = ' style="border:1px solid #666;vertical-align:top; padding:0.5em;"'
+    evaluation_rows = """
+                      <table style="border-collapse:collapse;">
+                        <tr>
+                          <th colspan="5"{}>Rule</th>
+                          <th{}>Your Evaluation</th>
+                        </tr>
+                        """.format(style_str, style_str)
     for evaluation in kept_evaluations:
       event_type = evaluation['event_type']
       if event_type == 'src-ok':
@@ -696,13 +703,12 @@ def do_form_3(request, session):
       else:
         description = evaluation_dict['other'].format(evaluation['comment_text'])
 
-      evaluation_rows += """
-        <tr>
-          <td style="border: 1px solid black; padding:0.5em;">{}</td>
-          <td style="border: 1px solid black; padding:0.5em;">{}</td>
-        </tr>
-        """.format(evaluation['rule_str'], description)
-
+      rule_str = re.sub('</tr>',
+                        """<td>{}</td></tr>
+                        """.format(description), evaluation['rule_str'])
+      evaluation_rows += re.sub('<td([^>]*)>', '<td\\1{}>'.format(style_str), rule_str)
+    evaluation_rows += '</table>'
+    # Send the email
     hostname = os.environ.get('HOSTNAME')
     if hostname == 'babbage.cs.qc.cuny.edu' or (hostname and hostname.endswith('.local')):
       hostname = 'http://localhost:5000'
@@ -801,13 +807,6 @@ def confirmation(token):
 # EVALUATION HISTORY PAGE
 # -------------------------------------------------------------------------------------------------
 # Display the history of evaluation events for a rule.
-#
-# DUDE: This is a problem: how do you identify a rule now, and associate a history with it?
-# It used to be you could use a pair of course ids, but now the key is (sending_institution,
-# sending_discipline, rule_group). So the events table has to be updated to reflect this.
-# But where does "the" status for a rule get stored when there are multiple sending and/or
-# receiving courses involved? *** TODO ***
-# Resolution will come, once the new rule_group table, with its single status, takes over.
 #
 @app.route('/history/<rule>', methods=['GET'])
 def history(rule):

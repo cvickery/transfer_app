@@ -207,11 +207,10 @@ $(function ()
       rule_str += $(this).text() + ' ';
     });
 
-    // Rule ids: "source_course_id:source_institution:dest_course_id:dest_institution"
-    // New Row IDs: rule_id; hyphen;
-    //              source institution name; hyphen;
+    //     Row IDs: rule_id; hyphen;
+    //              source institution; hyphen;
     //              colon-separated list of source course IDs, hyphen,
-    //              destination institution name; hyphen;
+    //              destination institution; hyphen;
     //              colon-separated list of destination course IDs.
     //
     var row_id = $(this).attr('id');
@@ -430,11 +429,14 @@ $(function ()
       review_form_rows = [];
       for (evaluation in pending_evaluations)
       {
-        // *** TODO *** Rework this against the evaluations page. rule_id is unique now.
         var the_rule = pending_evaluations[evaluation].rule_id;
-        var rule_str = pending_evaluations[evaluation].rule_str
-                                                      .replace(/<td class=".*">/g, '<td>')
-                                                      .replace(/<tr class=".*">/, '<tr>');
+        var rule_str = pending_evaluations[evaluation].rule_str;
+                                                      // .replace(/<td class=".*?">/g, '<td>')
+                                                      // .replace(/<tr class=".*?">/, '<tr>');
+
+        // Build a rule string that omits the previous status (i.e., the last td).
+        rule_str = rule_str.replace(/\n\s*/g, '').replace(/<td(?!.*<td).*<\/td><\/tr>/, '</tr>');
+        pending_evaluations[evaluation].rule_str = rule_str;
         var institution = 'Unknown';
         var go_nogo = 'Unknown';
         switch (pending_evaluations[evaluation].event_type)
@@ -532,7 +534,7 @@ $(function ()
         }
       });
 
-      // Submit the evaluations. This will invoke do_form(), which will sent the verification
+      // Submit the evaluations. This will invoke do_form_3(), which will sent the verification
       // email.
       $('#evaluation-form').submit(function ()
       {

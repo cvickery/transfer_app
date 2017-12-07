@@ -346,6 +346,12 @@ button:disabled {
   background-color: white;
 }
 
+.history-what-type {
+  display: inline-block;
+  width:5em;
+  border-right: 1px solid #999;
+  margin-right: 0.5em;
+}
 h2 + div {
   margin-left: 2em;
 }
