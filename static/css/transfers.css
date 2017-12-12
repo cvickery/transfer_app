@@ -152,7 +152,7 @@ td a:hover {
 }
 
 #evaluation-form table {
-  margin:auto;
+  margin:0 auto 0.5em;
 }
 
 #source-catalog-div {
@@ -193,7 +193,7 @@ td a:hover {
 }
 
 #evaluations-table table {
-  margin:0;
+  margin:0 0 0.5em 0;
 }
 
 .eval-rule td {
@@ -234,10 +234,6 @@ td a:hover {
 .ok-cancel {
   display:inline-block;
   width: 15em;
-}
-
-#verification-fieldset {
-  width: 50vw;
 }
 
 .selection-table-div {
@@ -329,6 +325,15 @@ button:disabled {
 #review-form {
   font-size: 1em;
   padding: 0.5em;
+}
+
+#verification-fieldset {
+  width: 30vw;
+}
+
+#num-pending{
+  margin: 0 auto 0.25em;
+  display: block;
 }
 
 .omit-button {

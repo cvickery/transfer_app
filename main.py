@@ -170,9 +170,9 @@ def do_form_0(request, session):
     <p>
       This is the first step of a web application for reviewing course transfer rules at CUNY.<br/>
       Background information and instructions are available in the
-      <a
-        href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE/edit?usp=sharing">
-        CUNY Transfer Rules Evaluation</a> document.
+      <a  target="_blank"
+          href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE">
+          Reviewing CUNY Transfer Rules</a> document.
     <fieldset>
       <form method="post" action="" id="form-1">
           {}
@@ -625,15 +625,15 @@ def do_form_2(request, session):
       Credits in parentheses give the number of credits transferred where that does not match the
       nominal number of credits for a course.<br/>
       Rules that are <span class="evaluated">highlighted like this</span> are ones that you have
-      evaluated but not yet reviewed.<br/>
-      Click on a rule to evaluate it.<br/>
+      reviewed but not yet submitted.<br/>
+      Click on a rule to review it.<br/>
       <em>Click on these instructions to hide them.</em><br/>
     </div>
     <p><a href="/review_transfers/" class="restart">Restart</a></p>
     <fieldset id="verification-fieldset">
-        <span id="num-pending">You have no evaluations to review yet.</span><br/>
+        <p id="num-pending">You have not reviewed any transfer rules yet.</p>
         <button type="text" id="send-email" disabled="disabled">
-        Click Here to review your evaluations before submitting them.
+        Preview Your Submissions.
       </button>
       <form method="post" action="" id="evaluation-form">
         Waiting for rules to finish loading ...
@@ -685,7 +685,7 @@ def do_form_3(request, session):
                       <table style="border-collapse:collapse;">
                         <tr>
                           <th colspan="5"{}>Rule</th>
-                          <th{}>Your Evaluation</th>
+                          <th{}>Your Observation</th>
                         </tr>
                         """.format(style_str, style_str)
     for evaluation in kept_evaluations:
@@ -757,7 +757,7 @@ def pending():
   else:
     table = '<table>{}</table>'.format(rows)
   result = """
-  <h1>Pending Evaluations</h1>
+  <h1>Pending Reviews</h1>
   {}
   """.format(table)
   return render_template('transfers.html', result=Markup(result))
@@ -798,7 +798,7 @@ def confirmation(token):
   result = """
 
   <h1>Confirmation</h1>
-  <p>Evaluation Report ID: {}</p>
+  <p>Review Report ID: {}</p>
   {}
     """.format(token, msg)
   return render_template('transfers.html', result=Markup(result))

@@ -17,7 +17,7 @@ def status_string(status):
     Generate a string summarizing all bits that are set in status.
   """
   global status_messages
-  if status == 0: return 'Not Evaluated'
+  if status == 0: return 'Not Yet Reviewed'
 
   if status_messages == None:
     conn = pgconnection('dbname=cuny_courses')
@@ -112,7 +112,7 @@ def process_pending(row):
     <table>
       <tr>
         <th>Rule</th>
-        <th>Previous Status</th>
+        <th>Review Status</th>
         <th>New Status<br/><em>Click for Evaluation History</em></th>
       </tr>
       {}

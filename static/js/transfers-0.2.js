@@ -387,13 +387,13 @@ $(function ()
       switch (pending_evaluations.length)
       {
         case 0:
-          num_pending_text = 'You have no evaluations to review yet.';
+          num_pending_text = 'You have not reviewed any transfer rules yet.';
           break;
         case 1:
-          num_pending_text = 'You have one evaluation to review.';
+          num_pending_text = 'You have reviewed one transfer rule.';
           break;
         default:
-          num_pending_text = `You have ${pending_evaluations.length} evaluations to review.`;
+          num_pending_text = `You have reviewed ${pending_evaluations.length} transfer rules.`;
       }
       $('#num-pending').text(num_pending_text);
       $('#evaluation-form').hide();
@@ -416,14 +416,14 @@ $(function ()
       var email_address = $('#email-address').text();
       var review_form = `
         <div id="review-form">
-          <h2>Review Your Evaluations</h2>
+          <h2>Review Your Submissions</h2>
           <p>Un-check the Include button if you don’t want to submit an item.</p>
           <div id="evaluations-table-div">
           <table id='evaluations-table'>
             <tr>
               <th>Include?</th>
               <th>Rule</th>
-              <th colspan="2">Your Evaluation</th>
+              <th colspan="2">Your Review</th>
             </tr>
         `;
       review_form_rows = [];
@@ -492,7 +492,7 @@ $(function ()
           <input type="hidden" value="${email_address}" />
           <input type="hidden" name="next-function" value="do_form_3" />
           <input type="hidden" id="hidden-evaluations" name="evaluations" value="Not Set" />
-          <button class="ok-cancel" type="submit" id="review-submit">Submit These Evaluations</button>
+          <button class="ok-cancel" type="submit" id="review-submit">Submit</button>
           <button class="ok-cancel dismiss" type="button">Cancel</button>
         </div>
       </div>`;

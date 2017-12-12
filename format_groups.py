@@ -53,7 +53,7 @@ def format_groups(groups, session):
           <th>Courses</th>
           <th></th>
           <th>Receiving</th>
-          <th>Courses</th><th>Previous Evaluations</th>
+          <th>Courses</th><th>Review Status</th>
         </tr>
       </thead>
       <tbody>

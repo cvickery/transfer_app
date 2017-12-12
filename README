@@ -1,3 +1,13 @@
+2017-12-09
+Full version of app ready for wider audience testing.
+Maintaining the db is the next issue. It would be easy just to recreate the db periodically, but
+that loses all the evaluations. Two possible approaches:
+  1. Diff the query files and update/insert row-by-row the catalog and rules tables. (argh)
+  2. Capture the evaluations, then rebuild the db.
+    * This raises the second issue: my db has unique IDs for rules. How do these get fed back
+      to the people who edit CF?
+      * To be discussed on 12/11 when I meet Chris Buonocore at CUNY.
+
 2017-08-05
 Working on CUNY Transfer Rules. Need to record the state of each review (reviewed by sender,
 reviewed by receiver, etc.) and to verify reviews submitted. Need state machine and events. Need to
