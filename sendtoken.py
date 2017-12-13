@@ -20,12 +20,12 @@ def send_token(email, url, evaluation_rows):
     it_them = 'it'
     this_these = 'this'
 
-  button_text = 'submit {} evaluation{}'.format(this_these, suffix).title()
+  button_text = 'submit {} review{}'.format(this_these, suffix).title()
   html_body = mail.Content('text/html',"""
   <p>
     Use the link below to confirm that you want to record the following transfer rule
-    evaluation{}.<br/>
-    You may ignore this message if you did not perform {} evaluation{} or if you have decided not
+    review{}.<br/>
+    You may ignore this message if you did not perform {} review{} or if you have decided not
     to record {}.
   </p>
   {}

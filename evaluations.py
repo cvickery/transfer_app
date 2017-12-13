@@ -108,12 +108,12 @@ def process_pending(row):
   suffix = 's'
   if len(evaluations) == 1: suffix = ''
   return """
-  <p>Recorded {} evaluation{} made by <em>{}</em> on {}.</p>
+  <p>Recorded {} review{} made by <em>{}</em> on {}.</p>
     <table>
       <tr>
         <th>Rule</th>
-        <th>Review Status</th>
-        <th>New Status<br/><em>Click for Evaluation History</em></th>
+        <th>Previous Review Status</th>
+        <th>New Review Status<br/><em>Click for Evaluation History</em></th>
       </tr>
       {}
     </table>

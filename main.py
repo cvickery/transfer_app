@@ -23,6 +23,15 @@ from format_groups import format_groups
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
 
+# Convert YYYY-MM-DD to Month day, year string
+def date2str(date):
+  """Takes a string in YYYY-MM-DD form and returns a text string with the date in full English form.
+  """
+  months = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December']
+  year, month, day = date.split('-')
+  return '{} {}, {}'.format(months[int(month) - 1], int(day), year)
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
@@ -54,7 +63,6 @@ def image_file(file_name):
 def error():
   result = "<h1>Error</h1>"
   return render_template('transfers.html', result=Markup(result))
-
 
 # QC Applications
 # =================================================================================================
@@ -110,6 +118,17 @@ def do_form_0(request, session):
   cursor.execute("select code, name from institutions order by lower(name)")
   institution_names = {row['code']: row['name'] for row in cursor}
   session['institution_names'] = institution_names
+
+  cursor.execute("select * from updates")
+  Update = namedtuple('Update', [d[0] for d in cursor.description])
+  updates = [Update._make(row) for row in cursor.fetchall()]
+  catalog_date = 'unknown'
+  rules_date = 'unknown'
+  for update in updates:
+    if update.table_name == 'courses':
+      catalog_date = date2str(update.update_date)
+    if update.table_name == 'rules':
+      rules_date = date2str(update.update_date)
   cursor.close()
   conn.close()
 
@@ -195,7 +214,11 @@ def do_form_0(request, session):
         </fieldset>
       </form>
     </fieldset>
-    """.format(source_prompt, destination_prompt, email, remember_me)
+    <div id="update-info">
+      <p>Catalog information last updated: {}</p>
+      <p>Transfer rules last updated: {}</p>
+    </div>
+    """.format(source_prompt, destination_prompt, email, remember_me, catalog_date, rules_date)
 
   response = make_response(render_template('transfers.html', result=Markup(result)))
   response.set_cookie('mysession',
@@ -633,7 +656,7 @@ def do_form_2(request, session):
     <fieldset id="verification-fieldset">
         <p id="num-pending">You have not reviewed any transfer rules yet.</p>
         <button type="text" id="send-email" disabled="disabled">
-        Preview Your Submissions.
+        Preview Your Submissions
       </button>
       <form method="post" action="" id="evaluation-form">
         Waiting for rules to finish loading ...
@@ -657,11 +680,11 @@ def do_form_3(request, session):
   else:
     message_tail = 'evaluation'
     if len(kept_evaluations) > 1:
-      count = len(kept_evaluations)
-      if count < 13:
-        count = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-                'eleven', 'twelve'][count - 2]
-      message_tail = '{} evaluations'.format(count)
+      num_evaluations = len(kept_evaluations)
+      if num_evaluations < 13:
+        num_evaluations = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+                'eleven', 'twelve'][num_evaluations - 2]
+      message_tail = '{} evaluations'.format(num_evaluations)
 
     # Insert these evaluations into the pending_evaluations table of the db.
     conn = pgconnection('dbname=cuny_courses')
@@ -681,13 +704,15 @@ def do_form_3(request, session):
 
     # Generate description messages
     style_str = ' style="border:1px solid #666;vertical-align:top; padding:0.5em;"'
+    suffix = 's'
+    if len(kept_evaluations) == 1: suffix = ''
     evaluation_rows = """
                       <table style="border-collapse:collapse;">
                         <tr>
                           <th colspan="5"{}>Rule</th>
-                          <th{}>Your Observation</th>
+                          <th{}>Your Review{}</th>
                         </tr>
-                        """.format(style_str, style_str)
+                        """.format(style_str, style_str, suffix)
     for evaluation in kept_evaluations:
       event_type = evaluation['event_type']
       if event_type == 'src-ok':
@@ -723,7 +748,7 @@ def do_form_3(request, session):
       result = """
       <h1>Step 4: Respond to Email</h1>
       <p>
-        Check your email at {}.<br/>Click on the 'activate these evaluations' button in that email to
+        Check your email at {}.<br/>Click on the 'activate these reviews' button in that email to
         confirm that you actually wish to have your {} recorded.
       </p>
       <p>
@@ -790,7 +815,7 @@ def confirmation(token):
 
   msg = ''
   if len(rows) == 0:
-    msg = '<p class="error">This evaluation report has either expired or already been recorded.</p>'
+    msg = '<p class="error">This report has either expired or already been recorded.</p>'
   if len(rows) > 1:
     msg = '<p class="error">Program Error: multiple pending_evaluations.</p>'
   if len(rows) == 1:
