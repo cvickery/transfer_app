@@ -113,7 +113,7 @@ def process_pending(row):
       <tr>
         <th>Rule</th>
         <th>Previous Review Status</th>
-        <th>New Review Status<br/><em>Click for Evaluation History</em></th>
+        <th>New Review Status<br/><em>Click for Review History</em></th>
       </tr>
       {}
     </table>
