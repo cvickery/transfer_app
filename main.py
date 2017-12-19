@@ -71,10 +71,9 @@ def error():
 
 # INDEX
 # -------------------------------------------------------------------------------------------------
-@app.route('/')
-@app.route('/index')
-def index():
-  return render_template('index.html')
+@app.route('/queens')
+def queens():
+  return render_template('queens.html')
 
 # ASSESSMENT
 # -------------------------------------------------------------------------------------------------
@@ -102,6 +101,41 @@ def assessment():
 #   for confirmation. When user replies to the email, mark all matching items as confirmed and
 #   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
 #   (This allows people to accidentally deny their work without losing it.)
+
+
+# INDEX PAGE
+# =================================================================================================
+# This is the entry point for the transfer rules review application
+@app.route('/', methods=['POST', 'GET'])
+@app.route('/index/', methods=['POST', 'GET'])
+@app.route('/review_transfers/', methods=['POST', 'GET'])
+def transfers():
+  """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
+      if any, the user submitted.
+  """
+  logger.debug('*** {} /review_transfers/ ***'.format(request.method))
+  mysession = MySession(request.cookies.get('mysession'))
+
+  # Dispatcher for forms
+  dispatcher = {
+    'do_form_1': do_form_1,
+    'do_form_2': do_form_2,
+    'do_form_3': do_form_3,
+  }
+
+  if request.method == 'POST':
+    # User has submitted a form.
+    return dispatcher.get(request.form['next-function'], lambda: error)(request, mysession)
+
+  # Form not submitted yet, so call do_form_0 to generate form_1
+  else:
+    # clear institutions, subjects, and rules from the session before restarting
+    mysession.remove('source_institutions')
+    mysession.remove('destination_institutions')
+    mysession.remove('source_disciplines')
+    mysession.remove('destination_disciplines')
+    keys = mysession.keys()
+    return do_form_0(request, mysession)
 
 # do_form_0()
 # -------------------------------------------------------------------------------------------------
@@ -446,7 +480,7 @@ def do_form_1(request, session):
     including electives and blanket credit.<br/>
     The next step will show all transfer rules for courses in the corresponding pairs of
     disciplines.<br/>
-    <em>Click on these instructions to hide them.</em>
+    <em>Clicking on these instructions hides them, making more room for the list of subjects.</em>
   </div>
   <form method="post" action="" id="form-2">
     <a href="/review_transfers/" class="restart">Restart</a>
@@ -650,7 +684,7 @@ def do_form_2(request, session):
       Rules that are <span class="evaluated">highlighted like this</span> are ones that you have
       reviewed but not yet submitted.<br/>
       Click on a rule to review it.<br/>
-      <em>Click on these instructions to hide them.</em><br/>
+      <em>Clicking on these instructions hides them, making more room for the list of rules.</em>
     </div>
     <p><a href="/review_transfers/" class="restart">Restart</a></p>
     <fieldset id="verification-fieldset">
@@ -839,39 +873,6 @@ def history(rule):
   """
   result = rule_history(rule)
   return render_template('transfers.html', result=Markup(result))
-
-
-# REVIEW_TRANSFERS PAGE
-# =================================================================================================
-#
-@app.route('/review_transfers/', methods=['POST', 'GET'])
-def transfers():
-  """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
-      if any, the user submitted.
-  """
-  logger.debug('*** {} /review_transfers/ ***'.format(request.method))
-  mysession = MySession(request.cookies.get('mysession'))
-
-  # Dispatcher for forms
-  dispatcher = {
-    'do_form_1': do_form_1,
-    'do_form_2': do_form_2,
-    'do_form_3': do_form_3,
-  }
-
-  if request.method == 'POST':
-    # User has submitted a form.
-    return dispatcher.get(request.form['next-function'], lambda: error)(request, mysession)
-
-  # Form not submitted yet, so call do_form_0 to generate form_1
-  else:
-    # clear institutions, subjects, and rules from the session before restarting
-    mysession.remove('source_institutions')
-    mysession.remove('destination_institutions')
-    mysession.remove('source_disciplines')
-    mysession.remove('destination_disciplines')
-    keys = mysession.keys()
-    return do_form_0(request, mysession)
 
 # /_COURSES
 # =================================================================================================
