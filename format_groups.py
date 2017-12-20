@@ -59,20 +59,24 @@ def format_groups(groups, session):
       <tbody>
       """
   for group in groups:
-    # The id for the row will be:
-    #   Rule group ID
+    # The id for the row will be the group id plus lists of course_ids:
+    #   Source institution
     #   hyphen
-    #   Source institution name
+    #   Discipline
+    #   hyphen
+    #   Group number
+    #   hyphen
+    #   Destination institution
     #   hyphen
     #   Colon-separated list of source course_ids
     #   hyphen
-    #   Destination institution name
-    #   hyphen
     #   Colon-separated list of destination courses_ids
-    row_id_str = '{}-{}-'.format(group.rule_id,
-                                 re.sub('\d*', '', group.source_institution))
+    row_id_str = '{}-{}-{}-{}-'.format(group.source_institution,
+                                       group.discipline,
+                                       group.group_number,
+                                       group.destination_institution)
 
-    # Build the source part of the rule group
+    # The source course ids part of the rule group
     source_credits = 0.0
     grade = ''
     discipline = ''
@@ -101,9 +105,7 @@ def format_groups(groups, session):
         source_credits += float(course.credits)
     source_course_list = source_course_list.strip('/')
 
-    row_id_str = row_id_str.strip(':')
-    row_id_str = row_id_str + \
-                 '-{}-'.format(re.sub('\d*', '', group.destination_institution))
+    row_id_str = row_id_str.strip(':') + '-'
 
     # Build the destination part of the rule group
     destination_credits = 0.0
@@ -136,7 +138,11 @@ def format_groups(groups, session):
     # hasn't been evaluated yet, the last column is just the text that says so.
     status_cell = status_string(group.status)
     if group.status != 0:
-      status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(group.rule_id,
+      rule_key = '{}-{}-{}-{}'.format(group.source_institution,
+                                      group.discipline,
+                                      group.group_number,
+                                      group.destination_institution)
+      status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule_key,
                                                                           status_cell)
     row = """ <tr id="{}" class="{}">
                 <td title="{}">{}</td>

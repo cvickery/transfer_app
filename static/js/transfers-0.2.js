@@ -207,10 +207,11 @@ $(function ()
       rule_str += $(this).text() + ' ';
     });
 
-    //     Row IDs: rule_id; hyphen;
-    //              source institution; hyphen;
-    //              colon-separated list of source course IDs, hyphen,
+    //     Row IDs: source institution; hyphen;
+    //              discipline; hyphen;
+    //              group_number; hyphen;
     //              destination institution; hyphen;
+    //              colon-separated list of source course IDs, hyphen,
     //              colon-separated list of destination course IDs.
     //
     var row_id = $(this).attr('id');
@@ -224,24 +225,35 @@ $(function ()
     var evaluation_rule_table = `<table>${evaluation_row_html}</table>`;
 
     var first_parse = row_id.split('-');
-    var rule_id = first_parse[0];
-    var source_institution = first_parse[1].replace(/_/g, ' ');
-    var source_course_ids = first_parse[2].split(':');
+    var rule_id = first_parse[0] + '-' +
+                  first_parse[1] + '-' +
+                  first_parse[2] + '-' +
+                  first_parse[3];
+    var source_institution = first_parse[0].replace(/_/g, ' ');
+    var source_institution_str = source_institution.replace(/\d+/, '');
+    var discipline = first_parse[1];
+    var group_number = first_parse[2];
     var destination_institution = first_parse[3].replace(/_/g, ' ');
-    var destination_course_ids = first_parse[4].split(':');
-    var source_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[2]});
-    var dest_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[4]});
+    var destination_institution_str = destination_institution.replace(/\d+/, '');
+    var source_course_ids = first_parse[4].split(':');
+    var destination_course_ids = first_parse[5].split(':');
+    var source_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[4]});
+    var dest_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[5]});
 
     var source_suffix = (source_course_ids.length !== 1) ? 's' : '';
     var source_catalog_div = `<div id="source-catalog-div">
-                              <h2>${source_institution} Course${source_suffix}</h2>
+                              <h2>
+                                ${source_institution_str} Course${source_suffix}
+                              </h2>
                               <div id="source-catalog-info">
                                 <p>Waiting for catalog entries ...</p>
                                 </div>
                             </div>`;
     var destination_suffix = (destination_course_ids.length !== 1) ? 's' : '';
     var destination_catalog_div = `<div id="destination-catalog-div">
-                                  <h2>${destination_institution} Course${destination_suffix}</h2>
+                                  <h2>
+                                    ${destination_institution_str} Course${destination_suffix}
+                                  </h2>
                                   <div id="destination-catalog-info">
                                     <p>Waiting for catalog entries ...</p>
                                     </div>
@@ -250,22 +262,22 @@ $(function ()
     var controls = `<div id="evaluation-controls-div" class="clean">
                     <div>
                       <input type="radio" name="reviewed" id="src-ok" value="src-ok"/>
-                      <label for="src-ok">Verified by ${source_institution}</label>
+                      <label for="src-ok">Verified by ${source_institution_str}</label>
                     </div>
                     <div>
                       <input type="radio" name="reviewed" id="src-not-ok" value="src-not-ok"/>
-                      <label for="src-not-ok">Problem observed by ${source_institution}</label>
+                      <label for="src-not-ok">Problem observed by ${source_institution_str}</label>
                     </div>
                     <div>
                       <input type="radio" name="reviewed" id="dest-ok" value="dest-ok"/>
                       <label for="dest-ok">
-                        Verified by ${destination_institution}
+                        Verified by ${destination_institution_str}
                       </label>
                     </div>
                     <div>
                       <input type="radio" name="reviewed" id="dest-not-ok" value="dest-not-ok"/>
                       <label for="dest-not-ok">
-                        Problem observed by ${destination_institution}
+                        Problem observed by ${destination_institution_str}
                       </label>
                     </div>
                     <div>
@@ -431,8 +443,6 @@ $(function ()
       {
         var the_rule = pending_evaluations[evaluation].rule_id;
         var rule_str = pending_evaluations[evaluation].rule_str;
-                                                      // .replace(/<td class=".*?">/g, '<td>')
-                                                      // .replace(/<tr class=".*?">/, '<tr>');
 
         // Build a rule string that omits the previous status (i.e., the last td).
         rule_str = rule_str.replace(/\n\s*/g, '').replace(/<td(?!.*<td).*<\/td><\/tr>/, '</tr>');
@@ -477,7 +487,7 @@ $(function ()
                             </table>
                           </td>
                           <td>
-                            ${institution}
+                            ${institution.replace(/\d+/, '')}
                           </td>
                           <td>
                             ${go_nogo}

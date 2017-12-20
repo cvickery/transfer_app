@@ -62,15 +62,34 @@ def process_pending(row):
 
       # Generate an event for this evaluation
       event_type = evaluation['event_type']
-      rule_id = evaluation['rule_id']
+      source_institution, discipline, group_number, destination_institution = \
+          evaluation['rule_id'].split('-')
       what = evaluation['comment_text']
       q = """
-      insert into events (event_type, rule_id, who, what, event_time)
-                         values (%s, %s, %s, %s, %s)"""
-      cursor.execute(q, (event_type, rule_id, email, what, when_entered))
+      insert into events (event_type,
+                          source_institution,
+                          discipline,
+                          group_number,
+                          destination_institution,
+                          who, what, event_time)
+                         values (%s, %s, %s, %s, %s, %s, %s, %s)"""
+      cursor.execute(q, (event_type,
+                         source_institution,
+                         discipline,
+                         group_number,
+                         destination_institution,
+                         email,
+                         what,
+                         when_entered))
 
       # Update the evaluation state for this rule.
-      cursor.execute('select * from rule_groups where id = %s', (rule_id,))
+      cursor.execute("""
+                     select * from rule_groups
+                      where source_institution = %s
+                        and discipline = %s
+                        and group_number = %s
+                        and destination_institution = %s
+                     """, (source_institution, discipline, group_number, destination_institution))
       rows = cursor.fetchall()
       if len(rows) != 1:
         summaries = """
@@ -79,8 +98,16 @@ def process_pending(row):
         break
       old_status = rows[0]['status']
       new_status = old_status | event_type_bits[event_type]
-      q = 'update rule_groups set status = %s where id = %s'
-      cursor.execute(q, (new_status, rule_id))
+      q = """update rule_groups set status = %s
+              where source_institution = %s
+                and discipline = %s
+                and group_number = %s
+                and destination_institution = %s"""
+      cursor.execute(q, (new_status,
+                         source_institution,
+                         discipline,
+                         group_number,
+                         destination_institution))
 
       # Generate a summary of this evaluation
       old_status_str = status_string(old_status)
@@ -122,17 +149,21 @@ def process_pending(row):
 
 # rule_history()
 # -------------------------------------------------------------------------------------------------
-def rule_history(rule_id):
+def rule_history(rule_key):
   """ Generate HTML for the evaluation history of a transfer rule.
   """
+  source_institution, discipline, group_number, destination_institution = rule_key.split('-')
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   q = """
       select event_type, who, what, to_char(event_time, 'YYYY-MM-DD HH12:MI am') as event_time
        from events
-      where rule_id = %s order by event_time desc
+       where source_institution = %s
+         and discipline = %s
+         and group_number = %s
+         and destination_institution = %s order by event_time desc
       """
-  cursor.execute(q, (rule_id,))
+  cursor.execute(q, (source_institution, discipline, group_number, destination_institution))
   Event = namedtuple('Event', [d[0] for d in cursor.description])
   history_rows = ''
   if cursor.rowcount < 1:
@@ -159,5 +190,5 @@ def rule_history(rule_id):
               </tr>
               {}
             </table>
-           """.format(rule_id, history_rows)
+           """.format(rule_key, history_rows)
   return result

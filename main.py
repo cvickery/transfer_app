@@ -546,8 +546,7 @@ def do_form_2(request, session):
   destination_subject_params = ', '.join('%s' for s in destination_subject_list)
 
   q = """
-  select r.id as rule_id,
-         r.source_institution,
+  select r.source_institution,
          r.discipline,
          r.group_number,
          r.destination_institution,
@@ -585,9 +584,9 @@ def do_form_2(request, session):
 
   Group_Info = namedtuple('Group_Info',
                          """
-                          rule_id
                           source_institution
-                          source_discipline
+                          discipline
+                          group_number
                           source_courses
                           destination_institution
                           destination_courses
@@ -624,7 +623,10 @@ def do_form_2(request, session):
                 sc.min_gpa,
                 sc.max_gpa
          from   source_courses sc, disciplines d, courses c
-         where  rule_group = {}
+         where  source_institution = '{}'
+           and  sc.discipline = '{}'
+           and  sc.group_number = {}
+           and  sc.destination_institution = '{}'
            and  c.course_id = sc.course_id
            and  d.institution = c.institution
            and  d.discipline = c.discipline
@@ -632,7 +634,10 @@ def do_form_2(request, session):
                   c.discipline,
                   sc.max_gpa desc,
                   substring(c.catalog_number from '\d+\.?\d*')::float
-         """.format(record.rule_id)
+         """.format(record.source_institution,
+                    record.discipline,
+                    record.group_number,
+                    record.destination_institution)
     cursor.execute(q)
     source_courses = [c for c in map(Source_Course._make, cursor.fetchall())]
 
@@ -644,18 +649,24 @@ def do_form_2(request, session):
                 c.credits,
                 dc.transfer_credits
           from  destination_courses dc, disciplines d, courses c
-         where  rule_group = {}
+         where  dc.source_institution = '{}'
+           and  dc.discipline = '{}'
+           and  dc.group_number = {}
+           and  dc.destination_institution = '{}'
            and  c.course_id = dc.course_id
            and  d.institution = c.institution
            and  d.discipline = c.discipline
          order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
-         """.format(record.rule_id)
+         """.format(record.source_institution,
+                    record.discipline,
+                    record.group_number,
+                    record.destination_institution)
     cursor.execute(q)
     destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
 
-    groups.append(Group_Info(record.rule_id,
-                             record.source_institution,
+    groups.append(Group_Info(record.source_institution,
                              record.discipline,
+                             record.group_number,
                              source_courses,
                              record.destination_institution,
                              destination_courses,
@@ -668,7 +679,7 @@ def do_form_2(request, session):
   if len(groups) > 1: num_rules = 'are {:,} transfer rules'.format(len(groups))
 
   groups.sort(key=lambda g: (g.source_institution,
-                             g.source_discipline,
+                             g.discipline,
                              g.source_courses[0].catalog_number))
   rules_table = format_groups(groups, session)
 
@@ -750,14 +761,18 @@ def do_form_3(request, session):
     for evaluation in kept_evaluations:
       event_type = evaluation['event_type']
       if event_type == 'src-ok':
-        description = evaluation_dict['ok'].format(evaluation['source_institution'])
+        description = evaluation_dict['ok'].format(re.sub('\d+', '',
+                                                          evaluation['source_institution']))
       elif event_type == 'dest-ok':
-        description = evaluation_dict['ok'].format(evaluation['destination_institution'])
+        description = evaluation_dict['ok'].format(re.sub('\d+', '',
+                                                          evaluation['destination_institution']))
       elif event_type == 'src-not-ok':
-        description = evaluation_dict['not-ok'].format(evaluation['source_institution'],
+        description = evaluation_dict['not-ok'].format(re.sub('\d+', '',
+                                                              evaluation['source_institution']),
                                                        evaluation['comment_text'])
       elif event_type == 'dest-not-ok':
-        description = evaluation_dict['not-ok'].format(evaluation['destination_institution'],
+        description = evaluation_dict['not-ok'].format(re.sub('\d+', '',
+                                                            evaluation['destination_institution']),
                                                        evaluation['comment_text'])
       else:
         description = evaluation_dict['other'].format(evaluation['comment_text'])
