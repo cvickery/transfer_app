@@ -17,7 +17,7 @@ from collections import namedtuple
 from cuny_course import CUNYCourse
 from mysession import MySession
 from sendtoken import send_token
-from evaluations import process_pending, rule_history, status_string
+from reviews import process_pending, rule_history, status_string
 from format_groups import format_groups
 
 from flask import Flask, url_for, render_template, make_response,\
@@ -516,7 +516,7 @@ def do_form_1(request, session):
 def do_form_2(request, session):
   """
       Process CUNY Subject list from form 2 and add to session.
-      Generate form_3: the selected transfer rules for evaluation
+      Generate form_3: the selected transfer rules for review
   """
   logger.debug('*** do_form_2({})'.format(session))
   conn = pgconnection('dbname=cuny_courses')
@@ -703,7 +703,7 @@ def do_form_2(request, session):
         <button type="text" id="send-email" disabled="disabled">
         Preview Your Submissions
       </button>
-      <form method="post" action="" id="evaluation-form">
+      <form method="post" action="" id="review-form">
         Waiting for rules to finish loading ...
       </form>
     </fieldset>
@@ -717,71 +717,71 @@ def do_form_2(request, session):
 # -------------------------------------------------------------------------------------------------
 def do_form_3(request, session):
   logger.debug('*** do_form_3({})'.format(session))
-  evaluations = json.loads(request.form['evaluations'])
-  kept_evaluations = [e for e in evaluations if e['include']]
+  reviews = json.loads(request.form['reviews'])
+  kept_reviews = [e for e in reviews if e['include']]
   email = session['email']
-  if len(kept_evaluations) == 0:
-    result = '<h1>There are no evaluations to confirm.</h1>'
+  if len(kept_reviews) == 0:
+    result = '<h1>There are no reviews to confirm.</h1>'
   else:
-    message_tail = 'evaluation'
-    if len(kept_evaluations) > 1:
-      num_evaluations = len(kept_evaluations)
-      if num_evaluations < 13:
-        num_evaluations = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-                'eleven', 'twelve'][num_evaluations - 2]
-      message_tail = '{} evaluations'.format(num_evaluations)
+    message_tail = 'review'
+    if len(kept_reviews) > 1:
+      num_reviews = len(kept_reviews)
+      if num_reviews < 13:
+        num_reviews = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+                'eleven', 'twelve'][num_reviews - 2]
+      message_tail = '{} reviews'.format(num_reviews)
 
-    # Insert these evaluations into the pending_evaluations table of the db.
+    # Insert these reviews into the pending_reviews table of the db.
     conn = pgconnection('dbname=cuny_courses')
     cursor = conn.cursor()
     token = str(uuid.uuid4())
-    evaluations = json.dumps(kept_evaluations)
-    q = "insert into pending_evaluations (token, email, evaluations) values(%s, %s, %s)"
-    cursor.execute(q, (token, email, evaluations))
+    reviews = json.dumps(kept_reviews)
+    q = "insert into pending_reviews (token, email, reviews) values(%s, %s, %s)"
+    cursor.execute(q, (token, email, reviews))
     conn.commit()
     conn.close()
 
     # Description message templates
-    evaluation_dict = dict()
-    evaluation_dict['ok'] = '{}: OK'
-    evaluation_dict['not-ok'] = '{}: {}'
-    evaluation_dict['other'] = 'Other: {}'
+    review_dict = dict()
+    review_dict['ok'] = '{}: OK'
+    review_dict['not-ok'] = '{}: {}'
+    review_dict['other'] = 'Other: {}'
 
     # Generate description messages
     style_str = ' style="border:1px solid #666;vertical-align:top; padding:0.5em;"'
     suffix = 's'
-    if len(kept_evaluations) == 1: suffix = ''
-    evaluation_rows = """
+    if len(kept_reviews) == 1: suffix = ''
+    review_rows = """
                       <table style="border-collapse:collapse;">
                         <tr>
                           <th colspan="5"{}>Rule</th>
                           <th{}>Your Review{}</th>
                         </tr>
                         """.format(style_str, style_str, suffix)
-    for evaluation in kept_evaluations:
-      event_type = evaluation['event_type']
+    for review in kept_reviews:
+      event_type = review['event_type']
       if event_type == 'src-ok':
-        description = evaluation_dict['ok'].format(re.sub('\d+', '',
-                                                          evaluation['source_institution']))
+        description = review_dict['ok'].format(re.sub('\d+', '',
+                                                          review['source_institution']))
       elif event_type == 'dest-ok':
-        description = evaluation_dict['ok'].format(re.sub('\d+', '',
-                                                          evaluation['destination_institution']))
+        description = review_dict['ok'].format(re.sub('\d+', '',
+                                                          review['destination_institution']))
       elif event_type == 'src-not-ok':
-        description = evaluation_dict['not-ok'].format(re.sub('\d+', '',
-                                                              evaluation['source_institution']),
-                                                       evaluation['comment_text'])
+        description = review_dict['not-ok'].format(re.sub('\d+', '',
+                                                              review['source_institution']),
+                                                       review['comment_text'])
       elif event_type == 'dest-not-ok':
-        description = evaluation_dict['not-ok'].format(re.sub('\d+', '',
-                                                            evaluation['destination_institution']),
-                                                       evaluation['comment_text'])
+        description = review_dict['not-ok'].format(re.sub('\d+', '',
+                                                            review['destination_institution']),
+                                                       review['comment_text'])
       else:
-        description = evaluation_dict['other'].format(evaluation['comment_text'])
+        description = review_dict['other'].format(review['comment_text'])
 
       rule_str = re.sub('</tr>',
                         """<td>{}</td></tr>
-                        """.format(description), evaluation['rule_str'])
-      evaluation_rows += re.sub('<td([^>]*)>', '<td\\1{}>'.format(style_str), rule_str)
-    evaluation_rows += '</table>'
+                        """.format(description), review['rule_str'])
+      review_rows += re.sub('<td([^>]*)>', '<td\\1{}>'.format(style_str), rule_str)
+    review_rows += '</table>'
     # Send the email
     hostname = os.environ.get('HOSTNAME')
     if hostname == 'babbage.cs.qc.cuny.edu' or (hostname and hostname.endswith('.local')):
@@ -790,7 +790,7 @@ def do_form_3(request, session):
       hostname = 'https://provost-access-148820.appspot.com'
     url = hostname + '/confirmation/' + token
 
-    response = send_token(email, url, evaluation_rows)
+    response = send_token(email, url, review_rows)
     if response.status_code != 202:
       result = 'Error sending email: {}'.format(response.body)
     else:
@@ -812,14 +812,14 @@ def do_form_3(request, session):
 # -------------------------------------------------------------------------------------------------
 @app.route('/pending')
 def pending():
-  """ Display pending evaluations.
+  """ Display pending reviews.
       TODO: Implement login option so defined users can manage this table.
   """
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   cursor.execute("""
-    select email, evaluations, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
-      from pending_evaluations""")
+    select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
+      from pending_reviews""")
   rows = ''
   for pending in cursor.fetchall():
     rows += format_pending(pending)
@@ -827,7 +827,7 @@ def pending():
   conn.close()
 
   if rows == '':
-    table = '<h2>There are no pending evaluations.</h2>'
+    table = '<h2>There are no pending reviews.</h2>'
   else:
     table = '<table>{}</table>'.format(rows)
   result = """
@@ -839,14 +839,14 @@ def pending():
 # format_pending()
 # -------------------------------------------------------------------------------------------------
 def format_pending(item):
-  """ Generate a table row that describes pending evaluations.
+  """ Generate a table row that describes pending reviews.
   """
-  evaluations = json.loads(item['evaluations'])
+  reviews = json.loads(item['reviews'])
   suffix = 's'
-  if len(evaluations) == 1:
+  if len(reviews) == 1:
     suffix = ''
-  return """<tr><td>{} evaluation{} by {} on {}</td></tr>
-  """.format(len(evaluations), suffix, item['email'], item['when_entered'])
+  return """<tr><td>{} review{} by {} on {}</td></tr>
+  """.format(len(reviews), suffix, item['email'], item['when_entered'])
 
 # CONFIRMATION PAGE
 # -------------------------------------------------------------------------------------------------
@@ -856,7 +856,7 @@ def confirmation(token):
   # Make sure the token is received and is in the pending table.
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  q = 'select * from pending_evaluations where token = %s'
+  q = 'select * from pending_reviews where token = %s'
   cursor.execute(q, (token,))
   rows = cursor.fetchall()
   cursor.close()
@@ -866,7 +866,7 @@ def confirmation(token):
   if len(rows) == 0:
     msg = '<p class="error">This report has either expired or already been recorded.</p>'
   if len(rows) > 1:
-    msg = '<p class="error">Program Error: multiple pending_evaluations.</p>'
+    msg = '<p class="error">Program Error: multiple pending_reviews.</p>'
   if len(rows) == 1:
     msg = process_pending(rows[0])
   result = """
@@ -880,7 +880,7 @@ def confirmation(token):
 
 # EVALUATION HISTORY PAGE
 # -------------------------------------------------------------------------------------------------
-# Display the history of evaluation events for a rule.
+# Display the history of review events for a rule.
 #
 @app.route('/history/<rule>', methods=['GET'])
 def history(rule):

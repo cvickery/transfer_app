@@ -8,21 +8,21 @@
 $(function ()
 {
   $('#need-js').hide();
-  $('#evaluation-form').hide();
+  $('#review-form').hide();
 
-  // Global action: escape key hides dialogs, currently only the evaluation-panel in form 2.
+  // Global action: escape key hides dialogs, currently only the review-panel in form 2.
   $('*').keyup(function (event)
   {
     if (event.keyCode === 27)
     {
       $('.rule').removeClass('selected-rule');
-      $('#evaluation-form').hide();
+      $('#review-form').hide();
     }
   });
 
   var error_msg = '';
   var dismiss_bar = '<div id="dismiss-bar" class="dismiss">×</div>';
-  var pending_evaluations = [];
+  var pending_reviews = [];
 
   // Form #1 Select Colleges
   // ==============================================================================================
@@ -189,11 +189,11 @@ $(function ()
 
   //  Form 3 Validation and Processing
   //  =============================================================================================
-  /*  Clicking on a rule in the rules table brings up the evaluation form.
+  /*  Clicking on a rule in the rules table brings up the review form.
    */
   $('.rule').click(function (event)
   {
-    // clicks in the prior evaluations column do not select a rule.
+    // clicks in the prior reviews column do not select a rule.
     if (event.target.nodeName === 'A')
     {
       return;
@@ -215,14 +215,14 @@ $(function ()
     //              colon-separated list of destination course IDs.
     //
     var row_id = $(this).attr('id');
-    var evaluation_row = document.getElementById(row_id);
-    var evaluation_row_class = evaluation_row.className
+    var review_row = document.getElementById(row_id);
+    var review_row_class = review_row.className
                                              .replace(/selected-rule/, '')
                                              .replace(/evaluated/, '');
-    var evaluation_row_html = `<tr class="${evaluation_row_class}">
-                                 ${evaluation_row.innerHTML.replace(/ id=".*"/, '')}
+    var review_row_html = `<tr class="${review_row_class}">
+                                 ${review_row.innerHTML.replace(/ id=".*"/, '')}
                                </tr>`;
-    var evaluation_rule_table = `<table>${evaluation_row_html}</table>`;
+    var review_rule_table = `<table>${review_row_html}</table>`;
 
     var first_parse = row_id.split('-');
     var rule_id = first_parse[0] + '-' +
@@ -259,7 +259,7 @@ $(function ()
                                     </div>
                                 </div>`;
 
-    var controls = `<div id="evaluation-controls-div" class="clean">
+    var controls = `<div id="review-controls-div" class="clean">
                     <div>
                       <input type="radio" name="reviewed" id="src-ok" value="src-ok"/>
                       <label for="src-ok">Verified by ${source_institution_str}</label>
@@ -293,22 +293,22 @@ $(function ()
                            value="${destination_institution}" />
                     <input type="hidden" name="rule-id" value="${rule_id}" />
                     <button class="ok-cancel"
-                            id="evaluation-submit"
+                            id="review-submit"
                             type="button"
                             disabled="disabled">OK</button>
                     <button class="ok-cancel dismiss" type="button">Cancel</button>
                   </div>`;
 
-    // Display the evaluation form even if the catalog entries haven't loaded yet
-    $('#evaluation-form').html(dismiss_bar +
-                               evaluation_rule_table +
+    // Display the review form even if the catalog entries haven't loaded yet
+    $('#review-form').html(dismiss_bar +
+                               review_rule_table +
                                source_catalog_div +
                                destination_catalog_div +
                                controls)
                            .show()
                            .draggable();
 
-    // Populate the source catalog entries in the evaluation form when they arrive
+    // Populate the source catalog entries in the review form when they arrive
     source_request.done(function (data, text_status)
     {
       // console.log(`source status: ${text_status}`);
@@ -320,7 +320,7 @@ $(function ()
       $('#source-catalog-info').html(html_str);
     });
 
-    // Populate the destination catalog entries in the evaluation form when they arrive
+    // Populate the destination catalog entries in the review form when they arrive
     dest_request.done(function (data, text_status)
     {
       // console.log(`destination status: ${text_status}`);
@@ -332,21 +332,21 @@ $(function ()
       $('#destination-catalog-info').html(html_str);
     });
 
-    /* The following lines would position the evaluation form over the rules table.
-     * Omitting them pushes the rules table down while the evaluation form is active, which seems
+    /* The following lines would position the review form over the rules table.
+     * Omitting them pushes the rules table down while the review form is active, which seems
      * fine to me.
      */
-    // var evaluation_form = document.getElementById('evaluation-form');
-    // var eval_form_rect = evaluation_form.getBoundingClientRect();
-    // evaluation_form.style.position = 'fixed';
-    // evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
-    // evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
+    // var review_form = document.getElementById('review-form');
+    // var eval_form_rect = review_form.getBoundingClientRect();
+    // review_form.style.position = 'fixed';
+    // review_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
+    // review_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
 
-    // Click to dismiss the evaluation form.
+    // Click to dismiss the review form.
     $('.dismiss').click(function ()
     {
       $('.rule').removeClass('selected-rule');
-      $('#evaluation-form').hide();
+      $('#review-form').hide();
     });
 
     // Enable form submission only if an input has changed.
@@ -358,45 +358,45 @@ $(function ()
       var ok_to_submit = ($(this).attr('id') === 'src-ok' ||
                           $(this).attr('id') === 'dest-ok' ||
                           comment_len > 12);
-      $('#evaluation-submit').attr('disabled', !ok_to_submit);
+      $('#review-submit').attr('disabled', !ok_to_submit);
     }
 
-    // Add or update an evaluation when user submits one.
-    $('#evaluation-submit').click(function (event)
+    // Add or update an review when user submits one.
+    $('#review-submit').click(function (event)
     {
-      var evaluation =
+      var review =
       {
         event_type: $('input[name=reviewed]:checked').val(),
         source_institution: $('input[name=src_institution]').val(),
         destination_institution: $('input[name=dest_institution]').val(),
         comment_text: $('#comment-text').val().replace('\'', '’'),
         rule_id: rule_id,
-        rule_str: evaluation_row_html,
+        rule_str: review_row_html,
         include: true
       };
-      // If there is already an evaluation for this rule ...
-      var new_evaluation = true;
-      for (var i = 0; i < pending_evaluations.length; i++)
+      // If there is already an review for this rule ...
+      var new_review = true;
+      for (var i = 0; i < pending_reviews.length; i++)
       {
-        if (evaluation.rule_id === pending_evaluations[i].rule_id &&
-            evaluation.event_type === pending_evaluations[i].event_type)
+        if (review.rule_id === pending_reviews[i].rule_id &&
+            review.event_type === pending_reviews[i].event_type)
         {
           // ... the only thing that could be different is the comment
-          pending_evaluations[i].comment_text = evaluation.comment_text;
-          new_evaluation = false;
+          pending_reviews[i].comment_text = review.comment_text;
+          new_review = false;
           break;
         }
       }
-      if (new_evaluation)
+      if (new_review)
       {
-        pending_evaluations.push(evaluation);
+        pending_reviews.push(review);
       }
 
       $('.selected-rule').addClass('evaluated');
 
-      // Update the evaluations pending information
+      // Update the reviews pending information
       var num_pending_text = '';
-      switch (pending_evaluations.length)
+      switch (pending_reviews.length)
       {
         case 0:
           num_pending_text = 'You have not reviewed any transfer rules yet.';
@@ -405,10 +405,10 @@ $(function ()
           num_pending_text = 'You have reviewed one transfer rule.';
           break;
         default:
-          num_pending_text = `You have reviewed ${pending_evaluations.length} transfer rules.`;
+          num_pending_text = `You have reviewed ${pending_reviews.length} transfer rules.`;
       }
       $('#num-pending').text(num_pending_text);
-      $('#evaluation-form').hide();
+      $('#review-form').hide();
       $('.selected-rule').removeClass('selected-rule');
 
       // Enable review/send-email button
@@ -419,9 +419,9 @@ $(function ()
 
     // Review and send email button click
     // --------------------------------------------------------------------------------------------
-    /* Generate a form for reviewing the evaluations so the user can omit items they don't
+    /* Generate a form for reviewing the reviews so the user can omit items they don't
      * intend. Then submit the form to a web page that actually enters the items into the
-     * pending_evaluations table and sends email to the user.
+     * pending_reviews table and sends email to the user.
      */
     $('#send-email').click(function (event)
     {
@@ -430,8 +430,8 @@ $(function ()
         <div id="review-form">
           <h2>Review Your Submissions</h2>
           <p>Un-check the Include button if you don’t want to submit an item.</p>
-          <div id="evaluations-table-div">
-          <table id='evaluations-table'>
+          <div id="reviews-table-div">
+          <table id='reviews-table'>
             <tr>
               <th>Include?</th>
               <th>Rule</th>
@@ -439,41 +439,41 @@ $(function ()
             </tr>
         `;
       review_form_rows = [];
-      for (evaluation in pending_evaluations)
+      for (review in pending_reviews)
       {
-        var the_rule = pending_evaluations[evaluation].rule_id;
-        var rule_str = pending_evaluations[evaluation].rule_str;
+        var the_rule = pending_reviews[review].rule_id;
+        var rule_str = pending_reviews[review].rule_str;
 
         // Build a rule string that omits the previous status (i.e., the last td).
         rule_str = rule_str.replace(/\n\s*/g, '').replace(/<td(?!.*<td).*<\/td><\/tr>/, '</tr>');
-        pending_evaluations[evaluation].rule_str = rule_str;
+        pending_reviews[review].rule_str = rule_str;
         var institution = 'Unknown';
         var go_nogo = 'Unknown';
-        switch (pending_evaluations[evaluation].event_type)
+        switch (pending_reviews[review].event_type)
         {
           case 'src-ok':
-            institution = pending_evaluations[evaluation].source_institution;
+            institution = pending_reviews[review].source_institution;
             go_nogo = 'OK';
             break;
           case 'dest-ok':
-            institution = pending_evaluations[evaluation].destination_institution;
+            institution = pending_reviews[review].destination_institution;
             go_nogo = 'OK';
             break;
           case 'src-not-ok':
-            institution = pending_evaluations[evaluation].source_institution + ': ';
-            go_nogo = pending_evaluations[evaluation].comment_text;
+            institution = pending_reviews[review].source_institution + ': ';
+            go_nogo = pending_reviews[review].comment_text;
             break;
           case 'dest-not-ok':
-            institution = pending_evaluations[evaluation].destination_institution + ': ';
-            go_nogo = pending_evaluations[evaluation].comment_text;
+            institution = pending_reviews[review].destination_institution + ': ';
+            go_nogo = pending_reviews[review].comment_text;
             break;
           default:
             institution = 'Other: ';
-            go_nogo = pending_evaluations[evaluation].comment_text;
+            go_nogo = pending_reviews[review].comment_text;
             break;
 
         }
-        review_form += `<tr id="evaluation-${evaluation}">
+        review_form += `<tr id="review-${review}">
                           <td>
                             <input type="checkbox"
                                    class="include-button"
@@ -501,14 +501,14 @@ $(function ()
         <div class='controls'>
           <input type="hidden" value="${email_address}" />
           <input type="hidden" name="next-function" value="do_form_3" />
-          <input type="hidden" id="hidden-evaluations" name="evaluations" value="Not Set" />
+          <input type="hidden" id="hidden-reviews" name="reviews" value="Not Set" />
           <button class="ok-cancel" type="submit" id="review-submit">Submit</button>
           <button class="ok-cancel dismiss" type="button">Cancel</button>
         </div>
       </div>`;
 
-      // Re-use the evaluation-form div for the evaluations-review form
-      $('#evaluation-form').html(dismiss_bar + review_form)
+      // Re-use the review-form div for the reviews-review form
+      $('#review-form').html(dismiss_bar + review_form)
                            .show()
                            .draggable();
 
@@ -517,21 +517,21 @@ $(function ()
       {
         var row = $(this).parent().parent();
         var index = row.attr('id').split('-')[1];
-        // Is the evaluation being omitted, or re-included?
+        // Is the review being omitted, or re-included?
         if ($(this).is(':checked'))
         {
-          pending_evaluations[index].include = true;
+          pending_reviews[index].include = true;
           row.removeClass('omitted');
           $('#review-submit').removeAttr('disabled');
         }
         else
         {
-          pending_evaluations[index].include = false;
+          pending_reviews[index].include = false;
           row.addClass('omitted');
           var any_included = false;
-          for (var i = 0; i < pending_evaluations.length; i++)
+          for (var i = 0; i < pending_reviews.length; i++)
           {
-            if (pending_evaluations[i].include)
+            if (pending_reviews[i].include)
             {
               any_included = true;
               break;
@@ -544,20 +544,20 @@ $(function ()
         }
       });
 
-      // Submit the evaluations. This will invoke do_form_3(), which will sent the verification
+      // Submit the reviews. This will invoke do_form_3(), which will sent the verification
       // email.
-      $('#evaluation-form').submit(function ()
+      $('#review-form').submit(function ()
       {
-        $('input[name="evaluations"]').val(JSON.stringify(pending_evaluations));
+        $('input[name="reviews"]').val(JSON.stringify(pending_reviews));
       });
-      var evaluation_form = document.getElementById('evaluation-form');
-      var eval_form_rect = evaluation_form.getBoundingClientRect();
-      evaluation_form.style.position = 'fixed';
-      evaluation_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
-      evaluation_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
+      var review_form = document.getElementById('review-form');
+      var eval_form_rect = review_form.getBoundingClientRect();
+      review_form.style.position = 'fixed';
+      review_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
+      review_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
       $('.dismiss').click(function ()
       {
-        $('#evaluation-form').hide();
+        $('#review-form').hide();
         $('.selected-rule').removeClass('selected-rule');
       });
     });

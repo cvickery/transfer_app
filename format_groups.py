@@ -4,7 +4,7 @@ import json
 import re
 import argparse
 
-from evaluations import status_string, rule_history
+from reviews import status_string, rule_history
 DEBUG = False
 
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']

@@ -147,7 +147,7 @@ td a:hover {
   font-style:italic;
 }
 
-#evaluation-form {
+#review-form {
   border: 1px solid #999999;
   border-radius: 0.5em;
   padding: 0.5em;
@@ -156,7 +156,7 @@ td a:hover {
   color:#444;
 }
 
-#evaluation-form table {
+#review-form table {
   margin:0 auto 0.5em;
 }
 
@@ -178,7 +178,7 @@ td a:hover {
   margin-bottom:0.5em;
 }
 
-#evaluation-controls-div {
+#review-controls-div {
   width: 50%;
   margin: 0.5em auto 0;
   padding:0.5em;
@@ -188,16 +188,16 @@ td a:hover {
   color: #666;
 }
 
-#evaluations-table td:first-child {
+#reviews-table td:first-child {
   text-align: center;
 }
 
-#evaluation-table div.controls {
+#review-table div.controls {
   margin:1em 0 0 0;
   text-align: center;
 }
 
-#evaluations-table table {
+#reviews-table table {
   margin:0 0 0.5em 0;
 }
 
