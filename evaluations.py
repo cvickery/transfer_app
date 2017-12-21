@@ -156,12 +156,15 @@ def rule_history(rule_key):
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   q = """
-      select event_type, who, what, to_char(event_time, 'YYYY-MM-DD HH12:MI am') as event_time
-       from events
-       where source_institution = %s
-         and discipline = %s
-         and group_number = %s
-         and destination_institution = %s order by event_time desc
+      select  e.event_type,
+              e.who,
+              e.what,
+              to_char(e.event_time, 'YYYY-MM-DD HH12:MI am') as event_time
+       from events e
+       where e.source_institution = %s
+         and e.discipline = %s
+         and e.group_number = %s
+         and e.destination_institution = %s order by e.event_time desc
       """
   cursor.execute(q, (source_institution, discipline, group_number, destination_institution))
   Event = namedtuple('Event', [d[0] for d in cursor.description])
