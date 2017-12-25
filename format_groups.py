@@ -71,11 +71,10 @@ def format_groups(groups, session):
     #   Colon-separated list of source course_ids
     #   hyphen
     #   Colon-separated list of destination courses_ids
-    row_id_str = '{}-{}-{}-{}-'.format(group.source_institution,
-                                       group.discipline,
-                                       group.group_number,
-                                       group.destination_institution)
-
+    rule_key = '{}-{}-{}-{}'.format(group.source_institution,
+                                    group.discipline,
+                                    group.group_number,
+                                    group.destination_institution)
     # The source course ids part of the rule group
     source_credits = 0.0
     grade = ''
@@ -84,7 +83,7 @@ def format_groups(groups, session):
     grade = ''
     source_course_list = ''
     for course in group.source_courses:
-      row_id_str += '{}:'.format(course.course_id)
+      row_id_str = '{}-{}:'.format(rule_key, course.course_id)
 
       course_grade = _grade(course.min_gpa, course.max_gpa)
       if course_grade != grade:
@@ -138,12 +137,9 @@ def format_groups(groups, session):
     # hasn't been evaluated yet, the last column is just the text that says so.
     status_cell = status_string(group.status)
     if group.status != 0:
-      rule_key = '{}-{}-{}-{}'.format(group.source_institution,
-                                      group.discipline,
-                                      group.group_number,
-                                      group.destination_institution)
       status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule_key,
                                                                           status_cell)
+    status_cell = '<span title="{}">{}</span>'.format(rule_key, status_cell)
     row = """ <tr id="{}" class="{}">
                 <td title="{}">{}</td>
                 <td>{}</td>
