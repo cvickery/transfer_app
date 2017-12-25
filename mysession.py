@@ -143,7 +143,7 @@ class MySession:
     mydict = pickle.loads(cursor.fetchone()[0])
     connection.close()
     self.touch()
-    return mydict[key] # KeyError if key not in sessions
+    return mydict[key] # raise KeyError if key not in session
 
   def __len__(self):
     # logger.debug('*** mysession.__len__({}'.format(self.session_key))

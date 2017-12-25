@@ -113,7 +113,7 @@ def transfers():
   """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
       if any, the user submitted.
   """
-  logger.debug('*** {} /review_transfers/ ***'.format(request.method))
+  logger.debug('*** {} / ***'.format(request.method))
   mysession = MySession(request.cookies.get('mysession'))
 
   # Dispatcher for forms
@@ -147,7 +147,6 @@ def do_form_0(request, session):
   logger.debug('*** do_form_0({})'.format(session))
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-
   # Look up institiution names; pass it on in the session
   cursor.execute("select code, name from institutions order by lower(name)")
   institution_names = {row['code']: row['name'] for row in cursor}
@@ -275,7 +274,19 @@ def do_form_1(request, session):
   session['destination_institutions'] = request.form.getlist('destination')
 
   # Get the list of institution names, looked up in do_form_0(), from the session
-  institution_names = session['institution_names']
+  try:
+    institution_names = session['institution_names']
+  except:
+    # the session is expired or invalid. Go back to Step 1.
+    return render_template('transfers.html', result=Markup("""
+                                                           <h1>Session Expired</h1>
+                                                           <p>
+                                                              <a  href="/"
+                                                                  class="restart">Restart
+                                                              </a>
+                                                           </p>
+
+                                                           """))
 
   # Database lookups
   # ----------------
@@ -483,7 +494,7 @@ def do_form_1(request, session):
     <em>Clicking on these instructions hides them, making more room for the list of subjects.</em>
   </div>
   <form method="post" action="" id="form-2">
-    <a href="/review_transfers/" class="restart">Restart</a>
+    <a href="/" class="restart">Restart</a>
     <button type="submit">Next</button>
     <input type="hidden" name="next-function" value="do_form_2" />
     {}
@@ -531,7 +542,15 @@ def do_form_2(request, session):
     destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
   except:
     # the session is expired or invalid. Go back to Step 1.
-    return render_template('transfers.html', result=Markup('{}'.format(session)))
+    return render_template('transfers.html', result=Markup("""
+                                                           <h1>Session Expired</h1>
+                                                           <p>
+                                                              <a  href="/"
+                                                                  class="restart">Restart
+                                                              </a>
+                                                           </p>
+
+                                                           """))
 
   # Prepare the query to get the set of rules that match the institutions ans subjects provided.
   source_subject_list = request.form.getlist('source_subject')
@@ -697,7 +716,7 @@ def do_form_2(request, session):
       Click on a rule to review it.<br/>
       <em>Clicking on these instructions hides them, making more room for the list of rules.</em>
     </div>
-    <p><a href="/review_transfers/" class="restart">Restart</a></p>
+    <p><a href="/" class="restart">Restart</a></p>
     <fieldset id="verification-fieldset">
         <p id="num-pending">You have not reviewed any transfer rules yet.</p>
         <button type="text" id="send-email" disabled="disabled">
@@ -803,7 +822,7 @@ def do_form_3(request, session):
       <p>
         Thank you for your work!
       </p>
-      <a href="/review_transfers/" class="restart">Restart</a>
+      <a href="/" class="restart">Restart</a>
 
       """.format(email, message_tail)
   return render_template('transfers.html', result=Markup(result))
@@ -919,7 +938,7 @@ def _courses():
 @app.route('/_sessions')
 def _sessions():
   conn = pgconnection('dbname=cuny_courses')
-  ccursor = conn.cursor()
+  cursor = conn.cursor()
   q = 'select session_key, expiration_time from sessions order by expiration_time'
   cursor.execute(q)
   result = '<table>'
