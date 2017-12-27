@@ -977,7 +977,7 @@ def courses():
   if request.method == 'POST':
 
     cursor.execute("select * from cuny_subjects")
-    cuny_subjects = {row['area']:row['description'] for row in cursor}
+    cuny_subjects = {row['subject']:row['description'] for row in cursor}
 
     cursor.execute("select * from cuny_careers")
     careers = {(row['institution'], row['career']): row['description'] for row in cursor}
@@ -1013,17 +1013,18 @@ def courses():
          and course_status = 'A'
          and can_schedule = 'Y'
          and discipline_status = 'A'
-       order by discipline, number
+       order by discipline, catalog_number
        """.format(institution_code)
     cursor.execute(query)
 
     for row in cursor:
       num_courses += 1
       result = result + """
-      <p class="catalog-entry"><strong>{} {}: {}</strong> (<em>{}; {}: {}</em>)<br/>
+      <p class="catalog-entry"><strong title="Course ID: {}">{} {}: {}</strong> (<em>{}; {}: {}</em>)<br/>
       {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
-      """.format(row['discipline'],
-                 row['number'].strip(),
+      """.format(row['course_id'],
+                 row['discipline'],
+                 row['catalog_number'].strip(),
                  row['title'],
                  careers[(row['institution'],row['career'])],
                  row['cuny_subject'], cuny_subjects[row['cuny_subject']],
@@ -1035,7 +1036,7 @@ def courses():
 
   # Form not submitted yet or institution has no courses
   if num_courses == 0:
-    prompt = '<fieldset><legend>Select a College</legend>'
+    prompt = '<h1>List Active Courses</h1><fieldset><legend>Select a College</legend>'
     cursor.execute("select * from institutions order by code")
     n = 0
     for row in cursor:
