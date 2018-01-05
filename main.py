@@ -908,12 +908,113 @@ def history(rule):
   result = rule_history(rule)
   return render_template('transfers.html', result=Markup(result))
 
+# LOOKUP RULES PAGE
+# -------------------------------------------------------------------------------------------------
+# An experimental utility: lookup all the rules that apply to a single course.
+#
+@app.route('/lookup', methods=['GET'])
+def lookup():
+  """ Prompt for a course (or set of courses in a discipline) at an institution, and display
+      view-only information about rules that involve that or those courses.
+  """
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute('select code, prompt from institutions order by prompt')
+  options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
+  conn.close()
+  institution_select = """
+  <select id="institution" name="institution">
+    <option value="none" selected="selected">Select a College</option>
+    {}
+  </select>
+  """.format('\n'.join(options))
+  # Supply colleges from db now, but use ajax to get a college's disciplines
+
+  result = """
+  <h1>Lookup Transfer Rules</h1>
+  <div class="instructions">
+    <p>
+      Enter course information to see what transfer rules involve that course CUNY-wide.
+    </p>
+    <p>
+      You can use a <a target="_blank" href="http://www.regular-expressions.info/">regular
+      expression</a> in the Catalog Number field to select a group of courses all at once.
+    </p>
+  </div>
+  <form action="" method="POST">
+    <div>
+      <label for="institution">College:</label>
+      {}
+    </div>
+    <div>
+      <label for="Discipline">Discipline:</label>
+      <input type="text" id="discipline" />
+    </div>
+    <div>
+      <label for="catalog-number">Catalog Number:</label>
+      <input type="text" id="catalog-number" />
+    </div>
+    <!--
+    <div id="button-div">
+      <button type="submit">Lookup</button>
+    </div>
+      -->
+  </form>
+  <hr>
+  <h2>Sending Rules</h2>
+  <div id="sending-rules">
+  </div>
+  <h2>Receiving Rules</h2>
+  <div id="receiving-rules">
+  </div>
+  """.format(institution_select)
+  return render_template('lookup.html', result=Markup(result))
+
+# /_DISCIPLINES
+# =================================================================================================
+# This route is for AJAX access to disciplines offered at a college
+#
+# Look up the disciplines and return the HTML for a select element named discipline.
+@app.route('/_disciplines')
+def _disciplines():
+  institution = request.args.get('institution', 0)
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute("""select discipline
+                      from disciplines
+                      where cuny_subject != 'MESG'
+                        and institution = %s
+                      order by discipline""", (institution,))
+  disciplines = ['<option value="{}">{}</option>'.format(x[0], x[0]) for x in cursor.fetchall()]
+  conn.close()
+  return jsonify("""<select name="discipline" id="discipline">
+    <option value="none' selected="selected">Select a Discipline</option>
+    {}
+    </select>""".format('\n'.join(disciplines)))
+
+# /_LOOKUP_RULES
+# =================================================================================================
+# This route is for AJAX access to the rules applicable to a course or set of courses.
+#
+# Returns two HTML strings, one for rules where the course(s) are a sending course, the other
+# where it/they are a receiving course.
+@app.route('/_lookup_rules')
+def lookup_rules():
+  institution = request.args.get('institution')
+  discipline = request.args.get('discipline')
+  catalog_number = request.args.get('catalog_number')
+  rules = dict()
+  rules['sending_rules'] = '<p>No sending rules</p>'
+  rules['receiving_rules'] = '<p>No receiving rules</p>'
+
+  return jsonify(rules)
+
 # /_COURSES
 # =================================================================================================
 # This route is for AJAX access to course catalog information.
 #
 # The request object has a course_ids field, which is a colon-separated list of course_ids.
-# Looks up each course, and returns a list of html-displayable objects.
+# Look up each course, and return a list of html-displayable objects.
 @app.route('/_courses')
 def _courses():
   return_list = []

@@ -1,0 +1,41 @@
+body {
+  background-color: #eff;
+  padding: 1em;
+  font-family:sans-serif;
+}
+label {
+  display:inline-block;
+  width:8em;
+  text-align: right;
+  padding: 0.25em 0.5em;
+  margin:0.1em;
+}
+
+input[type="text"] {
+  width:20em;
+}
+button {
+  margin-bottom: 1em;
+  font-variant:small-caps;
+  font-size:1em;
+  width:100%;
+  float:right;
+  border-radius:0.25em;
+}
+#button-div {
+  padding: 0.25em 0.5em;
+  margin:0.1em;
+  width:8em;
+}
+hr {
+  clear:both;
+}
+
+.instructions {
+  background-color: #fefefe;
+  padding:0.25em 1em;
+  margin: 1em 0;
+  max-width:40em;
+  border-radius:0.25em;
+  border: 1px solid #0cc;
+}
