@@ -4,7 +4,8 @@ import json
 import re
 import argparse
 
-from reviews import status_string, rule_history
+from pgconnection import pgconnection
+from status_utils import status_string
 DEBUG = False
 
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
@@ -80,7 +81,6 @@ def format_groups(groups, session):
     grade = ''
     discipline = ''
     catalog_number = ''
-    grade = ''
     source_course_list = ''
     for course in group.source_courses:
       row_id_str = '{}-{}:'.format(rule_key, course.course_id)
@@ -162,6 +162,159 @@ def format_groups(groups, session):
   table += '</tbody></table>'
   return table
 
+# format_group()
+# -------------------------------------------------------------------------------------------------
+def format_group(group_key):
+  """ Given a group key, return a string that returns a representation of the rule.
+      The name may be confusing, but it makes sense. In a more perfect world, format_groups() might
+      call this to generate the first part of each row in its interactive table. The hold-back is
+      that this function looks up the source and destination courses, but format_groups already has
+      that information.
+  """
+
+  source_institution, discipline, group_number, destination_institution = group_key.split('-')
+
+  # Code copied from main.do_form_2()
+  Source_Course = namedtuple('Source_Course',
+                             """
+                              course_id
+                              discipline
+                              discipline_name
+                              catalog_number
+                              credits
+                              min_gpa
+                              max_gpa
+                             """)
+  Destination_Course = namedtuple('Destination_Course',
+                            """
+                              course_id
+                              discipline
+                              discipline_name
+                              catalog_number
+                              credits
+                              transfer_credits
+                            """)
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute("select code, name from institutions order by lower(name)")
+  institution_names = {row['code']: row['name'] for row in cursor}
+
+
+  # Get lists of source and destination courses for this rule group
+  q = """
+      select  sc.course_id,
+              c.discipline,
+              d.description as discipline_name,
+              trim(c.catalog_number),
+              c.credits,
+              sc.min_gpa,
+              sc.max_gpa
+       from   source_courses sc, disciplines d, courses c
+       where  source_institution = '{}'
+         and  sc.discipline = '{}'
+         and  sc.group_number = {}
+         and  sc.destination_institution = '{}'
+         and  c.course_id = sc.course_id
+         and  d.institution = c.institution
+         and  d.discipline = c.discipline
+       order by c.institution,
+                c.discipline,
+                sc.max_gpa desc,
+                substring(c.catalog_number from '\d+\.?\d*')::float
+       """.format(source_institution,
+                  discipline,
+                  group_number,
+                  destination_institution)
+  cursor.execute(q)
+  source_courses = [c for c in map(Source_Course._make, cursor.fetchall())]
+
+  q = """
+      select  dc.course_id,
+              c.discipline,
+              d.description as discipline_name,
+              trim(c.catalog_number),
+              c.credits,
+              dc.transfer_credits
+        from  destination_courses dc, disciplines d, courses c
+       where  dc.source_institution = '{}'
+         and  dc.discipline = '{}'
+         and  dc.group_number = {}
+         and  dc.destination_institution = '{}'
+         and  c.course_id = dc.course_id
+         and  d.institution = c.institution
+         and  d.discipline = c.discipline
+       order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
+       """.format(source_institution,
+                  discipline,
+                  group_number,
+                  destination_institution)
+  cursor.execute(q)
+  destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
+
+  # Now generate the string, replete with hovers, based on code in format_groups()
+  source_credits = 0.0
+  grade = ''
+  discipline = ''
+  catalog_number = ''
+  source_course_list = ''
+  for course in source_courses:
+    course_grade = _grade(course.min_gpa, course.max_gpa)
+    if course_grade != grade:
+      if grade != '': source_course_list = source_course_list.strip('/') + '; '
+      grade = course_grade
+      source_course_list = source_course_list.strip('/') + ' {} '.format(grade)
+
+    if discipline != course.discipline:
+      if discipline != '': source_course_list = source_course_list.strip('/') +'; '
+      discipline = course.discipline
+      discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
+                                                           course.discipline)
+      source_course_list = source_course_list.strip('/') + discipline_str + '-'
+    if catalog_number != course.catalog_number:
+      catalog_number = course.catalog_number
+      source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
+                                                                            course.catalog_number)
+      source_credits += float(course.credits)
+  source_course_list = source_course_list.strip('/')
+
+  # Build the destination part of the rule group
+  destination_credits = 0.0
+  discipline = ''
+  destination_course_list = ''
+  for course in destination_courses:
+    course_catalog_number = course.catalog_number
+    if discipline != course.discipline:
+      if discipline != '': destination_course_list = destination_course_list.strip('/') +'; '
+      discipline = course.discipline
+      discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
+                                                           course.discipline)
+      destination_course_list = destination_course_list.strip('/ ') + discipline_str + '-'
+
+    if abs(float(course.credits) - course.transfer_credits) > 0.09:
+      course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
+    destination_course_list += \
+          '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
+    destination_credits += float(course.transfer_credits)
+
+  destination_course_list = destination_course_list.strip('/')
+
+  row_class = 'rule' # Needed if this code gets shared with format_groups()
+  if source_credits != destination_credits:
+    row_class = 'rule credit-mismatch'
+
+  rule_str = """
+            <p class="{}" style="max-width:60%; padding:0.5em;">
+              {} at {}, {} credits, transfers to {} as {}, {} credits.
+            </p>"""\
+          .format(row_class,
+                  source_course_list,
+                  institution_names[source_institution],
+                  source_credits,
+                  institution_names[destination_institution],
+                  destination_course_list,
+                  destination_credits)
+  return rule_str.replace('Pass', 'Passing grade in')
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser('Testing transfer rule groups')
   parser.add_argument('--debug', '-d', action='store_true', default=False)
@@ -169,21 +322,4 @@ if __name__ == "__main__":
 
   if args.debug: DEBUG = true
 
-  fp = open('qbcc-ph.json', 'r')
-  records = json.load(fp)
-  fp.close()
-  table = extract_groups(records)
-  html = """
-  <head>
-    <title>Testing Transfer Rule Groups</title>
-    <style>
-      table {border-collapse: collapse;}
-      td, th {border: 1px solid #ccc; padding:0.25em;}
-    </style>
-  </head>
-  <body>
-    {}
-  </body>
-  """.format(table)
-  with open('rules.html', 'w') as r:
-    r.write(html)
+  print('Unit test not implemented')

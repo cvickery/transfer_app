@@ -17,7 +17,8 @@ from collections import namedtuple
 from cuny_course import CUNYCourse
 from mysession import MySession
 from sendtoken import send_token
-from reviews import process_pending, rule_history, status_string
+from reviews import process_pending
+from rule_history import rule_history
 from format_groups import format_groups
 
 from flask import Flask, url_for, render_template, make_response,\
@@ -908,9 +909,10 @@ def history(rule):
   result = rule_history(rule)
   return render_template('transfers.html', result=Markup(result))
 
+
 # LOOKUP RULES PAGE
 # -------------------------------------------------------------------------------------------------
-# An experimental utility: lookup all the rules that apply to a single course.
+# Lookup all the rules that involve a course.
 #
 @app.route('/lookup', methods=['GET'])
 def lookup():
@@ -954,6 +956,21 @@ def lookup():
       <label for="catalog-number">Catalog Number:</label>
       <input type="text" id="catalog-number" />
     </div>
+    <div id="radios">
+      <div>
+        <input type="radio" id="sending-only" name="which-rules" value="1">
+        <label for="sending-only" class="radio-label">Sending Rules Only</label>
+      </div>
+      <div>
+        <input type="radio" id="receiving-only" name="which-rules" value="2">
+        <label for="receiving-only" class="radio-label"">Receiving Rules Only</label>
+      </div>
+      <div>
+        <input type="radio" id="both" name="which-rules" value="3" checked="checked">
+        <label for="both" class="radio-label">Both Sending and Receiving Rules
+        </label>
+      </div>
+    </div>
     <!--
     <div id="button-div">
       <button type="submit">Lookup</button>
@@ -992,6 +1009,7 @@ def _disciplines():
     {}
     </select>""".format('\n'.join(disciplines)))
 
+
 # /_LOOKUP_RULES
 # =================================================================================================
 # This route is for AJAX access to the rules applicable to a course or set of courses.
@@ -1003,9 +1021,53 @@ def lookup_rules():
   institution = request.args.get('institution')
   discipline = request.args.get('discipline')
   catalog_number = request.args.get('catalog_number')
-  rules = dict()
-  rules['sending_rules'] = '<p>No sending rules</p>'
-  rules['receiving_rules'] = '<p>No receiving rules</p>'
+  # Munge the catalog_number so it makes a good regex and doesn't get tripped up by whitespace in
+  # the CF catalog numbers.
+  catalog_number =  '^\s*' + \
+                    catalog_number.strip(' ^').replace('\.', '\\\.').replace('\\\\', '\\')
+  type = request.args.get('type')
+  # Get the course_ids
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  query = """
+  select distinct course_id
+    from courses
+   where institution = %s
+     and discipline = %s
+     and catalog_number ~* %s
+     and course_status = 'A'
+     and discipline_status = 'A'
+     and can_schedule = 'Y'
+     and cuny_subject != 'MESG'
+     """
+
+  rules = ''
+  cursor.execute(query, (institution, discipline, catalog_number))
+  if cursor.rowcount > 0:
+    course_ids = ', '.join(['{}'.format(x[0]) for x in cursor.fetchall()])
+
+    # Get the rules
+    if type == 'sending':
+      source_dest = 'source'
+    else:
+      source_dest = 'destination'
+
+    query = """
+    select  distinct
+            source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
+      from {}_courses
+     where course_id in ({})
+     order by source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
+    """.format(source_dest, course_ids)
+    cursor.execute(query)
+    rules = ["""
+      <div><a href="/history/{}" target="_blank">{}</a></div>
+      """.format(x[0], x[0]) for x in cursor.fetchall()]
+  if len(rules) == 0:
+    if type == 'sending':
+      rules = '<p>No sending rules</p>'
+    else:
+      rules = '<p>No receiving rules</p>'
 
   return jsonify(rules)
 

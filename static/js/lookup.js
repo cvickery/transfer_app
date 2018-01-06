@@ -29,16 +29,68 @@ $(function ()
     var institution = $('#institution').val();
     if (institution === 'none') return;
 
-    var rule_request = $.getJSON($SCRIPT_ROOT + '/_lookup_rules',
-                                 {institution: institution,
-                                  discipline: discipline,
-                                  catalog_number: catalog_number
-                                });
-    rule_request.done(function (rules, text_status)
+    var sending = false;
+    var receiving = false;
+    $('#sending-rules').html('');
+    $('#receiving-rules').html('');
+    switch ($('input[name=which-rules]:checked').val())
     {
-      console.log(rules);
-      $('#sending-rules').html(rules.sending_rules);
-      $('#receiving-rules').html(rules.receiving_rules);
-    });
+      case '1':
+          sending = true;
+          break;
+      case '2':
+          receiving = true;
+          break;
+      case '3':
+          sending = true;
+          receiving = true;
+          break;
+      default:
+          alert('Bad Switch');
+    }
+
+    if (sending)
+    {
+      $('#sending-rules').html('<p>Searching &hellip;</p>');
+      var sending_request = $.getJSON($SCRIPT_ROOT + '/_lookup_rules',
+                                  { institution: institution,
+                                    discipline: discipline,
+                                    catalog_number: catalog_number,
+                                    type: 'sending'
+                                  });
+      sending_request.done(function (rules, text_status)
+      {
+        if (text_status === 'success')
+        {
+          $('#sending-rules').html(rules);
+        }
+        else
+        {
+          $('#sending-rules').html('<p class="error">Search Failed</p>');
+        }
+      });
+    }
+
+    if (receiving)
+    {
+      $('#receiving-rules').html('<p>Searching &hellip;</p>');
+      var receiving_request = $.getJSON($SCRIPT_ROOT + '/_lookup_rules',
+                                  { institution: institution,
+                                    discipline: discipline,
+                                    catalog_number: catalog_number,
+                                    type: 'receiving'
+                                  });
+      receiving_request.done(function (rules, text_status)
+      {
+        if (text_status === 'success')
+        {
+          $('#receiving-rules').html(rules);
+        }
+        else
+        {
+          $('#receiving-rules').html('<p class="error">Search Failed</p>');
+        }
+      });
+    }
   });
 });

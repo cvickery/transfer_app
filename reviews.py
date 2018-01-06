@@ -8,49 +8,8 @@ from collections import namedtuple
 
 from pgconnection import pgconnection
 from cuny_course import CUNYCourse
-
-# Copy of the review_status_bits table
-# value: bitmask
-# abbr: short text
-# description: long text
-review_status_bits = False
-bitmask_to_description = dict()
-abbr_to_bitmask = dict()
-
-def populate_review_status_bits():
-  """ Define dicts for looking up status bit information.
-      bitmask_to_description
-      abbr_to_description
-  """
-  global review_status_bits
-  global bitmask_to_description
-  global abbr_to_description
-  conn = pgconnection('dbname=cuny_courses')
-  with conn.cursor() as cursor:
-
-    event_type_bits = dict()
-    cursor.execute('select * from review_status_bits')
-    for row in cursor.fetchall():
-      abbr_to_bitmask[row['abbr']] = row['bitmask']
-      bitmask_to_description[row['bitmask']] = row['description']
-  review_status_bits = True
-
-def status_string(status):
-  """
-    Generate a string summarizing all bits that are set in status.
-  """
-  global review_status_bits
-  global bitmask_to_description
-  if not review_status_bits:
-    populate_review_status_bits()
-  if status == 0: return 'Not Yet Reviewed'
-
-  strings = []
-  bit = 1
-  for i in range(16):
-    if status & bit: strings.append(bitmask_to_description[bit])
-    bit += bit
-  return '; '.join(strings)
+from format_groups import format_group
+from status_utils import status_string
 
 
 def process_pending(row):
@@ -160,53 +119,3 @@ def process_pending(row):
                  when_entered.strftime('%B %d, %Y at %I:%M %p'),
                  summaries)
 
-# rule_history()
-# -------------------------------------------------------------------------------------------------
-def rule_history(rule_key):
-  """ Generate HTML for the review history of a transfer rule.
-  """
-  source_institution, discipline, group_number, destination_institution = rule_key.split('-')
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
-  q = """
-      select  r.description,
-              e.who,
-              e.what,
-              to_char(e.event_time, 'YYYY-MM-DD HH12:MI am') as event_time
-       from events e, review_status_bits r
-       where e.source_institution = %s
-         and e.discipline = %s
-         and e.group_number = %s
-         and e.destination_institution = %s
-         and r.abbr = e.event_type
-         order by e.event_time desc
-      """
-  cursor.execute(q, (source_institution, discipline, group_number, destination_institution))
-  Event = namedtuple('Event', [d[0] for d in cursor.description])
-  history_rows = ''
-  if cursor.rowcount < 1:
-    history_rows='<tr><td colspan="3">There is no review history for this rule</td></tr>'
-  else:
-    for event in map(Event._make, cursor.fetchall()):
-      what = '<div class="history-what-type">{}</div> {}'.format(event.description, event.what)
-      history_rows += """
-        <tr>
-          <td>{}</td>
-          <td>{}</td>
-          <td>{}</td>
-        </tr>
-        """.format(event.event_time.replace(' 0', ' '), event.who, what)
-  cursor.close()
-  conn.close()
-  result = """
-            <h1>Event History for Transfer Rule ID {}</h1>
-            <table>
-              <tr>
-                <th>When</th>
-                <th>Who</th>
-                <th>What</th>
-              </tr>
-              {}
-            </table>
-           """.format(rule_key, history_rows)
-  return result
