@@ -55,13 +55,6 @@ hr {
   margin:0;
 }
 
-.credit-mismatch {
-  padding: 0.5em;
-  max-width: 50%;
-  background-color: #fee;
-  color: #f33;
-}
-
 .error {
   color:red;
 }
