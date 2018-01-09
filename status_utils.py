@@ -1,3 +1,6 @@
+
+from pgconnection import pgconnection
+
 # Copy of the review_status_bits table
 # value: bitmask
 # abbr: short text
