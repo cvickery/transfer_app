@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Regular Expressions</title>
+    <style>
+      body {
+        padding: 1em;
+        font-size: 12px;
+        font-family:sans-serif;
+        color:#333;
+        background-color:white;
+        max-width:50em;
+      }
+      code {
+        font-size: 1.1em;
+        border:1px solid #333;
+        padding: 0.1em;
+      }
+      .aside {
+        margin:auto;
+        width:90%;
+        padding:0.5em;
+        border: 1px solid #666;
+        border-radius:0.5em;
+        text-align:justify;
+      }
+    </style>
+    <link rel='stylesheet' href='/static/css/regex.css' />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <h1>Regular Expressions</h1>
+    <h2>Quick Start</h2>
+    <p>
+      If you want to look at the rules for all 100-level courses in a discipline, type
+      <code>1\d\d\D*</code>
+      in the catalog number box. That will select all course numbers that start with a 1, followed
+      by two digits, and then zero or more other characters (such as W for writing-intensive
+      courses).
+    </p>
+    <h2>Explanation</h2>
+    <p>
+      One tool in the computer scientist’s toolbox that has a reputation for being extremely
+      complex to work with, yet extremely valuable to master, is <a target="_blank"
+      href="https://www.xkcd.com/208/">regular expressions</a>. They are the swiss army knife of
+      text processing. (And the need to process text covers <em>a lot</em> of the things we all do
+      when working with digital information, even if Word or Excel is the only computer tool you
+      ever use.)
+    </p>
+    <p>
+      One thing that makes regular expressions difficult to master is their richness: they can use
+      extremely complicated rules to recognize patterns of text. Think about the relatively simple
+      case of email addresses used in the XKCD cartoon above. They have to contain exactly one ‘@’
+      character; some combination of letters and dots before and after the ‘@‘ character; can’t
+      begin or end with a dot, must always end with between 2 and 4 letters; can contain hyphens but
+      not underscores; no embedded spaces; capitalization doesn’t matter, etc. etc. A regular
+      expression to recognize all email addresses but only ones that are strictly “proper” is a
+      complex beast. (On the other hand, if you just look for ‘@’ characters in a body of text, you
+      could quickly find all email addresses and easily ignore spurious ‘@’ characters by eye; the
+      trick is to get the computer to handle the “by eye” part.)
+    </p>
+    <p>
+      A second thing that makes regular expressions tricky is that there are different dialects of
+      the regular expression language, and it can sometimes be difficult to know which one you are
+      working with. The tutorieal at <a href="https://www.regular-expressions.info/tutorial.html"
+      target="_blank">Regular-Expressions.info</a> is an excellent, albeit exhaustive, resource for
+      finding out how to work with regular expressions, and it covers differences among dialects
+      (called “engines” there) as well.
+    </p>
+    <p>
+      But it is very much possible to start using regular expressions productively without mastering
+      all the intricacies the tool provides, and that’s what this page is about.
+    </p>
+    <div class="aside">
+      <h3>Aside: Numbers and Text</h3>
+      <p>
+        Regular expressions allow you to work with strings of characters: the things you type using
+        a keyboard. Some of those characters might be numerals, like “1” or ”2” or “3”&mdash;keep
+        in mind that “looking for a number” in the land of regular expressions really means “looking
+        for a sequence of characters that are numerals.”
+      </p>
+      <p>
+        Understanding the difference between numbers and textual numerals explains some seeming
+        anomalies in how course catalog numbers work. The number 9 is less than the number 10, but
+        because the text numeral “1” comes before the text numeral ”9”, the string “10” comes before
+        the string “9”. Catalog numbers are actually strings of text that have numeral characters
+        (and sometimes others) in them.
+      </p>
+    </div>
+    <h2>Selecting Course Catalog Numbers</h2>
+    <p>
+      Let’s say you want to look up the transfer rules for CSCI 100 at Queens. You select Queens as
+      the college, select CSCI as the discipline, and type in 100 as the catalog number. When you do
+      that you have just used a regular expression (<code>100</code>) to match all course numbers
+      that have the characters 1-0-0 in them, and there is exactly one match in CUNYfirst. But if
+      the Queens CSCI program included a course numbered 1000, or 5100, or 100W, or any other course
+      that has “100“ somehere in its catalog number, those courses would have come up too.
+    </p>
+    <div class="aside">
+      <h3>Aside: CUNYfirst Course Catalog Numbers</h3>
+      <p>
+        You may have been told that CUNYfirst course catalog numbers cannot contain dots or leading
+        zeros. That is a CUNY policy, not a technical restriction of CUNYfirst. The
+        actual rule for catalog numbers in the CUNYfirst database is that they can be up to ten
+        characters long, only up to six of which have to be numerals, with the others allowed to be
+        either numerals or other characters, such as letters or periods. It’s actually a bit more
+        complicated than that but the basic idea is correct: the CUNYfirst database allows dots and
+        leading zeros in course catalog numbers.
+      </p>
+      <p>
+        Catalog numbers that do not adhere to the CUNY policy exist; catalog numbers that don’t
+        match the CUNYfirsrt database rules do not.
+      </p>
+    </div>
+
+    <h2>Catalog Number Regular Expressions Explained</h2>
+    <h3>For the Quick Start example above (<code>1\d\d\D*</code>):</h3>
+    <dl>
+      <dt><code>1</code></dt>
+      <dd>
+        Most characters, such as the numeral “1” here, match themselves. So entering just a “1”
+        would find all catalog numbers that have a 1 anywhere in them.
+      </dd>
+      <dt><code>\d</code></dt>
+      <dd>Match any decimal numeral (“0”, “1”, &hellip; “9”).</dd>
+      <dt><code>\D</code></dt>
+      <dd>Match anything that is <em>not</em> a numeral.</dd>
+    </dl>
+    <h3>Periods</h3>
+    <dl>
+      <dt><code>.</code></dt>
+      <dd>A period matches <em>any</em> character. If you want to look for an actual period,
+        put a backslash before it: <code>\.</code>. You could use this to find courses that have
+        non-conforming catalog numbers.
+      </dd>
+    </dl>
+    <h3>Repeated Characters</h3>
+    <dl>
+      <dt><code>?</code></dt>
+      <dd>Match if the previous character occurs either once or not at all.
+      </dd>
+      <dt><code>*</code></dt>
+      <dd>Match if the previous character occurs any number of times, including none.</dd>
+      <dt><code>{m,n}</code></dt>
+      <dd>Match if the previous character occurs between <em>m</em> and <em>n</em> times. If
+        <em>n</em> is omitted, it is the same as <em>m</em>. So <code>\d\d</code> could also be
+        written <code>\d{2,2}</code> (or just <code>\d{2}</code>). This would be useful, for
+        example, if you wanted to lookup courses with two-digit catalog numbers.
+      </dd>
+    </dl>
+    <h3>Spaces</h3>
+    <dl>
+      <dt><code>\s</code></dt>
+      <dd>A “whitespace” character: space, or tab.</dd>
+      <dt><code>\S</code></dt>
+      <dd>Anything that is not a whitespace characer</dd>
+    </dl>
+    <h3>Beggining and End</h3>
+    <dl>
+      <dt><code>^</code></dt>
+      <dd>The beginning of a string.</dd>
+      <dt><code>$</code></dt>
+      <dd>The end of a string.</dd>
+    </dl>
+    <p>
+      Some CUNYfirst catalog numbers have whitespace characters at the beginning, so the lookup
+      page always puts <code>^\s*</code> at the beginning of whatever you type into the catalog
+      number box inorder to ignore that anomaly for you. (If your regular expression already begins
+      with <code>^</code>, it just adds the <code>\s*</code> after it.)
+    </p>
+    <h2>Summary</h2>
+    <p>
+      Regular expressions are the ideal tool for dealing with patterns of course catalog numbers in
+      CUNYfirst. You can get along just fine without knowing anything about them, but they can
+      make your work more efficient.
+    </p>
+    <p>
+      This page is by no means a complete introduction to the subject.
+    </p>
+  </body>
+</html>

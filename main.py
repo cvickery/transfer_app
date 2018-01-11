@@ -939,8 +939,8 @@ def lookup():
       Enter course information to see what transfer rules involve that course CUNY-wide.
     </p>
     <p>
-      You can use a <a target="_blank" href="http://www.regular-expressions.info/">regular
-      expression</a> in the Catalog Number field to select a group of courses all at once.
+      You can use a <a target="_blank" href="/regex">regular expression</a> in the Catalog Number
+      field to select a group of courses all at once.
     </p>
   </div>
   <form action="" method="POST">
@@ -986,6 +986,13 @@ def lookup():
   </div>
   """.format(institution_select)
   return render_template('lookup.html', result=Markup(result))
+
+# /REGEX
+# =================================================================================================
+# The help page for entering regular expressions as course catalog numbers.
+@app.route('/regex')
+def regex():
+  return render_template('regex.html')
 
 # /_DISCIPLINES
 # =================================================================================================
