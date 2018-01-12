@@ -80,9 +80,16 @@ class CUNYCourse:
                  course['description'],
                  designation,
                  self.attributes)
+      self.title_str = """course_id {}: {} {} {} {:0.1f}hr;{:0.1f}cr""".format(course['course_id'],
+                                                              course['discipline'],
+                                                              course['catalog_number'].strip(),
+                                                              course['title'],
+                                                              float(course['hours']),
+                                                              float(course['credits']))
 
     else:
       self.html = '<p class="catalog-entry">{} Not in CUNY Catalog</p>'.format(course_id)
+      self.title_str = 'course_id {}: Not in CUNY Catalog'.format(course_id)
       self.is_active = False
       self.institution = 'No Institution'
 

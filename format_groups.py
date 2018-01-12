@@ -4,6 +4,7 @@ import json
 import re
 import argparse
 
+from cuny_course import CUNYCourse
 from pgconnection import pgconnection
 from status_utils import status_string
 DEBUG = False
@@ -196,8 +197,8 @@ def format_group(group_key):
                             """)
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute("select code, name from institutions order by lower(name)")
-  institution_names = {row['code']: row['name'] for row in cursor}
+  cursor.execute("select code, prompt from institutions order by lower(name)")
+  institution_names = {row['code']: row['prompt'] for row in cursor}
 
 
   # Get lists of source and destination courses for this rule group
@@ -272,8 +273,9 @@ def format_group(group_key):
       source_course_list = source_course_list.strip('/') + discipline_str + '-'
     if catalog_number != course.catalog_number:
       catalog_number = course.catalog_number
-      source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
-                                                                            course.catalog_number)
+      source_course_list += '<span title="{}">{}</span>/'.format(
+                                                          CUNYCourse(course.course_id).title_str,
+                                                          course.catalog_number)
       source_credits += float(course.credits)
   source_course_list = source_course_list.strip('/')
 
@@ -293,19 +295,20 @@ def format_group(group_key):
     if abs(float(course.credits) - course.transfer_credits) > 0.09:
       course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
     destination_course_list += \
-          '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
+          '<span title="{}">{}</span>/'.format(CUNYCourse(course.course_id).title_str,
+                                               course_catalog_number)
     destination_credits += float(course.transfer_credits)
 
   destination_course_list = destination_course_list.strip('/')
 
-  row_class = 'rule' # Needed if this code gets shared with format_groups()
+  row_class = '' # Needed if this code gets shared with format_groups()
   if source_credits != destination_credits:
-    row_class = 'rule credit-mismatch'
+    row_class = ' class="credit-mismatch"'
 
   rule_str = """
-            <p class="{}" style="max-width:60%; padding:0.5em;">
+            <div{} style="padding:0.5em;">
               {} at {}, {} credits, transfers to {} as {}, {} credits.
-            </p>"""\
+            </div>"""\
           .format(row_class,
                   source_course_list,
                   institution_names[source_institution],

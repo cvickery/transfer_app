@@ -58,3 +58,9 @@ hr {
 .error {
   color:red;
 }
+
+.credit-mismatch {
+  font-weight: bold;
+  font-style: italic;
+  color:#600;
+}

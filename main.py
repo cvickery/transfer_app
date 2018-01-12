@@ -19,7 +19,7 @@ from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_groups import format_groups
+from format_groups import format_group, format_groups
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
@@ -936,11 +936,18 @@ def lookup():
   <h1>Lookup Transfer Rules</h1>
   <div class="instructions">
     <p>
-      Enter course information to see what transfer rules involve that course CUNY-wide.
+      Select a college and discipline, and enter a course catalog number to see what transfer
+      rules involve that course CUNY-wide. You can limit the search to rules where the course is
+      on the sending instituion side or the receiving institution side, or leave the default and
+      get both sets.
     </p>
     <p>
-      You can use a <a target="_blank" href="/regex">regular expression</a> in the Catalog Number
-      field to select a group of courses all at once.
+      The Catalog Number field can be entered as a simple course number but is actually a ”regular
+      expression” that can select a group of courses. So if you wanted to do something like find the
+      rules for all 100-level courses in a discipline, you might want to look at the <a
+      href="/regex" target="_blank">regular expression</a> web page for more information about this
+      field. And if you enter a simple course number but get back information for some additional
+      courses, that web page explains what’s going on in that case, too.
     </p>
   </div>
   <form action="" method="POST">
@@ -1021,7 +1028,7 @@ def _disciplines():
 # =================================================================================================
 # This route is for AJAX access to the rules applicable to a course or set of courses.
 #
-# Returns two HTML strings, one for rules where the course(s) are a sending course, the other
+# Returns up to two HTML strings, one for rules where the course(s) are a sending course, the other
 # where it/they are a receiving course.
 @app.route('/_lookup_rules')
 def lookup_rules():
@@ -1067,9 +1074,16 @@ def lookup_rules():
      order by source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
     """.format(source_dest, course_ids)
     cursor.execute(query)
-    rules = ["""
-      <div><a href="/history/{}" target="_blank">{}</a></div>
-      """.format(x[0], x[0]) for x in cursor.fetchall()]
+    rules = ['<div>{}</div>'.format(format_group(x[0])) for x in cursor.fetchall()]
+    credit_mismatch = False
+    for rule in rules:
+      if 'credit-mismatch' in rule:
+        credit_mismatch = True
+        break
+    if credit_mismatch:
+      rules.insert(0, """<p class="credit-mismatch">Rules higlighted like this have different
+                   numbers of credits at the sending and receiving colleges.</p>""")
+    rules.insert(0, '<p><em>Hover over catalog numbers for course details.</em></p>')
   if len(rules) == 0:
     if type == 'sending':
       rules = '<p>No sending rules</p>'
