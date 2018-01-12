@@ -9,16 +9,14 @@ from collections import namedtuple
 from pgconnection import pgconnection
 from cuny_course import CUNYCourse
 from format_groups import format_group
-from status_utils import status_string
+from status_utils import get_abbr_to_bitmask, status_string
 
-
+# process_pending()
+# -------------------------------------------------------------------------------------------------
 def process_pending(row):
   """ Look up the token and generate events. Return as status message.
   """
-  global review_status_bits
-  global abbr_to_bitmask
-  if not review_status_bits:
-    populate_review_status_bits()
+  abbr_to_bitmask = get_abbr_to_bitmask()
   token = row['token']
   reviews = json.loads(row['reviews'])
   email = row['email']

@@ -17,25 +17,28 @@ def populate_review_status_bits():
   global review_status_bits
   global bitmask_to_description
   global abbr_to_description
-  conn = pgconnection('dbname=cuny_courses')
-  with conn.cursor() as cursor:
+  if not review_status_bits:
+    conn = pgconnection('dbname=cuny_courses')
+    with conn.cursor() as cursor:
 
-    event_type_bits = dict()
-    cursor.execute('select * from review_status_bits')
-    for row in cursor.fetchall():
-      abbr_to_bitmask[row['abbr']] = row['bitmask']
-      bitmask_to_description[row['bitmask']] = row['description']
-  review_status_bits = True
+      event_type_bits = dict()
+      cursor.execute('select * from review_status_bits')
+      for row in cursor.fetchall():
+        abbr_to_bitmask[row['abbr']] = row['bitmask']
+        bitmask_to_description[row['bitmask']] = row['description']
+    review_status_bits = True
 
+def get_abbr_to_bitmask():
+  global abbr_to_bitmask
+  populate_review_status_bits()
+  return abbr_to_bitmask
 
 def status_string(status):
   """
     Generate a string summarizing all bits that are set in status.
   """
-  global review_status_bits
   global bitmask_to_description
-  if not review_status_bits:
-    populate_review_status_bits()
+  populate_review_status_bits()
   if status == 0: return 'Not Yet Reviewed'
 
   strings = []
