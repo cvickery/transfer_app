@@ -1034,11 +1034,18 @@ def _disciplines():
 def lookup_rules():
   institution = request.args.get('institution')
   discipline = request.args.get('discipline')
-  catalog_number = request.args.get('catalog_number')
+  original_catalog_number = request.args.get('catalog_number')
   # Munge the catalog_number so it makes a good regex and doesn't get tripped up by whitespace in
   # the CF catalog numbers.
   catalog_number =  '^\s*' + \
-                    catalog_number.strip(' ^').replace('\.', '\\\.').replace('\\\\', '\\')
+                    original_catalog_number.strip(' ^').replace('\.', '\\\.').replace('\\\\', '\\')
+  # Make sure it will compile when it gets to the db
+  try:
+    re.compile(catalog_number)
+  except:
+    return jsonify("""
+                   <p class="error">Invalid regular expression:
+                   Unable to use "{}" as a catalog number.</p>""".format(original_catalog_number))
   type = request.args.get('type')
   # Get the course_ids
   conn = pgconnection('dbname=cuny_courses')

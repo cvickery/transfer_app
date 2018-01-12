@@ -23,11 +23,20 @@ $(function ()
   $('#institution, #discipline, #catalog-number').change(function ()
   {
     var catalog_number = $('#catalog-number').val().trim();
-    if (catalog_number === '') return;
+    if (catalog_number === '')
+    {
+      return;
+    }
     var discipline = $('#discipline').val();
-    if (discipline === 'none') return;
+    if (discipline === 'none')
+    {
+      return;
+    }
     var institution = $('#institution').val();
-    if (institution === 'none') return;
+    if (institution === 'none')
+    {
+      return;
+    }
 
     var sending = false;
     var receiving = false;
