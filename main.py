@@ -153,6 +153,8 @@ def do_form_0(request, session):
   institution_names = {row['code']: row['name'] for row in cursor}
   session['institution_names'] = institution_names
 
+  cursor.execute("select count(*) from rule_groups")
+  num_rules = cursor.fetchone()[0]
   cursor.execute("select * from updates")
   Update = namedtuple('Update', [d[0] for d in cursor.description])
   updates = [Update._make(row) for row in cursor.fetchall()]
@@ -220,12 +222,25 @@ def do_form_0(request, session):
   # Return Form 1
   result = """
     <h1>Step 1: Select Colleges</h1>
-    <p>
-      This is the first step of a web application for reviewing course transfer rules at CUNY.<br/>
-      Background information and instructions are available in the
-      <a  target="_blank"
-          href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE">
-          Reviewing CUNY Transfer Rules</a> document.
+    <div class="instructions">
+      <p>
+        This is the first step of for reviewing the {:,} existing course transfer rules at CUNY.
+      </p>
+      <p>
+        To see just the rules you are interested in, start here by selecting exactly one sending
+        college and at least one receiving college, or exactly one receiving college and one or more
+        sending colleges.
+        <br/>
+        In the next step you will select just the discipline(s) you are interested in, and in the
+        last step you will be able to review the rules that match your choices.
+      </p>
+      <p>
+        Background information and more detailed instructions are available in the
+        <a  target="_blank"
+            href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE">
+            Reviewing CUNY Transfer Rules</a> document.
+      </p>
+    </div>
     <fieldset>
       <form method="post" action="" id="form-1">
           {}
@@ -252,7 +267,13 @@ def do_form_0(request, session):
       <p>Catalog information last updated: {}</p>
       <p>Transfer rules last updated: {}</p>
     </div>
-    """.format(source_prompt, destination_prompt, email, remember_me, catalog_date, rules_date)
+    """.format(num_rules,
+               source_prompt,
+               destination_prompt,
+               email,
+               remember_me,
+               catalog_date,
+               rules_date)
 
   response = make_response(render_template('transfers.html', result=Markup(result)))
   response.set_cookie('mysession',
