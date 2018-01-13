@@ -224,7 +224,7 @@ def do_form_0(request, session):
     <h1>Step 1: Select Colleges</h1>
     <div class="instructions">
       <p>
-        This is the first step of for reviewing the {:,}<sup>&dagger;</sup> existing course transfer
+        This is the first step for reviewing the {:,}<sup>&dagger;</sup> existing course transfer
         rules at CUNY.
       </p>
       <p>
@@ -233,7 +233,8 @@ def do_form_0(request, session):
         sending colleges.
         <br/>
         In the next step you will select just the discipline(s) you are interested in, and in the
-        last step you will be able to review the rules that match your choices.
+        last step you will be able to review the rules that match your selections in the first two
+        steps.
       </p>
       <p>
         Background information and more detailed instructions are available in the
