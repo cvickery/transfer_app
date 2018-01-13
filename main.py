@@ -224,7 +224,8 @@ def do_form_0(request, session):
     <h1>Step 1: Select Colleges</h1>
     <div class="instructions">
       <p>
-        This is the first step of for reviewing the {:,} existing course transfer rules at CUNY.
+        This is the first step of for reviewing the {:,}<sup>&dagger;</sup> existing course transfer
+        rules at CUNY.
       </p>
       <p>
         To see just the rules you are interested in, start here by selecting exactly one sending
@@ -264,8 +265,8 @@ def do_form_0(request, session):
       </form>
     </fieldset>
     <div id="update-info">
-      <p>Catalog information last updated: {}</p>
-      <p>Transfer rules last updated: {}</p>
+      <p><sup>&dagger;</sup>Transfer rule information last updated {}</p>
+      <p>Catalog information last updated {}</p>
     </div>
     """.format(num_rules,
                source_prompt,
