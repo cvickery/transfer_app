@@ -233,7 +233,7 @@ def do_form_0(request, session):
         sending colleges.
         <br/>
         In the next step you will select just the discipline(s) you are interested in, and in the
-        last step you will be able to review the rules that match your selections in the first two
+        last step you will be able to review the rules that match your selections from the first two
         steps.
       </p>
       <p>
