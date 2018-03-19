@@ -83,8 +83,9 @@ def format_groups(groups, session):
     discipline = ''
     catalog_number = ''
     source_course_list = ''
+    row_id_str = '{}-'.format(rule_key)
     for course in group.source_courses:
-      row_id_str = '{}-{}:'.format(rule_key, course.course_id)
+      row_id_str += '{}:'.format(course.course_id)
 
       course_grade = _grade(course.min_gpa, course.max_gpa)
       if course_grade != grade:
