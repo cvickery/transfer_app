@@ -9,8 +9,8 @@ def send_token(email, url, evaluation_rows):
   sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
 
   to_email = mail.Email(email)
-  from_email = mail.Email('Tranfer.Evaluations@provost-access-148820.appspotmail.com')
-  subject = 'Link for confirming your evaluations'
+  from_email = mail.Email('CUNY_Tranfer_Reviews@provost-access-148820.appspotmail.com')
+  subject = 'Link for confirming your reviews'
   suffix = 's'
   it_them = 'them'
   this_these = 'these'
