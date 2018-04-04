@@ -1,3 +1,27 @@
+2018-04-01
+Find missing transfer rules
+- Select receiving college, discipline, catalog number(s)
+  See sending colleges that do not match.
+
+- Select sending college, discipline, catalog number(s)
+  See receiving colleges that do not match.
+
+left join all matching courses with source/destination rules by college.
+
+There are 56,593 rules where the sending course is inactive, and 1,623 rules where the receiving course is inactive.
+
+There are 57,837 "bogus" rule components out of the 1,303,766.
+  When a rule covers a combination of courses at either the sending or receiving side, there is a
+  separate rule component for each course pair. (There are actually just 1,285,869 rules for an
+  average of just 1.014 components per rule.)
+  A bogus component is one where the course_id does not match the institution/discipline/catalog number.
+  - The app uses the course_id.
+
+There is at least one observed case where it looks like two unrelated rules have been combined.
+
+There are ### missing rules.
+
+
 2017-12-09
 Full version of app ready for wider audience testing.
 Maintaining the db is the next issue. It would be easy just to recreate the db periodically, but
