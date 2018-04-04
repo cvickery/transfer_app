@@ -104,12 +104,36 @@ def assessment():
 #   (This allows people to accidentally deny their work without losing it.)
 
 
-# INDEX PAGE
+# INDEX PAGE: Top-level Menu
 # =================================================================================================
 # This is the entry point for the transfer rules review application
 @app.route('/', methods=['POST', 'GET'])
 @app.route('/index/', methods=['POST', 'GET'])
-@app.route('/review_transfers/', methods=['POST', 'GET'])
+def top_menu():
+  """ Display menu of available features.
+  """
+  # You can put messages above the menu.
+  result =  """
+  <div>
+    <h2>Note</h2>
+    <p>
+      In addition to the functions listed above, the following additional items are under
+      development, or planned.
+    </p>
+    <ul>
+      <li>List missing rules</li>
+      <li>List rules that have been reviewed and require action</li>
+      <li>Show progress in reviewing existing rules, by college, by division/school, and by
+      department</li>
+    </ul>
+  </div>
+            """
+  response = make_response(render_template('top-menu.html', result=Markup(result)))
+  return response
+
+# REVIEW_TRANSFERS
+# =================================================================================================
+@app.route('/review_rules/', methods=['POST', 'GET'])
 def transfers():
   """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
       if any, the user submitted.

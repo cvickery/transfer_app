@@ -1,0 +1,40 @@
+body {
+  font-family: sans-serif;
+  border: 1em;
+  padding: 0 1em;
+  background-color: #eff;
+  color:#333;
+}
+
+.error {
+  color: #922;
+  font-size: 1em;
+}
+
+.warning {
+  color: #611;
+  font-style: italic;
+}
+
+h1 {
+  margin:0;
+  font-size:1.4em;
+}
+
+h2 {
+  font-size:1.2em;
+  margin: 0 auto;
+}
+
+dl {
+  margin: 1em;
+  padding: 0.5em;
+  border: 1px solid #ccc;
+  border-radius: 0.25em;
+  background-color:white;
+  max-width:40em;
+}
+dd {
+  margin: 0.5em;
+  text-align: justify;
+}

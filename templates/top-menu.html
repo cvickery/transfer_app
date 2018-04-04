@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Provost Prototype</title>
+
+    <link rel='stylesheet' href='/static/css/top-menu.css' />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <h1>CUNY Transfer Application</h1>
+    <p>The following functions are currently available:</p>
+    <dl>
+      <dt><a href="/review_rules">Review Existing Rules</a></dt>
+      <dd>
+        There are over a million rules for how courses transfer from one CUNY college to another.
+        The Review Rules function lets anyone look at and comment on existing rules after first
+        narrowing down the set to a manageable size based on sending / receiving colleges and
+        sending / receiving disciplines.
+      </dd>
+      <dt><a href="/lookup">Look Up Rules</a></dt>
+      <dd>
+        Look up all the existing rules that involve a course or set of courses. You can search for
+        rules where the courses are in the sending, receiving, or both parts of rules. You can
+        specify sets of catalog numbers, such as all 200-level courses, by using regular
+        expressions. There is a link on the page to a mini-tutorial on regular expressions.
+      </dd>
+      <dt><a href="/regex">Regular Expressions</a></dt>
+      <dd>
+        This is the regular expression guide that is referenced from the <em>Look Up Rules</em> page.
+      </dd>
+      <dt><a href="/pending">Pending Reviews</a></dt>
+      <dd>
+        This is a maintenance utility that shows reviews that have been submitted but not yet
+        confirmed by the submitter. These reviews are purged if not confirmed within two days of
+        submission.
+      </dd>
+      <dt><a href="/courses">Course Catalogs</a></dt>
+      <dd>
+        This function will display all the courses currently offered at any CUNY College in standard
+        college-bulletin format. But you have to say "Please."
+      </dd>
+    </dl>
+    <!-- Messages -->
+    {{ result }}
+  </body>
+</html>
