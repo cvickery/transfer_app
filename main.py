@@ -106,7 +106,7 @@ def assessment():
 
 # INDEX PAGE: Top-level Menu
 # =================================================================================================
-# This is the entry point for the transfer rules review application
+# This is the entry point for the transfer application
 @app.route('/', methods=['POST', 'GET'])
 @app.route('/index/', methods=['POST', 'GET'])
 def top_menu():
@@ -1040,6 +1040,119 @@ def lookup():
   </div>
   """.format(institution_select)
   return render_template('lookup.html', result=Markup(result))
+
+# LOOKUP RULES PAGE
+# -------------------------------------------------------------------------------------------------
+# Map courses at one instituition to all other other institutions, or vice-versa.
+# Shows missing rules as gaps.
+@app.route('/map_courses', methods=['GET'])
+def map_courses():
+  """ Prompt for a course (or set of courses in a discipline) at an institution, and display
+      view-only information about rules that involve that or those courses.
+      Display a CSV-downloadable table.
+  """
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute('select code, prompt from institutions order by prompt')
+  options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
+  conn.close()
+  institution_select = """
+  <select id="institution" name="institution">
+    <option value="none" selected="selected">Select a College</option>
+    {}
+  </select>
+  """.format('\n'.join(options))
+  # Supply colleges from db now, but use ajax to get a college's disciplines
+
+  result = """
+  <h1>Map Course Transfers</h1>
+  <div id="setup-div">
+    <h2>Setup</h2>
+    <div class="instructions">
+      <p>
+        Complete either Part A or Part B to select courses of interest. Then indicate whether you
+        want to map how these courses transfer <em>to</em> courses at other institutions
+        (<em>receiving</em> courses) or <em>from</em> courses at other institutions (<em>sending
+        courses</em>).
+      </p>
+    </div>
+    <form action="" method="POST">
+      <fieldset>
+        <legend>Part A</legend>
+        <p>
+          Select a college and the discipline for the courses you are interested in, and select
+          one or more of the grouping options.
+        </p>
+        <div>
+          <label for="institution">College:</label>
+          {}
+          <label for="Discipline">Discipline:</label>
+          <input type="text" id="discipline" />
+        </div>
+        <div id="grouping-div">
+          <label for="grouping-option">Grouping Options:</label>
+          <select multiple name="grouping-options" id="grouping-options" size="8">
+            <option value="all">All courses</option>
+            <option value="low">Below 100-level courses</option>
+            <option value="100">100-level courses</option>
+            <option value="200">200-level courses</option>
+            <option value="300">300-level courses</option>
+            <option value="400">400-level courses</option>
+            <option value="500">500-level courses</option>
+            <option value="600">600-level courses</option>
+          </select>
+          <div>
+            <input type="checkbox" id="include-4-digit" name="include-4-digit" checked>
+            <label for="include-4-digit">Include 4-digit course numbers in groups</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Part B</legend>
+        <label for="course-ids">
+          If you know the CUNYfirst Course IDs for the courses you are interested in, enter them here:
+        </label>
+        <div>
+        <input type="text" id="course-ids"><button id="clear-ids">clear</button>
+        </div>
+      </fieldset>
+      <p>
+        <span id="number-of-courses">No courses</span> selected.
+      </p>
+      <div>
+          <input  type="checkbox"
+                  id="baccalaureate"
+                  name="which-colleges"
+                  value="baccalaureate"
+                  checked>
+          <label for="baccalaureate" class="radio-label"">Include Baccalaureate Degree Colleges</label>
+          <input  type="checkbox"
+                  id="associates"
+                  name="which-colleges"
+                  value="assocociates"
+                  checked>
+          <label for="associates" class="radio-label">Include Associates Degree Colleges</label>
+      </div>
+      <div>
+        <button id="show-receiving">show receiving courses</button>
+        <strong>or</strong>
+        <button id="show-sending">show sending courses</button>
+      </div>
+    </form>
+  </div>
+  <div id="transfers-map-div">
+    <h2>Transfers Map</h2>
+    <table id="transfers-map">
+    </table>
+    <div>
+      <button id="download-csv">download as csv</button>
+      <strong>or</strong>
+      <button id="show-controls">show setup</button>
+    </div>
+  </div>
+  """.format(institution_select)
+  return render_template('map-courses.html', result=Markup(result))
 
 # /REGEX
 # =================================================================================================

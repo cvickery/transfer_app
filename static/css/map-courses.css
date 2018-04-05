@@ -1,0 +1,64 @@
+body {
+  background-color: #eff;
+  padding: 1em;
+  font-family:sans-serif;
+}
+
+.instructions {
+  background-color: #fefefe;
+  padding:0.25em 1em;
+  margin: 1em 0;
+  max-width:40em;
+  border-radius:0.25em;
+  border: 1px solid #0cc;
+}
+
+fieldset {
+  margin-top: 1em;
+  max-width: 60em;
+}
+fieldset + div {
+  margin:1em;
+}
+fieldset + div + div
+{
+  margin: 1em 0 0 3em;
+}
+
+label {
+  text-align: right;
+  vertical-align: top;
+  padding: 0.25em 0.5em;
+  margin:0.1em;
+}
+
+input[type="text"] {
+  display: inline-block;
+  width:10em;
+}
+
+#grouping-div {
+  margin-top: 0.5em;
+}
+
+#course-ids {
+  margin: 0.5em;
+  width:60em;
+}
+
+#course-ids + button {
+  font-size: 0.8em;
+  padding: 0.25em;
+  margin: 0em;
+}
+
+button {
+  margin: 1em;
+  padding: 0.5em;
+  font-size: 1em;
+  font-variant: small-caps;
+}
+
+.error {
+  color:red;
+}
