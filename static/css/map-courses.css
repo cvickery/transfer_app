@@ -59,6 +59,13 @@ button {
   font-variant: small-caps;
 }
 
+#transfers-map-table {
+  border-collapse: collapse;
+}
+td, th {
+  border: 1px solid #ccc;
+  padding:0.5em;
+}
 .error {
   color:red;
 }

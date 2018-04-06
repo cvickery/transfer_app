@@ -1041,7 +1041,7 @@ def lookup():
   """.format(institution_select)
   return render_template('lookup.html', result=Markup(result))
 
-# LOOKUP RULES PAGE
+# MAP COURSES PAGE
 # -------------------------------------------------------------------------------------------------
 # Map courses at one instituition to all other other institutions, or vice-versa.
 # Shows missing rules as gaps.
@@ -1111,22 +1111,24 @@ def map_courses():
       <fieldset>
         <legend>Part B</legend>
         <label for="course-ids">
-          If you know the CUNYfirst Course IDs for the courses you are interested in, enter them here:
+          If you are interested in particular courses and know their CUNYfirst Course IDs,
+          you may enter them here:
         </label>
         <div>
-        <input type="text" id="course-ids"><button id="clear-ids">clear</button>
+          <input type="text" id="course-ids"/>
+          <button id="clear-ids">clear</button>
         </div>
       </fieldset>
       <p>
-        <span id="number-of-courses">No courses</span> selected.
+        <span id="num-courses">No courses</span> selected.
       </p>
       <div>
           <input  type="checkbox"
-                  id="baccalaureate"
+                  id="bachelors"
                   name="which-colleges"
-                  value="baccalaureate"
+                  value="bachelors"
                   checked>
-          <label for="baccalaureate" class="radio-label"">Include Baccalaureate Degree Colleges</label>
+          <label for="bachelors" class="radio-label"">Include Bachelor’s Degree Colleges</label>
           <input  type="checkbox"
                   id="associates"
                   name="which-colleges"
@@ -1143,7 +1145,7 @@ def map_courses():
   </div>
   <div id="transfers-map-div">
     <h2>Transfers Map</h2>
-    <table id="transfers-map">
+    <table id="transfers-map-table">
     </table>
     <div>
       <button id="download-csv">download as csv</button>
@@ -1160,6 +1162,23 @@ def map_courses():
 @app.route('/regex')
 def regex():
   return render_template('regex.html')
+
+# /_INSTITUTIONS
+# =================================================================================================
+# AJAX access to the institutions table.
+@app.route('/_institutions')
+def _institutions():
+  Institution = namedtuple('Institution', 'code, prompt, name, associates, bachelors')
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute("""select code, prompt, name, associates, bachelors
+                      from institutions order by code
+                 """)
+  institutions = [Institution._make(x)._asdict() for x in cursor.fetchall()]
+
+  conn.close()
+  return jsonify(institutions)
+
 
 # /_DISCIPLINES
 # =================================================================================================
@@ -1269,14 +1288,21 @@ def lookup_rules():
 def _courses():
   return_list = []
   course_ids = request.args.get('course_ids', 0)
+  already_done = set()
   for course_id in course_ids.split(':'):
+    if course_id in already_done: continue
+    already_done.add(course_id)
     course = CUNYCourse(course_id)
-    note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
-    if course.is_active:
-      note = ''
-    return_list.append({'course_id': course.course_id,
+    if course.exists:
+      note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
+      if course.is_active:
+        note = ''
+      return_list.append({'course_id': course.course_id,
                          'institution': course.institution,
                          'department': course.department,
+                         'discipline': course.discipline,
+                         'catalog_number': course.catalog_number,
+                         'title': course.title,
                          'html': course.html,
                          'note': note})
   return jsonify(return_list)
