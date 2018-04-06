@@ -19,6 +19,7 @@ class CUNYCourse:
     cursor.execute("select * from courses where course_id = '{}'".format(course_id))
     course = cursor.fetchone()
     if course:
+      self.exists = True
       cursor.execute("""
                 select * from cuny_subjects where subject = '{}'""".format(course['cuny_subject']))
       cuny_subject = cursor.fetchone()[1]
@@ -63,15 +64,17 @@ class CUNYCourse:
             <div class="catalog-entry"><strong>Attribute:</strong> {}</div>\n""".format(attribute)
       cursor.close()
       conn.close()
-
+      self.discipline = course['discipline']
+      self.catalog_number = course['catalog_number'].strip()
+      self.title = course['title']
       self.html = """
       <p class="catalog-entry" title="course id: {}"><strong>{} {}: {}</strong> (<em>{}; {}</em>)
       <br/>
       {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>{}
-      """.format(course['course_id'],
-                 course['discipline'],
-                 course['catalog_number'].strip(),
-                 course['title'],
+      """.format(self.course_id,
+                 self.discipline,
+                 self.catalog_number,
+                 self.title,
                  career,
                  cuny_subject,
                  float(course['hours']),
@@ -88,10 +91,15 @@ class CUNYCourse:
                                                               float(course['credits']))
 
     else:
+      self.exists = False
       self.html = '<p class="catalog-entry">{} Not in CUNY Catalog</p>'.format(course_id)
       self.title_str = 'course_id {}: Not in CUNY Catalog'.format(course_id)
       self.is_active = False
       self.institution = 'No Institution'
+      self.department = 'No Department'
+      self.discipline = 'No Discipline'
+      self.catalog_number = '###'
+      self.title = 'No Title'
 
   def __str__(self):
     return self.html
