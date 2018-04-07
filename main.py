@@ -1148,9 +1148,9 @@ def map_courses():
     <table id="transfers-map-table">
     </table>
     <div>
+      <a href="/"><button>main menu</button></a>
+      <button id="show-setup">return to setup</button>
       <button id="download-csv">download as csv</button>
-      <strong>or</strong>
-      <button id="show-controls">show setup</button>
     </div>
   </div>
   """.format(institution_select)
@@ -1201,6 +1201,37 @@ def _disciplines():
     <option value="none' selected="selected">Select a Discipline</option>
     {}
     </select>""".format('\n'.join(disciplines)))
+
+
+# /_MAP_COURSES
+# =================================================================================================
+# AJAX access to counts of rules for a course given the course_id and whether it is a source (give
+# the counts for each destination institution) or destination (give the counts for each source
+# institution)
+@app.route('/_map_course')
+def _map_course():
+  course_id = request.args.get('course_id', default=0)
+  direction = request.args.get('direction', default='from')
+  Course_Map = namedtuple('Course_Map', 'institution count')
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  if direction == 'from':
+    cursor.execute("""select destination_institution, count(*)
+                      from source_courses
+                      where course_id = %s
+                      group by destination_institution
+                  """, (course_id, ))
+
+  else:
+    cursor.execute("""select source_institution, count(*)
+                  from destination_courses
+                  where course_id = %s
+                  group by source_institution
+              """, (course_id, ))
+
+  course_map = [Course_Map._make(x)._asdict() for x in cursor.fetchall()]
+  conn.close()
+  return jsonify(course_map)
 
 
 # /_LOOKUP_RULES

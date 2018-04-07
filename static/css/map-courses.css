@@ -17,9 +17,11 @@ fieldset {
   margin-top: 1em;
   max-width: 60em;
 }
+
 fieldset + div {
   margin:1em;
 }
+
 fieldset + div + div
 {
   margin: 1em 0 0 3em;
@@ -56,6 +58,13 @@ button {
   margin: 1em;
   padding: 0.5em;
   font-size: 1em;
+  font-family: sans-serif;
+  font-variant: small-caps;
+  background-color:#fff;
+}
+
+a {
+  text-decoration: none;
   font-variant: small-caps;
 }
 

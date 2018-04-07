@@ -117,6 +117,14 @@ $(function ()
     });
   });
 
+  /* Show Setup
+   */
+  $('#show-setup').mouseup(function ()
+  {
+    $('#setup-div').show();
+    $('#transfers-map-div').hide();
+  });
+
   /* Show Receiving
    */
   $('#show-receiving').mouseup(function ()
@@ -142,7 +150,40 @@ $(function ()
       colleges_row += `<th>${colleges[c].replace('01', '')}</th>` ;
     }
     colleges_row += '</tr>';
-    $('#transfers-map-table').html(header_row + colleges_row);
+    course_rows = [];
+    for (var c = 0; c < target_course_list.length; c++)
+    {
+      var map_request = $.getJSON($SCRIPT_ROOT = '/_map_course',
+                                        {
+                                          course_id: target_course_list[c].course_id,
+                                          direction: 'from'
+                                        });
+      map_request.done(function (result, status)
+      {
+        /* You have promises to keep.
+         * Here, you can build a course row in its entirety, and push it to an array.
+         * Then you have to wait for all these dones to complete, and join the array
+         * into course_rows.
+         *
+         * Consider passing the discipline and catalog_number in the request, and having
+         * map_course return them as part of the response.
+         *
+         * But you still have to set up a promise so you can know when all the rows have been
+         * collected.
+         */
+        course_row = `<tr><th title="course_id ${target_course_list[c].course_id}">
+                              ${target_course_list[c].discipline}
+                              ${target_course_list[c].catalog_number}
+                          </th>`;
+        console.log(result);
+        console.log(colleges);
+        console.log(course_rows);
+        for (var i = 0; i < colleges.length; i++) course_row += '<td></td>';
+        course_row += '</tr>\n';
+        course_rows.push(course_row);
+      });
+    }
+    $('#transfers-map-table').html(header_row + colleges_row + course_rows);
     $('#setup-div').hide();
     $('#transfers-map-div').show();
   });
