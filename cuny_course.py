@@ -43,8 +43,9 @@ class CUNYCourse:
       self.is_active = course['course_status'] == 'A'
 
 
-      cursor.execute("select name from institutions where code = '{}'".format(course['institution']))
-      institution = cursor.fetchone()[0]
+      cursor.execute("select prompt, name from institutions where code = '{}'".format(course['institution']))
+      prompt, institution = cursor.fetchone()
+      self.institution_prompt = prompt
       self.institution = institution
 
       cursor.execute("""
@@ -96,6 +97,7 @@ class CUNYCourse:
       self.title_str = 'course_id {}: Not in CUNY Catalog'.format(course_id)
       self.is_active = False
       self.institution = 'No Institution'
+      self.institution_prompt = 'None'
       self.department = 'No Department'
       self.discipline = 'No Discipline'
       self.catalog_number = '###'
