@@ -1044,7 +1044,6 @@ def lookup():
 # MAP COURSES PAGE
 # -------------------------------------------------------------------------------------------------
 # Map courses at one instituition to all other other institutions, or vice-versa.
-# Shows missing rules as gaps.
 @app.route('/map_courses', methods=['GET'])
 def map_courses():
   """ Prompt for a course (or set of courses in a discipline) at an institution, and display
@@ -1203,36 +1202,66 @@ def _disciplines():
     </select>""".format('\n'.join(disciplines)))
 
 
-# /_MAP_COURSES
+# /_MAP_COURSE
 # =================================================================================================
-# AJAX access to counts of rules for a course given the course_id and whether it is a source (give
-# the counts for each destination institution) or destination (give the counts for each source
-# institution)
+# AJAX generator of course_map table.
+# Create a table row for each course_id in course_id_list; a column for each element in colleges.
+# Request type tells which type of request: show-sending or show-receiving.
 @app.route('/_map_course')
 def _map_course():
-  course_id = request.args.get('course_id', default=0)
-  direction = request.args.get('direction', default='from')
+  # Note to self: there has to be a cleaner way to pass an array from JavaScript
+  course_id_list = json.loads(request.args.getlist('course_id_list')[0])
+  colleges = json.loads(request.args.getlist('colleges')[0])
+
+  request_type = request.args.get('request_type', default='show-receiving')
   Course_Map = namedtuple('Course_Map', 'institution count')
+  Course_Info = namedtuple('Course_info', 'course_id institution discipline catalog_number title')
+  table_rows = []
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  if direction == 'from':
-    cursor.execute("""select destination_institution, count(*)
-                      from source_courses
+  for course_id in course_id_list:
+    cursor.execute("""select course_id, institution, discipline, catalog_number, title
+                      from courses
                       where course_id = %s
-                      group by destination_institution
-                  """, (course_id, ))
+                   """, (course_id, ))
+    if cursor.rowcount == 0: continue
+    course_info = Course_Info._make(cursor.fetchone())
+    course_info_cell =  """
+                          <th title="course_id {}: {} {}">{} {}</th>
+                        """.format(course_info.course_id,
+                                   course_info.institution,
+                                   course_info.title,
+                                   course_info.discipline,
+                                   course_info.catalog_number)
+    if request_type == 'show-receiving':
+      row_template = '<tr>' + course_info_cell + '{}</tr>'
+      cursor.execute("""select destination_institution, count(*)
+                        from source_courses
+                        where course_id = %s
+                        group by destination_institution
+                    """, (course_id, ))
 
-  else:
-    cursor.execute("""select source_institution, count(*)
-                  from destination_courses
-                  where course_id = %s
-                  group by source_institution
-              """, (course_id, ))
+    else:
+      row_template = '<tr>{}' + course_info_cell + '</tr>'
+      cursor.execute("""select source_institution, count(*)
+                    from destination_courses
+                    where course_id = %s
+                    group by source_institution
+                """, (course_id, ))
 
-  course_map = [Course_Map._make(x)._asdict() for x in cursor.fetchall()]
+    rows = [Course_Map._make(x) for x in cursor.fetchall()]
+    course_map = dict()
+    for row in rows:
+      course_map[row.institution] = row.count
+    data_cells = ''
+    for college in colleges:
+      if college in course_map.keys():
+        data_cells += '<td>{}</td>'.format(course_map[college])
+      else:
+        data_cells += '<td class="no-rules">0</td>'
+    table_rows.append(row_template.format(data_cells))
   conn.close()
-  return jsonify(course_map)
-
+  return jsonify('\n'.join(table_rows))
 
 # /_LOOKUP_RULES
 # =================================================================================================

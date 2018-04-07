@@ -75,6 +75,11 @@ td, th {
   border: 1px solid #ccc;
   padding:0.5em;
 }
+
+.no-rules {
+  background-color: red;
+  color: yellow;
+}
 .error {
-  color:red;
+  color: red;
 }
