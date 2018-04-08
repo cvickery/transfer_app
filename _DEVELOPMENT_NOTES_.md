@@ -8,7 +8,8 @@ Find missing transfer rules
 
 left join all matching courses with source/destination rules by college.
 
-There are 56,593 rules where the sending course is inactive, and 1,623 rules where the receiving course is inactive.
+There are 56,593 rules where the sending course is inactive, and 1,623 rules where the receiving
+course is inactive.
 
 There are 57,837 "bogus" rule components out of the 1,303,766.
   When a rule covers a combination of courses at either the sending or receiving side, there is a
@@ -17,10 +18,14 @@ There are 57,837 "bogus" rule components out of the 1,303,766.
   A bogus component is one where the course_id does not match the institution/discipline/catalog number.
   - The app uses the course_id.
 
-There is at least one observed case where it looks like two unrelated rules have been combined.
+There is at least two observed cases where it looks like two unrelated rules have been combined.
+(Anthropology courses transferring from QCC to QNS.)
+
+There are 184 undergraduate courses with catalog numbers that have decimal points in them,
+(including a "SPAN SPAN." at BKL). 164 of these courses appear in sending rules; two of them appear
+in receiving rules. They mess up the search for courses by level (100-level, etc.)
 
 There are ### missing rules.
-
 
 2017-12-09
 Full version of app ready for wider audience testing.
