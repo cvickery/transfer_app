@@ -329,7 +329,9 @@ def do_form_1(request, session):
     return render_template('transfers.html', result=Markup("""
                                                            <h1>Session Expired</h1>
                                                            <p>
-                                                              <a  href="/"
+                                                              <a  href="/"><button>Main Menu
+                                                                           </button></a>
+                                                              <a  href="/review_rules"
                                                                   class="restart">Restart
                                                               </a>
                                                            </p>
@@ -542,7 +544,8 @@ def do_form_1(request, session):
     <em>Clicking on these instructions hides them, making more room for the list of subjects.</em>
   </div>
   <form method="post" action="" id="form-2">
-    <a href="/" class="restart">Restart</a>
+    <a href="/"><button>Main Menu</button></a>
+    <a href="/review_rules" class="restart">Restart</a>
     <button type="submit">Next</button>
     <input type="hidden" name="next-function" value="do_form_2" />
     {}
@@ -593,7 +596,9 @@ def do_form_2(request, session):
     return render_template('transfers.html', result=Markup("""
                                                            <h1>Session Expired</h1>
                                                            <p>
-                                                              <a  href="/"
+                                                             <a href="/">
+                                                                <button>Main Menu</button></a>
+                                                             <a href="/review_rules"
                                                                   class="restart">Restart
                                                               </a>
                                                            </p>
@@ -764,7 +769,10 @@ def do_form_2(request, session):
       Click on a rule to review it.<br/>
       <em>Clicking on these instructions hides them, making more room for the list of rules.</em>
     </div>
-    <p><a href="/" class="restart">Restart</a></p>
+    <p>
+      <a href="/"><button>Main Menu</button></a>
+      <a href="/review_rules" class="restart">Restart</a>
+    </p>
     <fieldset id="verification-fieldset">
         <p id="num-pending">You have not reviewed any transfer rules yet.</p>
         <button type="text" id="send-email" disabled="disabled">
@@ -870,7 +878,8 @@ def do_form_3(request, session):
       <p>
         Thank you for your work!
       </p>
-      <a href="/" class="restart">Restart</a>
+      <a href="/"><button>Main Menu</button></a>
+      <a href="/review_rules" class="restart">Restart</a>
 
       """.format(email, message_tail)
   return render_template('transfers.html', result=Markup(result))
@@ -900,6 +909,7 @@ def pending():
   result = """
   <h1>Pending Reviews</h1>
   {}
+  <a href="/"><button>main menu</button></a>
   """.format(table)
   return render_template('transfers.html', result=Markup(result))
 
@@ -1149,7 +1159,6 @@ def map_courses():
     <div>
       <a href="/"><button>main menu</button></a>
       <button id="show-setup">return to setup</button>
-      <button id="download-csv">download as csv</button>
     </div>
   </div>
   """.format(institution_select)
