@@ -1244,6 +1244,7 @@ def _find_course_ids():
     numeric_part = re.search('\d+\.?\d*', pair.catalog_number)
     if numeric_part == None: continue
     numeric_part = float(numeric_part.group(0))
+    while numeric_part > 1000.0: numeric_part = numeric_part / 10.0;
     for range in ranges:
       if numeric_part >= range[0] and numeric_part < range[1]:
         return_groups.append(pair)
@@ -1263,22 +1264,32 @@ def _map_course():
 
   request_type = request.args.get('request_type', default='show-receiving')
   Course_Map = namedtuple('Course_Map', 'institution count')
-  Course_Info = namedtuple('Course_info', 'course_id institution discipline catalog_number title')
+  Course_Info = namedtuple('Course_info',
+                           'course_id institution discipline catalog_number title course_status')
   table_rows = []
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   for course_id in course_id_list:
-    cursor.execute("""select course_id, institution, discipline, catalog_number, title
+    cursor.execute("""select  course_id,
+                              institution,
+                              discipline,
+                              catalog_number,
+                              title,
+                              course_status
                       from courses
                       where course_id = %s
                    """, (course_id, ))
     if cursor.rowcount == 0: continue
     course_info = Course_Info._make(cursor.fetchone())
+    class_info = ''
+    if course_info.course_status != 'A':
+      class_info = ' class="inactive-course"'
     course_info_cell =  """
-                          <th title="course_id {}: {} {}">{} {}</th>
+                          <th title="course_id {}: {} {}"{}>{} {}</th>
                         """.format(course_info.course_id,
                                    course_info.institution,
                                    course_info.title,
+                                   class_info,
                                    course_info.discipline,
                                    course_info.catalog_number)
     if request_type == 'show-receiving':
@@ -1304,9 +1315,15 @@ def _map_course():
     data_cells = ''
     for college in colleges:
       if college in course_map.keys():
-        data_cells += '<td>{}</td>'.format(course_map[college])
+        if course_info.course_status == 'A':
+          data_cells += '<td>{}</td>'.format(course_map[college])
+        else:
+          data_cells += '<td class="bogus-rule">{}</td>'.format(course_map[college])
       else:
-        data_cells += '<td class="no-rules">0</td>'
+        if course_info.course_status == 'A':
+          data_cells += '<td class="missing-rule">0</td>'
+        else:
+          data_cells += '<td>0</td>'
     table_rows.append(row_template.format(data_cells))
   conn.close()
   return jsonify('\n'.join(table_rows))

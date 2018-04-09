@@ -78,11 +78,22 @@ a {
 td, th {
   border: 1px solid #ccc;
   padding:0.5em;
+  text-align: center;
 }
 
-.no-rules {
-  background-color: red;
-  color: yellow;
+.missing-rule {
+  background-color: #faa;
+  color: black;
+}
+
+.bogus-rule {
+  background-color: #aaf;
+  color: black;
+}
+
+.inactive-course {
+  background-color: #ccc;
+  color: black;
 }
 .error {
   color: red;
