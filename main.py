@@ -1088,32 +1088,37 @@ def map_courses():
     <form action="" method="POST">
       <fieldset>
         <legend>Part A</legend>
-        <p>
-          Select a college and the discipline for the courses you are interested in, and select
-          one or more of the grouping options.
-        </p>
-        <div>
-          <label for="institution">College:</label>
-          {}
-          <label for="Discipline">Discipline:</label>
-          <input type="text" id="discipline" />
-        </div>
+        <h2>
+          Select one or more of the following course groups.
+        </h2>
         <div id="grouping-div">
-          <label for="grouping-option">Grouping Options:</label>
-          <select multiple name="grouping-options" id="grouping-options" size="8">
-            <option value="all">All courses</option>
-            <option value="low">Below 100-level courses</option>
+          <label for="course-groups">Course Groups:</label>
+          <select multiple id="course-groups" size="9">
+            <option value="all">All course levels</option>
+            <option value="below">Below 100-level courses</option>
             <option value="100">100-level courses</option>
             <option value="200">200-level courses</option>
             <option value="300">300-level courses</option>
             <option value="400">400-level courses</option>
             <option value="500">500-level courses</option>
             <option value="600">600-level courses</option>
+            <option value="above">Above 600-level courses</option>
           </select>
-          <div>
-            <input type="checkbox" id="include-4-digit" name="include-4-digit" checked>
-            <label for="include-4-digit">Include 4-digit course numbers in groups</label>
-          </div>
+          <p>
+            <em>Note:</em> Catalog numbers greater than 999 will be divided by ten until they are
+            in the range 0 to 999 for grouping purposes.
+          </p>
+        </div>
+        <h2>
+          Select a college and the discipline for the courses you are interested in.
+        </h2>
+        <div>
+          <label for="institution">College:</label>
+          {}
+          <span id="discipline-span">
+            <label for="Discipline">Discipline:</label>
+            <input type="text" id="discipline" />
+          </span>
         </div>
       </fieldset>
 
@@ -1164,13 +1169,6 @@ def map_courses():
   """.format(institution_select)
   return render_template('map-courses.html', result=Markup(result))
 
-# /REGEX
-# =================================================================================================
-# The help page for entering regular expressions as course catalog numbers.
-@app.route('/regex')
-def regex():
-  return render_template('regex.html')
-
 # /_INSTITUTIONS
 # =================================================================================================
 # AJAX access to the institutions table.
@@ -1206,10 +1204,50 @@ def _disciplines():
   disciplines = ['<option value="{}">{}</option>'.format(x[0], x[0]) for x in cursor.fetchall()]
   conn.close()
   return jsonify("""<select name="discipline" id="discipline">
-    <option value="none' selected="selected">Select a Discipline</option>
+    <option value="none" selected="selected">Select a Discipline</option>
     {}
     </select>""".format('\n'.join(disciplines)))
 
+# /_FIND_COURSE_IDS
+# AJAX course_id lookup.
+@app.route('/_find_course_ids')
+def _find_course_ids():
+  """ Given an institution and discipline, get all the matching course_ids. Then use course_groups
+      to filter out any that are not wanted.
+  """
+  institution = request.args.get('institution')
+  discipline = request.args.get('discipline')
+  Pairs = namedtuple('Pairs', 'course_id catalog_number')
+  ranges_str = request.args.get('ranges_str')
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute("""select course_id, catalog_number
+                    from courses
+                    where institution = %s and discipline = %s
+                 """, (institution, discipline))
+  all_groups = [Pairs._make(x) for x in cursor.fetchall()]
+  # Filter out the undesireables
+  if 'all' in ranges_str:
+    return jsonify(all_groups._asdict())
+
+  # Range string syntax: all | min:max [;...]
+  range_strings = ranges_str.split(';')
+  ranges = []
+  for range_string in range_strings:
+    min, max = range_string.split(':')
+    ranges.append((float(min), float((max))))
+
+  return_groups = []
+  for pair in all_groups:
+    # Extract the numeric part of the catalog number, including up to one fractional part.
+    numeric_part = re.search('\d+\.?\d*', pair.catalog_number)
+    if numeric_part == None: continue
+    numeric_part = float(numeric_part.group(0))
+    for range in ranges:
+      if numeric_part >= range[0] and numeric_part < range[1]:
+        return_groups.append(pair)
+        continue
+  return jsonify(sorted(return_groups, key=lambda pair: pair[1]))
 
 # /_MAP_COURSE
 # =================================================================================================
@@ -1505,6 +1543,13 @@ def courses():
   cursor.close()
   conn.close()
   return render_template('courses.html', result=Markup(result))
+
+# /REGEX
+# =================================================================================================
+# A help page for entering regular expressions as course catalog numbers.
+@app.route('/regex')
+def regex():
+  return render_template('regex.html')
 
 
 @app.errorhandler(500)

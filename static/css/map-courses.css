@@ -13,6 +13,10 @@ body {
   border: 1px solid #0cc;
 }
 
+h2 {
+  font-size: 1em;
+}
+
 fieldset {
   margin-top: 1em;
   max-width: 60em;

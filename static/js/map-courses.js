@@ -3,6 +3,7 @@ $(function ()
   //  Initial Settings
   //  =============================================================================================
   $('#need-js').hide();
+  $('#discipline-span').hide();
   $('#transfers-map-div').hide();
   $('form').submit(function (event)
   {
@@ -17,23 +18,119 @@ $(function ()
                               institutions = result;
                            });
 
+//  update_course_count()
+//  -----------------------------------------------------------------------------------------------
+/*  Utility to show user how many courses have been selected, and to enable course map if that
+ *  number is greater than zero.
+ */
+  function update_course_count()
+  {
+    $('#show-sending, #show-receiving').prop('disabled', true);
+    switch (course_id_list.length)
+    {
+      case 0:
+        // There were courses to look up, but none were found
+        $('#num-courses').text('No courses');
+        return;
+      case 1:
+        $('#num-courses').text('One course');
+        break;
+      default:
+        $('#num-courses').text(`${course_id_list.length} courses`);
+        break;
+    }
+    //  At least one course was selected: enable action buttons
+    $('#show-sending, #show-receiving').prop('disabled', false);
+  }
+
   //  Event Listeners
   //  =============================================================================================
-  /* Change college: update disciplines selection
+  /* Any change in Part A, the controls for institution, discipline, and course groups.
    */
-  $('#institution').change(function ()
+  var part_a_change = function ()
   {
     var institution = $('#institution').val();
-    if (institution !== 'none')
+    var discipline = $('#discipline').val();
+    var course_groups = $('#course-groups').val();
+
+    if ($(this).attr('id') === 'institution')
     {
-      var discipline_request = $.getJSON($SCRIPT_ROOT + '/_disciplines',
-                                         {institution: institution});
-      discipline_request.done(function (discipline_select, text_status)
+      if (institution === 'none')
       {
-        $('#discipline').replaceWith(discipline_select);
-      });
+        $('#discipline-span').hide();
+        return;
+      }
+      else
+      {
+        $('#discipline').val('none');
+        var discipline_request = $.getJSON($SCRIPT_ROOT + '/_disciplines',
+                                           {institution: institution});
+        discipline_request.done(function (discipline_select, text_status)
+        {
+          $('#discipline').replaceWith(discipline_select);
+          $('#discipline-span').show();
+          $('#discipline').change(part_a_change);
+        });
+        return;
+      }
     }
-  });
+    if (institution === 'none' || discipline === 'none' || course_groups.length === 0)
+    {
+      return;
+    }
+    // Create course_groups_string from the array.
+    ranges_str = '';
+    for (cg = 0; cg < course_groups.length; cg++)
+    {
+      switch (course_groups[cg])
+      {
+        case 'all':
+          ranges_str += '0:1000000000;';
+          break;
+        case 'below':
+          ranges_str += '0:100;';
+          break;
+        case '100':
+          ranges_str += '100:200;';
+          break;
+        case '200':
+          ranges_str += '200:300;';
+          break;
+        case '300':
+          ranges_str += '300:400;';
+          break;
+        case '400':
+          ranges_str += '400:500;';
+          break;
+        case '500':
+          ranges_str += '500:600;';
+          break;
+        case '600':
+          ranges_str += '600:700;';
+          break;
+        case 'above':
+          ranges_str += '700:1000000000;';
+          break;
+      }
+    }
+    // Trim trailing semicolor
+    ranges_str = ranges_str.substring(0, ranges_str.length - 1);
+    var find_course_ids_request = $.getJSON($SCRIPT_ROOT + '/_find_course_ids',
+                                           {
+                                              institution: institution,
+                                              discipline: discipline,
+                                              ranges_str: ranges_str
+                                           });
+    find_course_ids_request.done(function (result, status)
+    {
+      course_id_list = [];
+      for (var i = 0; i < result.length; i++)
+      {
+        course_id_list.push(result[i][0]);
+      }
+      update_course_count();
+    });
+  };
 
   /* Clear string of course IDs, update num courses msg, and disable action buttons.
    */
@@ -49,20 +146,23 @@ $(function ()
    */
   $('#bachelors').change(function ()
   {
-    if (! $(this).prop('checked'))
+    if (!$(this).prop('checked'))
     {
       $('#associates').prop('checked', true);
     }
   });
+
   $('#associates').change(function ()
   {
-    if (! $(this).prop('checked'))
+    if (!$(this).prop('checked'))
     {
       $('#bachelors').prop('checked', true);
     }
   });
 
-  /* Process change in course ID list
+  $('#institution, #course-groups').change(part_a_change);
+
+  /* Any change in Part B, the Course ID list
    */
   $('#course-ids').change(function ()
   {
@@ -88,21 +188,7 @@ $(function ()
         course_id_list.shift();
       }
     }
-    switch (course_id_list.length)
-    {
-      case 0:
-        // There were courses to look up, but none were found
-        $('#num-courses').text('No courses');
-        return;
-      case 1:
-        $('#num-courses').text('One course');
-        break;
-      default:
-        $('#num-courses').text(`${course_id_list.length} courses`);
-        break;
-    }
-    //  At least one course was selected: enable action buttons
-    $('#show-sending, #show-receiving').prop('disabled', false);
+    update_course_count();
   });
 
   /* Show Setup
