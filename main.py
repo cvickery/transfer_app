@@ -1154,6 +1154,7 @@ def map_courses():
         <button id="show-receiving">show receiving courses</button>
         <strong>or</strong>
         <button id="show-sending">show sending courses</button>
+        <span id="please-wait">Please Wait ...</span>
       </div>
     </form>
   </div>

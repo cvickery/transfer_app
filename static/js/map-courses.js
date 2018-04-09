@@ -3,6 +3,7 @@ $(function ()
   //  Initial Settings
   //  =============================================================================================
   $('#need-js').hide();
+  $('#please-wait').hide();
   $('#discipline-span').hide();
   $('#transfers-map-div').hide();
   $('form').submit(function (event)
@@ -234,6 +235,7 @@ $(function ()
     }
     colleges_row += '</tr>';
     // Get the table body rows from /_map_courses
+    $('#please-wait').show();
     var map_request = $.getJSON($SCRIPT_ROOT = '/_map_course',
                                         {
                                           course_id_list: JSON.stringify(course_id_list),
@@ -242,6 +244,7 @@ $(function ()
                                         });
     map_request.done(function (result, status)
     {
+      $('#please-wait').hide();
       $('#transfers-map-table').html(header_row + colleges_row + result);
       $('#setup-div').hide();
       $('#transfers-map-div').show();
