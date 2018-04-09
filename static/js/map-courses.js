@@ -235,6 +235,7 @@ $(function ()
     }
     colleges_row += '</tr>';
     // Get the table body rows from /_map_courses
+    $('#show-sending, #show-receiving').prop('disabled', true);
     $('#please-wait').show();
     var map_request = $.getJSON($SCRIPT_ROOT = '/_map_course',
                                         {
@@ -245,6 +246,7 @@ $(function ()
     map_request.done(function (result, status)
     {
       $('#please-wait').hide();
+      $('#show-sending, #show-receiving').prop('disabled', false);
       $('#transfers-map-table').html(header_row + colleges_row + result);
       $('#setup-div').hide();
       $('#transfers-map-div').show();
