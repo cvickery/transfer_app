@@ -6,8 +6,6 @@ Find missing transfer rules
 - Select sending college, discipline, catalog number(s)
   See receiving colleges that do not match.
 
-left join all matching courses with source/destination rules by college.
-
 There are 56,593 rules where the sending course is inactive, and 1,623 rules where the receiving
 course is inactive.
 
@@ -25,7 +23,6 @@ There are 184 undergraduate courses with catalog numbers that have decimal point
 (including a "SPAN SPAN." at BKL). 164 of these courses appear in sending rules; two of them appear
 in receiving rules. They mess up the search for courses by level (100-level, etc.)
 
-There are ### missing rules.
 
 2017-12-09
 Full version of app ready for wider audience testing.
