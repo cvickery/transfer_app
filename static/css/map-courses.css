@@ -91,6 +91,11 @@ td, th {
   color: black;
 }
 
+.self-rule {
+  background-color: #afa;
+  color:red;
+}
+
 .inactive-course {
   background-color: #ccc;
   color: black;

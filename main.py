@@ -13,6 +13,8 @@ from pgconnection import pgconnection
 import logging
 
 from collections import namedtuple
+from collections import defaultdict
+from collections import Counter
 
 from cuny_course import CUNYCourse
 from mysession import MySession
@@ -1160,6 +1162,37 @@ def map_courses():
   </div>
   <div id="transfers-map-div">
     <h2>Transfers Map</h2>
+    <div class="instructions">
+      <p>
+        Each row of the table below shows the number of ways each course selected during setup
+        transfers <span id="map-direction">to</span> other CUNY colleges.
+      </p>
+      <p>
+        If a cell contains zero there are no transfer rules for the course and that college. Values
+        greater than one occur when there are multiple rules, for example when a course transfers as
+        a particular destination course only if the student earned a minimum grade, and as blanket
+        credit otherwise.
+      </p>
+      <p>
+        If a course is<span class="inactive-course"> highlighted like this, </span>it is inactive,
+        and non-zero rule counts are<span class="bogus-rule"> highlighted like this.</span> If this
+        is a sending course, it is possible the rule would be used for students who completed the
+        course before it became inactive. But if this is a receiving course, the rule is definitely
+        an error.
+      </p>
+      <p>
+        If a course is active but has zero values for some colleges, they are<span
+        class="missing-rule"> highlighted like this.</span>
+      </p>
+      <p>
+        If there are any rules that maps courses to their own institution, they are<span
+        class="self-rule"> highlighted like this.</span>
+      </p>
+      <p>
+        If the table is empty, it means that all the selected courses are inactive and there are no
+        no transfer rules for them with any college. (A good thing.)
+      </p>
+    </div>
     <table id="transfers-map-table">
     </table>
     <div>
@@ -1263,9 +1296,10 @@ def _map_course():
   colleges = json.loads(request.args.getlist('colleges')[0])
 
   request_type = request.args.get('request_type', default='show-receiving')
-  Course_Map = namedtuple('Course_Map', 'institution count')
   Course_Info = namedtuple('Course_info',
                            'course_id institution discipline catalog_number title course_status')
+  Rule_Info = namedtuple('Rule_Info',
+                         'source_institution discipline group_number destination_institution')
   table_rows = []
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
@@ -1285,45 +1319,65 @@ def _map_course():
     if course_info.course_status != 'A':
       class_info = ' class="inactive-course"'
     course_info_cell =  """
-                          <th title="course_id {}: {} {}"{}>{} {}</th>
+                          <th title="course_id {}: {} {}"{}>{} {} {}</th>
                         """.format(course_info.course_id,
                                    course_info.institution,
                                    course_info.title,
                                    class_info,
+                                   course_info.institution.replace('01', ''),
                                    course_info.discipline,
                                    course_info.catalog_number)
     if request_type == 'show-receiving':
       row_template = '<tr>' + course_info_cell + '{}</tr>'
-      cursor.execute("""select destination_institution, count(*)
+      cursor.execute("""select source_institution,
+                               discipline,
+                               trim(leading ' ' from to_char(group_number, '99999999')),
+                               destination_institution
                         from source_courses
                         where course_id = %s
-                        group by destination_institution
+                        order by source_institution, discipline, destination_institution
                     """, (course_id, ))
 
     else:
       row_template = '<tr>{}' + course_info_cell + '</tr>'
-      cursor.execute("""select source_institution, count(*)
-                    from destination_courses
-                    where course_id = %s
-                    group by source_institution
-                """, (course_id, ))
+      cursor.execute("""select source_institution,
+                               discipline,
+                               trim(leading ' ' from to_char(group_number, '99999999')),
+                               destination_institution
+                        from destination_courses
+                        where course_id = %s
+                        order by source_institution, discipline, destination_institution
+                    """, (course_id, ))
+    rows = [Rule_Info._make(x) for x in cursor.fetchall()]
 
-    rows = [Course_Map._make(x) for x in cursor.fetchall()]
-    course_map = dict()
+    # For each destination/source institution, need the count of number of rules and a list of the
+    # rules.
+    rule_counts = Counter()
+    rules = defaultdict(list)
     for row in rows:
-      course_map[row.institution] = row.count
+      if request_type == 'show-receiving':
+        rule_counts[row.destination_institution] += 1
+        rules[row.destination_institution].append('-'.join(row))
+      else:
+        rule_counts[row.source_institution] += 1
+        rules[row.source_institution].append('-'.join(row))
+
+    # Ignore inactive courses for which there are no rules
+    if sum(rule_counts.values()) == 0 and course_info.course_status != 'A': continue
+
+    # Fill in the data cells for each college
     data_cells = ''
     for college in colleges:
-      if college in course_map.keys():
-        if course_info.course_status == 'A':
-          data_cells += '<td>{}</td>'.format(course_map[college])
-        else:
-          data_cells += '<td class="bogus-rule">{}</td>'.format(course_map[college])
-      else:
-        if course_info.course_status == 'A':
-          data_cells += '<td class="missing-rule">0</td>'
-        else:
-          data_cells += '<td>0</td>'
+      num_rules = rule_counts[college]
+      rules_str = ':'.join(rules[college])
+      class_info = ''
+      if course_info.course_status == 'A' and num_rules == 0 and college != course_info.institution:
+        class_info = ' class="missing-rule"'
+      if course_info.course_status != 'A' and num_rules > 0 and college != course_info.institution:
+        class_info = ' class="bogus-rule"'
+      if num_rules > 0 and college == course_info.institution:
+        class_info = ' class="self-rule"'
+      data_cells += '<td title="{}"{}>{}</td>'.format(rules_str, class_info, num_rules)
     table_rows.append(row_template.format(data_cells))
   conn.close()
   return jsonify('\n'.join(table_rows))
