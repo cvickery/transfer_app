@@ -1190,7 +1190,7 @@ def map_courses():
       </p>
       <p>
         If the table is empty, it means that all the selected courses are inactive and there are no
-        no transfer rules for them with any college. (A good thing.)
+        transfer rules for them with any college. (A good thing.)
       </p>
     </div>
     <table id="transfers-map-table">
