@@ -1192,12 +1192,23 @@ def map_courses():
         If the table is empty, it means that all the selected courses are inactive and there are no
         transfer rules for them with any college. (A good thing.)
       </p>
+      <p>
+        Click on courses to see their catalog information.
+      </p>
+      <p>
+        Click anywhere in these instructions to hide them. Type a question mark to see them again.
+      </p>
     </div>
     <table id="transfers-map-table">
     </table>
     <div>
       <a href="/"><button>main menu</button></a>
       <button id="show-setup">return to setup</button>
+    </div>
+  </div>
+  <div id="pop-up-div">
+    <div id="dismiss-bar">x</div>
+    <div id="pop-up-content">
     </div>
   </div>
   """.format(institution_select)
@@ -1319,7 +1330,7 @@ def _map_course():
     if course_info.course_status != 'A':
       class_info = ' class="inactive-course"'
     course_info_cell =  """
-                          <th title="course_id {}: {} {}"{}>{} {} {}</th>
+                          <th class="selected-course" title="course_id {}: {} {}"{}>{} {} {}</th>
                         """.format(course_info.course_id,
                                    course_info.institution,
                                    course_info.title,

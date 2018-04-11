@@ -2,16 +2,41 @@ $(function ()
 {
   //  Initial Settings
   //  =============================================================================================
-  $('#need-js').hide();
-  $('#please-wait').hide();
-  $('#discipline-span').hide();
-  $('#transfers-map-div').hide();
+  $('#need-js, #please-wait, #discipline-span, #transfers-map-div, #pop-up-div').hide();
+  $('#show-sending, #show-receiving').prop('disabled', true);
+
   $('form').submit(function (event)
   {
     event.preventDefault();
   });
+
+  // Global action: escape key hides pop-ups; question key shows instructions.
+  $('*').keyup(function (event)
+  {
+    if (event.keyCode === 27)
+    {
+      $('#pop-up-div').hide();
+    }
+    if (event.key === '?')
+    {
+      $('.instructions').show();
+    }
+  });
+  // Clicking on the dismiss bar also hides the pop-ups.
+  $('#dismiss-bar').click(function ()
+  {
+    $('#pop-up-div').hide();
+  });
+
+  // Clicking on the instructions hides them.
+  $('.instructions').click(function ()
+  {
+    $(this).hide();
+  });
+
+//  Globals
+//  ===============================================================================================
   var course_id_list = [];
-  $('#show-sending, #show-receiving').prop('disabled', true);
   var institutions = [];
   var institutions_request = $.getJSON($SCRIPT_ROOT + '/_institutions');
   institutions_request.done(function (result, status)
@@ -21,8 +46,8 @@ $(function ()
 
 //  update_course_count()
 //  -----------------------------------------------------------------------------------------------
-/*  Utility to show user how many courses have been selected, and to enable course map if that
- *  number is greater than zero.
+/*  Utility to show user how many courses have been selected, and to enable course map activators if
+ *  that number is greater than zero.
  */
   function update_course_count()
   {
@@ -59,7 +84,6 @@ $(function ()
       if (institution === 'none')
       {
         $('#discipline-span').hide();
-        return;
       }
       else
       {
@@ -72,11 +96,12 @@ $(function ()
           $('#discipline-span').show();
           $('#discipline').change(part_a_change);
         });
-        return;
       }
     }
     if (institution === 'none' || discipline === 'none' || course_groups.length === 0)
     {
+      course_ids_list = [];
+      update_course_count();
       return;
     }
     // Create course_groups_string from the array.
@@ -258,6 +283,26 @@ $(function ()
       $('#transfers-map-table').html(header_row + colleges_row + result);
       $('#setup-div').hide();
       $('#transfers-map-div').show();
+
+      // Event handlers for this table
+      // ==========================================================================================
+      // Clicking on a selected course pops up the catalog description
+      // ----------------------------------------------------------------------------------------------
+      $('.selected-course').click(function ()
+      {
+        var title_string = $(this).attr('title');
+        var matches = title_string.match(/course_id (\d+):/);
+        var course_id = matches[1];
+        var catalog_request = $.getJSON($SCRIPT_ROOT = '/_courses',
+                                        {course_ids: course_id});
+        catalog_request.done(function (result, status)
+        {
+          $('#pop-up-content').html(result[0].html);
+          $('#pop-up-div').show().draggable();
+        });
+      });
+
     });
   });
+
 });

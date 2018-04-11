@@ -100,6 +100,51 @@ td, th {
   background-color: #ccc;
   color: black;
 }
+
 .error {
   color: red;
+}
+
+#dismiss-bar {
+  width: 100%;
+  text-align:right;
+  background-color:#999;
+  color: #333;
+  padding: 0 0.5em;
+  font-size: 1.1em;
+  cursor:default;
+  position: relative;
+  top: -0.5em;
+  left: -0.5em;
+  border-top: 1px solid #111;
+  border-bottom: 1px solid #111;
+  border-radius: 0.25em 0.25em 0 0;
+}
+
+#dismiss-bar:hover {
+  background-color:#bbb;
+  color: #e00;
+}
+
+#pop-up-div {
+  border: 1px solid #333;
+  border-radius: 0.25em;
+  background-color: #eee;
+  color: #111;
+  max-width: 30em;
+  height: 10em;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
+  padding: 0.5em;
+}
+#pop-up-content {
+  height: 9em;
+  overflow-y: auto;
+}
+.catalog-entry {
+  margin: 0;
 }
