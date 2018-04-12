@@ -1468,6 +1468,16 @@ def lookup_rules():
 
   return jsonify(rules)
 
+# /_GROUPS_TO_HTML
+# =================================================================================================
+# AJAX utility for converting a colon-separated list of group keys into displayable description of
+# the rules. Acts as an interface to format_groups().
+@app.route('/_groups_to_html')
+def _groups_to_html():
+  groups = request.args.get('groups_string').split(':')
+  return jsonify('<hr>'.join([format_group(group) for group in groups]))
+
+
 # /_COURSES
 # =================================================================================================
 # This route is for AJAX access to course catalog information.

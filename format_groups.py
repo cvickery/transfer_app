@@ -168,10 +168,10 @@ def format_groups(groups, session):
 # -------------------------------------------------------------------------------------------------
 def format_group(group_key):
   """ Given a group key, return a string that returns a representation of the rule.
-      The name may be confusing, but it makes sense. In a more perfect world, format_groups() might
-      call this to generate the first part of each row in its interactive table. The hold-back is
-      that this function looks up the source and destination courses, but format_groups already has
-      that information.
+      The name of the function may be confusing, but it makes sense. In a more perfect world,
+      format_groups() might call this to generate the first part of each row in its interactive
+      table. The hold-back is that this function looks up the source and destination courses, but
+      format_groups already has that information.
   """
 
   source_institution, discipline, group_number, destination_institution = group_key.split('-')
@@ -271,7 +271,7 @@ def format_group(group_key):
       discipline = course.discipline
       discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                            course.discipline)
-      source_course_list = source_course_list.strip('/') + discipline_str + '-'
+      source_course_list = source_course_list.strip('/') + discipline_str + ' '
     if catalog_number != course.catalog_number:
       catalog_number = course.catalog_number
       source_course_list += '<span title="{}">{}</span>/'.format(
@@ -291,7 +291,7 @@ def format_group(group_key):
       discipline = course.discipline
       discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                            course.discipline)
-      destination_course_list = destination_course_list.strip('/ ') + discipline_str + '-'
+      destination_course_list = destination_course_list.strip('/ ') + discipline_str + ' '
 
     if abs(float(course.credits) - course.transfer_credits) > 0.09:
       course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
@@ -307,7 +307,7 @@ def format_group(group_key):
     row_class = ' class="credit-mismatch"'
 
   rule_str = """
-            <div{} style="padding:0.5em;">
+            <div{}>
               {} at {}, {} credits, transfers to {} as {}, {} credits.
             </div>"""\
           .format(row_class,

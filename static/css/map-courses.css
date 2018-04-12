@@ -141,10 +141,17 @@ td, th {
   margin: auto;
   padding: 0.5em;
 }
+
 #pop-up-content {
   height: 9em;
   overflow-y: auto;
 }
+
 .catalog-entry {
   margin: 0;
+}
+
+.credit-mismatch {
+  background-color: #ffa;
+  color: black;
 }

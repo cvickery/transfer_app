@@ -81,29 +81,34 @@ $(function ()
 
     if ($(this).attr('id') === 'institution')
     {
+      course_id_list = [];
+      update_course_count();
       if (institution === 'none')
       {
         $('#discipline-span').hide();
       }
       else
       {
-        $('#discipline').val('none');
         var discipline_request = $.getJSON($SCRIPT_ROOT + '/_disciplines',
                                            {institution: institution});
         discipline_request.done(function (discipline_select, text_status)
         {
           $('#discipline').replaceWith(discipline_select);
-          $('#discipline-span').show();
+          $('#discipline').val('none');
           $('#discipline').change(part_a_change);
+          $('#discipline-span').show();
         });
+        return;
       }
     }
+
     if (institution === 'none' || discipline === 'none' || course_groups.length === 0)
     {
-      course_ids_list = [];
+      course_id_list = [];
       update_course_count();
       return;
     }
+
     // Create course_groups_string from the array.
     ranges_str = '';
     for (cg = 0; cg < course_groups.length; cg++)
@@ -139,7 +144,7 @@ $(function ()
           break;
       }
     }
-    // Trim trailing semicolor
+    // Trim trailing semicolon
     ranges_str = ranges_str.substring(0, ranges_str.length - 1);
     var find_course_ids_request = $.getJSON($SCRIPT_ROOT + '/_find_course_ids',
                                            {
@@ -221,6 +226,7 @@ $(function ()
    */
   $('#show-setup').mouseup(function ()
   {
+    $('#pop-up-div').hide();
     $('#setup-div').show();
     $('#transfers-map-div').hide();
   });
@@ -270,7 +276,7 @@ $(function ()
     // Get the table body rows from /_map_courses
     $('#show-sending, #show-receiving').prop('disabled', true);
     $('#please-wait').show();
-    var map_request = $.getJSON($SCRIPT_ROOT = '/_map_course',
+    var map_request = $.getJSON($SCRIPT_ROOT + '/_map_course',
                                         {
                                           course_id_list: JSON.stringify(course_id_list),
                                           colleges: JSON.stringify(colleges),
@@ -293,7 +299,7 @@ $(function ()
         var title_string = $(this).attr('title');
         var matches = title_string.match(/course_id (\d+):/);
         var course_id = matches[1];
-        var catalog_request = $.getJSON($SCRIPT_ROOT = '/_courses',
+        var catalog_request = $.getJSON($SCRIPT_ROOT + '/_courses',
                                         {course_ids: course_id});
         catalog_request.done(function (result, status)
         {
@@ -302,6 +308,26 @@ $(function ()
         });
       });
 
+      //  Clicking on a data cell pops up a description of all the rules, if there are any.
+      $('td').click(function ()
+      {
+        var title_string = $(this).attr('title');
+        if (title_string === '')
+        {
+          $('#pop-up-div').hide();
+          return;
+        }
+        var rules = title_string.split(':');
+        var groups_to_html_request = $.getJSON($SCRIPT_ROOT + '/_groups_to_html',
+                                               {
+                                                 groups_string: rules.join(':')
+                                               });
+        groups_to_html_request.done(function (result, status)
+        {
+          $('#pop-up-content').html(result);
+          $('#pop-up-div').show().draggable();
+        });
+      });
     });
   });
 
