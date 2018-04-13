@@ -255,7 +255,7 @@ $(function ()
       if ((institutions[i].bachelors && bachelors) ||
           (institutions[i].associates && associates))
       {
-        colleges.push(institutions[i].code);
+        colleges.push(institutions[i]);
       }
     }
     var header_row = `<tr>
@@ -270,7 +270,8 @@ $(function ()
     var colleges_row = '<tr>';
     for (var c = 0; c < colleges.length; c++)
     {
-      colleges_row += `<th>${colleges[c].replace('01', '')}</th>` ;
+      colleges_row += `<th title="${colleges[c].name}">${colleges[c].code.replace('01', '')}</th>`;
+      colleges[c] = colleges[c].code;
     }
     colleges_row += '</tr>';
     // Get the table body rows from /_map_courses
