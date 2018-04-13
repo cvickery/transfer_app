@@ -239,11 +239,11 @@ $(function ()
     var request_type = $(this).attr('id');
     if (request_type === 'show-sending')
     {
-      $('#map-direction').text('from')
+      $('#map-direction').text('from');
     }
     else
     {
-      $('#map-direction').text('to')
+      $('#map-direction').text('to');
     }
 
     // Header row: "Sending" or "Receiving" Course and list of receiving colleges
