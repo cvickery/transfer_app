@@ -1326,12 +1326,13 @@ def _map_course():
                    """, (course_id, ))
     if cursor.rowcount == 0: continue
     course_info = Course_Info._make(cursor.fetchone())
-    class_info = ''
+    class_info = 'selected-course'
     if course_info.course_status != 'A':
-      class_info = ' class="inactive-course"'
+      class_info = ' class="selected-course inactive-course"'
     course_info_cell =  """
-                          <th class="selected-course" title="course_id {}: {} {}"{}>{} {} {}</th>
-                        """.format(course_info.course_id,
+                          <th {} title="course_id {}: {} {}"{}>{} {} {}</th>
+                        """.format(class_info,
+                                   course_info.course_id,
                                    course_info.institution,
                                    course_info.title,
                                    class_info,

@@ -102,7 +102,11 @@ td, th {
 }
 
 .error {
-  color: red;
+  color: #c30;
+}
+
+.warning {
+  color: #b30;
 }
 
 #dismiss-bar {
