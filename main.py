@@ -1307,6 +1307,9 @@ def _map_course():
   colleges = json.loads(request.args.getlist('colleges')[0])
 
   request_type = request.args.get('request_type', default='show-receiving')
+  print('_map_course\n  course_id_list {}\n  colleges {}\n  request type {}'.format(course_id_list,
+                                                                                    colleges,
+                                                                                    request_type))
   Course_Info = namedtuple('Course_info',
                            'course_id institution discipline catalog_number title course_status')
   Rule_Info = namedtuple('Rule_Info',
@@ -1328,9 +1331,9 @@ def _map_course():
     course_info = Course_Info._make(cursor.fetchone())
     class_info = 'selected-course'
     if course_info.course_status != 'A':
-      class_info = ' class="selected-course inactive-course"'
+      class_info = 'selected-course inactive-course'
     course_info_cell =  """
-                          <th {} title="course_id {}: {} {}"{}>{} {} {}</th>
+                          <th class="{}" title="course_id {}: {} {}"{}>{} {} {}</th>
                         """.format(class_info,
                                    course_info.course_id,
                                    course_info.institution,
