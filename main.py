@@ -123,7 +123,6 @@ def top_menu():
       development, or planned.
     </p>
     <ul>
-      <li>List missing rules</li>
       <li>List rules that have been reviewed and require action</li>
       <li>Show progress in reviewing existing rules, by college, by division/school, and by
       department</li>
