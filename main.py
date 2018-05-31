@@ -1307,9 +1307,9 @@ def _map_course():
   colleges = json.loads(request.args.getlist('colleges')[0])
 
   request_type = request.args.get('request_type', default='show-receiving')
-  print('_map_course\n  course_id_list {}\n  colleges {}\n  request type {}'.format(course_id_list,
-                                                                                    colleges,
-                                                                                    request_type))
+  # print('_map_course\n  course_id_list {}\n  colleges {}\n  request type {}'.format(course_id_list,
+  #                                                                                   colleges,
+  #                                                                                   request_type))
   Course_Info = namedtuple('Course_info',
                            'course_id institution discipline catalog_number title course_status')
   Rule_Info = namedtuple('Rule_Info',
