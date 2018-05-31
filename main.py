@@ -1180,6 +1180,10 @@ def map_courses():
         an error.
       </p>
       <p>
+        If the table is empty, it means that all the selected courses are inactive and there are no
+        transfer rules for them with any college. (A good thing.)
+      </p>
+      <p>
         If a course is active but has zero values for some colleges, they are<span
         class="missing-rule"> highlighted like this.</span>
       </p>
@@ -1188,15 +1192,11 @@ def map_courses():
         class="self-rule"> highlighted like this.</span>
       </p>
       <p>
-        If the table is empty, it means that all the selected courses are inactive and there are no
-        transfer rules for them with any college. (A good thing.)
-      </p>
-      <p>
         Click on courses to see their catalog information. Click on non-zero cells to see details
         about those rule(s).
       </p>
-      <p>
-        Click anywhere in these instructions to hide them. Type a question mark to see them again.
+      <p class="hide-show">
+        Click anywhere in these instructions to hide them.<br>Type a question mark to see them again.
       </p>
     </div>
     <table id="transfers-map-table">

@@ -13,6 +13,11 @@ body {
   border: 1px solid #0cc;
 }
 
+.hide-show {
+  text-align:center;
+  padding:0.5em;
+}
+
 h2 {
   font-size: 1em;
 }
