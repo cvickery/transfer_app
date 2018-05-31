@@ -1192,7 +1192,8 @@ def map_courses():
         transfer rules for them with any college. (A good thing.)
       </p>
       <p>
-        Click on courses to see their catalog information.
+        Click on courses to see their catalog information. Click on non-zero cells to see details
+        about those rule(s).
       </p>
       <p>
         Click anywhere in these instructions to hide them. Type a question mark to see them again.

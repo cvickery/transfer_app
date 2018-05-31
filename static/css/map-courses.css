@@ -109,6 +109,16 @@ td, th {
   color: #b30;
 }
 
+#please-wait {
+  color:#d30;
+  background-color:#ffe;
+  padding:0.5em;
+  border-radius:0.25em;
+  border: 1px solid #d30;
+  font-size: 1.1em
+  ;
+}
+
 #dismiss-bar {
   width: 100%;
   text-align:right;
