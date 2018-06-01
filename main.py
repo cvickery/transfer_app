@@ -114,21 +114,28 @@ def assessment():
 def top_menu():
   """ Display menu of available features.
   """
-  # You can put messages above the menu.
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute("select count(*) from rule_groups")
+  num_rules = cursor.fetchone()[0]
+  cursor.execute("select * from updates")
+  Update = namedtuple('Update', [d[0] for d in cursor.description])
+  updates = [Update._make(row) for row in cursor.fetchall()]
+  catalog_date = 'unknown'
+  rules_date = 'unknown'
+  for update in updates:
+    if update.table_name == 'courses':
+      catalog_date = date2str(update.update_date)
+    if update.table_name == 'rules':
+      rules_date = date2str(update.update_date)
+  cursor.close()
+  conn.close()
+  # You can put messages for below the menu here:
   result =  """
-  <div>
-    <h2>Note</h2>
-    <p>
-      In addition to the functions listed above, the following additional items are under
-      development, or planned.
-    </p>
-    <ul>
-      <li>List rules that have been reviewed and require action</li>
-      <li>Show progress in reviewing existing rules, by college, by division/school, and by
-      department</li>
-    </ul>
+  <div id="update-info">
+    <p><sup>&dagger;</sup>{:,} transfer rules as of {}.</p>
   </div>
-            """
+            """.format(num_rules, rules_date)
   response = make_response(render_template('top-menu.html', result=Markup(result)))
   return response
 
@@ -290,6 +297,7 @@ def do_form_0(request, session):
         </fieldset>
       </form>
     </fieldset>
+    <p><button><a href="/">Main Menu</a></button></p>
     <div id="update-info">
       <p><sup>&dagger;</sup>Transfer rule information last updated {}</p>
       <p>Catalog information last updated {}</p>
@@ -910,7 +918,7 @@ def pending():
   result = """
   <h1>Pending Reviews</h1>
   {}
-  <a href="/"><button>main menu</button></a>
+  <p><a href="/"><button>main menu</button></a></p>
   """.format(table)
   return render_template('transfers.html', result=Markup(result))
 
@@ -1036,11 +1044,6 @@ def lookup():
         </label>
       </div>
     </div>
-    <!--
-    <div id="button-div">
-      <button type="submit">Lookup</button>
-    </div>
-      -->
   </form>
   <hr>
   <h2>Sending Rules</h2>
@@ -1188,6 +1191,10 @@ def map_courses():
         class="missing-rule"> highlighted like this.</span>
       </p>
       <p>
+        If a course transfers only as blanket credit, it is <span class="blanket-credit">highlighted
+        like this.</span>
+      </p>
+      <p>
         If there are any rules that maps courses to their own institution, they are<span
         class="self-rule"> highlighted like this.</span>
       </p>
@@ -1311,7 +1318,13 @@ def _map_course():
   #                                                                                   colleges,
   #                                                                                   request_type))
   Course_Info = namedtuple('Course_info',
-                           'course_id institution discipline catalog_number title course_status')
+                           """course_id
+                              institution
+                              discipline
+                              catalog_number
+                              title
+                              course_status
+                              designation""")
   Rule_Info = namedtuple('Rule_Info',
                          'source_institution discipline group_number destination_institution')
   table_rows = []
@@ -1323,7 +1336,8 @@ def _map_course():
                               discipline,
                               catalog_number,
                               title,
-                              course_status
+                              course_status,
+                              designation
                       from courses
                       where course_id = %s
                    """, (course_id, ))
@@ -1387,11 +1401,15 @@ def _map_course():
       rules_str = ':'.join(rules[college])
       class_info = ''
       if course_info.course_status == 'A' and num_rules == 0 and college != course_info.institution:
-        class_info = ' class="missing-rule"'
+        class_info = 'missing-rule'
+      if num_rules == 1 and (course_info.designation == 'MLA' or course_info.designation == 'MNL'):
+        class_info = 'blanket-credit'
       if course_info.course_status != 'A' and num_rules > 0 and college != course_info.institution:
-        class_info = ' class="bogus-rule"'
+        class_info = 'bogus-rule'
       if num_rules > 0 and college == course_info.institution:
-        class_info = ' class="self-rule"'
+        class_info = 'self-rule'
+      if class_info != '':
+        class_info = ' class="{}"'.format(class_info)
       data_cells += '<td title="{}"{}>{}</td>'.format(rules_str, class_info, num_rules)
     table_rows.append(row_template.format(data_cells))
   conn.close()

@@ -101,6 +101,10 @@ td, th {
   color:red;
 }
 
+.blanket-credit {
+  background-color:#ff0;
+  color:#00c;
+}
 .inactive-course {
   background-color: #ccc;
   color: black;

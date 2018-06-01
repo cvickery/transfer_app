@@ -4,6 +4,7 @@ body {
   padding: 0 1em;
   background-color: #eff;
   color:#333;
+  max-width:40em;
 }
 
 .error {
