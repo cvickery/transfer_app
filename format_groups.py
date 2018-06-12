@@ -103,7 +103,10 @@ def format_groups(groups, session):
         catalog_number = course.catalog_number
         source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
                                                                               course.catalog_number)
-        source_credits += float(course.credits)
+        # If it’s a variable-credit course, what to do? TODO: figure this out!
+        # ====================================================================
+        if '-' not in course.credits:
+          source_credits += float(course.credits)
     source_course_list = source_course_list.strip('/')
 
     row_id_str = row_id_str.strip(':') + '-'
@@ -126,6 +129,7 @@ def format_groups(groups, session):
         course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
       destination_course_list += \
             '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
+
       destination_credits += float(course.transfer_credits)
 
     destination_course_list = destination_course_list.strip('/')

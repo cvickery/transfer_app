@@ -1,4 +1,5 @@
 from pgconnection import pgconnection
+import math
 import re
 
 # CUNYCourse
@@ -19,6 +20,26 @@ class CUNYCourse:
     cursor.execute("select * from courses where course_id = '{}'".format(course_id))
     course = cursor.fetchone()
     if course:
+      # Generate hours-credits string from hours, min_credits, max_credits, credits, fa_credits
+      hours = float(course['hours'])
+      min_credits = float(course['min_credits'])
+      max_credits = float(course['max_credits'])
+      credits = float(course['credits'])
+      fa_credits = float(course['fa_credits'])
+      # Default string: hours and credits using progress_units for credits
+      hours_credits_str = '{:0.1f}hr; {:0.1f}cr;'.format(hours, credits)
+      # Check min, max, and progress units
+      if math.isclose(min_credits, max_credits):
+        if not math.isclose(min_credits, credits):
+          # min and max are the same, but progress is different: append the latter
+          hours_credits_str = hours_credits_str + ' {:0.1f} progress units;'.format(credits)
+      else:
+        # min and max differ: report range and progress units
+        hours_credits_str = '{:0.1f}hr; {:0.1f}—{:0.1f}cr; {:0.1f} progress units;'.format(
+                                                                                    min_credits,
+                                                                                    max_credits,
+                                                                                    credits)
+
       self.exists = True
       cursor.execute("""
                 select * from cuny_subjects where subject = '{}'""".format(course['cuny_subject']))
@@ -71,25 +92,24 @@ class CUNYCourse:
       self.html = """
       <p class="catalog-entry" title="course id: {}"><strong>{} {}: {}</strong> (<em>{}; {}</em>)
       <br/>
-      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>{}
+      {} Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>{}
       """.format(self.course_id,
                  self.discipline,
                  self.catalog_number,
                  self.title,
                  career,
                  cuny_subject,
-                 float(course['hours']),
-                 float(course['credits']),
+                 hours_credits_str,
                  course['requisites'],
                  course['description'],
                  designation,
                  self.attributes)
-      self.title_str = """course_id {}: {} {} {} {:0.1f}hr;{:0.1f}cr""".format(course['course_id'],
+      self.title_str = """course_id {}: {} {} {} {}hr;{}cr""".format(course['course_id'],
                                                               course['discipline'],
                                                               course['catalog_number'].strip(),
                                                               course['title'],
-                                                              float(course['hours']),
-                                                              float(course['credits']))
+                                                              course['hours'],
+                                                              course['credits'])
 
     else:
       self.exists = False
