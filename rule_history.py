@@ -1,6 +1,6 @@
 from collections import namedtuple
 from pgconnection import pgconnection
-from format_groups import format_group
+from format_rules import format_rule
 
 # rule_history()
 # -------------------------------------------------------------------------------------------------
@@ -52,5 +52,5 @@ def rule_history(rule_key):
               </tr>
               {}
             </table>
-           """.format(rule_key, format_group(rule_key), history_rows)
+           """.format(rule_key, format_rule(rule_key), history_rows)
   return result

@@ -56,6 +56,6 @@ class pgconnection:
 
   # Cursor shim
   # By returning the psycopg2 cursor, there is no need to shim other cursor-based functions.
-  def cursor(self):
-    self._cursor = self._connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
+  def cursor(self, cursor_factory=psycopg2.extras.DictCursor):
+    self._cursor = self._connection.cursor(cursor_factory=cursor_factory)
     return self._cursor

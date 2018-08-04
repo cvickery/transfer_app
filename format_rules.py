@@ -41,9 +41,9 @@ def _grade(min_gpa, max_gpa):
   letter = letters[int(round(max_gpa * 3))]
   return 'below ' + letter + ' in'
 
-# format_groups()
+# format_rules()
 # -------------------------------------------------------------------------------------------------
-def format_groups(groups, session):
+def format_rules(groups, session):
   """ Generate HTML table with information about each rule group.
   """
   institution_names = session['institution_names']
@@ -168,14 +168,14 @@ def format_groups(groups, session):
   table += '</tbody></table>'
   return table
 
-# format_group()
+# format_rule()
 # -------------------------------------------------------------------------------------------------
-def format_group(group_key):
+def format_rule(group_key):
   """ Given a group key, return a string that returns a representation of the rule.
       The name of the function may be confusing, but it makes sense. In a more perfect world,
-      format_groups() might call this to generate the first part of each row in its interactive
+      format_rules() might call this to generate the first part of each row in its interactive
       table. The hold-back is that this function looks up the source and destination courses, but
-      format_groups already has that information.
+      format_rules already has that information.
   """
 
   source_institution, discipline, group_number, destination_institution = group_key.split('-')
@@ -257,7 +257,7 @@ def format_group(group_key):
   cursor.execute(q)
   destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
 
-  # Now generate the string, replete with hovers, based on code in format_groups()
+  # Now generate the string, replete with hovers, based on code in format_rules()
   source_credits = 0.0
   grade = ''
   discipline = ''
@@ -306,7 +306,7 @@ def format_group(group_key):
 
   destination_course_list = destination_course_list.strip('/')
 
-  row_class = '' # Needed if this code gets shared with format_groups()
+  row_class = '' # Needed if this code gets shared with format_rules()
   if source_credits != destination_credits:
     row_class = ' class="credit-mismatch"'
 

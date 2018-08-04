@@ -16,12 +16,12 @@ from collections import namedtuple
 from collections import defaultdict
 from collections import Counter
 
-from cuny_course import CUNYCourse
+from cuny_course import CUNYCourse, lookup_course, lookup_courses
 from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_groups import format_group, format_groups
+from format_rules import format_rule, format_rules
 
 from flask import Flask, url_for, render_template, make_response,\
                   redirect, send_file, Markup, request, jsonify
@@ -762,7 +762,7 @@ def do_form_2(request, session):
   groups.sort(key=lambda g: (g.source_institution,
                              g.discipline,
                              g.source_courses[0].catalog_number))
-  rules_table = format_groups(groups, session)
+  rules_table = format_rules(groups, session)
 
   result = """
   <h1>Step 3: Review Transfer Rules</h1>
@@ -1472,7 +1472,7 @@ def lookup_rules():
      order by source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
     """.format(source_dest, course_ids)
     cursor.execute(query)
-    rules = ['<div>{}</div>'.format(format_group(x[0])) for x in cursor.fetchall()]
+    rules = ['<div>{}</div>'.format(format_rule(x[0])) for x in cursor.fetchall()]
     credit_mismatch = False
     for rule in rules:
       if 'credit-mismatch' in rule:
@@ -1493,11 +1493,11 @@ def lookup_rules():
 # /_GROUPS_TO_HTML
 # =================================================================================================
 # AJAX utility for converting a colon-separated list of group keys into displayable description of
-# the rules. Acts as an interface to format_groups().
+# the rules. Acts as an interface to format_rules().
 @app.route('/_groups_to_html')
 def _groups_to_html():
   groups = request.args.get('groups_string').split(':')
-  return jsonify('<hr>'.join([format_group(group) for group in groups]))
+  return jsonify('<hr>'.join([format_rule(group) for group in groups]))
 
 
 # /_COURSES
@@ -1568,73 +1568,79 @@ def _sessions():
 # COURSES PAGE
 # =================================================================================================
 # Pick a college, and see catalog descriptions of all courses currently active there.
+# Allow institution to come from the URL
 @app.route('/courses/', methods=['POST', 'GET'])
 def courses():
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  num_courses = 0
+  num_active_courses = 0
   if request.method == 'POST':
-
-    cursor.execute("select * from cuny_subjects")
-    cuny_subjects = {row['subject']:row['description'] for row in cursor}
-
-    cursor.execute("select * from cuny_careers")
-    careers = {(row['institution'], row['career']): row['description'] for row in cursor}
-
-    cursor.execute("select * from designations")
-    designations = {row['designation']: row['description'] for row in cursor}
-
     institution_code = request.form['inst']
+  else:
+    institution_code = request.args.get('college')
+  if institution_code:
     cursor.execute("""
               select name, date_updated
                 from institutions
-               where code = %s
+               where code ~* %s
                """, [institution_code])
-    row = cursor.fetchone()
-    institution_name = row['name']
-    date_updated = row['date_updated'].strftime('%B %d, %Y')
-    cursor.execute("""
-        select count(*) from courses
-         where institution = %s
-           and course_status = 'A'
-           and can_schedule = 'Y'
-           and discipline_status = 'A'
-        """, [institution_code])
-    num_active_courses = cursor.fetchone()[0]
+    if cursor.rowcount == 1:
+      # Found a college: assuming it offers some courses
+      row = cursor.fetchone()
+      institution_name = row['name']
+      date_updated = row['date_updated'].strftime('%B %d, %Y')
+      cursor.execute("""
+          select count(*) from courses
+           where institution ~* %s
+             and course_status = 'A'
+             and can_schedule = 'Y'
+             and discipline_status = 'A'
+          """, [institution_code])
+      num_active_courses = cursor.fetchone()[0]
 
-    result = """
-      <h1>{} Courses</h1><p class='subtitle'>{:,} active courses as of {}</p>
-      """.format(institution_name, num_active_courses, date_updated)
+      result = """
+        <h1>{} Courses</h1><p class='subtitle'>{:,} active courses as of {}</p>
+        <p id="need-js" class="error">Loading catalog information ...</p>
+        """.format(institution_name, num_active_courses, date_updated)
+      result = result + lookup_courses(institution_code)
+      # cursor.execute("select * from cuny_subjects")
+      # cuny_subjects = {row['subject']:row['description'] for row in cursor}
 
-    query = """
-      select * from courses
-       where institution = '{}'
-         and course_status = 'A'
-         and can_schedule = 'Y'
-         and discipline_status = 'A'
-       order by discipline, catalog_number
-       """.format(institution_code)
-    cursor.execute(query)
+      # cursor.execute("select * from cuny_careers")
+      # careers = {(row['institution'], row['career']): row['description'] for row in cursor}
 
-    for row in cursor:
-      num_courses += 1
-      result = result + """
-      <p class="catalog-entry"><strong title="Course ID: {}">{} {}: {}</strong> (<em>{}; {}: {}</em>)<br/>
-      {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
-      """.format(row['course_id'],
-                 row['discipline'],
-                 row['catalog_number'].strip(),
-                 row['title'],
-                 careers[(row['institution'],row['career'])],
-                 row['cuny_subject'], cuny_subjects[row['cuny_subject']],
-                 float(row['hours']),
-                 float(row['credits']),
-                 row['requisites'],
-                 row['description'],
-                 designations[row['designation']])
+      # cursor.execute("select * from designations")
+      # designations = {row['designation']: row['description'] for row in cursor}
+
+      # query = """
+      #   select * from courses
+      #    where institution ~* '{}'
+      #      and course_status = 'A'
+      #      and can_schedule = 'Y'
+      #      and discipline_status = 'A'
+      #    order by discipline, catalog_number
+      #    """.format(institution_code)
+      # cursor.execute(query)
+
+      # for row in cursor:
+      #   result = result + lookup_course(row['course_id']).html
+        # result = result + """
+        # <p class="catalog-entry"><strong title="Course ID: {}">{} {}: {}</strong> (<em>{}; {}: {}</em>)<br/>
+        # {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
+        # """.format(row['course_id'],
+        #            row['discipline'],
+        #            row['catalog_number'].strip(),
+        #            row['title'],
+        #            careers[(row['institution'],row['career'])],
+        #            row['cuny_subject'], cuny_subjects[row['cuny_subject']],
+        #            float(row['hours']),
+        #            float(row['credits']),
+        #            row['requisites'],
+        #            row['description'],
+        #            designations[row['designation']])
 
   # Form not submitted yet or institution has no courses
-  if num_courses == 0:
+  if num_active_courses == 0:
     prompt = '<h1>List Active Courses</h1><fieldset><legend>Select a College</legend>'
     cursor.execute("select * from institutions order by code")
     n = 0
@@ -1647,6 +1653,7 @@ def courses():
       </div>
       """.format(n, row['code'], n, row['name'])
     result = """
+    <p id="need-js" class="error">This app requires JavaScript.</p>
     <form method="post" action="">
       {}
       <div>

@@ -8,7 +8,7 @@ from collections import namedtuple
 
 from pgconnection import pgconnection
 from cuny_course import CUNYCourse
-from format_groups import format_group
+from format_rules import format_rule
 from status_utils import get_abbr_to_bitmask, status_string
 
 # process_pending()
