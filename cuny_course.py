@@ -91,7 +91,9 @@ def lookup_courses(institution):
          cc.description                     as career,
           c.designation                     as rd,
          rd.description                     as designation,
-          c.course_status                   as course_status
+          c.course_status                   as course_status,
+          c.attributes                      as attributes,
+          c.attribute_descriptions          as attribute_descriptions
 
     from  courses           c,
           institutions      i,
@@ -120,21 +122,6 @@ def lookup_courses(institution):
   for row in cursor.fetchall():
     course = Row._make(row)
 
-    # Have to collect attribute(s) separately 'cause there might be multiple rows
-    course_cursor.execute('select value from course_attributes where course_id = %s',
-                          (course.course_id, ))
-              # select a.attribute_name, a.attribute_value, a.description
-              # from attributes a, course_attributes c
-              # where c.course_id = %s
-              #   and c.name = a.attribute_name
-              #   and c.value = a.attribute_value
-              # """, (course.course_id, ))
-    the_attributes = [row[0] for row in course_cursor.fetchall()]
-    if the_attributes == None or len(the_attributes) == 0:
-      attributes = 'None'
-    else:
-      attributes = ', '.join(the_attributes)
-
     # if one of the components is the primary component (it should be), make it the first one.
     components = course.components
     if len(course.components) > 1:
@@ -149,43 +136,46 @@ def lookup_courses(institution):
     else:
       credits_str = f'{component_str}; {course.min_credits:0.1f}–{course.max_credits:0.1f} cr'
 
-# TODO: fix title string to show cuny_subject for each cross-listed course.
-#
-# BIOL 352: Anthropological Genomics
-# Cross-listed with:
-# ANTH 364: Anthropological Genomics (Undergraduate; Biology)
-#
-# cuny_courses=# select discipline, catalog_number, cuny_subject from courses where course_id = 125393
-# cuny_courses-# ;
-#  discipline | catalog_number | cuny_subject
-# ------------+----------------+--------------
-#  BIOL       | 352            | BIOL
-#  ANTH       | 364            | ANTH
-    title_str = f'{course.discipline} {course.catalog_number}: {course.title}'
+    title_str = f"""
+                  <strong>{course.discipline} {course.catalog_number}: {course.title}</strong>
+                  (<em>{course.career}, {course.cuny_subject}, {course.attributes}</em>)
+                  <br/>Requisites: {course.requisites}"""
     if course.course_id in cross_listed:
+      # For cross-listed courses, it’s normal for the cuny_subject and requisites to change across
+      # members of the group.
+      # But it would be an error for career, requisites, description, designation, etc. to vary, so
+      # we assume they don’t. (There are two known cases of career errors, which OUR is correctins
+      # as we speak. There are no observed  errors of the other types.)
+      # There is no way to get a different attributes list, because those depend only on course_id.
       title_str += '<br/>Cross-listed with:'
       course_cursor.execute("""
-                            select discipline, catalog_number, title
-                            from courses
+                            select c.discipline, c.catalog_number, c.title,
+                              cc. description as career, s.description as cuny_subject,
+                              c.designation, c.requisites, c.attributes
+                            from courses c, cuny_subjects s, cuny_careers cc
                             where course_id = %s
                             and offer_nbr != %s
+                            and cc.career = c.career
+                            and  cc.institution = c.institution
+                            and s.subject = c.cuny_subject
                             order by discipline, catalog_number""",
                             (course.course_id, course.offer_nbr))
       for cross_list in course_cursor.fetchall():
-        title_str += f'<br/>{cross_list.discipline} {cross_list.catalog_number}: {cross_list.title}'
+        title_str += f"""<br/>
+        <strong>{cross_list.discipline} {cross_list.catalog_number}: {cross_list.title}</strong>
+        (<em>{cross_list.career}, {cross_list.cuny_subject}, {cross_list.attributes}</em>)
+        <br/>Requisites: {cross_list.requisites}
+        """
+
     html = html + """
-    <p class="catalog-entry" title="course id: {}"><strong>{}</strong> (<em>{}; {}</em>)
-    <br/>
-    {} Requisites: <em>{}</em><br/>{} (<em>{}</em>)<br>Attributes: {}</p>
+    <p class="catalog-entry" title="course id: {}">{}
+      <br/>{}
+      <br/>{}
+    </p>
     """.format(course.course_id,
                title_str,
-               course.career,
-               course.cuny_subject,
                credits_str,
-               course.requisites,
-               course.description,
-               course.designation,
-               attributes)
+               course.description)
   cursor.close()
   conn.close()
   end = time()
