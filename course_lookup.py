@@ -5,8 +5,25 @@ from collections import namedtuple
 
 import math
 import re
-import sys
 from time import time
+
+""" Globals
+    ----------------------------------------------------------------
+"""
+conn = pgconnection('dbname=cuny_courses')
+cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+
+# Create list of all cross-listed courses’s course_ids
+query = """
+  select course_id from courses
+  where offer_nbr > 1 and offer_nbr < 5
+  group by course_id
+  order by course_id
+        """
+cursor.execute(query)
+cross_listed = [id.course_id for id in cursor.fetchall()]
+cursor.close()
+conn.close()
 
 Course_Info = namedtuple('Course_Info',
                          """
@@ -29,6 +46,7 @@ Course_Info = namedtuple('Course_Info',
                             rd
                             designation
                             attributes
+                            attribute_descriptions
                             title_str
                             html
                          """)
@@ -54,26 +72,15 @@ def lookup_courses(institution):
   """ Lookup all the active courses for an institution. Return giant html string.
   """
   start = time()
-  html = ''
-
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   course_cursor = conn.cursor(cursor_factory=NamedTupleCursor)   # for attribute queries
 
-  # Create list of cross-listed courses’s course_ids
-  query = """
-    select course_id from courses
-    where institution = %s
-    and offer_nbr > 1 and offer_nbr < 5
-    group by course_id
-    order by course_id
-          """
-  cursor.execute(query, (institution,))
-  cross_listed = [id.course_id for id in cursor.fetchall()]
+  html = ''
 
   # print(f'cross-listed courses at {institution}: {cross_listed}')
 
-  query = """
+  institution_query = """
   select  c.course_id                       as course_id,
           c.offer_nbr                       as offer_nbr,
           i.name                            as institution,
@@ -115,7 +122,7 @@ def lookup_courses(institution):
    order by discipline, catalog_number
   """
 
-  cursor.execute(query, (institution,))
+  cursor.execute(institution_query, (institution,))
   Row = namedtuple('Row', [c.name for c in cursor.description])
 
   first_query = time()
@@ -184,7 +191,6 @@ def lookup_courses(institution):
 
 def lookup_course(course_id):
   """ Lookup a course and returned a named tuple with lotso info about it.
-      Used by CUNYCourse as the basis for different views and attributes of the course.
   """
   query = """
     select  i.prompt                          as institution_prompt,
@@ -380,6 +386,7 @@ def lookup_course(course_id):
 #     return self.department
 
 if __name__ == '__main__':
+  import sys
   try:
     courses = lookup_courses(sys.argv[1])
     print(courses)

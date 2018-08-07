@@ -4,7 +4,7 @@ import json
 import re
 import argparse
 
-from cuny_course import CUNYCourse
+from course_lookup import lookup_course
 from pgconnection import pgconnection
 from status_utils import status_string
 DEBUG = False
@@ -278,9 +278,10 @@ def format_rule(group_key):
       source_course_list = source_course_list.strip('/') + discipline_str + ' '
     if catalog_number != course.catalog_number:
       catalog_number = course.catalog_number
-      source_course_list += '<span title="{}">{}</span>/'.format(
-                                                          CUNYCourse(course.course_id).title_str,
-                                                          course.catalog_number)
+      # PROBLEM HERE
+      # source_course_list += '<span title="{}">{}</span>/'.format(
+      #                                                     CUNYCourse(course.course_id).title_str,
+      #                                                     course.catalog_number)
       source_credits += float(course.credits)
   source_course_list = source_course_list.strip('/')
 
@@ -299,9 +300,10 @@ def format_rule(group_key):
 
     if abs(float(course.credits) - course.transfer_credits) > 0.09:
       course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
-    destination_course_list += \
-          '<span title="{}">{}</span>/'.format(CUNYCourse(course.course_id).title_str,
-                                               course_catalog_number)
+    # PROBLEM HERE
+    # destination_course_list += \
+    #       '<span title="{}">{}</span>/'.format(CUNYCourse(course.course_id).title_str,
+    #                                            course_catalog_number)
     destination_credits += float(course.transfer_credits)
 
   destination_course_list = destination_course_list.strip('/')

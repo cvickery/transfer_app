@@ -16,7 +16,7 @@ from collections import namedtuple
 from collections import defaultdict
 from collections import Counter
 
-from cuny_course import CUNYCourse, lookup_course, lookup_courses
+from course_lookup import lookup_courses, lookup_course
 from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
@@ -1531,7 +1531,7 @@ def _courses():
 
 # /_SESSIONS
 # =================================================================================================
-# This route is intended as a utility for pruning dead "mysessiob" entries from the db. A periodic
+# This route is intended as a utility for pruning dead "mysession" entries from the db. A periodic
 # script can access this url to prevent db bloat when millions of people start using the app. Until
 # then, it's just here in case it's needed.
 @app.route('/_sessions')
@@ -1583,7 +1583,7 @@ def courses():
               select name, date_updated
                 from institutions
                where code ~* %s
-               """, [institution_code])
+               """, (institution_code,))
     if cursor.rowcount == 1:
       # Found a college: assuming it offers some courses
       row = cursor.fetchone()
@@ -1600,48 +1600,17 @@ def courses():
 
       result = """
         <h1>{} Courses</h1><p class='subtitle'>{:,} active courses as of {}</p>
+        <p><em>Information in parenthesis following course titles:</em></p>
+        <ul><li>Career</li><li>CUNY Subject</li><li>Course Attributes</li></ul>
         <p id="need-js" class="error">Loading catalog information ...</p>
         """.format(institution_name, num_active_courses, date_updated)
       result = result + lookup_courses(institution_code)
-      # cursor.execute("select * from cuny_subjects")
-      # cuny_subjects = {row['subject']:row['description'] for row in cursor}
 
-      # cursor.execute("select * from cuny_careers")
-      # careers = {(row['institution'], row['career']): row['description'] for row in cursor}
-
-      # cursor.execute("select * from designations")
-      # designations = {row['designation']: row['description'] for row in cursor}
-
-      # query = """
-      #   select * from courses
-      #    where institution ~* '{}'
-      #      and course_status = 'A'
-      #      and can_schedule = 'Y'
-      #      and discipline_status = 'A'
-      #    order by discipline, catalog_number
-      #    """.format(institution_code)
-      # cursor.execute(query)
-
-      # for row in cursor:
-      #   result = result + lookup_course(row['course_id']).html
-        # result = result + """
-        # <p class="catalog-entry"><strong title="Course ID: {}">{} {}: {}</strong> (<em>{}; {}: {}</em>)<br/>
-        # {:0.1f}hr; {:0.1f}cr; Requisites: <em>{}</em><br/>{} (<em>{}</em>)</p>
-        # """.format(row['course_id'],
-        #            row['discipline'],
-        #            row['catalog_number'].strip(),
-        #            row['title'],
-        #            careers[(row['institution'],row['career'])],
-        #            row['cuny_subject'], cuny_subjects[row['cuny_subject']],
-        #            float(row['hours']),
-        #            float(row['credits']),
-        #            row['requisites'],
-        #            row['description'],
-        #            designations[row['designation']])
-
-  # Form not submitted yet or institution has no courses
   if num_active_courses == 0:
-    prompt = '<h1>List Active Courses</h1><fieldset><legend>Select a College</legend>'
+    # No courses yet: prompt user to select an institution
+    prompt = """
+    <h1>List Active Courses</h1><p>Pick a college and say “Please”.</p>
+    <fieldset><legend>Select a College</legend>"""
     cursor.execute("select * from institutions order by code")
     n = 0
     for row in cursor:
