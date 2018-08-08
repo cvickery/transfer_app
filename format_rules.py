@@ -11,6 +11,7 @@ DEBUG = False
 
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
 
+
 # _grade()
 # -------------------------------------------------------------------------------------------------
 def _grade(min_gpa, max_gpa):
@@ -40,6 +41,7 @@ def _grade(min_gpa, max_gpa):
       return 'Pass'
   letter = letters[int(round(max_gpa * 3))]
   return 'below ' + letter + ' in'
+
 
 # format_rules()
 # -------------------------------------------------------------------------------------------------
@@ -89,12 +91,14 @@ def format_rules(groups, session):
 
       course_grade = _grade(course.min_gpa, course.max_gpa)
       if course_grade != grade:
-        if grade != '': source_course_list = source_course_list.strip('/') + '; '
+        if grade != '':
+          source_course_list = source_course_list.strip('/') + '; '
         grade = course_grade
         source_course_list = source_course_list.strip('/') + ' {} '.format(grade)
 
       if discipline != course.discipline:
-        if discipline != '': source_course_list = source_course_list.strip('/') +'; '
+        if discipline != '':
+          source_course_list = source_course_list.strip('/') + '; '
         discipline = course.discipline
         discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                              course.discipline)
@@ -119,7 +123,8 @@ def format_rules(groups, session):
       course_catalog_number = course.catalog_number
       row_id_str += '{}:'.format(course.course_id)
       if discipline != course.discipline:
-        if discipline != '': destination_course_list = destination_course_list.strip('/') +'; '
+        if discipline != '':
+          destination_course_list = destination_course_list.strip('/') + '; '
         discipline = course.discipline
         discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                              course.discipline)
@@ -128,7 +133,7 @@ def format_rules(groups, session):
       if abs(float(course.credits) - course.transfer_credits) > 0.09:
         course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
       destination_course_list += \
-            '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
+          '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
 
       destination_credits += float(course.transfer_credits)
 
@@ -158,7 +163,7 @@ def format_rules(groups, session):
                     institution_names[group.source_institution],
                     re.search('\D+', group.source_institution).group(0),
                     source_course_list,
-                    '{} cr. :: {} cr.'.format(source_credits,destination_credits),
+                    '{} cr. :: {} cr.'.format(source_credits, destination_credits),
                     institution_names[group.destination_institution],
                     re.search('\D+', group.destination_institution).group(0),
                     destination_course_list,
@@ -167,6 +172,7 @@ def format_rules(groups, session):
 
   table += '</tbody></table>'
   return table
+
 
 # format_rule()
 # -------------------------------------------------------------------------------------------------
@@ -192,19 +198,18 @@ def format_rule(group_key):
                               max_gpa
                              """)
   Destination_Course = namedtuple('Destination_Course',
-                            """
-                              course_id
-                              discipline
-                              discipline_name
-                              catalog_number
-                              credits
-                              transfer_credits
-                            """)
+                                  """
+                                    course_id
+                                    discipline
+                                    discipline_name
+                                    catalog_number
+                                    credits
+                                    transfer_credits
+                                  """)
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   cursor.execute("select code, prompt from institutions order by lower(name)")
   institution_names = {row['code']: row['prompt'] for row in cursor}
-
 
   # Get lists of source and destination courses for this rule group
   q = """
@@ -266,12 +271,14 @@ def format_rule(group_key):
   for course in source_courses:
     course_grade = _grade(course.min_gpa, course.max_gpa)
     if course_grade != grade:
-      if grade != '': source_course_list = source_course_list.strip('/') + '; '
+      if grade != '':
+        source_course_list = source_course_list.strip('/') + '; '
       grade = course_grade
       source_course_list = source_course_list.strip('/') + ' {} '.format(grade)
 
     if discipline != course.discipline:
-      if discipline != '': source_course_list = source_course_list.strip('/') +'; '
+      if discipline != '':
+        source_course_list = source_course_list.strip('/') + '; '
       discipline = course.discipline
       discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                            course.discipline)
@@ -292,7 +299,8 @@ def format_rule(group_key):
   for course in destination_courses:
     course_catalog_number = course.catalog_number
     if discipline != course.discipline:
-      if discipline != '': destination_course_list = destination_course_list.strip('/') +'; '
+      if discipline != '':
+        destination_course_list = destination_course_list.strip('/') + '; '
       discipline = course.discipline
       discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                            course.discipline)
@@ -308,7 +316,7 @@ def format_rule(group_key):
 
   destination_course_list = destination_course_list.strip('/')
 
-  row_class = '' # Needed if this code gets shared with format_rules()
+  row_class = ''  # Needed if this code gets shared with format_rules()
   if source_credits != destination_credits:
     row_class = ' class="credit-mismatch"'
 
@@ -325,11 +333,13 @@ def format_rule(group_key):
                   destination_credits)
   return rule_str.replace('Pass', 'Passing grade in')
 
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser('Testing transfer rule groups')
   parser.add_argument('--debug', '-d', action='store_true', default=False)
   args = parser.parse_args()
 
-  if args.debug: DEBUG = true
+  if args.debug:
+    DEBUG = true
 
   print('Unit test not implemented')

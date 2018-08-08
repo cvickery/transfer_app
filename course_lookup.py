@@ -139,7 +139,8 @@ def lookup_courses(institution):
                            components.pop(course.primary_component, None)]
       components = [[component, components[component]] for component in components.keys()]
       components.insert(0, primary_component)
-    component_str = ', '.join([f'{component[1]} hr {component[0].lower()}' for component in components])
+    component_str = ', '.join([f'{component[1]} hr {component[0].lower()}'
+                              for component in components])
     if math.isclose(course.min_credits, course.max_credits):
       credits_str = f'{component_str}; {course.min_credits:0.1f} cr.'
     else:

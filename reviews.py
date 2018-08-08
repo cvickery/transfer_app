@@ -98,7 +98,8 @@ def process_pending(row):
     conn.close()
 
     suffix = 's'
-    if len(reviews) == 1: suffix = ''
+    if len(reviews) == 1:
+      suffix = ''
     return """
     <p>Recorded {} review{} made by <em>{}</em> on {}.</p>
       <table>
@@ -114,4 +115,3 @@ def process_pending(row):
                  email,
                  when_entered.strftime('%B %d, %Y at %I:%M %p'),
                  summaries)
-

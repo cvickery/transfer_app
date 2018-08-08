@@ -6,7 +6,8 @@ import socket
 
 import json
 import uuid
-import datetime, time
+import datetime
+import time
 
 from pgconnection import pgconnection
 
@@ -662,18 +663,17 @@ def do_form_2(request, session):
   if records is None:
     records = []
 
-  #  Now create something that lets you process the groups of rules in first-course-number order.
-  #  ********************************************************************************************
-  #  For each group, get institution, discipline, group_number, first course number. Then go through
-  #  that list, picking out all courses in the group, and querying to get all destination courses
-  #  too.
-  #  A group is keyed by source institution, source discipline, first catalog number, group number,
-  #  and destination institution. There are two (ordered) lists: source courses and destination
-  #  courses. Elements in both courses lists are course id, discipline, discipline name, course
-  #  number (numeric
-  #  part only), and credits. In addition, courses in the source list have the grade requirement,
-  #  whereas the courses in the destination list have the number of transfer credits.
-
+  # Now create something that lets you process the groups of rules in first-course-number order.
+  # ********************************************************************************************
+  # For each group, get institution, discipline, group_number, first course number. Then go through
+  # that list, picking out all courses in the group, and querying to get all destination courses
+  # too.
+  # A group is keyed by source institution, source discipline, first catalog number, group number,
+  # and destination institution. There are two (ordered) lists: source courses and destination
+  # courses. Elements in both courses lists are course id, discipline, discipline name, course
+  # number (numeric
+  # part only), and credits. In addition, courses in the source list have the grade requirement,
+  # whereas the courses in the destination list have the number of transfer credits.
   Group_Info = namedtuple('Group_Info',
                           """
                             source_institution
@@ -860,23 +860,23 @@ def do_form_3(request, session):
     for review in kept_reviews:
       event_type = review['event_type']
       if event_type == 'src-ok':
-          description = review_dict['ok'].format(re.sub('\d+', '',
+          description = review_dict['ok'].format(re.sub(r'\d+', '',
                                                         review['source_institution']))
       elif event_type == 'dest-ok':
-        description = review_dict['ok'].format(re.sub('\d+', '',
+        description = review_dict['ok'].format(re.sub(r'\d+', '',
                                                       review['destination_institution']))
       elif event_type == 'src-not-ok':
-        description = review_dict['not-ok'].format(re.sub('\d+', '',
+        description = review_dict['not-ok'].format(re.sub(r'\d+', '',
                                                           review['source_institution']),
                                                    review['comment_text'])
       elif event_type == 'dest-not-ok':
-        description = review_dict['not-ok'].format(re.sub('\d+', '',
+        description = review_dict['not-ok'].format(re.sub(r'\d+', '',
                                                           review['destination_institution']),
                                                    review['comment_text'])
       else:
         description = review_dict['other'].format(review['comment_text'])
 
-      rule_str = re.sub('</tr>',
+      rule_str = re.sub(r'</tr>',
                         """<td>{}</td></tr>
                         """.format(description), review['rule_str'])
       review_rows += re.sub('<td([^>]*)>', '<td\\1{}>'.format(style_str), rule_str)
@@ -1314,7 +1314,7 @@ def _find_course_ids():
   return_groups = []
   for pair in all_groups:
     # Extract the numeric part of the catalog number, including up to one fractional part.
-    numeric_part = re.search('\d+\.?\d*', pair.catalog_number)
+    numeric_part = re.search(r'\d+\.?\d*', pair.catalog_number)
     if numeric_part is None:
       continue
     numeric_part = float(numeric_part.group(0))
@@ -1454,8 +1454,8 @@ def lookup_rules():
   original_catalog_number = request.args.get('catalog_number')
   # Munge the catalog_number so it makes a good regex and doesn't get tripped up by whitespace in
   # the CF catalog numbers.
-  catalog_number = '^\s*' + \
-      original_catalog_number.strip(' ^').replace('\.', '\\\.').replace('\\\\', '\\')
+  catalog_number = r'^\s*' + \
+      original_catalog_number.strip(' ^').replace(r'\.', r'\\\.').replace(r'\\\\', r'\\')
   # Make sure it will compile when it gets to the db
   try:
     re.compile(catalog_number)
@@ -1516,6 +1516,7 @@ def lookup_rules():
 
   return jsonify(rules)
 
+
 # /_GROUPS_TO_HTML
 # =================================================================================================
 # AJAX utility for converting a colon-separated list of group keys into displayable description of
@@ -1538,7 +1539,8 @@ def _courses():
   course_ids = request.args.get('course_ids', 0)
   already_done = set()
   for course_id in course_ids.split(':'):
-    if course_id in already_done: continue
+    if course_id in already_done:
+      continue
     already_done.add(course_id)
     course = CUNYCourse(course_id)
     if course.exists:
@@ -1546,14 +1548,15 @@ def _courses():
       if course.is_active:
         note = ''
       return_list.append({'course_id': course.course_id,
-                         'institution': course.institution,
-                         'department': course.department,
-                         'discipline': course.discipline,
-                         'catalog_number': course.catalog_number,
-                         'title': course.title,
-                         'html': course.html,
-                         'note': note})
+                          'institution': course.institution,
+                          'department': course.department,
+                          'discipline': course.discipline,
+                          'catalog_number': course.catalog_number,
+                          'title': course.title,
+                          'html': course.html,
+                          'note': note})
   return jsonify(return_list)
+
 
 # /_SESSIONS
 # =================================================================================================
@@ -1586,8 +1589,10 @@ def _sessions():
     cursor.close()
     conn.close()
 
-    if num_expired == 1: msg = '<p>Deleted one expired session.</p>'
-    else: msg = '<p>Deleted {} expired sessions.</p>'.format(num_expired)
+    if num_expired == 1:
+      msg = '<p>Deleted one expired session.</p>'
+    else:
+      msg = '<p>Deleted {} expired sessions.</p>'.format(num_expired)
   return result + '</table>' + msg
 
 
