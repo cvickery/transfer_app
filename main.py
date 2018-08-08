@@ -24,9 +24,9 @@ from rule_history import rule_history
 from format_rules import format_rule, format_rules
 
 from flask import Flask, url_for, render_template, make_response,\
-                  redirect, send_file, Markup, request, jsonify
+    redirect, send_file, Markup, request, jsonify
 
-# Convert YYYY-MM-DD to Month day, year string
+
 def date2str(date):
   """Takes a string in YYYY-MM-DD form and returns a text string with the date in full English form.
   """
@@ -34,6 +34,7 @@ def date2str(date):
             'July', 'August', 'September', 'October', 'November', 'December']
   year, month, day = date.split('-')
   return '{} {}, {}'.format(months[int(month) - 1], int(day), year)
+
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -49,19 +50,22 @@ fh = logging.FileHandler('debugging.log')
 sh = logging.StreamHandler()
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 fh.setFormatter(formatter)
-#logger.addHandler(fh)
+# logger.addHandler(fh)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
 
-#
+
 # Overhead URIs
+# =================================================================================================
 @app.route('/favicon.ico')
 def favicon():
-  return send_file('favicon.ico', mimetype = "image/x-icon")
+  return send_file('favicon.ico', mimetype="image/x-icon")
+
 
 @app.route('/image/<file_name>')
 def image_file(file_name):
   return send_file('static/images/' + file_name + '.png')
+
 
 def error():
   result = "<h1>Error</h1>"
@@ -69,16 +73,18 @@ def error():
 
 # QC Applications
 # =================================================================================================
-# Index: Require user to sign in using  QC email address, and provide a menu of applications.
-# Assessment: Demonstrate accessing G-Suite Assessment repository info.
+# /queens: Require user to sign in using  QC email address, and provide a menu of applications.
+# /assessment: Demonstrate accessing G-Suite Assessment repository info.
 
-# INDEX
+
+# QUEENS PAGE
 # -------------------------------------------------------------------------------------------------
 @app.route('/queens')
 def queens():
   return render_template('queens.html')
 
-# ASSESSMENT
+
+# ASSESSMENT PAGE
 # -------------------------------------------------------------------------------------------------
 @app.route('/assessment')
 def assessment():
@@ -131,7 +137,7 @@ def top_menu():
   cursor.close()
   conn.close()
   # You can put messages for below the menu here:
-  result =  """
+  result = """
   <div id="update-info">
     <p><sup>&dagger;</sup>{:,} transfer rules as of {}.</p>
   </div>
@@ -139,7 +145,8 @@ def top_menu():
   response = make_response(render_template('top-menu.html', result=Markup(result)))
   return response
 
-# REVIEW_TRANSFERS
+
+# REVIEW_RULES PAGE
 # =================================================================================================
 @app.route('/review_rules/', methods=['POST', 'GET'])
 def transfers():
@@ -151,9 +158,9 @@ def transfers():
 
   # Dispatcher for forms
   dispatcher = {
-    'do_form_1': do_form_1,
-    'do_form_2': do_form_2,
-    'do_form_3': do_form_3,
+      'do_form_1': do_form_1,
+      'do_form_2': do_form_2,
+      'do_form_3': do_form_3,
   }
 
   if request.method == 'POST':
@@ -169,6 +176,7 @@ def transfers():
     mysession.remove('destination_disciplines')
     keys = mysession.keys()
     return do_form_0(request, mysession)
+
 
 # do_form_0()
 # -------------------------------------------------------------------------------------------------
@@ -245,10 +253,10 @@ def do_form_0(request, session):
   """
 
   email = ''
-  if request.cookies.get('email') != None:
+  if request.cookies.get('email') is not None:
     email = request.cookies.get('email')
   remember_me = ''
-  if request.cookies.get('remember-me') != None:
+  if request.cookies.get('remember-me') is not None:
     remember_me = 'checked="checked"'
 
   # Return Form 1
@@ -316,6 +324,7 @@ def do_form_0(request, session):
 
   return response
 
+
 # do_form_1()
 # -------------------------------------------------------------------------------------------------
 def do_form_1(request, session):
@@ -333,7 +342,7 @@ def do_form_1(request, session):
   # Get the list of institution names, looked up in do_form_0(), from the session
   try:
     institution_names = session['institution_names']
-  except:
+  except KeyError:
     # the session is expired or invalid. Go back to Step 1.
     return render_template('transfers.html', result=Markup("""
                                                            <h1>Session Expired</h1>
@@ -354,13 +363,13 @@ def do_form_1(request, session):
 
   # The CUNY Subjects table, for getting subject descriptions from their abbreviations
   cursor.execute("select * from cuny_subjects order by subject")
-  subject_names = {row['subject']:row['description'] for row in cursor}
+  subject_names = {row['subject']: row['description'] for row in cursor}
 
   # Generate table headings for source and destination institutions
   sending_is_singleton = False
   sending_heading = 'Sending Colleges’'
   receiving_is_singleton = False
-  receiving_heading ='Receiving Colleges’'
+  receiving_heading = 'Receiving Colleges’'
   criterion = ''
   if len(session['source_institutions']) == 1:
     sending_is_singleton = True
@@ -369,9 +378,10 @@ def do_form_1(request, session):
   if len(session['destination_institutions']) == 1:
     receiving_is_singleton = True
     receiving_heading = '{}’s'.format(institution_names[session['destination_institutions'][0]])
-    if sending_is_singleton: criterion += ' or '
+    if sending_is_singleton:
+      criterion += ' or '
     criterion += 'the receiving college is ' + \
-                  institution_names[session['destination_institutions'][0]]
+        institution_names[session['destination_institutions'][0]]
 
   # Look up all {source_institution, source_discipline, cuny_subject}
   #         and {destination_institution, destination_discipline, cuny_subject}
@@ -399,7 +409,7 @@ def do_form_1(request, session):
   # The CUNY subjects actually used by the source and destination disciplines.
   subjects = set([d.cuny_subject for d in source_disciplines])
   subjects |= set([d.cuny_subject for d in destination_disciplines])
-  subjects.discard('') # empty strings don't match anything in the subjects table.
+  subjects.discard('')  # empty strings don't match anything in the subjects table.
   subjects = sorted(subjects)
 
   cursor.close()
@@ -425,7 +435,7 @@ def do_form_1(request, session):
 
     if sending_is_singleton:
       if len(source_disciplines_set) > 1:
-        source_disciplines_str = '<div>' +'</div><div>'.join(source_disciplines_set) + '</div>'
+        source_disciplines_str = '<div>' + '</div><div>'.join(source_disciplines_set) + '</div>'
       else:
         source_disciplines_str = ''.join(source_disciplines_set)
     else:
@@ -436,7 +446,7 @@ def do_form_1(request, session):
         colleges[discipline[0]].append(discipline[1])
       for college in colleges:
         source_disciplines_str += '<div>{}: <em>{}</em></div>'.format(institution_names[college],
-                                                                  ', '.join(colleges[college]))
+                                                                      ', '.join(colleges[college]))
 
     # Receiving College Disciplines
     destination_disciplines_str = ''
@@ -463,8 +473,8 @@ def do_form_1(request, session):
           colleges[discipline[0]] = []
         colleges[discipline[0]].append(discipline[1])
       for college in colleges:
-        destination_disciplines_str += '<div>{}: <em>{}</em></div>'.format(institution_names[college],
-                                                                       ', '.join(colleges[college]))
+        destination_disciplines_str += '<div>{}: <em>{}</em></div>'.\
+            format(institution_names[college], ', '.join(colleges[college]))
 
     source_box = ''
     if source_disciplines_str != '':
@@ -488,8 +498,7 @@ def do_form_1(request, session):
       <td class="destination-subject f2-cbox">{}</td>
       <td class="destination-subject"><label for="destination-subject-{}">{}</label></td>
     </tr>
-    """.format(
-               subject, source_disciplines_str,
+    """.format(subject, source_disciplines_str,
                source_box,
 
                subject_names[subject],
@@ -533,7 +542,7 @@ def do_form_1(request, session):
 
   # set or clear email-related cookies based on form data
   email = request.form.get('email')
-  session['email'] = email # always valid for this session
+  session['email'] = email  # always valid for this session
   # The email cookie expires now or later, depending on state of "remember me"
   expire_time = datetime.datetime.now()
   remember_me = request.form.get('remember-me')
@@ -582,6 +591,7 @@ def do_form_1(request, session):
   response.set_cookie('remember-me', 'on', expires=expire_time)
   return response
 
+
 # do_form_2()
 # -------------------------------------------------------------------------------------------------
 def do_form_2(request, session):
@@ -600,7 +610,7 @@ def do_form_2(request, session):
   try:
     source_institution_params = ', '.join('%s' for i in session['source_institutions'])
     destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
-  except:
+  except KeyError:
     # the session is expired or invalid. Go back to Step 1.
     return render_template('transfers.html', result=Markup("""
                                                            <h1>Session Expired</h1>
@@ -642,37 +652,38 @@ def do_form_2(request, session):
 
   """.format(source_institution_params, source_institution_params, source_subject_params,
              destination_institution_params)
-  cursor.execute(q, session['source_institutions'] + session['source_institutions'] +
-                  source_subject_list +
-                  session['destination_institutions'])
+  cursor.execute(q, session['source_institutions']
+                 + session['source_institutions']
+                 + source_subject_list
+                 + session['destination_institutions'])
   Record = namedtuple('Record', [d[0] for d in cursor.description])
   records = map(Record._make, cursor.fetchall())
 
-  if records == None: records = []
+  if records is None:
+    records = []
 
-
-  # Now create something that lets you process the groups of rules in first-course-number order.
-  # ********************************************************************************************
-  # For each group, get institution, discipline, group_number, first course number. Then go through
-  # that list, picking out all courses in the group, and querying to get all destination courses
-  # too.
-  # A group is keyed by source institution, source discipline, first catalog number, group number,
-  # and destination institution. There are two (ordered) lists: source courses and destination
-  # courses. Elements in both courses lists are course id, discipline, discipline name, course
-  # number (numeric
-  # part only), and credits. In addition, courses in the source list have the grade requirement,
-  # whereas the courses in the destination list have the number of transfer credits.
+  #  Now create something that lets you process the groups of rules in first-course-number order.
+  #  ********************************************************************************************
+  #  For each group, get institution, discipline, group_number, first course number. Then go through
+  #  that list, picking out all courses in the group, and querying to get all destination courses
+  #  too.
+  #  A group is keyed by source institution, source discipline, first catalog number, group number,
+  #  and destination institution. There are two (ordered) lists: source courses and destination
+  #  courses. Elements in both courses lists are course id, discipline, discipline name, course
+  #  number (numeric
+  #  part only), and credits. In addition, courses in the source list have the grade requirement,
+  #  whereas the courses in the destination list have the number of transfer credits.
 
   Group_Info = namedtuple('Group_Info',
-                         """
-                          source_institution
-                          discipline
-                          group_number
-                          source_courses
-                          destination_institution
-                          destination_courses
-                          status
-                         """)
+                          """
+                            source_institution
+                            discipline
+                            group_number
+                            source_courses
+                            destination_institution
+                            destination_courses
+                            status
+                          """)
   Source_Course = namedtuple('Source_Course',
                              """
                               course_id
@@ -756,8 +767,10 @@ def do_form_2(request, session):
   conn.close()
 
   num_rules = 'are no transfer rules'
-  if len(groups) == 1: num_rules = 'is one transfer rule'
-  if len(groups) > 1: num_rules = 'are {:,} transfer rules'.format(len(groups))
+  if len(groups) == 1:
+    num_rules = 'is one transfer rule'
+  if len(groups) > 1:
+    num_rules = 'are {:,} transfer rules'.format(len(groups))
 
   groups.sort(key=lambda g: (g.source_institution,
                              g.discipline,
@@ -797,6 +810,7 @@ def do_form_2(request, session):
   """.format(num_rules, rules_table)
   return render_template('transfers.html', result=Markup(result))
 
+
 # do_form_3()
 # -------------------------------------------------------------------------------------------------
 def do_form_3(request, session):
@@ -812,7 +826,7 @@ def do_form_3(request, session):
       num_reviews = len(kept_reviews)
       if num_reviews < 13:
         num_reviews = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-                'eleven', 'twelve'][num_reviews - 2]
+                       'eleven', 'twelve'][num_reviews - 2]
       message_tail = '{} reviews'.format(num_reviews)
 
     # Insert these reviews into the pending_reviews table of the db.
@@ -834,7 +848,8 @@ def do_form_3(request, session):
     # Generate description messages
     style_str = ' style="border:1px solid #666;vertical-align:top; padding:0.5em;"'
     suffix = 's'
-    if len(kept_reviews) == 1: suffix = ''
+    if len(kept_reviews) == 1:
+      suffix = ''
     review_rows = """
                       <table style="border-collapse:collapse;">
                         <tr>
@@ -845,19 +860,19 @@ def do_form_3(request, session):
     for review in kept_reviews:
       event_type = review['event_type']
       if event_type == 'src-ok':
-        description = review_dict['ok'].format(re.sub('\d+', '',
-                                                          review['source_institution']))
+          description = review_dict['ok'].format(re.sub('\d+', '',
+                                                        review['source_institution']))
       elif event_type == 'dest-ok':
         description = review_dict['ok'].format(re.sub('\d+', '',
-                                                          review['destination_institution']))
+                                                      review['destination_institution']))
       elif event_type == 'src-not-ok':
         description = review_dict['not-ok'].format(re.sub('\d+', '',
-                                                              review['source_institution']),
-                                                       review['comment_text'])
+                                                          review['source_institution']),
+                                                   review['comment_text'])
       elif event_type == 'dest-not-ok':
         description = review_dict['not-ok'].format(re.sub('\d+', '',
-                                                            review['destination_institution']),
-                                                       review['comment_text'])
+                                                          review['destination_institution']),
+                                                   review['comment_text'])
       else:
         description = review_dict['other'].format(review['comment_text'])
 
@@ -893,6 +908,7 @@ def do_form_3(request, session):
       """.format(email, message_tail)
   return render_template('transfers.html', result=Markup(result))
 
+
 # PENDING PAGE
 # -------------------------------------------------------------------------------------------------
 @app.route('/pending')
@@ -922,6 +938,7 @@ def pending():
   """.format(table)
   return render_template('transfers.html', result=Markup(result))
 
+
 # format_pending()
 # -------------------------------------------------------------------------------------------------
 def format_pending(item):
@@ -933,6 +950,7 @@ def format_pending(item):
     suffix = ''
   return """<tr><td>{} review{} by {} on {}</td></tr>
   """.format(len(reviews), suffix, item['email'], item['when_entered'])
+
 
 # CONFIRMATION PAGE
 # -------------------------------------------------------------------------------------------------
@@ -964,7 +982,7 @@ def confirmation(token):
   return render_template('transfers.html', result=Markup(result))
 
 
-# EVALUATION HISTORY PAGE
+# HISTORY PAGE
 # -------------------------------------------------------------------------------------------------
 # Display the history of review events for a rule.
 #
@@ -976,7 +994,7 @@ def history(rule):
   return render_template('transfers.html', result=Markup(result))
 
 
-# LOOKUP RULES PAGE
+# LOOKUP PAGE
 # -------------------------------------------------------------------------------------------------
 # Lookup all the rules that involve a course.
 #
@@ -1055,7 +1073,8 @@ def lookup():
   """.format(institution_select)
   return render_template('lookup.html', result=Markup(result))
 
-# MAP COURSES PAGE
+
+# MAP_COURSES PAGE
 # -------------------------------------------------------------------------------------------------
 # Map courses at one instituition to all other other institutions, or vice-versa.
 @app.route('/map_courses', methods=['GET'])
@@ -1203,7 +1222,8 @@ def map_courses():
         about those rule(s).
       </p>
       <p class="hide-show">
-        Click anywhere in these instructions to hide them.<br>Type a question mark to see them again.
+        Click anywhere in these instructions to hide them.<br>
+        Type a question mark to see them again.
       </p>
     </div>
     <table id="transfers-map-table">
@@ -1220,6 +1240,7 @@ def map_courses():
   </div>
   """.format(institution_select)
   return render_template('map-courses.html', result=Markup(result))
+
 
 # /_INSTITUTIONS
 # =================================================================================================
@@ -1240,7 +1261,7 @@ def _institutions():
 
 # /_DISCIPLINES
 # =================================================================================================
-# This route is for AJAX access to disciplines offered at a college
+# AJAX access to disciplines offered at a college
 #
 # Look up the disciplines and return the HTML for a select element named discipline.
 @app.route('/_disciplines')
@@ -1259,6 +1280,7 @@ def _disciplines():
     <option value="none" selected="selected">Select a Discipline</option>
     {}
     </select>""".format('\n'.join(disciplines)))
+
 
 # /_FIND_COURSE_IDS
 # AJAX course_id lookup.
@@ -1293,14 +1315,17 @@ def _find_course_ids():
   for pair in all_groups:
     # Extract the numeric part of the catalog number, including up to one fractional part.
     numeric_part = re.search('\d+\.?\d*', pair.catalog_number)
-    if numeric_part == None: continue
+    if numeric_part is None:
+      continue
     numeric_part = float(numeric_part.group(0))
-    while numeric_part > 1000.0: numeric_part = numeric_part / 10.0;
+    while numeric_part > 1000.0:
+      numeric_part = numeric_part / 10.0
     for range in ranges:
       if numeric_part >= range[0] and numeric_part < range[1]:
         return_groups.append(pair)
         continue
   return jsonify(sorted(return_groups, key=lambda pair: pair[1]))
+
 
 # /_MAP_COURSE
 # =================================================================================================
@@ -1314,9 +1339,7 @@ def _map_course():
   colleges = json.loads(request.args.getlist('colleges')[0])
 
   request_type = request.args.get('request_type', default='show-receiving')
-  # print('_map_course\n  course_id_list {}\n  colleges {}\n  request type {}'.format(course_id_list,
-  #                                                                                   colleges,
-  #                                                                                   request_type))
+
   Course_Info = namedtuple('Course_info',
                            """course_id
                               institution
@@ -1341,21 +1364,22 @@ def _map_course():
                       from courses
                       where course_id = %s
                    """, (course_id, ))
-    if cursor.rowcount == 0: continue
+    if cursor.rowcount == 0:
+      continue
     course_info = Course_Info._make(cursor.fetchone())
     class_info = 'selected-course'
     if course_info.course_status != 'A':
       class_info = 'selected-course inactive-course'
-    course_info_cell =  """
-                          <th class="{}" title="course_id {}: {} {}"{}>{} {} {}</th>
-                        """.format(class_info,
-                                   course_info.course_id,
-                                   course_info.institution,
-                                   course_info.title,
-                                   class_info,
-                                   course_info.institution.replace('01', ''),
-                                   course_info.discipline,
-                                   course_info.catalog_number)
+    course_info_cell = """
+                         <th class="{}" title="course_id {}: {} {}"{}>{} {} {}</th>
+                       """.format(class_info,
+                                  course_info.course_id,
+                                  course_info.institution,
+                                  course_info.title,
+                                  class_info,
+                                  course_info.institution.replace('01', ''),
+                                  course_info.discipline,
+                                  course_info.catalog_number)
     if request_type == 'show-receiving':
       row_template = '<tr>' + course_info_cell + '{}</tr>'
       cursor.execute("""select source_institution,
@@ -1392,7 +1416,8 @@ def _map_course():
         rules[row.source_institution].append('-'.join(row))
 
     # Ignore inactive courses for which there are no rules
-    if sum(rule_counts.values()) == 0 and course_info.course_status != 'A': continue
+    if sum(rule_counts.values()) == 0 and course_info.course_status != 'A':
+      continue
 
     # Fill in the data cells for each college
     data_cells = ''
@@ -1415,9 +1440,10 @@ def _map_course():
   conn.close()
   return jsonify('\n'.join(table_rows))
 
+
 # /_LOOKUP_RULES
 # =================================================================================================
-# This route is for AJAX access to the rules applicable to a course or set of courses.
+# AJAX access to the rules applicable to a course or set of courses.
 #
 # Returns up to two HTML strings, one for rules where the course(s) are a sending course, the other
 # where it/they are a receiving course.
@@ -1428,12 +1454,12 @@ def lookup_rules():
   original_catalog_number = request.args.get('catalog_number')
   # Munge the catalog_number so it makes a good regex and doesn't get tripped up by whitespace in
   # the CF catalog numbers.
-  catalog_number =  '^\s*' + \
-                    original_catalog_number.strip(' ^').replace('\.', '\\\.').replace('\\\\', '\\')
+  catalog_number = '^\s*' + \
+      original_catalog_number.strip(' ^').replace('\.', '\\\.').replace('\\\\', '\\')
   # Make sure it will compile when it gets to the db
   try:
     re.compile(catalog_number)
-  except:
+  except re.error:
     return jsonify("""
                    <p class="error">Invalid regular expression:
                    Unable to use "{}" as a catalog number.</p>""".format(original_catalog_number))
@@ -1607,7 +1633,7 @@ def courses():
       result = result + lookup_courses(institution_code)
 
   if num_active_courses == 0:
-    # No courses yet: prompt user to select an institution
+    # No courses yet (bogus or missing institution): prompt user to select an institution
     prompt = """
     <h1>List Active Courses</h1><p>Pick a college and say “Please”.</p>
     <fieldset><legend>Select a College</legend>"""
@@ -1634,6 +1660,7 @@ def courses():
   cursor.close()
   conn.close()
   return render_template('courses.html', result=Markup(result))
+
 
 # /REGEX
 # =================================================================================================

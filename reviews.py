@@ -10,8 +10,7 @@ from pgconnection import pgconnection
 from format_rules import format_rule
 from status_utils import get_abbr_to_bitmask, status_string
 
-# process_pending()
-# -------------------------------------------------------------------------------------------------
+
 def process_pending(row):
   """ Look up the token and generate events. Return as status message.
   """

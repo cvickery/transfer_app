@@ -66,8 +66,10 @@ Course_Info.__new__.__defaults__ = (False,                  # exists
                                     '',                     # credit_details
                                     '',                     # description
                                     '',                     # attributes
-                                    '<p class="catalog-entry"> Not in CUNY Catalog</p>' # html
+                                    '<p class="catalog-entry"> Not in CUNY Catalog</p>'  # html
                                     )
+
+
 def lookup_courses(institution):
   """ Lookup all the active courses for an institution. Return giant html string.
   """
@@ -189,6 +191,7 @@ def lookup_courses(institution):
 
   return html
 
+
 def lookup_course(course_id):
   """ Lookup a course and returned a named tuple with lotso info about it.
   """
@@ -231,7 +234,7 @@ def lookup_course(course_id):
   cursor = conn.cursor()
   try:
     course_id = int(course_id)
-  except:
+  except ValueError:
     return (Course_Info(course_id, False))  # invalid course_id
   cursor.execute(query, (course_id,))
   Row = namedtuple('Row', [c.name for c in cursor.description])
@@ -248,7 +251,7 @@ def lookup_course(course_id):
               """, (course_id, ))
     the_attributes = [row[2] for row in cursor.fetchall()]
     attributes = ''
-    if the_attributes == None or len(the_attributes) == 0:
+    if the_attributes is None or len(the_attributes) == 0:
       pass
     else:
       for attribute in the_attributes:
@@ -282,11 +285,11 @@ def lookup_course(course_id):
                attributes)
 
     title_str = """course_id {}: {} {} {} {:0.1f}hr;{}cr""".format(course_id,
-                                                              row.discipline,
-                                                              row.catalog_number,
-                                                              row.title,
-                                                              row.hours,
-                                                              credits_str)
+                                                                   row.discipline,
+                                                                   row.catalog_number,
+                                                                   row.title,
+                                                                   row.hours,
+                                                                   credits_str)
 
     return Course_Info(course_id,                 # course_id
                        True,                      # exists
@@ -384,6 +387,7 @@ def lookup_course(course_id):
 #     return self.institution
 #   def department(self):
 #     return self.department
+
 
 if __name__ == '__main__':
   import sys
