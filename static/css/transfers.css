@@ -29,6 +29,10 @@ h1 {
   font-size:1.4em;
 }
 
+h1 + div {
+  margin:1em;
+}
+
 h2 {
   font-size:1.2em;
   margin: 0 auto;

@@ -8,13 +8,12 @@ from collections import namedtuple
 
 from pgconnection import pgconnection
 from format_rules import format_rule
-from status_utils import get_abbr_to_bitmask, status_string
+from status_utils import abbr_to_bitmask, status_string
 
 
 def process_pending(row):
   """ Look up the token and generate events. Return as status message.
   """
-  abbr_to_bitmask = get_abbr_to_bitmask()
   token = row['token']
   reviews = json.loads(row['reviews'])
   email = row['email']

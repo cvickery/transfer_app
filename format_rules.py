@@ -77,8 +77,7 @@ def _grade(min_gpa, max_gpa):
 
 # format_rules()
 # -------------------------------------------------------------------------------------------------
-def format_rules(groups, session):
-  print('format_rules:', groups)
+def format_rules(rules, session):
   """ Generate HTML table with information about each rule group.
   """
   institution_names = session['institution_names']
@@ -95,7 +94,7 @@ def format_rules(groups, session):
       </thead>
       <tbody>
       """
-  for group in groups:
+  for rule in rules:
     # The id for the row will be the group id plus lists of course_ids:
     #   Source institution
     #   hyphen
@@ -108,11 +107,11 @@ def format_rules(groups, session):
     #   Colon-separated list of source course_ids
     #   hyphen
     #   Colon-separated list of destination courses_ids
-    group_key = '{}-{}-{}-{}'.format(group.source_institution,
-                                     group.source_discipline,
-                                     group.group_number,
-                                     group.destination_institution)
-    row, description = format_rule(group_key)
+    rule_key = '{}-{}-{}-{}'.format(rule.source_institution,
+                                    rule.source_discipline,
+                                    rule.group_number,
+                                    rule.destination_institution)
+    row, description = format_rule(rule_key, rule.status)
     table += row
   table += '</tbody></table>'
   return table
@@ -120,8 +119,8 @@ def format_rules(groups, session):
 
 # format_rule()
 # -------------------------------------------------------------------------------------------------
-def format_rule(group_key):
-  """ Given a group key, return a string that returns a representation of the rule.
+def format_rule(rule_key, rule_status=0):
+  """ Given a rule key and review status, return a string that returns a representation of the rule.
       The name of the function may be confusing, but it makes sense. In a more perfect world,
       format_rules() might call this to generate the first part of each row in its interactive
       table. The hold-back is that this function looks up the source and destination courses, but
@@ -129,72 +128,76 @@ def format_rule(group_key):
   """
 
   source_institution, source_discipline, group_number, destination_institution = \
-      group_key.split('-')
+      rule_key.split('-')
 
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
   # Get lists of source and destination courses for this rule group
+  #   NOTE: offer_nbr must be one-digit; the last digit of the the group_number
   q = """
       select  sc.course_id,
               c.discipline,
               d.description as discipline_name,
               trim(c.catalog_number),
-              c.credits,
+              c.min_credits,
+              c.max_credits,
               sc.min_gpa,
               sc.max_gpa
        from   source_courses sc, disciplines d, courses c
-       where  source_institution = '{}'
-         and  sc.discipline = '{}'
-         and  sc.group_number = {}
-         and  sc.destination_institution = '{}'
+       where  source_institution = %s
+         and  sc.source_discipline = %s
+         and  sc.group_number = %s
+         and  sc.destination_institution = %s
          and  c.course_id = sc.course_id
+         and  c.offer_nbr = %s
          and  d.institution = c.institution
          and  d.discipline = c.discipline
        order by c.institution,
                 c.discipline,
                 sc.max_gpa desc,
                 substring(c.catalog_number from '\d+\.?\d*')::float
-       """.format(source_institution,
-                  discipline,
-                  group_number,
-                  destination_institution)
-  cursor.execute(q)
+       """
+  cursor.execute(q, (source_institution,
+                     source_discipline,
+                     group_number,
+                     destination_institution,
+                     group_number[-1]))
   source_courses = [c for c in map(Source_Course._make, cursor.fetchall())]
   # groups.sort(key=lambda g: (g.source_institution,
   #                            g.source_discipline,
   #                            g.source_courses[0].catalog_number))
-  source_courses.sort(key=lambda c: (c.discipline, c.catalog_number))
 
   q = """
       select  dc.course_id,
               c.discipline,
               d.description as discipline_name,
               trim(c.catalog_number),
-              c.credits,
+              c.min_credits,
+              c.max_credits,
               dc.transfer_credits
         from  destination_courses dc, disciplines d, courses c
-       where  dc.source_institution = '{}'
-         and  dc.discipline = '{}'
-         and  dc.group_number = {}
-         and  dc.destination_institution = '{}'
+       where  dc.source_institution = %s
+         and  dc.source_discipline = %s
+         and  dc.group_number = %s
+         and  dc.destination_institution = %s
          and  c.course_id = dc.course_id
+         and  c.offer_nbr = %s
          and  d.institution = c.institution
          and  d.discipline = c.discipline
        order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
-       """.format(source_institution,
-                  discipline,
-                  group_number,
-                  destination_institution)
-  cursor.execute(q)
+       """
+  cursor.execute(q, (source_institution,
+                     source_discipline,
+                     group_number,
+                     destination_institution,
+                     group_number[-1]))
   destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
 
-  # The course ids parts
+  # The course ids parts of the table row id
   row_id = '{}-{}-{}'.format(rule_key,
-                             ':'.join(['{:06}'.format(c.course_id) for c in
-                                      group.source_courses]),
-                             ':'.join(['{:06}'.format(c.course_id) for c in
-                                      group.destination_courses]))
+                             ':'.join(['{:06}'.format(c.course_id) for c in source_courses]),
+                             ':'.join(['{:06}'.format(c.course_id) for c in destination_courses]))
   min_source_credits = 0.0
   max_source_credits = 0.0
   grade = ''
@@ -202,7 +205,9 @@ def format_rule(group_key):
   catalog_number = ''
   source_course_list = ''
 
-  for course in group.source_courses:
+  # Source course strings: All the courses have the same discipline, so that gets listed once,
+  # with catalog numbers separated by slashes.
+  for course in source_courses:
     course_grade = _grade(course.min_gpa, course.max_gpa)
     if course_grade != grade:
       if grade != '':
@@ -228,14 +233,14 @@ def format_rule(group_key):
       # So we will check if the transfer credits is in the range of min to max.
       min_source_credits += float(course.min_credits)
       max_source_credits += float(course.max_credits)
-
+  # YOU ARE HERE
   source_course_list = source_course_list.strip('/')
 
   # Build the destination part of the rule group
   destination_credits = 0.0
   discipline = ''
   destination_course_list = ''
-  for course in group.destination_courses:
+  for course in destination_courses:
     course_catalog_number = course.catalog_number
     row_id += '{}:'.format(course.course_id)
     if discipline != course.discipline:
@@ -246,7 +251,7 @@ def format_rule(group_key):
                                                            course.discipline)
       destination_course_list = destination_course_list.strip('/ ') + discipline_str + '-'
 
-    if abs(float(course.credits) - course.transfer_credits) > 0.09:
+    if abs(float(course.min_credits) - course.transfer_credits) > 0.09:
       course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
     destination_course_list += \
         '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
@@ -256,13 +261,18 @@ def format_rule(group_key):
   destination_course_list = destination_course_list.strip('/')
 
   row_class = 'rule'
-  if source_credits != destination_credits:
+  if destination_credits < min_source_credits or destination_credits > max_source_credits:
     row_class = 'rule credit-mismatch'
+
+  if min_source_credits != max_source_credits:
+    source_credits_str = f'{min_source_credits}-{max_source_credits}'
+  else:
+    source_credits_str = f'{min_source_credits}'
 
   # If the rule has been evaluated, the last column is a link to the review history. But if it
   # hasn't been evaluated yet, the last column is just the text that says so.
-  status_cell = status_string(group.status)
-  if group.status != 0:
+  status_cell = status_string(rule_status)
+  if rule_status != 0:
     status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule_key,
                                                                         status_cell)
   status_cell = '<span title="{}">{}</span>'.format(rule_key, status_cell)
@@ -274,22 +284,22 @@ def format_rule(group_key):
               <td>{}</td>
               <td>{}</td>
             </tr>""".format(row_id, row_class,
-                            institution_names[group.source_institution],
-                            re.search(r'\D+', group.source_institution).group(0),
+                            institution_names[source_institution],
+                            re.search(r'\D+', source_institution).group(0),
                             source_course_list,
                             '{} cr. :: {} cr.'
-                            .format(source_credits, destination_credits),
-                            institution_names[group.destination_institution],
-                            re.search(r'\D+', group.destination_institution).group(0),
+                            .format(source_credits_str, destination_credits),
+                            institution_names[destination_institution],
+                            re.search(r'\D+', destination_institution).group(0),
                             destination_course_list,
                             status_cell)
   description = """
-        <div{}>
+        <div class="{}">
           {} at {}, {} credits, transfers to {} as {}, {} credits.
         </div>""".format(row_class,
                          source_course_list,
                          institution_names[source_institution],
-                         source_credits,
+                         source_credits_str,
                          institution_names[destination_institution],
                          destination_course_list,
                          destination_credits)

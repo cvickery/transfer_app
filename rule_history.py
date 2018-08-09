@@ -52,5 +52,5 @@ def rule_history(rule_key):
               </tr>
               {}
             </table>
-           """.format(rule_key, format_rule(rule_key), history_rows)
+           """.format(rule_key, format_rule(rule_key)[1], history_rows)
   return result
