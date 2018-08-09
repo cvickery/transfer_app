@@ -22,7 +22,7 @@ from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_rules import format_rule, format_rules
+from format_rules import format_rule, format_rules, Group_Info
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -41,7 +41,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 #
-# Initialization
+# Module Initialization
 
 Filter = namedtuple('Filter', ['subject', 'college', 'discipline'])
 
@@ -191,7 +191,7 @@ def do_form_0(request, session):
   cursor = conn.cursor()
   # Look up institiution names; pass it on in the session
   cursor.execute("select code, name from institutions order by lower(name)")
-  institution_names = {row['code']: row['name'] for row in cursor}
+  institution_names = {row.code: row.name for row in cursor}
   session['institution_names'] = institution_names
 
   cursor.execute("select count(*) from rule_groups")
@@ -364,7 +364,7 @@ def do_form_1(request, session):
 
   # The CUNY Subjects table, for getting subject descriptions from their abbreviations
   cursor.execute("select * from cuny_subjects order by subject")
-  subject_names = {row['subject']: row['description'] for row in cursor}
+  subject_names = {row.subject: row.description for row in cursor}
 
   # Generate table headings for source and destination institutions
   sending_is_singleton = False
@@ -625,7 +625,7 @@ def do_form_2(request, session):
 
                                                            """))
 
-  # Prepare the query to get the set of rules that match the institutions ans subjects provided.
+  # Prepare the query to get the set of rules that match the institutions and subjects provided.
   source_subject_list = request.form.getlist('source_subject')
   destination_subject_list = request.form.getlist('destination_subject')
 
@@ -639,17 +639,17 @@ def do_form_2(request, session):
 
   q = """
   select r.source_institution,
-         r.discipline,
+         r.source_discipline,
          r.group_number,
          r.destination_institution,
          r.status
     from  rule_groups r
    where  r.source_institution in ({})
-     and  r.discipline in (select discipline
+     and  r.source_discipline in (select discipline
                              from disciplines where institution in ({})
                               and cuny_subject in ({}))
      and  r.destination_institution in ({})
-  order by  r.source_institution, r.discipline, group_number, r.destination_institution
+  order by  r.source_institution, r.source_discipline, group_number, r.destination_institution
 
   """.format(source_institution_params, source_institution_params, source_subject_params,
              destination_institution_params)
@@ -657,7 +657,7 @@ def do_form_2(request, session):
                  + session['source_institutions']
                  + source_subject_list
                  + session['destination_institutions'])
-  Record = namedtuple('Record', [d[0] for d in cursor.description])
+  Record = namedtuple('Record', [d.name for d in cursor.description])
   records = map(Record._make, cursor.fetchall())
 
   if records is None:
@@ -674,94 +674,71 @@ def do_form_2(request, session):
   # number (numeric
   # part only), and credits. In addition, courses in the source list have the grade requirement,
   # whereas the courses in the destination list have the number of transfer credits.
-  Group_Info = namedtuple('Group_Info',
-                          """
-                            source_institution
-                            discipline
-                            group_number
-                            source_courses
-                            destination_institution
-                            destination_courses
-                            status
-                          """)
-  Source_Course = namedtuple('Source_Course',
-                             """
-                              course_id
-                              discipline
-                              discipline_name
-                              catalog_number
-                              credits
-                              min_gpa
-                              max_gpa
-                             """)
-  Destination_Course = namedtuple('Destination_Course',
-                                  """
-                                    course_id
-                                    discipline
-                                    discipline_name
-                                    catalog_number
-                                    credits
-                                    transfer_credits
-                                  """)
+
+  # Namedtuples for the group, sourse, and destination fields of interest
+
   groups = []
   for record in records:
     # Get lists of source and destination courses for this rule group
-    q = """
-        select  sc.course_id,
-                c.discipline,
-                d.description as discipline_name,
-                trim(c.catalog_number),
-                c.credits,
-                sc.min_gpa,
-                sc.max_gpa
-         from   source_courses sc, disciplines d, courses c
-         where  source_institution = '{}'
-           and  sc.discipline = '{}'
-           and  sc.group_number = {}
-           and  sc.destination_institution = '{}'
-           and  c.course_id = sc.course_id
-           and  d.institution = c.institution
-           and  d.discipline = c.discipline
-         order by c.institution,
-                  c.discipline,
-                  sc.max_gpa desc,
-                  substring(c.catalog_number from '\d+\.?\d*')::float
-         """.format(record.source_institution,
-                    record.discipline,
-                    record.group_number,
-                    record.destination_institution)
-    cursor.execute(q)
-    source_courses = [c for c in map(Source_Course._make, cursor.fetchall())]
-
-    q = """
-        select  dc.course_id,
-                c.discipline,
-                d.description as discipline_name,
-                trim(c.catalog_number),
-                c.credits,
-                dc.transfer_credits
-          from  destination_courses dc, disciplines d, courses c
-         where  dc.source_institution = '{}'
-           and  dc.discipline = '{}'
-           and  dc.group_number = {}
-           and  dc.destination_institution = '{}'
-           and  c.course_id = dc.course_id
-           and  d.institution = c.institution
-           and  d.discipline = c.discipline
-         order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
-         """.format(record.source_institution,
-                    record.discipline,
-                    record.group_number,
-                    record.destination_institution)
-    cursor.execute(q)
-    destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
-
+    # q = """
+    #     select  sc.course_id,
+    #             c.discipline,
+    #             d.description as discipline_name,
+    #             trim(c.catalog_number),
+    #             c.min_credits,
+    #             c.max_credits,
+    #             sc.min_gpa,
+    #             sc.max_gpa
+    #      from   source_courses sc, disciplines d, courses c
+    #      where  source_institution = '{}'
+    #        and  sc.source_discipline = '{}'
+    #        and  sc.group_number = {}
+    #        and  sc.destination_institution = '{}'
+    #        and  c.course_id = sc.course_id
+    #        and  d.institution = c.institution
+    #        and  d.discipline = c.discipline
+    #      order by c.institution,
+    #               c.discipline,
+    #               sc.max_gpa desc,
+    #               substring(c.catalog_number from '\d+\.?\d*')::float
+    #      """.format(record.source_institution,
+    #                 record.source_discipline,
+    #                 record.group_number,
+    #                 record.destination_institution)
+    # cursor.execute(q)
+    # source_courses = [c for c in map(Source_Course._make, cursor.fetchall())]
+    # q = """
+    #     select  dc.course_id,
+    #             c.discipline,
+    #             d.description as discipline_name,
+    #             trim(c.catalog_number),
+    #             c.min_credits,
+    #             c.max_credits,
+    #             dc.transfer_credits
+    #       from  destination_courses dc, disciplines d, courses c
+    #      where  dc.source_institution = '{}'
+    #        and  dc.source_discipline = '{}'
+    #        and  dc.group_number = {}
+    #        and  dc.destination_institution = '{}'
+    #        and  c.course_id = dc.course_id
+    #        and  d.institution = c.institution
+    #        and  d.discipline = c.discipline
+    #      order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
+    #      """.format(record.source_institution,
+    #                 record.source_discipline,
+    #                 record.group_number,
+    #                 record.destination_institution)
+    # cursor.execute(q)
+    # destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
+    # print('{}-{}-{}-{}-{}'.format(record.source_institution,
+    #                 record.source_discipline,
+    #                 record.group_number,
+    #                 record.destination_institution,
+    #                 record.status))
     groups.append(Group_Info(record.source_institution,
-                             record.discipline,
+                             record.source_discipline,
                              record.group_number,
-                             source_courses,
                              record.destination_institution,
-                             destination_courses,
                              record.status))
   cursor.close()
   conn.close()
@@ -772,9 +749,9 @@ def do_form_2(request, session):
   if len(groups) > 1:
     num_rules = 'are {:,} transfer rules'.format(len(groups))
 
-  groups.sort(key=lambda g: (g.source_institution,
-                             g.discipline,
-                             g.source_courses[0].catalog_number))
+  # groups.sort(key=lambda g: (g.source_institution,
+  #                            g.source_discipline,
+  #                            g.source_courses[0].catalog_number))
   rules_table = format_rules(groups, session)
 
   result = """
@@ -1491,8 +1468,8 @@ def lookup_rules():
       source_dest = 'destination'
 
     query = """
-    select  distinct
-            source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
+    select distinct
+        source_institution||'-'||source_discipline||'-'||group_number||'-'||destination_institution
       from {}_courses
      where course_id in ({})
      order by source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
@@ -1618,8 +1595,8 @@ def courses():
     if cursor.rowcount == 1:
       # Found a college: assuming it offers some courses
       row = cursor.fetchone()
-      institution_name = row['name']
-      date_updated = row['date_updated'].strftime('%B %d, %Y')
+      institution_name = row.name
+      date_updated = row.date_updated.strftime('%B %d, %Y')
       cursor.execute("""
           select count(*) from courses
            where institution ~* %s
@@ -1651,7 +1628,7 @@ def courses():
         <input type="radio" name="inst" id="inst-{}" value="{}">
         <label for="inst-{}">{}</label>
       </div>
-      """.format(n, row['code'], n, row['name'])
+      """.format(n, row.code, n, row.name)
     result = """
     <p id="need-js" class="error">This app requires JavaScript.</p>
     <form method="post" action="">

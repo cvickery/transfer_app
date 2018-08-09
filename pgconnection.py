@@ -1,50 +1,46 @@
 import psycopg2
-import psycopg2.extras
+from psycopg2.extras import NamedTupleCursor
+
 import os
 import re
 import socket
 
+
 class pgconnection:
-  """
-      Wrappers for psycopg2 connect() and cursor(). The former handles connection to local (testing)
-      db or remote, based on environment variables and whether proxy server is detected or not. The
-      latter takes care of using the DictCursor cursor factory for the connection. Includes shims
+  """ Wrappers for psycopg2 connect() and cursor().
+      The connection will be to:
+        * the local db named cuny_courses if running on GAE
+        * the GAE db named cuny_courses if running on a development machine with pgproxy running
+        * the local testing db named cuny_courses if running on a development machine with pgproxy
+          not running.
+
+      The cursor will use the NamedTupleCursor cursor_factory unless overridden. It includes shims
       for operational connection functions (commit() and close()).
   """
-  # Use psycopg2.connect() to access local (testing) db or the master copy
-  def __init__(self, str):
-    """ Connect to local db, use proxy, or connect directly.
-        If USE_LOCAL_DB is set, connect that db locally (default user, etc.)
-        Otherwise, use /cloudsql... with PGPORT, which will be 5431 if the proxy server
-        is running.
+  def __init__(self, conn_str='dbname=cuny_courses'):
+    """ If proxy server is not running or USE_LOCAL_DB is set, use local db
+        Else bind to GAE db through the proxy server.
     """
-    dbname = os.environ.get('USE_LOCAL_DB')
-    if dbname != None:
-      self._connection = psycopg2.connect('dbname={}'.format(dbname))
-      return
 
-    # Extract the dbname from the connection string and set up for deployed GAE access
-    dbname = re.search('dbname=(\w*)', str).group(1)
-    port = 5432
-    host = '/cloudsql/provost-access-148820:us-east1:cuny-courses'
-    user = 'postgres'
-    password = 'cuny-postgres'
-    # if port 5431 is bound, the proxy is running, and the connection string refers to localhost on
-    # that port
+    # is the proxy server running? (If so, it liatens on port 5431)
     s = socket.socket()
     try:
-      c = s.bind(('localhost', 5431))
-    except:
-      # Unable to bind: proxy must be running
-      host = 'localhost'
-      port = 5431
+      s.bind(('localhost', 5431))
+      proxy_running = True
+    except OSError as e:
+      proxy_running = False
     s.close()
-    conn_str = 'dbname={} host={} port={} user={} password={}'.format(
-        dbname,
-        host,
-        port,
-        user,
-        password)
+
+    # Check environment override of proxy
+    use_local = 'USE_LOCAL_DB' in os.environ.keys()
+
+    if proxy_running and not use_local:
+      conn_str += """
+                  host=/cloudsql/provost-access-148820:us-east1:cuny-courses
+                  user=postgres
+                  password=cuny-postgres
+                  port=5431
+                  """
     self._connection = psycopg2.connect(conn_str)
 
   # Connection shims
@@ -56,6 +52,6 @@ class pgconnection:
 
   # Cursor shim
   # By returning the psycopg2 cursor, there is no need to shim other cursor-based functions.
-  def cursor(self, cursor_factory=psycopg2.extras.DictCursor):
+  def cursor(self, cursor_factory=NamedTupleCursor):
     self._cursor = self._connection.cursor(cursor_factory=cursor_factory)
     return self._cursor

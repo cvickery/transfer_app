@@ -7,9 +7,41 @@ import argparse
 from course_lookup import lookup_course
 from pgconnection import pgconnection
 from status_utils import status_string
+
 DEBUG = False
 
+Group_Info = namedtuple('Group_Info', """
+                        source_institution
+                        source_discipline
+                        group_number
+                        destination_institution
+                        status""")
+
+Source_Course = namedtuple('Source_Course', """
+                           course_id
+                           discipline
+                           discipline_name
+                           catalog_number
+                           min_credits
+                           max_credits
+                           min_gpa
+                           max_gpa
+                           """)
+Destination_Course = namedtuple('Destination_Course', """
+                                course_id
+                                discipline
+                                discipline_name
+                                catalog_number
+                                min_credits
+                                max_credits
+                                transfer_credits""")
+
+conn = pgconnection('dbname=cuny_courses')
+cursor = conn.cursor()
+cursor.execute("select code, prompt from institutions order by lower(name)")
+institution_names = {row.code: row.prompt for row in cursor}
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
+conn.close()
 
 
 # _grade()
@@ -46,6 +78,7 @@ def _grade(min_gpa, max_gpa):
 # format_rules()
 # -------------------------------------------------------------------------------------------------
 def format_rules(groups, session):
+  print('format_rules:', groups)
   """ Generate HTML table with information about each rule group.
   """
   institution_names = session['institution_names']
@@ -75,101 +108,12 @@ def format_rules(groups, session):
     #   Colon-separated list of source course_ids
     #   hyphen
     #   Colon-separated list of destination courses_ids
-    rule_key = '{}-{}-{}-{}'.format(group.source_institution,
-                                    group.discipline,
-                                    group.group_number,
-                                    group.destination_institution)
-    # The source course ids part of the rule group
-    source_credits = 0.0
-    grade = ''
-    discipline = ''
-    catalog_number = ''
-    source_course_list = ''
-    row_id_str = '{}-'.format(rule_key)
-    for course in group.source_courses:
-      row_id_str += '{}:'.format(course.course_id)
-
-      course_grade = _grade(course.min_gpa, course.max_gpa)
-      if course_grade != grade:
-        if grade != '':
-          source_course_list = source_course_list.strip('/') + '; '
-        grade = course_grade
-        source_course_list = source_course_list.strip('/') + ' {} '.format(grade)
-
-      if discipline != course.discipline:
-        if discipline != '':
-          source_course_list = source_course_list.strip('/') + '; '
-        discipline = course.discipline
-        discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
-                                                             course.discipline)
-        source_course_list = source_course_list.strip('/') + discipline_str + '-'
-      if catalog_number != course.catalog_number:
-        catalog_number = course.catalog_number
-        source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
-                                                                              course.catalog_number)
-        # If it’s a variable-credit course, what to do? TODO: figure this out!
-        # ====================================================================
-        if '-' not in course.credits:
-          source_credits += float(course.credits)
-    source_course_list = source_course_list.strip('/')
-
-    row_id_str = row_id_str.strip(':') + '-'
-
-    # Build the destination part of the rule group
-    destination_credits = 0.0
-    discipline = ''
-    destination_course_list = ''
-    for course in group.destination_courses:
-      course_catalog_number = course.catalog_number
-      row_id_str += '{}:'.format(course.course_id)
-      if discipline != course.discipline:
-        if discipline != '':
-          destination_course_list = destination_course_list.strip('/') + '; '
-        discipline = course.discipline
-        discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
-                                                             course.discipline)
-        destination_course_list = destination_course_list.strip('/ ') + discipline_str + '-'
-
-      if abs(float(course.credits) - course.transfer_credits) > 0.09:
-        course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
-      destination_course_list += \
-          '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
-
-      destination_credits += float(course.transfer_credits)
-
-    destination_course_list = destination_course_list.strip('/')
-
-    row_id_str = row_id_str.strip(':')
-    row_class = 'rule'
-    if source_credits != destination_credits:
-      row_class = 'rule credit-mismatch'
-
-    # If the rule has been evaluated, the last column is a link to the review history. But if it
-    # hasn't been evaluated yet, the last column is just the text that says so.
-    status_cell = status_string(group.status)
-    if group.status != 0:
-      status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule_key,
-                                                                          status_cell)
-    status_cell = '<span title="{}">{}</span>'.format(rule_key, status_cell)
-    row = """ <tr id="{}" class="{}">
-                <td title="{}">{}</td>
-                <td>{}</td>
-                <td title="{}">=></td>
-                <td title="{}">{}</td>
-                <td>{}</td>
-                <td>{}</td>
-              </tr>"""\
-            .format(row_id_str, row_class,
-                    institution_names[group.source_institution],
-                    re.search('\D+', group.source_institution).group(0),
-                    source_course_list,
-                    '{} cr. :: {} cr.'.format(source_credits, destination_credits),
-                    institution_names[group.destination_institution],
-                    re.search('\D+', group.destination_institution).group(0),
-                    destination_course_list,
-                    status_cell)
-    table += '  {}\n'.format(row)
-
+    group_key = '{}-{}-{}-{}'.format(group.source_institution,
+                                     group.source_discipline,
+                                     group.group_number,
+                                     group.destination_institution)
+    row, description = format_rule(group_key)
+    table += row
   table += '</tbody></table>'
   return table
 
@@ -184,32 +128,11 @@ def format_rule(group_key):
       format_rules already has that information.
   """
 
-  source_institution, discipline, group_number, destination_institution = group_key.split('-')
+  source_institution, source_discipline, group_number, destination_institution = \
+      group_key.split('-')
 
-  # Code copied from main.do_form_2()
-  Source_Course = namedtuple('Source_Course',
-                             """
-                              course_id
-                              discipline
-                              discipline_name
-                              catalog_number
-                              credits
-                              min_gpa
-                              max_gpa
-                             """)
-  Destination_Course = namedtuple('Destination_Course',
-                                  """
-                                    course_id
-                                    discipline
-                                    discipline_name
-                                    catalog_number
-                                    credits
-                                    transfer_credits
-                                  """)
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute("select code, prompt from institutions order by lower(name)")
-  institution_names = {row['code']: row['prompt'] for row in cursor}
 
   # Get lists of source and destination courses for this rule group
   q = """
@@ -238,6 +161,10 @@ def format_rule(group_key):
                   destination_institution)
   cursor.execute(q)
   source_courses = [c for c in map(Source_Course._make, cursor.fetchall())]
+  # groups.sort(key=lambda g: (g.source_institution,
+  #                            g.source_discipline,
+  #                            g.source_courses[0].catalog_number))
+  source_courses.sort(key=lambda c: (c.discipline, c.catalog_number))
 
   q = """
       select  dc.course_id,
@@ -262,13 +189,20 @@ def format_rule(group_key):
   cursor.execute(q)
   destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
 
-  # Now generate the string, replete with hovers, based on code in format_rules()
-  source_credits = 0.0
+  # The course ids parts
+  row_id = '{}-{}-{}'.format(rule_key,
+                             ':'.join(['{:06}'.format(c.course_id) for c in
+                                      group.source_courses]),
+                             ':'.join(['{:06}'.format(c.course_id) for c in
+                                      group.destination_courses]))
+  min_source_credits = 0.0
+  max_source_credits = 0.0
   grade = ''
   discipline = ''
   catalog_number = ''
   source_course_list = ''
-  for course in source_courses:
+
+  for course in group.source_courses:
     course_grade = _grade(course.min_gpa, course.max_gpa)
     if course_grade != grade:
       if grade != '':
@@ -282,56 +216,85 @@ def format_rule(group_key):
       discipline = course.discipline
       discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                            course.discipline)
-      source_course_list = source_course_list.strip('/') + discipline_str + ' '
+      source_course_list = source_course_list.strip('/') + discipline_str + '-'
     if catalog_number != course.catalog_number:
       catalog_number = course.catalog_number
-      # PROBLEM HERE
-      # source_course_list += '<span title="{}">{}</span>/'.format(
-      #                                                     CUNYCourse(course.course_id).title_str,
-      #                                                     course.catalog_number)
-      source_credits += float(course.credits)
+      source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
+                                                                            course.catalog_number)
+
+      # If it’s a variable-credit course, what to do? TODO: figure this out!
+      # ====================================================================
+      # ?? how often does it happen? 1859 times.
+      # So we will check if the transfer credits is in the range of min to max.
+      min_source_credits += float(course.min_credits)
+      max_source_credits += float(course.max_credits)
+
   source_course_list = source_course_list.strip('/')
 
   # Build the destination part of the rule group
   destination_credits = 0.0
   discipline = ''
   destination_course_list = ''
-  for course in destination_courses:
+  for course in group.destination_courses:
     course_catalog_number = course.catalog_number
+    row_id += '{}:'.format(course.course_id)
     if discipline != course.discipline:
       if discipline != '':
         destination_course_list = destination_course_list.strip('/') + '; '
       discipline = course.discipline
       discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
                                                            course.discipline)
-      destination_course_list = destination_course_list.strip('/ ') + discipline_str + ' '
+      destination_course_list = destination_course_list.strip('/ ') + discipline_str + '-'
 
     if abs(float(course.credits) - course.transfer_credits) > 0.09:
       course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
-    # PROBLEM HERE
-    # destination_course_list += \
-    #       '<span title="{}">{}</span>/'.format(CUNYCourse(course.course_id).title_str,
-    #                                            course_catalog_number)
+    destination_course_list += \
+        '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
+
     destination_credits += float(course.transfer_credits)
 
   destination_course_list = destination_course_list.strip('/')
 
-  row_class = ''  # Needed if this code gets shared with format_rules()
+  row_class = 'rule'
   if source_credits != destination_credits:
-    row_class = ' class="credit-mismatch"'
+    row_class = 'rule credit-mismatch'
 
-  rule_str = """
-            <div{}>
-              {} at {}, {} credits, transfers to {} as {}, {} credits.
-            </div>"""\
-          .format(row_class,
-                  source_course_list,
-                  institution_names[source_institution],
-                  source_credits,
-                  institution_names[destination_institution],
-                  destination_course_list,
-                  destination_credits)
-  return rule_str.replace('Pass', 'Passing grade in')
+  # If the rule has been evaluated, the last column is a link to the review history. But if it
+  # hasn't been evaluated yet, the last column is just the text that says so.
+  status_cell = status_string(group.status)
+  if group.status != 0:
+    status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule_key,
+                                                                        status_cell)
+  status_cell = '<span title="{}">{}</span>'.format(rule_key, status_cell)
+  row = """<tr id="{}" class="{}">
+              <td title="{}">{}</td>
+              <td>{}</td>
+              <td title="{}">=></td>
+              <td title="{}">{}</td>
+              <td>{}</td>
+              <td>{}</td>
+            </tr>""".format(row_id, row_class,
+                            institution_names[group.source_institution],
+                            re.search(r'\D+', group.source_institution).group(0),
+                            source_course_list,
+                            '{} cr. :: {} cr.'
+                            .format(source_credits, destination_credits),
+                            institution_names[group.destination_institution],
+                            re.search(r'\D+', group.destination_institution).group(0),
+                            destination_course_list,
+                            status_cell)
+  description = """
+        <div{}>
+          {} at {}, {} credits, transfers to {} as {}, {} credits.
+        </div>""".format(row_class,
+                         source_course_list,
+                         institution_names[source_institution],
+                         source_credits,
+                         institution_names[destination_institution],
+                         destination_course_list,
+                         destination_credits)
+  description = description.replace('Pass', 'Passing grade in')
+  return row, description
 
 
 if __name__ == "__main__":
