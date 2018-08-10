@@ -22,7 +22,7 @@ from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_rules import format_rule, format_rules, Group_Info
+from format_rules import format_rule, format_rules, Rule_Info
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -657,102 +657,57 @@ def do_form_2(request, session):
                  + session['source_institutions']
                  + source_subject_list
                  + session['destination_institutions'])
-  Record = namedtuple('Record', [d.name for d in cursor.description])
-  records = map(Record._make, cursor.fetchall())
 
-  if records is None:
-    records = []
+  # TODO remove comments
+  # Record = namedtuple('Record', [d.name for d in cursor.description])
+  # records = map(Record._make, cursor.fetchall())
 
-  # Now create something that lets you process the groups of rules in first-course-number order.
-  # ********************************************************************************************
-  # For each group, get institution, discipline, group_number, first course number. Then go through
-  # that list, picking out all courses in the group, and querying to get all destination courses
-  # too.
-  # A group is keyed by source institution, source discipline, first catalog number, group number,
-  # and destination institution. There are two (ordered) lists: source courses and destination
-  # courses. Elements in both courses lists are course id, discipline, discipline name, course
-  # number (numeric
-  # part only), and credits. In addition, courses in the source list have the grade requirement,
-  # whereas the courses in the destination list have the number of transfer credits.
+  # rules = [Rule_Info(row.source_institution,
+  #                    row.source_discipline,
+  #                    row.group_number,
+  #                    row.destination_institution,
+  #                    row.status) for row in cursor.fetchall()]
 
-  # Namedtuples for the group, sourse, and destination fields of interest
+  # rules = [row for row in cursor.fetchall()]
 
-  groups = []
-  for record in records:
-    # Get lists of source and destination courses for this rule group
-    # q = """
-    #     select  sc.course_id,
-    #             c.discipline,
-    #             d.description as discipline_name,
-    #             trim(c.catalog_number),
-    #             c.min_credits,
-    #             c.max_credits,
-    #             sc.min_gpa,
-    #             sc.max_gpa
-    #      from   source_courses sc, disciplines d, courses c
-    #      where  source_institution = '{}'
-    #        and  sc.source_discipline = '{}'
-    #        and  sc.group_number = {}
-    #        and  sc.destination_institution = '{}'
-    #        and  c.course_id = sc.course_id
-    #        and  d.institution = c.institution
-    #        and  d.discipline = c.discipline
-    #      order by c.institution,
-    #               c.discipline,
-    #               sc.max_gpa desc,
-    #               substring(c.catalog_number from '\d+\.?\d*')::float
-    #      """.format(record.source_institution,
-    #                 record.source_discipline,
-    #                 record.group_number,
-    #                 record.destination_institution)
-    # cursor.execute(q)
-    # source_courses = [c for c in map(Source_Course._make, cursor.fetchall())]
-    # q = """
-    #     select  dc.course_id,
-    #             c.discipline,
-    #             d.description as discipline_name,
-    #             trim(c.catalog_number),
-    #             c.min_credits,
-    #             c.max_credits,
-    #             dc.transfer_credits
-    #       from  destination_courses dc, disciplines d, courses c
-    #      where  dc.source_institution = '{}'
-    #        and  dc.source_discipline = '{}'
-    #        and  dc.group_number = {}
-    #        and  dc.destination_institution = '{}'
-    #        and  c.course_id = dc.course_id
-    #        and  d.institution = c.institution
-    #        and  d.discipline = c.discipline
-    #      order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
-    #      """.format(record.source_institution,
-    #                 record.source_discipline,
-    #                 record.group_number,
-    #                 record.destination_institution)
-    # cursor.execute(q)
-    # destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
-    # print('{}-{}-{}-{}-{}'.format(record.source_institution,
-    #                 record.source_discipline,
-    #                 record.group_number,
-    #                 record.destination_institution,
-    #                 record.status))
-    groups.append(Group_Info(record.source_institution,
-                             record.source_discipline,
-                             record.group_number,
-                             record.destination_institution,
-                             record.status))
+  rules = cursor.fetchall()
+  if rules is None:
+    rules = []
+
+                              # Now create something that lets you process the groups of rules in first-course-number order.
+                              # ********************************************************************************************
+                              # For each group, get institution, discipline, group_number, first course number. Then go through
+                              # that list, picking out all courses in the group, and querying to get all destination courses
+                              # too.
+                              # A group is keyed by source institution, source discipline, first catalog number, group number,
+                              # and destination institution. There are two (ordered) lists: source courses and destination
+                              # courses. Elements in both courses lists are course id, discipline, discipline name, course
+                              # number (numeric
+                              # part only), and credits. In addition, courses in the source list have the grade requirement,
+                              # whereas the courses in the destination list have the number of transfer credits.
+
+                              # Namedtuples for the group, sourse, and destination fields of interest
+
+                              # groups = []
+                              # for record in records:
+                              #   groups.append(Group_Info(record.source_institution,
+                              #                            record.source_discipline,
+                              #                            record.group_number,
+                              #                            record.destination_institution,
+                              #                            record.status))
   cursor.close()
   conn.close()
 
   num_rules = 'are no transfer rules'
-  if len(groups) == 1:
+  if len(rules) == 1:
     num_rules = 'is one transfer rule'
-  if len(groups) > 1:
-    num_rules = 'are {:,} transfer rules'.format(len(groups))
+  if len(rules) > 1:
+    num_rules = 'are {:,} transfer rules'.format(len(rules))
 
   # groups.sort(key=lambda g: (g.source_institution,
   #                            g.source_discipline,
   #                            g.source_courses[0].catalog_number))
-  rules_table = format_rules(groups, session)
+  rules_table = format_rules(rules, session)
 
   result = """
   <h1>Step 3: Review Transfer Rules</h1>
@@ -1309,6 +1264,11 @@ def _find_course_ids():
 # AJAX generator of course_map table.
 # Create a table row for each course_id in course_id_list; a column for each element in colleges.
 # Request type tells which type of request: show-sending or show-receiving.
+#
+# TODO: This will include cross-listed courses, which typically have different.
+# I think they should be filtered out when JavaScript asks for it's course_id list. That would
+# mean that this code can remain as-is.
+#
 @app.route('/_map_course')
 def _map_course():
   # Note to self: there has to be a cleaner way to pass an array from JavaScript
@@ -1326,7 +1286,7 @@ def _map_course():
                               course_status
                               designation""")
   Rule_Info = namedtuple('Rule_Info',
-                         'source_institution discipline group_number destination_institution')
+                         'source_institution source_discipline group_number destination_institution')
   table_rows = []
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
@@ -1360,23 +1320,23 @@ def _map_course():
     if request_type == 'show-receiving':
       row_template = '<tr>' + course_info_cell + '{}</tr>'
       cursor.execute("""select source_institution,
-                               discipline,
-                               trim(leading ' ' from to_char(group_number, '99999999')),
+                               source_discipline,
+                               group_number,
                                destination_institution
                         from source_courses
                         where course_id = %s
-                        order by source_institution, discipline, destination_institution
+                        order by source_institution, source_discipline, destination_institution
                     """, (course_id, ))
 
     else:
       row_template = '<tr>{}' + course_info_cell + '</tr>'
       cursor.execute("""select source_institution,
-                               discipline,
-                               trim(leading ' ' from to_char(group_number, '99999999')),
+                               source_discipline,
+                               group_number,
                                destination_institution
                         from destination_courses
                         where course_id = %s
-                        order by source_institution, discipline, destination_institution
+                        order by source_institution, source_discipline, destination_institution
                     """, (course_id, ))
     rows = [Rule_Info._make(x) for x in cursor.fetchall()]
 
@@ -1387,10 +1347,10 @@ def _map_course():
     for row in rows:
       if request_type == 'show-receiving':
         rule_counts[row.destination_institution] += 1
-        rules[row.destination_institution].append('-'.join(row))
+        rules[row.destination_institution].append('-'.join(f'{row}'))
       else:
         rule_counts[row.source_institution] += 1
-        rules[row.source_institution].append('-'.join(row))
+        rules[row.source_institution].append('-'.join(f'{row}'))
 
     # Ignore inactive courses for which there are no rules
     if sum(rule_counts.values()) == 0 and course_info.course_status != 'A':

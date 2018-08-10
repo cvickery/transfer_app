@@ -10,7 +10,7 @@ from status_utils import status_string
 
 DEBUG = False
 
-Group_Info = namedtuple('Group_Info', """
+Rule_Info = namedtuple('Rule_Info', """
                         source_institution
                         source_discipline
                         group_number
@@ -95,10 +95,10 @@ def format_rules(rules, session):
       <tbody>
       """
   for rule in rules:
-    # The id for the row will be the group id plus lists of course_ids:
+    # The id for the row will be the rule id plus lists of course_ids:
     #   Source institution
     #   hyphen
-    #   Discipline
+    #   Source Discipline
     #   hyphen
     #   Group number
     #   hyphen
