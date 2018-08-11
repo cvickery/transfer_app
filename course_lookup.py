@@ -13,7 +13,7 @@ from time import time
 conn = pgconnection('dbname=cuny_courses')
 cursor = conn.cursor(cursor_factory=NamedTupleCursor)
 
-# Create list of all cross-listed courses’s course_ids
+# Public list of all cross-listed courses’s course_ids CUNY-wide
 query = """
   select course_id from courses
   where offer_nbr > 1 and offer_nbr < 5
@@ -69,255 +69,321 @@ Course_Info.__new__.__defaults__ = (False,                  # exists
                                     '<p class="catalog-entry"> Not in CUNY Catalog</p>'  # html
                                     )
 
+# Course info for all courses at an institution
+institution_query = """
+select  c.course_id                       as course_id,
+        c.offer_nbr                       as offer_nbr,
+        i.name                            as institution,
+        s.description                     as cuny_subject,
+        d.description                     as department,
+        c.discipline                      as discipline,
+        trim(both from c.catalog_number)  as catalog_number,
+        c.title                           as title,
+        c.primary_component               as primary_component,
+        c.components                      as components,
+        c.min_credits                     as min_credits,
+        c.max_credits                     as max_credits,
+        c.requisites                      as requisites,
+        c.description                     as description,
+       cc.description                     as career,
+        c.designation                     as rd,
+       rd.description                     as designation,
+        c.course_status                   as course_status,
+        c.attributes                      as attributes,
+        c.attribute_descriptions          as attribute_descriptions
 
-def lookup_courses(institution):
-  """ Lookup all the active courses for an institution. Return giant html string.
-  """
-  start = time()
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-  course_cursor = conn.cursor(cursor_factory=NamedTupleCursor)   # for attribute queries
+  from  courses           c,
+        institutions      i,
+        cuny_departments  d,
+        cuny_subjects     s,
+        cuny_careers      cc,
+        designations      rd
+ where  c.institution = %s
+   and  c.course_status = 'A'
+   and  c.can_schedule = 'Y'
+   and  c.discipline_status = 'A'
+   and  i.code = c.institution
+   and  d.institution = c.institution
+   and  d.department = c.department
+   and  s.subject = c.cuny_subject
+   and  cc.institution = c.institution
+   and  cc.career = c.career
+   and  rd.designation = c.designation
+ order by discipline, catalog_number
+"""
 
-  html = ''
+# Course info for a single course_id
+course_query = """
+select  c.course_id                       as course_id,
+        c.offer_nbr                       as offer_nbr,
+        i.name                            as institution,
+        s.description                     as cuny_subject,
+        d.description                     as department,
+        c.discipline                      as discipline,
+        trim(both from c.catalog_number)  as catalog_number,
+        c.title                           as title,
+        c.primary_component               as primary_component,
+        c.components                      as components,
+        c.min_credits                     as min_credits,
+        c.max_credits                     as max_credits,
+        c.requisites                      as requisites,
+        c.description                     as description,
+       cc.description                     as career,
+        c.designation                     as rd,
+       rd.description                     as designation,
+        c.course_status                   as course_status,
+        c.attributes                      as attributes,
+        c.attribute_descriptions          as attribute_descriptions
 
-  # print(f'cross-listed courses at {institution}: {cross_listed}')
-
-  institution_query = """
-  select  c.course_id                       as course_id,
-          c.offer_nbr                       as offer_nbr,
-          i.name                            as institution,
-          s.description                     as cuny_subject,
-          d.description                     as department,
-          c.discipline                      as discipline,
-          trim(both from c.catalog_number)  as catalog_number,
-          c.title                           as title,
-          c.primary_component               as primary_component,
-          c.components                      as components,
-          c.min_credits                     as min_credits,
-          c.max_credits                     as max_credits,
-          c.requisites                      as requisites,
-          c.description                     as description,
-         cc.description                     as career,
-          c.designation                     as rd,
-         rd.description                     as designation,
-          c.course_status                   as course_status,
-          c.attributes                      as attributes,
-          c.attribute_descriptions          as attribute_descriptions
-
-    from  courses           c,
-          institutions      i,
-          cuny_departments  d,
-          cuny_subjects     s,
-          cuny_careers      cc,
-          designations      rd
-   where  c.institution = %s
-     and  c.course_status = 'A'
-     and  c.can_schedule = 'Y'
-     and  c.discipline_status = 'A'
-     and  i.code = c.institution
-     and  d.institution = c.institution
-     and  d.department = c.department
-     and  s.subject = c.cuny_subject
-     and  cc.institution = c.institution
-     and  cc.career = c.career
-     and  rd.designation = c.designation
-   order by discipline, catalog_number
-  """
-
-  cursor.execute(institution_query, (institution,))
-  Row = namedtuple('Row', [c.name for c in cursor.description])
-
-  first_query = time()
-  for row in cursor.fetchall():
-    course = Row._make(row)
-
-    # if one of the components is the primary component (it should be), make it the first one.
-    components = course.components
-    if len(course.components) > 1:
-      components = dict(course.components)
-      primary_component = [course.primary_component,
-                           components.pop(course.primary_component, None)]
-      components = [[component, components[component]] for component in components.keys()]
-      components.insert(0, primary_component)
-    component_str = ', '.join([f'{component[1]} hr {component[0].lower()}'
-                              for component in components])
-    if math.isclose(course.min_credits, course.max_credits):
-      credits_str = f'{component_str}; {course.min_credits:0.1f} cr.'
-    else:
-      credits_str = f'{component_str}; {course.min_credits:0.1f}–{course.max_credits:0.1f} cr'
-
-    title_str = f"""
-                  <strong>{course.discipline} {course.catalog_number}: {course.title}</strong>
-                  (<em>{course.career}, {course.cuny_subject}, {course.attributes}</em>)
-                  <br/>Requisites: {course.requisites}"""
-    if course.course_id in cross_listed:
-      # For cross-listed courses, it’s normal for the cuny_subject and requisites to change across
-      # members of the group.
-      # But it would be an error for career, requisites, description, designation, etc. to vary, so
-      # we assume they don’t. (There are two known cases of career errors, which OUR is correctins
-      # as we speak. There are no observed  errors of the other types.)
-      # There is no way to get a different attributes list, because those depend only on course_id.
-      title_str += '<br/>Cross-listed with:'
-      course_cursor.execute("""
-                            select c.discipline, c.catalog_number, c.title,
-                              cc. description as career, s.description as cuny_subject,
-                              c.designation, c.requisites, c.attributes
-                            from courses c, cuny_subjects s, cuny_careers cc
-                            where course_id = %s
-                            and offer_nbr != %s
-                            and cc.career = c.career
-                            and  cc.institution = c.institution
-                            and s.subject = c.cuny_subject
-                            order by discipline, catalog_number""",
-                            (course.course_id, course.offer_nbr))
-      for cross_list in course_cursor.fetchall():
-        title_str += f"""<br/>
-        <strong>{cross_list.discipline} {cross_list.catalog_number}: {cross_list.title}</strong>
-        (<em>{cross_list.career}, {cross_list.cuny_subject}, {cross_list.attributes}</em>)
-        <br/>Requisites: {cross_list.requisites}
-        """
-
-    html = html + """
-    <p class="catalog-entry" title="course id: {}">{}
-      <br/>{}
-      <br/>{}
-    </p>
-    """.format(course.course_id,
-               title_str,
-               credits_str,
-               course.description)
-  cursor.close()
-  conn.close()
-  end = time()
-
-  return html
+  from  courses           c,
+        institutions      i,
+        cuny_departments  d,
+        cuny_subjects     s,
+        cuny_careers      cc,
+        designations      rd
+ where  c.course_id = %s
+   and  c.offer_nbr = %s
+   and  c.course_status = 'A'
+   and  c.can_schedule = 'Y'
+   and  c.discipline_status = 'A'
+   and  i.code = c.institution
+   and  d.institution = c.institution
+   and  d.department = c.department
+   and  s.subject = c.cuny_subject
+   and  cc.institution = c.institution
+   and  cc.career = c.career
+   and  rd.designation = c.designation
+ order by discipline, catalog_number
+"""
 
 
-def lookup_course(course_id):
-  """ Lookup a course and returned a named tuple with lotso info about it.
-  """
-  query = """
-    select  i.prompt                          as institution_prompt,
-            i.name                            as institution,
-            s.description                     as cuny_subject,
-            d.description                     as department,
-            c.discipline                      as discipline,
-            trim(both from c.catalog_number)  as catalog_number,
-            c.title                           as title,
-            c.hours                           as hours,
-            c.min_credits                     as min_credits,
-            c.max_credits                     as max_credits,
-            c.credits                         as progress_units,
-            c.fa_credits                      as fin_aid_units,
-            c.requisites                      as requisites,
-            c.description                     as description,
-           cc.description                     as career,
-            c.designation                     as rd,
-           rd.description                     as designation,
-            c.course_status                   as course_status
-
-      from  courses           c,
-            institutions      i,
-            cuny_departments  d,
-            cuny_subjects     s,
-            cuny_careers      cc,
-            designations      rd
-     where  c.course_id = %s
-       and  i.code = c.institution
-       and  d.institution = c.institution
-       and  d.department = c.department
-       and  s.subject = c.cuny_subject
-       and  cc.institution = c.institution
-       and  cc.career = c.career
-       and  rd.designation = c.designation
+# lookup_course()
+# --------------------------------------------------------------------------------------------------
+def lookup_course(course_id, offer_nbr=1):
+  """ Get HTML for one course catalog entry
   """
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  try:
-    course_id = int(course_id)
-  except ValueError:
-    return (Course_Info(course_id, False))  # invalid course_id
-  cursor.execute(query, (course_id,))
-  Row = namedtuple('Row', [c.name for c in cursor.description])
-  if cursor.rowcount == 1:
-    row = Row._make(cursor.fetchone())
+  cursor.execute(course_query, (course_id, offer_nbr))
+  html = ''
+  for course in cursor.fetchall():
+    html += format_course(course)
+  return html
 
-    # Have to collect attribute(s) separately 'cause there might be multiple rows
+
+# lookup_courses()
+# --------------------------------------------------------------------------------------------------
+def lookup_courses(institution):
+  """ Lookup all the active courses for an institution. Return giant html string.
+  """
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+
+  html = ''
+
+  cursor.execute(institution_query, (institution,))
+  for course in cursor.fetchall():
+    html += format_course(course)
+
+  cursor.close()
+  conn.close()
+  return html
+
+
+# format_course()
+# --------------------------------------------------------------------------------------------------
+def format_course(course):
+  """ Given a namedtuple returned by institution_query or course_query, generate an html "catalog"
+      entry for the course
+  """
+
+  # if one of the components is the primary component (it should be), make it the first one.
+  components = course.components
+  if len(course.components) > 1:
+    components = dict(course.components)
+    primary_component = [course.primary_component,
+                         components.pop(course.primary_component, None)]
+    components = [[component, components[component]] for component in components.keys()]
+    components.insert(0, primary_component)
+  component_str = ', '.join([f'{component[1]} hr {component[0].lower()}'
+                            for component in components])
+  if math.isclose(course.min_credits, course.max_credits):
+    credits_str = f'{component_str}; {course.min_credits:0.1f} cr.'
+  else:
+    credits_str = f'{component_str}; {course.min_credits:0.1f}–{course.max_credits:0.1f} cr'
+
+  title_str = f"""
+                <strong>{course.discipline} {course.catalog_number}: {course.title}</strong>
+                (<em>{course.career}, {course.cuny_subject}, {course.attributes}</em>)
+                <br/>Requisites: {course.requisites}"""
+  if course.course_id in cross_listed:
+    # For cross-listed courses, it’s normal for the cuny_subject and requisites to change across
+    # members of the group.
+    # But it would be an error for career, requisites, description, designation, etc. to vary, so
+    # we assume they don’t. (There are two known cases of career errors, which OUR is correctins
+    # as we speak. There are no observed  errors of the other types.)
+    # There is no way to get a different attributes list, because those depend only on course_id.
+    title_str += '<br/>Cross-listed with:'
+    conn = pgconnection('dbname=cuny_courses')
+    cursor = conn.cursor(cursor_factory=NamedTupleCursor)
     cursor.execute("""
-              select a.attribute_name, a.attribute_value, a.description
-              from attributes a, course_attributes c
-              where c.course_id = %s
-                and c.name = a.attribute_name
-                and c.value = a.attribute_value
-              """, (course_id, ))
-    the_attributes = [row[2] for row in cursor.fetchall()]
-    attributes = ''
-    if the_attributes is None or len(the_attributes) == 0:
-      pass
-    else:
-      for attribute in the_attributes:
-        attributes += """
-          <div class="catalog-entry"><strong>Attribute:</strong> {}</div>\n""".format(attribute)
-
+        select c.discipline, c.catalog_number, c.title,
+          cc. description as career, s.description as cuny_subject,
+          c.designation, c.requisites, c.attributes
+        from courses c, cuny_subjects s, cuny_careers cc
+        where course_id = %s
+        and offer_nbr != %s
+        and cc.career = c.career
+        and  cc.institution = c.institution
+        and s.subject = c.cuny_subject
+        order by discipline, catalog_number
+        """, (course.course_id, course.offer_nbr))
+    for cross_list in cursor.fetchall():
+      title_str += f"""<br/>
+      <strong>{cross_list.discipline} {cross_list.catalog_number}: {cross_list.title}</strong>
+      (<em>{cross_list.career}, {cross_list.cuny_subject}, {cross_list.attributes}</em>)
+      <br/>Requisites: {cross_list.requisites}
+      """
     cursor.close()
     conn.close()
 
-    if isclose(row.min_credits, row.max_credits):
-      credits_str = f'{row.min_credits:0.1f}'
-      hours_credits_str = f'{row.hours:0.1f}hr; {row.min_credits:0.1f}cr;'
-    else:
-      credits_str = f'{row.min_credits:0.1f}–{row.max_credits:0.1f}'
-      hours_credits_str = f'{row.hours:0.1f}hr; {row.min_credits:0.1f}–{row.max_credits:0.1f}cr;'
+  html = """
+  <p class="catalog-entry" title="course id: {}">{}
+    <br/>{}
+    <br/>{}
+  </p>
+  """.format(course.course_id,
+             title_str,
+             credits_str,
+             course.description)
+  return html
 
-    html = """
-    <p class="catalog-entry" title="course id: {}"><strong>{} {}: {}</strong> (<em>{}; {}</em>)
-    <br/>
-    {} Requisites: <em>{}</em><br/>{} (<em>{}</em>)<br/>Attributes: {}</p>
-    """.format(course_id,
-               row.discipline,
-               catalog_number,
-               row.title,
-               row.career,
-               row.cuny_subject,
-               hours_credits_str,
-               row.requisites,
-               row.description,
-               row.designation,
-               attributes)
 
-    title_str = """course_id {}: {} {} {} {:0.1f}hr;{}cr""".format(course_id,
-                                                                   row.discipline,
-                                                                   row.catalog_number,
-                                                                   row.title,
-                                                                   row.hours,
-                                                                   credits_str)
+# def lookup_course(course_id):
+#   """ Lookup a course and return a named tuple with lotso info about it.
+#   """
+#   query = """
+#     select  i.prompt                          as institution_prompt,
+#             i.name                            as institution,
+#             s.description                     as cuny_subject,
+#             d.description                     as department,
+#             c.discipline                      as discipline,
+#             trim(both from c.catalog_number)  as catalog_number,
+#             c.title                           as title,
+#             c.hours                           as hours,
+#             c.min_credits                     as min_credits,
+#             c.max_credits                     as max_credits,
+#             c.credits                         as progress_units,
+#             c.fa_credits                      as fin_aid_units,
+#             c.requisites                      as requisites,
+#             c.description                     as description,
+#            cc.description                     as career,
+#             c.designation                     as rd,
+#            rd.description                     as designation,
+#             c.course_status                   as course_status
 
-    return Course_Info(course_id,                 # course_id
-                       True,                      # exists
-                       row.course_status == 'A',  # is_active
-                       row.career,                # career
-                       row.institution_prompt,    # institution_prompt
-                       row.institution,           # institution
-                       row.cuny_subject,          # cuny_subject
-                       row.department,            # department
-                       row.discipline,            # discipline
-                       row.catalog_number,        # catalog_number
-                       row.title,                 # title
-                       row.hours,                 # hours
-                       row.min_credits,           # min_credits
-                       row.max_credits,           # max_credits
-                       row.progress_units,        # progress_units
-                       row.fin_aid_units,         # fin_aid_units
-                       row.requisites,            # requisites
-                       row.description,           # description
-                       row.rd,                    # rd
-                       row.designation,           # designation
-                       attributes,                # attributes
-                       title_str,                 # title_str
-                       html                       # html
-                       )
-  else:
-    return Course_Info(course_id, False)
+#       from  courses           c,
+#             institutions      i,
+#             cuny_departments  d,
+#             cuny_subjects     s,
+#             cuny_careers      cc,
+#             designations      rd
+#      where  c.course_id = %s
+#        and  i.code = c.institution
+#        and  d.institution = c.institution
+#        and  d.department = c.department
+#        and  s.subject = c.cuny_subject
+#        and  cc.institution = c.institution
+#        and  cc.career = c.career
+#        and  rd.designation = c.designation
+#   """
+#   conn = pgconnection('dbname=cuny_courses')
+#   cursor = conn.cursor()
+#   try:
+#     course_id = int(course_id)
+#   except ValueError:
+#     return (Course_Info(course_id, False))  # invalid course_id
+#   cursor.execute(query, (course_id,))
+#   Row = namedtuple('Row', [c.name for c in cursor.description])
+#   if cursor.rowcount == 1:
+#     row = Row._make(cursor.fetchone())
+
+#     # Have to collect attribute(s) separately 'cause there might be multiple rows
+#     cursor.execute("""
+#               select a.attribute_name, a.attribute_value, a.description
+#               from attributes a, course_attributes c
+#               where c.course_id = %s
+#                 and c.name = a.attribute_name
+#                 and c.value = a.attribute_value
+#               """, (course_id, ))
+#     the_attributes = [row[2] for row in cursor.fetchall()]
+#     attributes = ''
+#     if the_attributes is None or len(the_attributes) == 0:
+#       pass
+#     else:
+#       for attribute in the_attributes:
+#         attributes += """
+#           <div class="catalog-entry"><strong>Attribute:</strong> {}</div>\n""".format(attribute)
+
+#     cursor.close()
+#     conn.close()
+
+#     if isclose(row.min_credits, row.max_credits):
+#       credits_str = f'{row.min_credits:0.1f}'
+#       hours_credits_str = f'{row.hours:0.1f}hr; {row.min_credits:0.1f}cr;'
+#     else:
+#       credits_str = f'{row.min_credits:0.1f}–{row.max_credits:0.1f}'
+#       hours_credits_str = f'{row.hours:0.1f}hr; {row.min_credits:0.1f}–{row.max_credits:0.1f}cr;'
+
+#     html = """
+#     <p class="catalog-entry" title="course id: {}"><strong>{} {}: {}</strong> (<em>{}; {}</em>)
+#     <br/>
+#     {} Requisites: <em>{}</em><br/>{} (<em>{}</em>)<br/>Attributes: {}</p>
+#     """.format(course_id,
+#                row.discipline,
+#                catalog_number,
+#                row.title,
+#                row.career,
+#                row.cuny_subject,
+#                hours_credits_str,
+#                row.requisites,
+#                row.description,
+#                row.designation,
+#                attributes)
+
+#     title_str = """course_id {}: {} {} {} {:0.1f}hr;{}cr""".format(course_id,
+#                                                                    row.discipline,
+#                                                                    row.catalog_number,
+#                                                                    row.title,
+#                                                                    row.hours,
+#                                                                    credits_str)
+
+#     return Course_Info(course_id,                 # course_id
+#                        True,                      # exists
+#                        row.course_status == 'A',  # is_active
+#                        row.career,                # career
+#                        row.institution_prompt,    # institution_prompt
+#                        row.institution,           # institution
+#                        row.cuny_subject,          # cuny_subject
+#                        row.department,            # department
+#                        row.discipline,            # discipline
+#                        row.catalog_number,        # catalog_number
+#                        row.title,                 # title
+#                        row.hours,                 # hours
+#                        row.min_credits,           # min_credits
+#                        row.max_credits,           # max_credits
+#                        row.progress_units,        # progress_units
+#                        row.fin_aid_units,         # fin_aid_units
+#                        row.requisites,            # requisites
+#                        row.description,           # description
+#                        row.rd,                    # rd
+#                        row.designation,           # designation
+#                        attributes,                # attributes
+#                        title_str,                 # title_str
+#                        html                       # html
+#                        )
+#   else:
+#     return Course_Info(course_id, False)
 
 # CUNYCourse
 # -------------------------------------------------------------------------------------------------

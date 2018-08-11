@@ -17,7 +17,7 @@ from collections import namedtuple
 from collections import defaultdict
 from collections import Counter
 
-from course_lookup import lookup_courses, lookup_course
+from course_lookup import lookup_courses, lookup_course, Course_Info
 from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
@@ -1479,7 +1479,7 @@ def _courses():
     if course_id in already_done:
       continue
     already_done.add(course_id)
-    course = CUNYCourse(course_id)
+    course = lookup_course(course_id)  # BUT lookup_course RETURNS HTML *** TODO
     if course.exists:
       note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
       if course.is_active:
