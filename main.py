@@ -17,7 +17,7 @@ from collections import namedtuple
 from collections import defaultdict
 from collections import Counter
 
-from course_lookup import lookup_courses, lookup_course, Course_Info
+from course_lookup import lookup_courses, lookup_course
 from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
@@ -1215,15 +1215,17 @@ def _disciplines():
 
 
 # /_FIND_COURSE_IDS
+# ================================================================================================
 # AJAX course_id lookup.
 @app.route('/_find_course_ids')
 def _find_course_ids():
   """ Given an institution and discipline, get all the matching course_ids. Then use course_groups
       to filter out any that are not wanted.
   """
+  # TODO Need to use offer_nbr to filter out course_ids for cross-listed courses in a different
+  # discipline **************************************************************************************************************************
   institution = request.args.get('institution')
   discipline = request.args.get('discipline')
-  Pairs = namedtuple('Pairs', 'course_id catalog_number')
   ranges_str = request.args.get('ranges_str')
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
@@ -1231,7 +1233,8 @@ def _find_course_ids():
                     from courses
                     where institution = %s and discipline = %s
                  """, (institution, discipline))
-  all_groups = [Pairs._make(x) for x in cursor.fetchall()]
+  all_groups = cursor.fetchall()
+
   # Filter out the undesireables
   if 'all' in ranges_str:
     return jsonify(all_groups._asdict())
@@ -1277,14 +1280,6 @@ def _map_course():
 
   request_type = request.args.get('request_type', default='show-receiving')
 
-  Course_Info = namedtuple('Course_info',
-                           """course_id
-                              institution
-                              discipline
-                              catalog_number
-                              title
-                              course_status
-                              designation""")
   Rule_Info = namedtuple('Rule_Info',
                          'source_institution source_discipline group_number destination_institution')
   table_rows = []
@@ -1303,7 +1298,7 @@ def _map_course():
                    """, (course_id, ))
     if cursor.rowcount == 0:
       continue
-    course_info = Course_Info._make(cursor.fetchone())
+    course_info = cursor.fetchone()
     class_info = 'selected-course'
     if course_info.course_status != 'A':
       class_info = 'selected-course inactive-course'
@@ -1479,19 +1474,15 @@ def _courses():
     if course_id in already_done:
       continue
     already_done.add(course_id)
-    course = lookup_course(course_id)  # BUT lookup_course RETURNS HTML *** TODO
-    if course.exists:
-      note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
-      if course.is_active:
-        note = ''
+    course, html = lookup_course(int(course_id), active_only=False)
+    if course is not None:
       return_list.append({'course_id': course.course_id,
                           'institution': course.institution,
                           'department': course.department,
                           'discipline': course.discipline,
                           'catalog_number': course.catalog_number,
                           'title': course.title,
-                          'html': course.html,
-                          'note': note})
+                          'html': html})
   return jsonify(return_list)
 
 

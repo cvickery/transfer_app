@@ -304,7 +304,7 @@ $(function ()
                                         {course_ids: course_id});
         catalog_request.done(function (result, status)
         {
-          $('#pop-up-content').html(result[0].html + result[0].note);
+          $('#pop-up-content').html(result[0].html);
           $('#pop-up-div').show().draggable();
         });
       });

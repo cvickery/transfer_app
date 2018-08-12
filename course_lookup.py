@@ -25,49 +25,49 @@ cross_listed = [id.course_id for id in cursor.fetchall()]
 cursor.close()
 conn.close()
 
-Course_Info = namedtuple('Course_Info',
-                         """
-                            course_id
-                            exists
-                            is_active
-                            career
-                            institution_prompt
-                            institution
-                            cuny_subject
-                            department
-                            discipline
-                            catalog_number
-                            title
-                            contact_hours
-                            min_credits
-                            max_credits
-                            requisites
-                            description
-                            rd
-                            designation
-                            attributes
-                            attribute_descriptions
-                            title_str
-                            html
-                         """)
-# default values, except for course_id, which is required
-Course_Info.__new__.__defaults__ = (False,                  # exists
-                                    False,                  # is_active
-                                    '',                     # career
-                                    'None',                 # institution_prompt
-                                    'No Institution',       # institution
-                                    'No Subject',           # cuny_subject
-                                    'No Department',        # department
-                                    'No Discipline',        # discipline
-                                    'No Number',            # catalog_number
-                                    'No Title',             # title
-                                    'Not in CUNY Catalog',  # title_str
-                                    '',                     # hours_credits_str
-                                    '',                     # credit_details
-                                    '',                     # description
-                                    '',                     # attributes
-                                    '<p class="catalog-entry"> Not in CUNY Catalog</p>'  # html
-                                    )
+# Course_Info = namedtuple('Course_Info',
+#                          """
+#                             course_id
+#                             exists
+#                             is_active
+#                             career
+#                             institution_prompt
+#                             institution
+#                             cuny_subject
+#                             department
+#                             discipline
+#                             catalog_number
+#                             title
+#                             contact_hours
+#                             min_credits
+#                             max_credits
+#                             requisites
+#                             description
+#                             rd
+#                             designation
+#                             attributes
+#                             attribute_descriptions
+#                             title_str
+#                             html
+#                          """)
+# # default values, except for course_id, which is required
+# Course_Info.__new__.__defaults__ = (False,                  # exists
+#                                     False,                  # is_active
+#                                     '',                     # career
+#                                     'None',                 # institution_prompt
+#                                     'No Institution',       # institution
+#                                     'No Subject',           # cuny_subject
+#                                     'No Department',        # department
+#                                     'No Discipline',        # discipline
+#                                     'No Number',            # catalog_number
+#                                     'No Title',             # title
+#                                     'Not in CUNY Catalog',  # title_str
+#                                     '',                     # hours_credits_str
+#                                     '',                     # credit_details
+#                                     '',                     # description
+#                                     '',                     # attributes
+#                                     '<p class="catalog-entry"> Not in CUNY Catalog</p>'  # html
+                                    # )
 
 # Course info for all courses at an institution
 institution_query = """
@@ -99,9 +99,7 @@ select  c.course_id                       as course_id,
         cuny_careers      cc,
         designations      rd
  where  c.institution = %s
-   and  c.course_status = 'A'
-   and  c.can_schedule = 'Y'
-   and  c.discipline_status = 'A'
+   {}
    and  i.code = c.institution
    and  d.institution = c.institution
    and  d.department = c.department
@@ -143,9 +141,7 @@ select  c.course_id                       as course_id,
         designations      rd
  where  c.course_id = %s
    and  c.offer_nbr = %s
-   and  c.course_status = 'A'
-   and  c.can_schedule = 'Y'
-   and  c.discipline_status = 'A'
+   {}
    and  i.code = c.institution
    and  d.institution = c.institution
    and  d.department = c.department
@@ -159,29 +155,73 @@ select  c.course_id                       as course_id,
 
 # lookup_course()
 # --------------------------------------------------------------------------------------------------
-def lookup_course(course_id, offer_nbr=1):
-  """ Get HTML for one course catalog entry
+def lookup_course(course_id, active_only=False, offer_nbr=1):
+  """ Get HTML for one course_id. In the case of cross-listed courses, give the one with offer_nbr
+      equal to 1 unless overridden.
   """
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute(course_query, (course_id, offer_nbr))
-  html = ''
-  for course in cursor.fetchall():
-    html += format_course(course)
-  return html
+
+  # Active courses require both the course and the discipline to be active
+  print(course_id, active_only, offer_nbr)
+  if active_only:
+    which_courses = """
+    and  c.course_status = 'A'
+    and  c.discipline_status = 'A'
+    """
+  else:
+    which_courses = ''
+
+  cursor.execute(course_query.format(which_courses), (course_id, offer_nbr))
+  if cursor.rowcount == 0:
+    print('FAILED LOOKUP', cursor.query)
+    return None
+
+  if cursor.rowcount > 1:
+    raise Exception(f'lookup_course() found {cursor.rowcount} courses for {course_id}:{offer_nbr}')
+  # for course in cursor.fetchall():
+  #   institution = course.institution
+  #   department = course.department
+  #   discipline = course.discipline
+  #   catalog_number = course.catalog_number
+  #   title = course.title
+  #   html += format_course(course)
+
+  # return{'course_id': course_id,
+  #        'institution': institution,
+  #        'department': department,
+  #        'discipline': discipline,
+  #        'catalog_number': catalog_number,
+  #        'title': title,
+  #        'html': html}
+  course = cursor.fetchone()
+  html = format_course(course)
+  return [course, html]
 
 
 # lookup_courses()
 # --------------------------------------------------------------------------------------------------
-def lookup_courses(institution):
+def lookup_courses(institution, active_only=True):
   """ Lookup all the active courses for an institution. Return giant html string.
   """
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
 
-  html = ''
+  # Active courses require both the course and the discipline to be active
+  if active_only:
+    which_courses = """
+    and  c.course_status = 'A'
+    and  c.can_schedule = 'Y'
+    and  c.discipline_status = 'A'
+    """
+  else:
+    # Always suppress courses that cannot be scheduled
+    which_courses = """
+    and c.can_schecule = 'Y'
+    """
+  cursor.execute(institution_query.format(which_courses), (institution,))
 
-  cursor.execute(institution_query, (institution,))
+  html = ''
   for course in cursor.fetchall():
     html += format_course(course)
 
@@ -192,7 +232,7 @@ def lookup_courses(institution):
 
 # format_course()
 # --------------------------------------------------------------------------------------------------
-def format_course(course):
+def format_course(course, active_only=False):
   """ Given a namedtuple returned by institution_query or course_query, generate an html "catalog"
       entry for the course
   """
@@ -247,15 +287,21 @@ def format_course(course):
     cursor.close()
     conn.close()
 
+  note = ''
+  if not active_only:
+    if course.course_status != 'A':
+      note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
   html = """
   <p class="catalog-entry" title="course id: {}">{}
     <br/>{}
     <br/>{}
   </p>
+  {}
   """.format(course.course_id,
              title_str,
              credits_str,
-             course.description)
+             course.description,
+             note)
   return html
 
 
