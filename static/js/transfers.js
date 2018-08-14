@@ -1,6 +1,6 @@
 /* This script handles all 3+ steps of the transfer review application.
  * as such, it should probably be broken up into separate scripts to avoid cross-step code
- * pollution. One reason it works is that there is no consequences for hooking code to elements
+ * pollution. One reason it works is that there are no consequences for hooking code to elements
  * that don't actually exist in a particular step's DOM.
  * For now it continues its monolithic megopoly.
  */
@@ -225,6 +225,7 @@ $(function ()
     var review_rule_table = `<table>${review_row_html}</table>`;
 
     var first_parse = row_id.split('-');
+console.log(first_parse);
     var rule_id = first_parse[0] + '-' +
                   first_parse[1] + '-' +
                   first_parse[2] + '-' +
@@ -315,7 +316,7 @@ $(function ()
       var html_str = '';
       for (var i = 0; i < data.length; i++)
       {
-        html_str += `${data[i].html} ${data[i].note} <hr/>`;
+        html_str += `${data[i].html} <hr/>`;
       }
       $('#source-catalog-info').html(html_str);
     });
@@ -327,7 +328,7 @@ $(function ()
       var html_str = '';
       for (var i = 0; i < data.length; i++)
       {
-        html_str += `${data[i].html} ${data[i].note} <hr/>`;
+        html_str += `${data[i].html}<hr/>`;
       }
       $('#destination-catalog-info').html(html_str);
     });

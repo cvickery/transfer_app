@@ -159,11 +159,12 @@ def lookup_course(course_id, active_only=False, offer_nbr=1):
   """ Get HTML for one course_id. In the case of cross-listed courses, give the one with offer_nbr
       equal to 1 unless overridden.
   """
+  print(f'lookup_course({course_id}, {active_only}, {offer_nbr}')
+
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
   # Active courses require both the course and the discipline to be active
-  print(course_id, active_only, offer_nbr)
   if active_only:
     which_courses = """
     and  c.course_status = 'A'
@@ -174,26 +175,12 @@ def lookup_course(course_id, active_only=False, offer_nbr=1):
 
   cursor.execute(course_query.format(which_courses), (course_id, offer_nbr))
   if cursor.rowcount == 0:
-    print('FAILED LOOKUP', cursor.query)
+    print('COURSE LOOKUP FAILED', cursor.query)
     return None
 
   if cursor.rowcount > 1:
     raise Exception(f'lookup_course() found {cursor.rowcount} courses for {course_id}:{offer_nbr}')
-  # for course in cursor.fetchall():
-  #   institution = course.institution
-  #   department = course.department
-  #   discipline = course.discipline
-  #   catalog_number = course.catalog_number
-  #   title = course.title
-  #   html += format_course(course)
 
-  # return{'course_id': course_id,
-  #        'institution': institution,
-  #        'department': department,
-  #        'discipline': discipline,
-  #        'catalog_number': catalog_number,
-  #        'title': title,
-  #        'html': html}
   course = cursor.fetchone()
   html = format_course(course)
   return [course, html]
@@ -291,6 +278,7 @@ def format_course(course, active_only=False):
   if not active_only:
     if course.course_status != 'A':
       note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
+
   html = """
   <p class="catalog-entry" title="course id: {}">{}
     <br/>{}

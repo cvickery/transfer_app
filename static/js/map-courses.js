@@ -157,7 +157,8 @@ $(function ()
       course_id_list = [];
       for (var i = 0; i < result.length; i++)
       {
-        course_id_list.push(result[i][0]);
+        // course_id_list includes both course_id and offer_nbr for unambiguous course lookup
+        course_id_list.push({course_id: result[i][0], offer_nbr: result[i][1]});
       }
       update_course_count();
     });
@@ -192,35 +193,6 @@ $(function ()
   });
 
   $('#institution, #course-groups').change(part_a_change);
-
-  /* Any change in Part B, the Course ID list
-   */
-  $('#course-ids').change(function ()
-  {
-    course_id_list = [];
-    $('#show-sending, #show-receiving').prop('disabled', true);
-    // Parse the course-ids string
-    /* Course IDs can be separated by any non-numberic characters.
-     * The split() function returns empty strings at beginning and/or end if there are separator
-     * chars at beginning or end of the string, so they have to be trimmed away.
-     */
-    course_id_list = $(this).val().split(/\D+/);
-    if (course_id_list.length > 0)
-    {
-      if (course_id_list[course_id_list.length - 1] === '')
-      {
-        course_id_list.pop();
-      }
-    }
-    if (course_id_list.length > 0)
-    {
-      if (course_id_list[0] === '')
-      {
-        course_id_list.shift();
-      }
-    }
-    update_course_count();
-  });
 
   /* Show Setup
    */
@@ -258,6 +230,7 @@ $(function ()
         colleges.push(institutions[i]);
       }
     }
+
     var header_row = `<tr>
                         <th rowspan="2">Sending Course</th>
                         <th colspan="${colleges.length}">Receiving College</th></tr>`;

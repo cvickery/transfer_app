@@ -14,10 +14,10 @@ from status_utils import abbr_to_bitmask, status_string
 def process_pending(row):
   """ Look up the token and generate events. Return as status message.
   """
-  token = row['token']
-  reviews = json.loads(row['reviews'])
-  email = row['email']
-  when_entered = row['when_entered']
+  token = row.token
+  reviews = json.loads(row.reviews)
+  email = row.email
+  when_entered = row.when_entered
   summaries = ''
 
   conn = pgconnection('dbname=cuny_courses')
@@ -27,20 +27,20 @@ def process_pending(row):
 
     # Generate an event for this review
     event_type = review['event_type']
-    source_institution, discipline, group_number, destination_institution = \
+    source_institution, source_discipline, group_number, destination_institution = \
         review['rule_id'].split('-')
     what = review['comment_text']
     q = """
     insert into events (event_type,
                         source_institution,
-                        discipline,
+                        source_discipline,
                         group_number,
                         destination_institution,
                         who, what, event_time)
                        values (%s, %s, %s, %s, %s, %s, %s, %s)"""
     cursor.execute(q, (event_type,
                        source_institution,
-                       discipline,
+                       source_discipline,
                        group_number,
                        destination_institution,
                        email,
@@ -51,26 +51,29 @@ def process_pending(row):
     cursor.execute("""
                    select * from rule_groups
                     where source_institution = %s
-                      and discipline = %s
+                      and source_discipline = %s
                       and group_number = %s
                       and destination_institution = %s
-                   """, (source_institution, discipline, group_number, destination_institution))
+                   """, (source_institution,
+                         source_discipline,
+                         group_number,
+                         destination_institution))
     rows = cursor.fetchall()
     if len(rows) != 1:
       summaries = """
       <tr><td class="error">Found {} transfer rules for {}</td></tr>
       """.format(len(rows), rule_id)
       break
-    old_status = rows[0]['status']
+    old_status = rows[0].status
     new_status = old_status | abbr_to_bitmask[event_type]
     q = """update rule_groups set status = %s
             where source_institution = %s
-              and discipline = %s
+              and source_discipline = %s
               and group_number = %s
               and destination_institution = %s"""
     cursor.execute(q, (new_status,
                        source_institution,
-                       discipline,
+                       source_discipline,
                        group_number,
                        destination_institution))
 

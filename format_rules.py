@@ -17,30 +17,31 @@ Rule_Info = namedtuple('Rule_Info', """
                         destination_institution
                         status""")
 
-Source_Course = namedtuple('Source_Course', """
-                           course_id
-                           discipline
-                           discipline_name
-                           catalog_number
-                           min_credits
-                           max_credits
-                           min_gpa
-                           max_gpa
-                           """)
-Destination_Course = namedtuple('Destination_Course', """
-                                course_id
-                                discipline
-                                discipline_name
-                                catalog_number
-                                min_credits
-                                max_credits
-                                transfer_credits""")
+# Source_Course = namedtuple('Source_Course', """
+#                            course_id
+#                            discipline
+#                            discipline_name
+#                            catalog_number
+#                            min_credits
+#                            max_credits
+#                            min_gpa
+#                            max_gpa
+#                            """)
+# Destination_Course = namedtuple('Destination_Course', """
+#                                 course_id
+#                                 discipline
+#                                 discipline_name
+#                                 catalog_number
+#                                 min_credits
+#                                 max_credits
+#                                 transfer_credits""")
+
+letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
 
 conn = pgconnection('dbname=cuny_courses')
 cursor = conn.cursor()
 cursor.execute("select code, prompt from institutions order by lower(name)")
 institution_names = {row.code: row.prompt for row in cursor}
-letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
 conn.close()
 
 
@@ -80,7 +81,6 @@ def _grade(min_gpa, max_gpa):
 def format_rules(rules, session):
   """ Generate HTML table with information about each rule group.
   """
-  institution_names = session['institution_names']
   table = """
     <table id="rules-table">
       <thead>
@@ -136,10 +136,10 @@ def format_rule(rule_key, rule_status=0):
   # Get lists of source and destination courses for this rule group
   #   NOTE: offer_nbr must be one-digit; the last digit of the the group_number
   q = """
-      select  sc.course_id,
+      select  c.course_id,
               c.discipline,
               d.description as discipline_name,
-              trim(c.catalog_number),
+              trim(c.catalog_number) as catalog_number,
               c.min_credits,
               c.max_credits,
               sc.min_gpa,
@@ -163,16 +163,16 @@ def format_rule(rule_key, rule_status=0):
                      group_number,
                      destination_institution,
                      group_number[-1]))
-  source_courses = [c for c in map(Source_Course._make, cursor.fetchall())]
+  source_courses = cursor.fetchall()
   # groups.sort(key=lambda g: (g.source_institution,
   #                            g.source_discipline,
   #                            g.source_courses[0].catalog_number))
 
   q = """
-      select  dc.course_id,
+      select  c.course_id,
               c.discipline,
               d.description as discipline_name,
-              trim(c.catalog_number),
+              trim(c.catalog_number) as catalog_number,
               c.min_credits,
               c.max_credits,
               dc.transfer_credits
@@ -192,12 +192,13 @@ def format_rule(rule_key, rule_status=0):
                      group_number,
                      destination_institution,
                      group_number[-1]))
-  destination_courses = [c for c in map(Destination_Course._make, cursor.fetchall())]
+  destination_courses = cursor.fetchall()
 
   # The course ids parts of the table row id
   row_id = '{}-{}-{}'.format(rule_key,
                              ':'.join(['{:06}'.format(c.course_id) for c in source_courses]),
                              ':'.join(['{:06}'.format(c.course_id) for c in destination_courses]))
+  print(row_id)
   min_source_credits = 0.0
   max_source_credits = 0.0
   grade = ''
@@ -227,10 +228,10 @@ def format_rule(rule_key, rule_status=0):
       source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
                                                                             course.catalog_number)
 
-      # If it’s a variable-credit course, what to do? TODO: figure this out!
-      # ====================================================================
+      # If it’s a variable-credit course, what to do?
+      # =======================================================================
       # ?? how often does it happen? 1859 times.
-      # So we will check if the transfer credits is in the range of min to max.
+      # So just check if the transfer credits is in the range of min to max.
       min_source_credits += float(course.min_credits)
       max_source_credits += float(course.max_credits)
   # YOU ARE HERE
@@ -242,7 +243,6 @@ def format_rule(rule_key, rule_status=0):
   destination_course_list = ''
   for course in destination_courses:
     course_catalog_number = course.catalog_number
-    row_id += '{}:'.format(course.course_id)
     if discipline != course.discipline:
       if discipline != '':
         destination_course_list = destination_course_list.strip('/') + '; '

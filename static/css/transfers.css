@@ -3,7 +3,7 @@ body {
   border: 1em;
   padding: 0 1em;
   background-color: #eff;
-  color:#333;
+  color: #333;
 }
 
 .error {
@@ -17,30 +17,30 @@ body {
 }
 
 .instructions {
-  margin:0.5em;
-  padding:0.5em;
-  width:50vw;
+  margin: 0.5em;
+  padding: 0.5em;
+  width: 50vw;
   background-color: #fff;
   color: #666;
-  border-radius:0.5em;
+  border-radius: 0.5em;
 }
 h1 {
-  margin:0;
-  font-size:1.4em;
+  margin: 0;
+  font-size: 1.4em;
 }
 
 h1 + div {
-  margin:1em;
+  margin: 1em;
 }
 
 h2 {
-  font-size:1.2em;
+  font-size: 1.2em;
   margin: 0 auto;
 }
 
 button, .restart {
     border: 1px solid #999;
-    border-radius:0.25em;
+    border-radius: 0.25em;
     text-decoration: none;
     background-color: white;
     color: black;
@@ -49,56 +49,57 @@ button, .restart {
 }
 
 #submit-form-1 {
-  margin-top:1em;
+  margin-top: 1em;
 }
 
 #content-div {
-    width:50%;
-    background-color:white;
-    display:none;
+    width: 50%;
+    background-color: white;
+    display: none;
     padding: 1em;
     border: 1px solid black;
     border-radius: 0.25em;
 }
 
 fieldset {
-    border-radius:0.5em;
+    border-radius: 0.5em;
 }
 
 fieldset fieldset {
-  margin-top:1em;
-  background-color:white;
+  margin-top: 1em;
+  background-color: white;
 }
 
 legend {
-  border-radius:0.75em;
-  padding:0.5em;
-  background-color:white;
+  border-radius: 0.75em;
+  padding: 0.5em;
+  background-color: white;
 }
 
 table, td, th {
     border: 1px solid black;
-    padding:0.5em;
-    border-collapse:collapse;
+    padding: 0.5em;
+    border-collapse: collapse;
 }
 
 td, th {
   background-color: white;
-  color:#333;
+  color: #333;
+  vertical-align: top;
 }
 
 td a {
   display: block;
-  text-decoration:none;
+  text-decoration: none;
 }
 
-td a:hover {
+td a: hover {
   background-color: #ccc;
 }
 
 .institution-select {
-  display:inline-block;
-  width:18em;
+  display: inline-block;
+  width: 18em;
 }
 
 #source-college-list, #destination-college-list {
@@ -107,7 +108,7 @@ td a:hover {
 }
 
 #email-text {
-  width:25em;
+  width: 25em;
 }
 
 #update-info p {
@@ -124,21 +125,21 @@ td a:hover {
 }
 
 #subject-table th, #rules-table th {
-  background-color:#bbb;
-  color:#333;
+  background-color: #bbb;
+  color: #333;
 }
 
 .source-subject {
-  background-color:#eff;
+  background-color: #eff;
   text-align: right;
 }
 
-.f2-cbox:parent {
+.f2-cbox: parent {
   background-color: white;
 }
 
 .destination-subject {
-  background-color:#eeffff;
+  background-color: #eeffff;
 }
 
 .f2-cbox {
@@ -146,93 +147,93 @@ td a:hover {
 }
 
 .subtitle {
-  margin:-0.5em 0 1em 0;
-  font-size:0.9em;
-  font-style:italic;
+  margin: -0.5em 0 1em 0;
+  font-size: 0.9em;
+  font-style: italic;
 }
 
 #review-form {
   border: 1px solid #999999;
   border-radius: 0.5em;
   padding: 0.5em;
-  width:80vw;
-  background-color:#ddd;
-  color:#444;
+  width: 80vw;
+  background-color: #ddd;
+  color: #444;
 }
 
 #review-form table {
-  margin:0 auto 0.5em;
+  margin: 0 auto 0.5em;
 }
 
 #source-catalog-div {
-  max-height:30vh;
+  max-height: 30vh;
   width: 45%;
   padding: 0.5em;
-  float:left;
-  overflow:scroll;
-  margin-bottom:0.5em;
+  float: left;
+  overflow: scroll;
+  margin-bottom: 0.5em;
 }
 
 #destination-catalog-div {
-  max-height:30vh;
+  max-height: 30vh;
   width: 45%;
   padding: 0.5em;
-  float:left;
-  overflow:scroll;
-  margin-bottom:0.5em;
+  float: left;
+  overflow: scroll;
+  margin-bottom: 0.5em;
 }
 
 #review-controls-div {
   width: 50%;
   margin: 0.5em auto 0;
-  padding:0.5em;
-  clear:both;
+  padding: 0.5em;
+  clear: both;
   border-radius: 0.5em;
-  background-color:#fff;
+  background-color: #fff;
   color: #666;
 }
 
-#reviews-table td:first-child {
+#reviews-table td: first-child {
   text-align: center;
 }
 
 #review-table div.controls {
-  margin:1em 0 0 0;
+  margin: 1em 0 0 0;
   text-align: center;
 }
 
 #reviews-table table {
-  margin:0 0 0.5em 0;
+  margin: 0 0 0.5em 0;
 }
 
 .eval-rule td {
-  font-size:0.9em;
+  font-size: 0.9em;
   padding: 0.1em 0.5em;
 }
 
 .eval-rule table, .eval-rule table td {
-  margin:0;
+  margin: 0;
   border: none;
   font-style: italic;
 }
 
 #dismiss-bar {
   width: 100%;
-  text-align:right;
-  background-color:#999;
+  text-align: right;
+  background-color: #999;
   color: #333;
   padding: 0 0.5em;
   font-size: 1.1em;
-  cursor:default;
-  position:relative;
+  cursor: default;
+  position: relative;
   top: -0.5em;
   left: -0.5em;
   border-top: 1px solid #111;
   border-bottom: 1px solid #111;
 }
 
-#dismiss-bar:hover {
-  background-color:#bbb;
+#dismiss-bar: hover {
+  background-color: #bbb;
   color: #e00;
 }
 
@@ -241,7 +242,7 @@ td a:hover {
 }
 
 .ok-cancel {
-  display:inline-block;
+  display: inline-block;
   width: 15em;
 }
 
@@ -259,30 +260,30 @@ td a:hover {
   border-left: 1px solid black;
 }
 
-#rules-table th:nth-child(1) {
+#rules-table th: nth-child(1) {
   border-right: none;
 }
 
-#rules-table th:nth-child(2),
-#rules-table th:nth-child(3),
-#rules-table th:nth-child(4) {
+#rules-table th: nth-child(2),
+#rules-table th: nth-child(3),
+#rules-table th: nth-child(4) {
   border-left: none;
-  border-right:none;
+  border-right: none;
 }
 
-#rules-table th:nth-child(5) {
+#rules-table th: nth-child(5) {
   border-left: none;
 }
 
-#rules-table th:nth-child(1),
-#rules-table th:nth-child(2),
-#rules-table th:nth-child(4),
-#rules-table th:nth-child(5) {
-  text-align:left;
+#rules-table th: nth-child(1),
+#rules-table th: nth-child(2),
+#rules-table th: nth-child(4),
+#rules-table th: nth-child(5) {
+  text-align: left;
 }
 
 #rules-table tr {
-  margin:0.1em;
+  margin: 0.1em;
   outline: 1px solid #999;
 }
 
@@ -292,37 +293,37 @@ td a:hover {
   color: #333;
 }
 
-#rules-table td:last-child {
+#rules-table td: last-child {
   border: 1px solid #999;
   background-color: white;
 }
 
-#rules-table td:nth-child(2),
-#rules-table td:nth-child(5) {
-  min-width:20%;
+#rules-table td: nth-child(2),
+#rules-table td: nth-child(5) {
+  min-width: 20%;
 }
 
-#rules-table td:nth-child(3) {
+#rules-table td: nth-child(3) {
   text-align: center;
   font-weight: bold;
 }
 
 #rules-table tr.selected-rule td {
   background-color: #bbb;
-  color:#eee;
+  color: #eee;
 }
 
 .credit-mismatch, .credit-mismatch td {
   background-color: #fcc;
-  color:black;
+  color: black;
 }
 
-button:disabled {
-  color:#999;
+button: disabled {
+  color: #999;
   background-color: #eee;
 }
 
-#send-email:enabled {
+#send-email: enabled {
   border: 2px solid black;
 }
 
@@ -347,7 +348,7 @@ button:disabled {
 
 .omit-button {
   padding: 0.1em;
-  margin:0;
+  margin: 0;
   font-variant: all-petit-caps;
 }
 
@@ -361,8 +362,8 @@ button:disabled {
 }
 
 .history-what-type {
-  display: inline-block;
-  width:5em;
+  float: left;
+  width: 5em;
   border-right: 1px solid #999;
   margin-right: 0.5em;
 }

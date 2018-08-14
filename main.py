@@ -22,7 +22,7 @@ from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_rules import format_rule, format_rules, Rule_Info
+from format_rules import format_rule, format_rules, Rule_Info, institution_names
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -42,8 +42,6 @@ app.secret_key = os.urandom(24)
 
 #
 # Module Initialization
-
-Filter = namedtuple('Filter', ['subject', 'college', 'discipline'])
 
 logger = logging.getLogger('debugging')
 logger.setLevel(logging.DEBUG)
@@ -189,10 +187,6 @@ def do_form_0(request, session):
   logger.debug('*** do_form_0({})'.format(session))
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  # Look up institiution names; pass it on in the session
-  cursor.execute("select code, name from institutions order by lower(name)")
-  institution_names = {row.code: row.name for row in cursor}
-  session['institution_names'] = institution_names
 
   cursor.execute("select count(*) from rule_groups")
   num_rules = cursor.fetchone()[0]
@@ -339,23 +333,6 @@ def do_form_1(request, session):
   # Add institutions selected to user's session
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
-
-  # Get the list of institution names, looked up in do_form_0(), from the session
-  try:
-    institution_names = session['institution_names']
-  except KeyError:
-    # the session is expired or invalid. Go back to Step 1.
-    return render_template('transfers.html', result=Markup("""
-                                                           <h1>Session Expired</h1>
-                                                           <p>
-                                                              <a  href="/"><button>Main Menu
-                                                                           </button></a>
-                                                              <a  href="/review_rules"
-                                                                  class="restart">Restart
-                                                              </a>
-                                                           </p>
-
-                                                           """))
 
   # Database lookups
   # ----------------
@@ -1042,7 +1019,6 @@ def map_courses():
     </div>
     <form action="" method="POST">
       <fieldset>
-        <legend>Part A</legend>
         <h2>
           Select one or more of the following course groups.
         </h2>
@@ -1077,17 +1053,6 @@ def map_courses():
         </div>
       </fieldset>
 
-      <fieldset>
-        <legend>Part B</legend>
-        <label for="course-ids">
-          If you are interested in particular courses and know their CUNYfirst Course IDs,
-          you may enter them here:
-        </label>
-        <div>
-          <input type="text" id="course-ids"/>
-          <button id="clear-ids">clear</button>
-        </div>
-      </fieldset>
       <p>
         <span id="num-courses">No courses</span> selected.
       </p>
@@ -1219,26 +1184,23 @@ def _disciplines():
 # AJAX course_id lookup.
 @app.route('/_find_course_ids')
 def _find_course_ids():
-  """ Given an institution and discipline, get all the matching course_ids. Then use course_groups
-      to filter out any that are not wanted.
+  """ Given an institution and discipline, get all the matching course_ids. Then use range strings
+      to select only the ones wanted (100-level, etc.)
+      Return an array of triples, with the offer_nbr included, so JavaScript can look up the courses
+      without getting flummoxed by cross-listed courses having a different discipline.
   """
-  # TODO Need to use offer_nbr to filter out course_ids for cross-listed courses in a different
-  # discipline **************************************************************************************************************************
   institution = request.args.get('institution')
   discipline = request.args.get('discipline')
   ranges_str = request.args.get('ranges_str')
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute("""select course_id, catalog_number
+  cursor.execute("""select course_id, offer_nbr, catalog_number
                     from courses
                     where institution = %s and discipline = %s
                  """, (institution, discipline))
-  all_groups = cursor.fetchall()
+  courses = [[course, _numeric_part(course.catalog_number)] for course in cursor.fetchall()]
 
-  # Filter out the undesireables
-  if 'all' in ranges_str:
-    return jsonify(all_groups._asdict())
-
+  # Filter out the deplorables
   # Range string syntax: all | min:max [;...]
   range_strings = ranges_str.split(';')
   ranges = []
@@ -1246,20 +1208,32 @@ def _find_course_ids():
     min, max = range_string.split(':')
     ranges.append((float(min), float((max))))
 
-  return_groups = []
-  for pair in all_groups:
-    # Extract the numeric part of the catalog number, including up to one fractional part.
-    numeric_part = re.search(r'\d+\.?\d*', pair.catalog_number)
-    if numeric_part is None:
-      continue
-    numeric_part = float(numeric_part.group(0))
-    while numeric_part > 1000.0:
-      numeric_part = numeric_part / 10.0
+  keepers = []
+  for course in courses:
+    # Extract the numeric part of the catalog number, including up to one fractional character.
     for range in ranges:
-      if numeric_part >= range[0] and numeric_part < range[1]:
-        return_groups.append(pair)
+      if 'all' in ranges_str or course[1] >= range[0] and course[1] < range[1]:
+        keepers.append(course)
         continue
-  return jsonify(sorted(return_groups, key=lambda pair: pair[1]))
+
+  # The keepers list includes the normalized catalog_number so it can be sorted before returning
+  # just the array of selected course triples.
+  keepers.sort(key=lambda c: c[1])
+  return jsonify([c[0] for c in keepers])
+
+
+# _numeric_part()
+# -------------------------------------------------------------------------------------------------
+def _numeric_part(catalog_number):
+  """ Helper function for _find_course_ids().
+  """
+  # ASSUMPTION: Catalog numbers are always less than 1,000. If larger, they are adjustments to
+  # the "no decimals in catalog numbers" edict, so reduce them to the correct range.
+  match = re.search(r'(\d+\.?\d*)', catalog_number)
+  numeric_part = float(match.group(1))
+  while numeric_part > 1000.0:
+    numeric_part = numeric_part / 10.0
+  return numeric_part
 
 
 # /_MAP_COURSE
@@ -1267,25 +1241,18 @@ def _find_course_ids():
 # AJAX generator of course_map table.
 # Create a table row for each course_id in course_id_list; a column for each element in colleges.
 # Request type tells which type of request: show-sending or show-receiving.
-#
-# TODO: This will include cross-listed courses, which typically have different.
-# I think they should be filtered out when JavaScript asks for it's course_id list. That would
-# mean that this code can remain as-is.
-#
 @app.route('/_map_course')
 def _map_course():
   # Note to self: there has to be a cleaner way to pass an array from JavaScript
-  course_id_list = json.loads(request.args.getlist('course_id_list')[0])
+  courses = json.loads(request.args.getlist('course_id_list')[0])
   colleges = json.loads(request.args.getlist('colleges')[0])
 
   request_type = request.args.get('request_type', default='show-receiving')
 
-  Rule_Info = namedtuple('Rule_Info',
-                         'source_institution source_discipline group_number destination_institution')
   table_rows = []
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  for course_id in course_id_list:
+  for course in courses:
     cursor.execute("""select  course_id,
                               institution,
                               discipline,
@@ -1295,7 +1262,8 @@ def _map_course():
                               designation
                       from courses
                       where course_id = %s
-                   """, (course_id, ))
+                      and offer_nbr = %s
+                   """, (course['course_id'], course['offer_nbr']))
     if cursor.rowcount == 0:
       continue
     course_info = cursor.fetchone()
@@ -1321,7 +1289,7 @@ def _map_course():
                         from source_courses
                         where course_id = %s
                         order by source_institution, source_discipline, destination_institution
-                    """, (course_id, ))
+                    """, (course['course_id'], ))  # ???? farmers mkt
 
     else:
       row_template = '<tr>{}' + course_info_cell + '</tr>'
@@ -1332,20 +1300,24 @@ def _map_course():
                         from destination_courses
                         where course_id = %s
                         order by source_institution, source_discipline, destination_institution
-                    """, (course_id, ))
-    rows = [Rule_Info._make(x) for x in cursor.fetchall()]
-
+                    """, (course['course_id'], ))
+    rows = ['{}-{}-{}-{}'.format(x.source_institution,
+                                 x.source_discipline,
+                                 x.group_number,
+                                 x.destination_institution) for x in cursor.fetchall()]
+    print(rows)
     # For each destination/source institution, need the count of number of rules and a list of the
     # rules.
     rule_counts = Counter()
     rules = defaultdict(list)
-    for row in rows:
+    for row in rows:  # TODO: a row is a hyphen-separated string, not a tuple. See line 1364 above.
+      print(row)
       if request_type == 'show-receiving':
         rule_counts[row.destination_institution] += 1
-        rules[row.destination_institution].append('-'.join(f'{row}'))
+        rules[row.destination_institution].append(row)
       else:
         rule_counts[row.source_institution] += 1
-        rules[row.source_institution].append('-'.join(f'{row}'))
+        rules[row.source_institution].append(row)
 
     # Ignore inactive courses for which there are no rules
     if sum(rule_counts.values()) == 0 and course_info.course_status != 'A':

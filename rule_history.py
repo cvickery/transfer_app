@@ -2,6 +2,7 @@ from collections import namedtuple
 from pgconnection import pgconnection
 from format_rules import format_rule
 
+
 # rule_history()
 # -------------------------------------------------------------------------------------------------
 def rule_history(rule_key):
@@ -17,7 +18,7 @@ def rule_history(rule_key):
               to_char(e.event_time, 'YYYY-MM-DD HH12:MI am') as event_time
        from events e, review_status_bits r
        where e.source_institution = %s
-         and e.discipline = %s
+         and e.source_discipline = %s
          and e.group_number = %s
          and e.destination_institution = %s
          and r.abbr = e.event_type
