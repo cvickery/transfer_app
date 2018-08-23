@@ -25,50 +25,6 @@ cross_listed = [id.course_id for id in cursor.fetchall()]
 cursor.close()
 conn.close()
 
-# Course_Info = namedtuple('Course_Info',
-#                          """
-#                             course_id
-#                             exists
-#                             is_active
-#                             career
-#                             institution_prompt
-#                             institution
-#                             cuny_subject
-#                             department
-#                             discipline
-#                             catalog_number
-#                             title
-#                             contact_hours
-#                             min_credits
-#                             max_credits
-#                             requisites
-#                             description
-#                             rd
-#                             designation
-#                             attributes
-#                             attribute_descriptions
-#                             title_str
-#                             html
-#                          """)
-# # default values, except for course_id, which is required
-# Course_Info.__new__.__defaults__ = (False,                  # exists
-#                                     False,                  # is_active
-#                                     '',                     # career
-#                                     'None',                 # institution_prompt
-#                                     'No Institution',       # institution
-#                                     'No Subject',           # cuny_subject
-#                                     'No Department',        # department
-#                                     'No Discipline',        # discipline
-#                                     'No Number',            # catalog_number
-#                                     'No Title',             # title
-#                                     'Not in CUNY Catalog',  # title_str
-#                                     '',                     # hours_credits_str
-#                                     '',                     # credit_details
-#                                     '',                     # description
-#                                     '',                     # attributes
-#                                     '<p class="catalog-entry"> Not in CUNY Catalog</p>'  # html
-                                    # )
-
 # Course info for all courses at an institution
 institution_query = """
 select  c.course_id                       as course_id,

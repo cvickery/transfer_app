@@ -107,11 +107,8 @@ def format_rules(rules, session):
     #   Colon-separated list of source course_ids
     #   hyphen
     #   Colon-separated list of destination courses_ids
-    rule_key = '{}-{}-{}-{}'.format(rule.source_institution,
-                                    rule.source_discipline,
-                                    rule.group_number,
-                                    rule.destination_institution)
-    row, description = format_rule(rule_key, rule.status)
+    print(rule)
+    row, description = format_rule(rule)
     table += row
   table += '</tbody></table>'
   return table
@@ -119,24 +116,16 @@ def format_rules(rules, session):
 
 # format_rule()
 # -------------------------------------------------------------------------------------------------
-def format_rule(rule_key, rule_status=0):
-  """ Given a rule key and review status, return a string that returns a representation of the rule.
-      The name of the function may be confusing, but it makes sense. In a more perfect world,
-      format_rules() might call this to generate the first part of each row in its interactive
-      table. The hold-back is that this function looks up the source and destination courses, but
-      format_rules already has that information.
+def format_rule(rule):
+  """ Return strings that represent the rule as a table row and as a descriptive paragraph.
   """
-
-  source_institution, source_discipline, group_number, destination_institution = \
-      rule_key.split('-')
-
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
   # Get lists of source and destination courses for this rule group
-  #   NOTE: offer_nbr must be one-digit; the last digit of the the group_number
   q = """
       select  c.course_id,
+              c.offer_nbr,
               c.discipline,
               d.description as discipline_name,
               trim(c.catalog_number) as catalog_number,
@@ -144,26 +133,17 @@ def format_rule(rule_key, rule_status=0):
               c.max_credits,
               sc.min_gpa,
               sc.max_gpa
-       from   source_courses sc, disciplines d, courses c
-       where  source_institution = %s
-         and  sc.source_discipline = %s
-         and  sc.group_number = %s
-         and  sc.destination_institution = %s
-         and  c.course_id = sc.course_id
-         and  c.offer_nbr = %s
-         and  d.institution = c.institution
-         and  d.discipline = c.discipline
-       order by c.institution,
-                c.discipline,
+       from   courses c, disciplines d, source_courses sc
+       where  sc.rule_id = %s
+         and  %s ~ c.course_id::text
+         and  sc.course_id = c.course_id
+       order by c.discipline,
                 sc.max_gpa desc,
                 substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (source_institution,
-                     source_discipline,
-                     group_number,
-                     destination_institution,
-                     group_number[-1]))
+  cursor.execute(q, (rule.rule_id, rule.source_course_ids))
   source_courses = cursor.fetchall()
+
   # groups.sort(key=lambda g: (g.source_institution,
   #                            g.source_discipline,
   #                            g.source_courses[0].catalog_number))
@@ -176,29 +156,18 @@ def format_rule(rule_key, rule_status=0):
               c.min_credits,
               c.max_credits,
               dc.transfer_credits
-        from  destination_courses dc, disciplines d, courses c
-       where  dc.source_institution = %s
-         and  dc.source_discipline = %s
-         and  dc.group_number = %s
-         and  dc.destination_institution = %s
-         and  c.course_id = dc.course_id
-         and  c.offer_nbr = %s
-         and  d.institution = c.institution
-         and  d.discipline = c.discipline
+        from  courses c, disciplines d, destination_courses dc
+       where  dc.rule_id = %s
+         and  %s ~ c.course_id::text
+         and  dc.course_id = c.course_id
        order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (source_institution,
-                     source_discipline,
-                     group_number,
-                     destination_institution,
-                     group_number[-1]))
+  cursor.execute(q, (rule.rule_id, rule.destination_course_ids))
   destination_courses = cursor.fetchall()
 
   # The course ids parts of the table row id
-  row_id = '{}-{}-{}'.format(rule_key,
-                             ':'.join(['{:06}'.format(c.course_id) for c in source_courses]),
-                             ':'.join(['{:06}'.format(c.course_id) for c in destination_courses]))
-  print(row_id)
+  row_id = '{}-{}-{}'.format(rule.rule_str, rule.source_course_ids, rule. destination_course_ids)
+  print('format_rule: row_id is:', row_id)
   min_source_credits = 0.0
   max_source_credits = 0.0
   grade = ''
@@ -234,7 +203,7 @@ def format_rule(rule_key, rule_status=0):
       # So just check if the transfer credits is in the range of min to max.
       min_source_credits += float(course.min_credits)
       max_source_credits += float(course.max_credits)
-  # YOU ARE HERE
+
   source_course_list = source_course_list.strip('/')
 
   # Build the destination part of the rule group
@@ -271,11 +240,11 @@ def format_rule(rule_key, rule_status=0):
 
   # If the rule has been evaluated, the last column is a link to the review history. But if it
   # hasn't been evaluated yet, the last column is just the text that says so.
-  status_cell = status_string(rule_status)
-  if rule_status != 0:
-    status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule_key,
+  status_cell = status_string(rule.review_status)
+  if rule.review_status != 0:
+    status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule.rule_str,
                                                                         status_cell)
-  status_cell = '<span title="{}">{}</span>'.format(rule_key, status_cell)
+  status_cell = '<span title="{}">{}</span>'.format(rule.rule_str, status_cell)
   row = """<tr id="{}" class="{}">
               <td title="{}">{}</td>
               <td>{}</td>
@@ -284,13 +253,13 @@ def format_rule(rule_key, rule_status=0):
               <td>{}</td>
               <td>{}</td>
             </tr>""".format(row_id, row_class,
-                            institution_names[source_institution],
-                            re.search(r'\D+', source_institution).group(0),
+                            institution_names[rule.source_institution],
+                            rule.source_institution.rstrip('0123456789'),
                             source_course_list,
                             '{} cr. :: {} cr.'
                             .format(source_credits_str, destination_credits),
-                            institution_names[destination_institution],
-                            re.search(r'\D+', destination_institution).group(0),
+                            institution_names[rule.destination_institution],
+                            rule.destination_institution.rstrip('0123456789'),
                             destination_course_list,
                             status_cell)
   description = """
@@ -298,9 +267,9 @@ def format_rule(rule_key, rule_status=0):
           {} at {}, {} credits, transfers to {} as {}, {} credits.
         </div>""".format(row_class,
                          source_course_list,
-                         institution_names[source_institution],
+                         institution_names[rule.source_institution],
                          source_credits_str,
-                         institution_names[destination_institution],
+                         institution_names[rule.destination_institution],
                          destination_course_list,
                          destination_credits)
   description = description.replace('Pass', 'Passing grade in')

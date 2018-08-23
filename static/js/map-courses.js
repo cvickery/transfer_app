@@ -294,7 +294,7 @@ $(function ()
         var rules = title_string.split(':');
         var groups_to_html_request = $.getJSON($SCRIPT_ROOT + '/_groups_to_html',
                                                {
-                                                 groups_string: rules.join(':')
+                                                 groups_string: title_string
                                                });
         groups_to_html_request.done(function (result, status)
         {
