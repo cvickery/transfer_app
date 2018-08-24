@@ -22,7 +22,7 @@ from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_rules import format_rule, format_rules, Rule_Info, institution_names
+from format_rules import format_rule, format_rules, institution_names
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -723,6 +723,11 @@ def do_form_3(request, session):
     conn = pgconnection('dbname=cuny_courses')
     cursor = conn.cursor()
     token = str(uuid.uuid4())
+    # add the rule_id to each kept review
+    for review in kept_reviews:
+      cursor.execute('select rule_id from view_transfer_rules where rule_str = %s',
+                     (review['rule_key'],))
+      review['rule_id'] = cursor.fetchone().rule_id
     reviews = json.dumps(kept_reviews)
     q = "insert into pending_reviews (token, email, reviews) values(%s, %s, %s)"
     cursor.execute(q, (token, email, reviews))

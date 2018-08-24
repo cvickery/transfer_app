@@ -26,63 +26,38 @@ def process_pending(row):
   for review in reviews:
 
     # Generate an event for this review
-    event_type = review['event_type']
-    source_institution, source_discipline, group_number, destination_institution = \
-        review['rule_id'].split('-')
-    what = review['comment_text']
     q = """
-    insert into events (event_type,
-                        source_institution,
-                        source_discipline,
-                        group_number,
-                        destination_institution,
+    insert into events (rule_id, event_type,
                         who, what, event_time)
-                       values (%s, %s, %s, %s, %s, %s, %s, %s)"""
-    cursor.execute(q, (event_type,
-                       source_institution,
-                       source_discipline,
-                       group_number,
-                       destination_institution,
+                       values (%s, %s, %s, %s, %s)"""
+    cursor.execute(q, (review['rule_id'],
+                       review['event_type'],
                        email,
-                       what,
+                       review['comment_text'],
                        when_entered))
 
     # Update the review state for this rule.
     cursor.execute("""
-                   select * from rule_groups
-                    where source_institution = %s
-                      and source_discipline = %s
-                      and group_number = %s
-                      and destination_institution = %s
-                   """, (source_institution,
-                         source_discipline,
-                         group_number,
-                         destination_institution))
+                   select * from transfer_rules
+                    where id = %s
+                   """, (review['rule_id'],))
     rows = cursor.fetchall()
     if len(rows) != 1:
       summaries = """
       <tr><td class="error">Found {} transfer rules for {}</td></tr>
-      """.format(len(rows), rule_id)
+      """.format(len(rows), review['rule_key'])
       break
-    old_status = rows[0].status
-    new_status = old_status | abbr_to_bitmask[event_type]
-    q = """update rule_groups set status = %s
-            where source_institution = %s
-              and source_discipline = %s
-              and group_number = %s
-              and destination_institution = %s"""
-    cursor.execute(q, (new_status,
-                       source_institution,
-                       source_discipline,
-                       group_number,
-                       destination_institution))
+    old_status = rows[0].review_status
+    new_status = old_status | abbr_to_bitmask[review['event_type']]
+    q = 'update transfer_rules set review_status = %s where id = %s'
+    cursor.execute(q, (new_status, review['rule_id']))
 
     # Generate a summary of this review
     old_status_str = status_string(old_status)
     new_status_str = status_string(new_status)
     # Convert to event-history link for the rule
     new_status_str = """
-    <a href="/history/{}" target="_blank">{}</a>""".format(review['rule_id'],
+    <a href="/history/{}" target="_blank">{}</a>""".format(review['rule_key'],
                                                            new_status_str)
     summaries += """
     <tr>

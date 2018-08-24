@@ -207,11 +207,11 @@ $(function ()
       rule_str += $(this).text() + ' ';
     });
 
-    //     Row IDs: source institution; hyphen;
-    //              discipline; hyphen;
+    //     Row IDs: source_institution; hyphen;
+    //              destination_institution; hyphen;
+    //              subject_area; hyphen;
     //              group_number; hyphen;
-    //              destination institution; hyphen;
-    //              colon-separated list of source course IDs, hyphen,
+    //              colon-separated list of source course IDs; hyphen;
     //              colon-separated list of destination course IDs.
     //
     var row_id = $(this).attr('id');
@@ -225,17 +225,16 @@ $(function ()
     var review_rule_table = `<table>${review_row_html}</table>`;
 
     var first_parse = row_id.split('-');
-console.log(first_parse);
-    var rule_id = first_parse[0] + '-' +
-                  first_parse[1] + '-' +
-                  first_parse[2] + '-' +
-                  first_parse[3];
+    var rule_key = first_parse[0] + '-' +
+                   first_parse[1] + '-' +
+                   first_parse[2] + '-' +
+                   first_parse[3];
     var source_institution = first_parse[0].replace(/_/g, ' ');
     var source_institution_str = source_institution.replace(/\d+/, '');
-    var discipline = first_parse[1];
-    var group_number = first_parse[2];
-    var destination_institution = first_parse[3].replace(/_/g, ' ');
+    var destination_institution = first_parse[1].replace(/_/g, ' ');
     var destination_institution_str = destination_institution.replace(/\d+/, '');
+    // var discipline = first_parse[2];
+    // var group_number = first_parse[3];
     var source_course_ids = first_parse[4].split(':');
     var destination_course_ids = first_parse[5].split(':');
     var source_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: first_parse[4]});
@@ -292,7 +291,7 @@ console.log(first_parse);
                            value="${source_institution}" />
                     <input type="hidden" name="dest_institution"
                            value="${destination_institution}" />
-                    <input type="hidden" name="rule-id" value="${rule_id}" />
+                    <input type="hidden" name="rule-id" value="${rule_key}" />
                     <button class="ok-cancel"
                             id="review-submit"
                             type="button"
@@ -312,7 +311,6 @@ console.log(first_parse);
     // Populate the source catalog entries in the review form when they arrive
     source_request.done(function (data, text_status)
     {
-      // console.log(`source status: ${text_status}`);
       var html_str = '';
       for (var i = 0; i < data.length; i++)
       {
@@ -324,7 +322,6 @@ console.log(first_parse);
     // Populate the destination catalog entries in the review form when they arrive
     dest_request.done(function (data, text_status)
     {
-      // console.log(`destination status: ${text_status}`);
       var html_str = '';
       for (var i = 0; i < data.length; i++)
       {
@@ -362,7 +359,7 @@ console.log(first_parse);
       $('#review-submit').attr('disabled', !ok_to_submit);
     }
 
-    // Add or update an review when user submits one.
+    // Add or update a review when user submits one.
     $('#review-submit').click(function (event)
     {
       var review =
@@ -371,15 +368,16 @@ console.log(first_parse);
         source_institution: $('input[name=src_institution]').val(),
         destination_institution: $('input[name=dest_institution]').val(),
         comment_text: $('#comment-text').val().replace('\'', '’'),
-        rule_id: rule_id,
+        rule_key: rule_key,
         rule_str: review_row_html,
         include: true
       };
-      // If there is already an review for this rule ...
+
+      // If there is already a review for this rule ...
       var new_review = true;
       for (var i = 0; i < pending_reviews.length; i++)
       {
-        if (review.rule_id === pending_reviews[i].rule_id &&
+        if (review.rule_key === pending_reviews[i].rule_key &&
             review.event_type === pending_reviews[i].event_type)
         {
           // ... the only thing that could be different is the comment
@@ -442,7 +440,6 @@ console.log(first_parse);
       review_form_rows = [];
       for (review in pending_reviews)
       {
-        var the_rule = pending_reviews[review].rule_id;
         var rule_str = pending_reviews[review].rule_str;
 
         // Build a rule string that omits the previous status (i.e., the last td).
@@ -547,7 +544,7 @@ console.log(first_parse);
 
       // Submit the reviews. This will invoke do_form_3(), which will sent the verification
       // email.
-      $('#review-form').submit(function ()
+      $('#review-form').submit(function (event)
       {
         $('input[name="reviews"]').val(JSON.stringify(pending_reviews));
       });

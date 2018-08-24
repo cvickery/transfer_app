@@ -10,13 +10,13 @@ from status_utils import status_string
 
 DEBUG = False
 
-Rule_Info = namedtuple('Rule_Info', """
-                        source_institution
-                        source_discipline
-                        group_number
-                        destination_institution
-                        status""")
-
+# Rule_Info = namedtuple('Rule_Info', """
+#                         source_institution
+#                         destination_institution
+#                         subject_area
+#                         group_number
+#                         review_status""")
+#
 # Source_Course = namedtuple('Source_Course', """
 #                            course_id
 #                            discipline
@@ -123,6 +123,7 @@ def format_rule(rule):
   cursor = conn.cursor()
 
   # Get lists of source and destination courses for this rule group
+  source_course_ids = ', '.join(rule.source_course_ids.strip(':').split(':'))
   q = """
       select  c.course_id,
               c.offer_nbr,
@@ -134,20 +135,25 @@ def format_rule(rule):
               sc.min_gpa,
               sc.max_gpa
        from   courses c, disciplines d, source_courses sc
-       where  sc.rule_id = %s
-         and  %s ~ c.course_id::text
+       where  c.course_id in (%s)
+         and  sc.rule_id = %s
          and  sc.course_id = c.course_id
+         and  d.institution = c.institution
+         and  d.discipline = c.discipline
        order by c.discipline,
                 sc.max_gpa desc,
                 substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (rule.rule_id, rule.source_course_ids))
+  cursor.execute(q, (source_course_ids, rule.rule_id))
+  print(cursor.query)
   source_courses = cursor.fetchall()
+  # print(source_courses)
 
   # groups.sort(key=lambda g: (g.source_institution,
   #                            g.source_discipline,
   #                            g.source_courses[0].catalog_number))
 
+  destination_course_ids = ', '.join(rule.destination_course_ids.strip(':').split(':'))
   q = """
       select  c.course_id,
               c.discipline,
@@ -157,13 +163,17 @@ def format_rule(rule):
               c.max_credits,
               dc.transfer_credits
         from  courses c, disciplines d, destination_courses dc
-       where  dc.rule_id = %s
-         and  %s ~ c.course_id::text
+       where  c.course_id in (%s)
          and  dc.course_id = c.course_id
+         and  dc.rule_id = %s
+         and  d.institution = c.institution
+         and  d.discipline = c.discipline
        order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (rule.rule_id, rule.destination_course_ids))
+  cursor.execute(q, (destination_course_ids, rule.rule_id))
+  print(cursor.query)
   destination_courses = cursor.fetchall()
+  # print(destination_courses)
 
   # The course ids parts of the table row id
   row_id = '{}-{}-{}'.format(rule.rule_str, rule.source_course_ids, rule. destination_course_ids)
