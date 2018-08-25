@@ -115,8 +115,6 @@ def lookup_course(course_id, active_only=False, offer_nbr=1):
   """ Get HTML for one course_id. In the case of cross-listed courses, give the one with offer_nbr
       equal to 1 unless overridden.
   """
-  print(f'lookup_course({course_id}, {active_only}, {offer_nbr}')
-
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
@@ -453,4 +451,4 @@ if __name__ == '__main__':
     print(courses)
   except Exception as e:
     print(e)
-    print('Usage: python cuny_course.py institution')
+    print('Usage: python course_lookup.py institution')

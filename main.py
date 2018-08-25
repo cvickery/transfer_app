@@ -22,7 +22,7 @@ from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_rules import format_rule, format_rules, institution_names
+from format_rules import format_rule, format_rules, institution_names, rule_ids
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -613,13 +613,13 @@ def do_form_2(request, session):
   destination_subject_params = ', '.join('%s' for s in destination_subject_list)
   source_subject_params = ', '.join('%s' for s in source_subject_list)
   q = """
-  select r.*, s.source_course_ids, d.destination_course_ids
-    from  view_transfer_rules r, view_source_courses s, view_destination_courses d
+  select  r.*, s.source_course_ids, d.destination_course_ids
+    from  transfer_rules r, view_source_courses s, view_destination_courses d
    where  r.source_institution in ({})
      and  r.destination_institution in ({})
      and  r.subject_area in ({})
-     and  r.rule_id = s.rule_id
-     and  r.rule_id = d.rule_id
+     and  r.id = s.rule_id
+     and  r.id = d.rule_id
 
   order by  r.source_institution, r.subject_area, r.group_number, r.destination_institution
 
@@ -725,9 +725,7 @@ def do_form_3(request, session):
     token = str(uuid.uuid4())
     # add the rule_id to each kept review
     for review in kept_reviews:
-      cursor.execute('select rule_id from view_transfer_rules where rule_str = %s',
-                     (review['rule_key'],))
-      review['rule_id'] = cursor.fetchone().rule_id
+      review['rule_id'] = rule_ids[review['rule_key']]
     reviews = json.dumps(kept_reviews)
     q = "insert into pending_reviews (token, email, reviews) values(%s, %s, %s)"
     cursor.execute(q, (token, email, reviews))
@@ -1292,16 +1290,16 @@ def _map_course():
     rule_counts = Counter()
     rules = defaultdict(list)
     for rule in all_rules:
-      rule_str = '{}-{}-{}-{}'.format(rule.source_institution,
+      rule_key = '{}-{}-{}-{}'.format(rule.source_institution,
                                       rule.source_discipline,
                                       rule.group_number,
                                       rule.destination_institution)
       if request_type == 'show-receiving':
         rule_counts[rule.destination_institution] += 1
-        rules[rule.destination_institution].append(rule_str)
+        rules[rule.destination_institution].append(rule_key)
       else:
         rule_counts[rule.source_institution] += 1
-        rules[rule.source_institution].append(rule_str)
+        rules[rule.source_institution].append(rule_key)
 
     # Ignore inactive courses for which there are no rules
     if sum(rule_counts.values()) == 0 and course_info.course_status != 'A':
@@ -1409,11 +1407,10 @@ def lookup_rules():
 # /_GROUPS_TO_HTML
 # =================================================================================================
 # AJAX utility for converting a colon-separated list of group keys into displayable description of
-# the rules. Acts as an interface to format_rules().
+# the rules. Acts as an interface to format_rule().
 @app.route('/_groups_to_html')
 def _groups_to_html():
   groups = request.args.get('groups_string').split(':')
-  print(groups)
   return jsonify('<hr>'.join([format_rule(group) for group in groups]))
 
 

@@ -10,38 +10,19 @@ from status_utils import status_string
 
 DEBUG = False
 
-# Rule_Info = namedtuple('Rule_Info', """
-#                         source_institution
-#                         destination_institution
-#                         subject_area
-#                         group_number
-#                         review_status""")
-#
-# Source_Course = namedtuple('Source_Course', """
-#                            course_id
-#                            discipline
-#                            discipline_name
-#                            catalog_number
-#                            min_credits
-#                            max_credits
-#                            min_gpa
-#                            max_gpa
-#                            """)
-# Destination_Course = namedtuple('Destination_Course', """
-#                                 course_id
-#                                 discipline
-#                                 discipline_name
-#                                 catalog_number
-#                                 min_credits
-#                                 max_credits
-#                                 transfer_credits""")
-
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
 
 conn = pgconnection('dbname=cuny_courses')
 cursor = conn.cursor()
 cursor.execute("select code, prompt from institutions order by lower(name)")
 institution_names = {row.code: row.prompt for row in cursor}
+cursor.execute('select * from transfer_rules')
+rule_ids = dict()
+for rule in cursor.fetchall():
+  rule_ids['{}-{}-{}-{}'.format(rule.source_institution,
+                                rule.destination_institution,
+                                rule.subject_area,
+                                rule.group_number)] = rule.id
 conn.close()
 
 
@@ -107,7 +88,6 @@ def format_rules(rules, session):
     #   Colon-separated list of source course_ids
     #   hyphen
     #   Colon-separated list of destination courses_ids
-    print(rule)
     row, description = format_rule(rule)
     table += row
   table += '</tbody></table>'
@@ -119,6 +99,10 @@ def format_rules(rules, session):
 def format_rule(rule):
   """ Return strings that represent the rule as a table row and as a descriptive paragraph.
   """
+  rule_key = '{}-{}-{}-{}'.format(rule.source_institution,
+                                  rule.destination_institution,
+                                  rule.subject_area,
+                                  rule.group_number)
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
@@ -144,10 +128,8 @@ def format_rule(rule):
                 sc.max_gpa desc,
                 substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (source_course_ids, rule.rule_id))
-  print(cursor.query)
+  cursor.execute(q, (source_course_ids, rule.id))
   source_courses = cursor.fetchall()
-  # print(source_courses)
 
   # groups.sort(key=lambda g: (g.source_institution,
   #                            g.source_discipline,
@@ -170,14 +152,11 @@ def format_rule(rule):
          and  d.discipline = c.discipline
        order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (destination_course_ids, rule.rule_id))
-  print(cursor.query)
+  cursor.execute(q, (destination_course_ids, rule.id))
   destination_courses = cursor.fetchall()
-  # print(destination_courses)
 
   # The course ids parts of the table row id
-  row_id = '{}-{}-{}'.format(rule.rule_str, rule.source_course_ids, rule. destination_course_ids)
-  print('format_rule: row_id is:', row_id)
+  row_id = '{}-{}-{}'.format(rule_key, rule.source_course_ids, rule. destination_course_ids)
   min_source_credits = 0.0
   max_source_credits = 0.0
   grade = ''
@@ -252,9 +231,9 @@ def format_rule(rule):
   # hasn't been evaluated yet, the last column is just the text that says so.
   status_cell = status_string(rule.review_status)
   if rule.review_status != 0:
-    status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule.rule_str,
+    status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule_key,
                                                                         status_cell)
-  status_cell = '<span title="{}">{}</span>'.format(rule.rule_str, status_cell)
+  status_cell = '<span title="{}">{}</span>'.format(rule_key, status_cell)
   row = """<tr id="{}" class="{}">
               <td title="{}">{}</td>
               <td>{}</td>
