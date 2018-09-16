@@ -2,7 +2,7 @@ $(function ()
 {
   //  Initial Settings
   //  =============================================================================================
-  $('#need-js, #please-wait, #discipline-span, #transfers-map-div, #pop-up-div').hide();
+  $('#need-js, #loading, #discipline-span, #transfers-map-div, #pop-up-div').hide();
   $('#show-sending, #show-receiving').prop('disabled', true);
 
   $('form').submit(function (event)
@@ -22,6 +22,7 @@ $(function ()
       $('.instructions').show();
     }
   });
+
   // Clicking on the dismiss bar also hides the pop-ups.
   $('#dismiss-bar').click(function ()
   {
@@ -71,7 +72,7 @@ $(function ()
 
   //  Event Listeners
   //  =============================================================================================
-  /* Any change in Part A, the controls for institution, discipline, and course groups.
+  /* Any change in the controls for institution, discipline, and course groups.
    */
   var part_a_change = function ()
   {
@@ -146,6 +147,7 @@ $(function ()
     }
     // Trim trailing semicolon
     ranges_str = ranges_str.substring(0, ranges_str.length - 1);
+
     var find_course_ids_request = $.getJSON($SCRIPT_ROOT + '/_find_course_ids',
                                            {
                                               institution: institution,
@@ -203,6 +205,7 @@ $(function ()
     $('#transfers-map-div').hide();
   });
 
+
   /*  Show Receiving and Show Sending event handlers
    *  ---------------------------------------------------------------------------------------------
    */
@@ -249,7 +252,7 @@ $(function ()
     colleges_row += '</tr>';
     // Get the table body rows from /_map_courses
     $('#show-sending, #show-receiving').prop('disabled', true);
-    $('#please-wait').show();
+    $('#loading').show();
     var map_request = $.getJSON($SCRIPT_ROOT + '/_map_course',
                                         {
                                           course_id_list: JSON.stringify(course_id_list),
@@ -258,7 +261,7 @@ $(function ()
                                         });
     map_request.done(function (result, status)
     {
-      $('#please-wait').hide();
+      $('#loading').hide();
       $('#show-sending, #show-receiving').prop('disabled', false);
       $('#transfers-map-table').html(header_row + colleges_row + result);
       $('#setup-div').hide();
@@ -291,12 +294,11 @@ $(function ()
           $('#pop-up-div').hide();
           return;
         }
-        var rules = title_string.split(':');
-        var groups_to_html_request = $.getJSON($SCRIPT_ROOT + '/_groups_to_html',
+        var rules_to_html_request = $.getJSON($SCRIPT_ROOT + '/_rules_to_html',
                                                {
-                                                 groups_string: title_string
+                                                 rule_keys: title_string
                                                });
-        groups_to_html_request.done(function (result, status)
+        rules_to_html_request.done(function (result, status)
         {
           $('#pop-up-content').html(result);
           $('#pop-up-div').show().draggable();

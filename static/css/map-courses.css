@@ -121,14 +121,40 @@ td, th {
   color: #b30;
 }
 
-#please-wait {
-  color:#d30;
+#loading {
+  color:#333;
   background-color:#ffe;
   padding:0.5em;
   border-radius:0.25em;
-  border: 1px solid #d30;
-  font-size: 1.1em
-  ;
+  border: 1px solid #333;
+  font-size: 1.1em;
+}
+
+/* Animate the loading ellipsis.
+ * https://codepen.io/davidangel/pen/NqPYdW
+ */
+#loading .one {
+    opacity: 0;
+    animation: dot 1.3s infinite;
+    animation-delay: 0.0s;
+}
+
+#loading .two {
+    opacity: 0;
+    animation: dot 1.3s infinite;
+    animation-delay: 0.2s;
+}
+
+#loading .three {
+    opacity: 0;
+    animation: dot 1.3s infinite;
+    animation-delay: 0.3s;
+}
+
+@keyframes dot {
+      0% { opacity: 0; }
+     50% { opacity: 0; }
+    100% { opacity: 1; }
 }
 
 #dismiss-bar {

@@ -1,8 +1,9 @@
-import logging
 import sys
 import os
+import argparse
 import re
 import socket
+
 
 import json
 import uuid
@@ -22,7 +23,7 @@ from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_rules import format_rule, format_rules, institution_names, rule_ids
+from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, rule_ids
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -37,13 +38,18 @@ def date2str(date):
   return '{} {}, {}'.format(months[int(month) - 1], int(day), year)
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--debug', '-d', action='store_true')
+parser.add_argument('--args', '-a', action='store_true')
+args = parser.parse_args()
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 #
 # Module Initialization
 
-logger = logging.getLogger('debugging')
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler('debugging.log')
 sh = logging.StreamHandler()
@@ -665,7 +671,7 @@ def do_form_2(request, session):
   # groups.sort(key=lambda g: (g.source_institution,
   #                            g.source_discipline,
   #                            g.source_courses[0].catalog_number))
-  rules_table = format_rules(rules, session)
+  rules_table = format_rules(rules)
 
   result = """
   <h1>Step 3: Review Transfer Rules</h1>
@@ -887,84 +893,85 @@ def history(rule):
   return render_template('transfers.html', result=Markup(result))
 
 
-# LOOKUP PAGE
-# -------------------------------------------------------------------------------------------------
-# Lookup all the rules that involve a course.
-#
-@app.route('/lookup', methods=['GET'])
-def lookup():
-  """ Prompt for a course (or set of courses in a discipline) at an institution, and display
-      view-only information about rules that involve that or those courses.
-  """
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
-  cursor.execute('select code, prompt from institutions order by prompt')
-  options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
-  conn.close()
-  institution_select = """
-  <select id="institution" name="institution">
-    <option value="none" selected="selected">Select a College</option>
-    {}
-  </select>
-  """.format('\n'.join(options))
-  # Supply colleges from db now, but use ajax to get a college's disciplines
+# # LOOKUP PAGE
+# # -------------------------------------------------------------------------------------------------
+# # Lookup all the rules that involve a course.
+# # This page is not used any more. Map Courses does the job better.
+# #
+# @app.route('/lookup', methods=['GET'])
+# def lookup():
+#   """ Prompt for a course (or set of courses in a discipline) at an institution, and display
+#       view-only information about rules that involve that or those courses.
+#   """
+#   conn = pgconnection('dbname=cuny_courses')
+#   cursor = conn.cursor()
+#   cursor.execute('select code, prompt from institutions order by prompt')
+#   options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
+#   conn.close()
+#   institution_select = """
+#   <select id="institution" name="institution">
+#     <option value="none" selected="selected">Select a College</option>
+#     {}
+#   </select>
+#   """.format('\n'.join(options))
+#   # Supply colleges from db now, but use ajax to get a college's disciplines
 
-  result = """
-  <h1>Lookup Transfer Rules</h1>
-  <div class="instructions">
-    <p>
-      Select a college and discipline, and enter a course catalog number to see what transfer
-      rules involve that course CUNY-wide. You can limit the search to rules where the course is
-      on the sending instituion side or the receiving institution side, or leave the default and
-      get both sets.
-    </p>
-    <p>
-      The Catalog Number field can be entered as a simple course number but is actually a ”regular
-      expression” that can select a group of courses. So if you wanted to do something like find the
-      rules for all 100-level courses in a discipline, you might want to look at the <a
-      href="/regex" target="_blank">regular expression</a> web page for more information about this
-      field. And if you enter a simple course number but get back information for some additional
-      courses, that web page explains what’s going on in that case, too.
-    </p>
-  </div>
-  <form action="" method="POST">
-    <div>
-      <label for="institution">College:</label>
-      {}
-    </div>
-    <div>
-      <label for="Discipline">Discipline:</label>
-      <input type="text" id="discipline" />
-    </div>
-    <div>
-      <label for="catalog-number">Catalog Number:</label>
-      <input type="text" id="catalog-number" />
-    </div>
-    <div id="radios">
-      <div>
-        <input type="radio" id="sending-only" name="which-rules" value="1">
-        <label for="sending-only" class="radio-label">Sending Rules Only</label>
-      </div>
-      <div>
-        <input type="radio" id="receiving-only" name="which-rules" value="2">
-        <label for="receiving-only" class="radio-label"">Receiving Rules Only</label>
-      </div>
-      <div>
-        <input type="radio" id="both" name="which-rules" value="3" checked="checked">
-        <label for="both" class="radio-label">Both Sending and Receiving Rules
-        </label>
-      </div>
-    </div>
-  </form>
-  <hr>
-  <h2>Sending Rules</h2>
-  <div id="sending-rules">
-  </div>
-  <h2>Receiving Rules</h2>
-  <div id="receiving-rules">
-  </div>
-  """.format(institution_select)
-  return render_template('lookup.html', result=Markup(result))
+#   result = """
+#   <h1>Lookup Transfer Rules</h1>
+#   <div class="instructions">
+#     <p>
+#       Select a college and discipline, and enter a course catalog number to see what transfer
+#       rules involve that course CUNY-wide. You can limit the search to rules where the course is
+#       on the sending instituion side or the receiving institution side, or leave the default and
+#       get both sets.
+#     </p>
+#     <p>
+#       The Catalog Number field can be entered as a simple course number but is actually a ”regular
+#       expression” that can select a group of courses. So if you wanted to do something like find the
+#       rules for all 100-level courses in a discipline, you might want to look at the <a
+#       href="/regex" target="_blank">regular expression</a> web page for more information about this
+#       field. And if you enter a simple course number but get back information for some additional
+#       courses, that web page explains what’s going on in that case, too.
+#     </p>
+#   </div>
+#   <form action="" method="POST">
+#     <div>
+#       <label for="institution">College:</label>
+#       {}
+#     </div>
+#     <div>
+#       <label for="Discipline">Discipline:</label>
+#       <input type="text" id="discipline" />
+#     </div>
+#     <div>
+#       <label for="catalog-number">Catalog Number:</label>
+#       <input type="text" id="catalog-number" />
+#     </div>
+#     <div id="radios">
+#       <div>
+#         <input type="radio" id="sending-only" name="which-rules" value="1">
+#         <label for="sending-only" class="radio-label">Sending Rules Only</label>
+#       </div>
+#       <div>
+#         <input type="radio" id="receiving-only" name="which-rules" value="2">
+#         <label for="receiving-only" class="radio-label"">Receiving Rules Only</label>
+#       </div>
+#       <div>
+#         <input type="radio" id="both" name="which-rules" value="3" checked="checked">
+#         <label for="both" class="radio-label">Both Sending and Receiving Rules
+#         </label>
+#       </div>
+#     </div>
+#   </form>
+#   <hr>
+#   <h2>Sending Rules</h2>
+#   <div id="sending-rules">
+#   </div>
+#   <h2>Receiving Rules</h2>
+#   <div id="receiving-rules">
+#   </div>
+#   """.format(institution_select)
+#   return render_template('lookup.html', result=Markup(result))
 
 
 # MAP_COURSES PAGE
@@ -1057,7 +1064,11 @@ def map_courses():
         <button id="show-receiving">show receiving courses</button>
         <strong>or</strong>
         <button id="show-sending">show sending courses</button>
-        <span id="please-wait">Please Wait ...</span>
+        <span id="loading">Loading
+          <span class="one">.</span>
+          <span class="two">.</span>
+          <span class="three">.</span>
+        </span>
       </div>
     </form>
   </div>
@@ -1265,35 +1276,57 @@ def _map_course():
                                   course_info.catalog_number)
     if request_type == 'show-receiving':
       row_template = '<tr>' + course_info_cell + '{}</tr>'
-      cursor.execute("""select source_institution,
-                               source_discipline,
-                               group_number,
-                               destination_institution
-                        from source_courses
-                        where course_id = %s
-                        order by source_institution, source_discipline, destination_institution
-                    """, (course['course_id'], ))  # ???? farmers mkt
+      cursor.execute("""select c.course_id,
+                               c.offer_nbr,
+                               s.rule_id,
+                               s.source_institution,
+                               s.destination_institution,
+                               s.subject_area,
+                               s.group_number
+                        from courses c, source_courses s
+                        where s. course_id = %s
+                          and s.course_id = c.course_id
+                        order by source_institution, subject_area, destination_institution
+                    """, (course_info.course_id, ))
 
     else:
       row_template = '<tr>{}' + course_info_cell + '</tr>'
-      cursor.execute("""select source_institution,
-                               source_discipline,
-                               group_number,
-                               destination_institution
-                        from destination_courses
-                        where course_id = %s
-                        order by source_institution, source_discipline, destination_institution
-                    """, (course['course_id'], ))
+      cursor.execute("""select c.course_id,
+                               c.offer_nbr,
+                               d.rule_id,
+                               d.source_institution,
+                               d.destination_institution,
+                               d.subject_area,
+                               d.group_number
+                        from courses c, destination_courses d
+                        where d.course_id = %s
+                          and d.course_id = c.course_id
+                        order by source_institution, subject_area, destination_institution
+                    """, (course_info.course_id, ))
     all_rules = cursor.fetchall()
+
+    # # Find all the rules that have the same course_id repeated.
+    # repeat_counts = dict()
+    # for rule in all_rules:
+    #   rule_course_tuple = (rule.rule_id, rule.course_id)
+    #   if rule_course_tuple not in repeat_counts.keys():
+    #     repeat_counts[rule_course_tuple] = 0
+    #   repeat_counts[rule_course_tuple] += 1
+    # # remove all rules where the repeat count is 1
+    # rules_with_repeated_course_ids = set()
+    # for key in repeat_counts.keys():
+    #   if repeat_counts[key] > 1:
+    #     rules_with_repeated_course_ids.add(key)
+
     # For each destination/source institution, need the count of number of rules and a list of the
     # rules.
     rule_counts = Counter()
     rules = defaultdict(list)
     for rule in all_rules:
       rule_key = '{}-{}-{}-{}'.format(rule.source_institution,
-                                      rule.source_discipline,
-                                      rule.group_number,
-                                      rule.destination_institution)
+                                      rule.destination_institution,
+                                      rule.subject_area,
+                                      rule.group_number)
       if request_type == 'show-receiving':
         rule_counts[rule.destination_institution] += 1
         rules[rule.destination_institution].append(rule_key)
@@ -1404,14 +1437,17 @@ def lookup_rules():
   return jsonify(rules)
 
 
-# /_GROUPS_TO_HTML
+# /_RULES_TO_HTML
 # =================================================================================================
-# AJAX utility for converting a colon-separated list of group keys into displayable description of
+# AJAX utility for converting a colon-separated list of rule keys into displayable description of
 # the rules. Acts as an interface to format_rule().
-@app.route('/_groups_to_html')
-def _groups_to_html():
-  groups = request.args.get('groups_string').split(':')
-  return jsonify('<hr>'.join([format_rule(group) for group in groups]))
+@app.route('/_rules_to_html')
+def _rules_to_html():
+  if args.debug:
+    print('_rules_to_html()')
+  rule_keys = request.args.get('rule_keys').split(':')
+  print(rule_keys)
+  return jsonify('<hr>'.join([format_rule_by_key(rule_key)[0] for rule_key in rule_keys]))
 
 
 # /_COURSES
