@@ -135,20 +135,23 @@ td, th {
  */
 #loading .one {
     opacity: 0;
-    animation: dot 1.3s infinite;
+    font-size: 1.1em;
+    animation: dot 1.5s alternate infinite;
     animation-delay: 0.0s;
 }
 
 #loading .two {
     opacity: 0;
-    animation: dot 1.3s infinite;
+    font-size: 1.1em;
+    animation: dot 1.5s alternate infinite;
     animation-delay: 0.2s;
 }
 
 #loading .three {
     opacity: 0;
-    animation: dot 1.3s infinite;
-    animation-delay: 0.3s;
+    font-size: 1.1em;
+    animation: dot 1.5s alternate infinite;
+    animation-delay: 0.4s;
 }
 
 @keyframes dot {
