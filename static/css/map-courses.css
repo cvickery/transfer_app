@@ -16,6 +16,9 @@ body {
 .hide-show {
   text-align:center;
   padding:0.5em;
+  border:1px solid #333;
+  border-radius: 0.25em;
+  background-color:#efe;
 }
 
 h2 {
