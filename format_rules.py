@@ -7,11 +7,12 @@ import argparse
 from course_lookup import lookup_course
 from pgconnection import pgconnection
 from status_utils import status_string
+from copy import copy
 
 DEBUG = False
 
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
-
+Work_Tuple = namedtuple('Work_Tuple', 'course_id offer_nbr discipline')
 conn = pgconnection('dbname=cuny_courses')
 cursor = conn.cursor()
 cursor.execute("select code, prompt from institutions order by lower(name)")
@@ -59,8 +60,8 @@ def _grade(min_gpa, max_gpa):
 
 # format_rules()
 # -------------------------------------------------------------------------------------------------
-def format_rules(rules, session):
-  """ Generate HTML table with information about each rule group.
+def format_rules(rules):
+  """ Generate HTML table with information about each transfer rule.
   """
   table = """
     <table id="rules-table">
@@ -76,14 +77,14 @@ def format_rules(rules, session):
       <tbody>
       """
   for rule in rules:
-    # The id for the row will be the rule id plus lists of course_ids:
-    #   Source institution
-    #   hyphen
-    #   Source Discipline
-    #   hyphen
-    #   Group number
-    #   hyphen
-    #   Destination institution
+    # The id attribute for each table row is the rule_key plus lists of course_ids:
+    #   Source Institution        |
+    #   hyphen                    |
+    #   Destination Institution   | R K
+    #   hyphen                    | U E
+    #   Subject Area              | L Y
+    #   hyphen                    | E
+    #   Group Number              |
     #   hyphen
     #   Colon-separated list of source course_ids
     #   hyphen
@@ -94,20 +95,47 @@ def format_rules(rules, session):
   return table
 
 
+# format_rule_by_key()
+# -------------------------------------------------------------------------------------------------
+def format_rule_by_key(rule_key):
+  """ Generate a rule tuple given the key.
+  """
+  rule_id = rule_ids[rule_key]
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute("""select t.*, s.source_course_ids, d.destination_course_ids
+                      from transfer_rules t, view_source_courses s, view_destination_courses d
+                     where t.id = %s
+                       and t.id = s.rule_id
+                       and t.id = d.rule_id
+                     order by t. source_institution, t.destination_institution, t.subject_area
+                 """, (rule_id, ))
+  return format_rule(cursor.fetchone(), rule_key)
+
+
 # format_rule()
 # -------------------------------------------------------------------------------------------------
-def format_rule(rule):
-  """ Return strings that represent the rule as a table row and as a descriptive paragraph.
+def format_rule(rule, rule_key=None):
+  """ Return two strings, one that represent the rule as a table row and one that is a descriptive
+      paragraph.
   """
-  rule_key = '{}-{}-{}-{}'.format(rule.source_institution,
-                                  rule.destination_institution,
-                                  rule.subject_area,
-                                  rule.group_number)
+  if rule_key is None:
+    rule_key = '{}-{}-{}-{}'.format(rule.source_institution,
+                                    rule.destination_institution,
+                                    rule.subject_area,
+                                    rule.group_number)
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
-  # Get lists of source and destination courses for this rule group
-  source_course_ids = ', '.join(rule.source_course_ids.strip(':').split(':'))
+  # Source Courses
+  source_course_ids = [id for id in rule.source_course_ids.strip(':').split(':')]
+  # There should be no duplicates in source_course_ids for the rule
+  assert len(set(source_course_ids)) == len(source_course_ids), \
+      f'Duplcated course id(s) for rule {rule_key}'
+
+  # Get source disciplines covered by the rule
+  source_disciplines = rule.source_disciplines.strip(':').split(':')
+
   q = """
       select  c.course_id,
               c.offer_nbr,
@@ -128,13 +156,49 @@ def format_rule(rule):
                 sc.max_gpa desc,
                 substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (source_course_ids, rule.id))
+  cursor.execute(q, (', '.join(source_course_ids), rule.id))
   source_courses = cursor.fetchall()
 
-  # groups.sort(key=lambda g: (g.source_institution,
-  #                            g.source_discipline,
-  #                            g.source_courses[0].catalog_number))
+  # Figure out what discipline to list first in the case of multiple disciplines or cross-listings
+  primary_discipline = source_courses[0].discipline   # default
+  if rule.subject_area in source_disciplines:
+    primary_discipline = rule.subject_area
+  else:
+    # Take the most frequently occurring discipline if there is a choice
+    if len(source_disciplines) > 1:
+      num_courses = dict([(d, 0) for d in source_disciplines])
+      for source_course in source_courses:
+        num_courses[source_course.discipline] += 1
+      primary_discipline = sorted(num_courses.items(), key=lambda kv: kv[1])[0][0]
+      print(f'*** {primary_discipline} ({num_courses[primary_discipline]}): {source_disciplines}')
+  print(f'**** {primary_discipline}')
+  #  Check for cross-listed courses (duplicated course_ids in query results)
+  if len(source_courses) != len(source_course_ids):
+    assert len(source_courses) > len(source_course_ids), \
+        f'Not all courses found for rule {rule_key}'
+    assert len(source_courses) > 0, \
+        f'No courses found for rule {rule_key}'
+    courses_by_id = copy(source_courses)
+    courses_by_id.sort(key=lambda record: (record.course_id, record.offer_nbr))
+    prev = -1
+    cross_listed_with = dict()
+    for course in courses_by_id:
+      if course.course_id == prev:
+        if prev not in cross_listed_with.keys():
+          cross_listed_with[prev] = []
+        cross_listed_with[prev].append(course)
+      else:
+        prev = course.course_id
+  # Now to figure out what to do with this nice list of source course cross-listings ... which also
+  # are still in source_courses.
+  for course_id in cross_listed_with.keys():
+    print(f'{course_id} is cross-listed with')
+    for course in cross_listed_with[course_id]:
+      print(f'  {course.offer_nbr}: {course.discipline} {course.catalog_number}')
 
+  source_class = ''  # for the HTML credit-mismatch indicator
+
+  # Destination Courses
   destination_course_ids = ', '.join(rule.destination_course_ids.strip(':').split(':'))
   q = """
       select  c.course_id,
@@ -156,7 +220,7 @@ def format_rule(rule):
   destination_courses = cursor.fetchall()
 
   # The course ids parts of the table row id
-  row_id = '{}-{}-{}'.format(rule_key, rule.source_course_ids, rule. destination_course_ids)
+  row_id = '{}-{}-{}'.format(rule_key, rule.source_course_ids, rule.destination_course_ids)
   min_source_credits = 0.0
   max_source_credits = 0.0
   grade = ''
@@ -166,6 +230,7 @@ def format_rule(rule):
 
   # Source course strings: All the courses have the same discipline, so that gets listed once,
   # with catalog numbers separated by slashes.
+  # TODO: fix for cross-listed courses. All courses do not necessarily have the same discipline.
   for course in source_courses:
     course_grade = _grade(course.min_gpa, course.max_gpa)
     if course_grade != grade:

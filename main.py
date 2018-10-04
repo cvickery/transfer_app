@@ -58,8 +58,7 @@ fh.setFormatter(formatter)
 # logger.addHandler(fh)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
-
-
+#
 # Overhead URIs
 # =================================================================================================
 @app.route('/favicon.ico')
@@ -1180,19 +1179,20 @@ def _disciplines():
 def _find_course_ids():
   """ Given an institution and discipline, get all the matching course_ids. Then use range strings
       to select only the ones wanted (100-level, etc.)
-      Return an array of triples, with the offer_nbr included, so JavaScript can look up the courses
-      without getting flummoxed by cross-listed courses having a different discipline.
+      Return an array of {course_id, catalog_number} tuples.
+      Cross-listing info (offer_nbr) is not included here because rules don’t know about them.
   """
   institution = request.args.get('institution')
   discipline = request.args.get('discipline')
   ranges_str = request.args.get('ranges_str')
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute("""select course_id, offer_nbr, catalog_number
+  cursor.execute("""select course_id, catalog_number
                     from courses
                     where institution = %s and discipline = %s
                  """, (institution, discipline))
-  courses = [[course, _numeric_part(course.catalog_number)] for course in cursor.fetchall()]
+  courses = [[course.course_id, _numeric_part(course.catalog_number)]
+             for course in cursor.fetchall()]
 
   # Filter out the deplorables
   # Range string syntax: all | min:max [;...]
@@ -1202,16 +1202,16 @@ def _find_course_ids():
     min, max = range_string.split(':')
     ranges.append((float(min), float((max))))
 
+  # Keep courses whose numeric part is within one of the ranges
   keepers = []
   for course in courses:
-    # Extract the numeric part of the catalog number, including up to one fractional character.
     for range in ranges:
       if 'all' in ranges_str or course[1] >= range[0] and course[1] < range[1]:
         keepers.append(course)
         continue
 
-  # The keepers list includes the normalized catalog_number so it can be sorted before returning
-  # just the array of selected course triples.
+  # The keepers list included the numeric part of catalog_number as a float so it could be sorted
+  # before returning just the array of course_ids.
   keepers.sort(key=lambda c: c[1])
   return jsonify([c[0] for c in keepers])
 
@@ -1233,12 +1233,17 @@ def _numeric_part(catalog_number):
 # /_MAP_COURSE
 # =================================================================================================
 # AJAX generator of course_map table.
+#
 # Create a table row for each course_id in course_id_list; a column for each element in colleges.
+# Table cells show how many rules there are for transferring that course to or from the institutions
+# listed, with the title attribute of each cell being a colon-separated list of rule_keys (if any),
+# and class attributes for bogus rules, etc.
 # Request type tells which type of request: show-sending or show-receiving.
+#
 @app.route('/_map_course')
 def _map_course():
   # Note to self: there has to be a cleaner way to pass an array from JavaScript
-  courses = json.loads(request.args.getlist('course_id_list')[0])
+  course_ids = json.loads(request.args.getlist('course_id_list')[0])
   colleges = json.loads(request.args.getlist('colleges')[0])
 
   request_type = request.args.get('request_type', default='show-receiving')
@@ -1246,7 +1251,7 @@ def _map_course():
   table_rows = []
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  for course in courses:
+  for course_id in course_ids:
     cursor.execute("""select  course_id,
                               institution,
                               discipline,
@@ -1256,8 +1261,7 @@ def _map_course():
                               designation
                       from courses
                       where course_id = %s
-                      and offer_nbr = %s
-                   """, (course['course_id'], course['offer_nbr']))
+                   """, (course_id, ))
     if cursor.rowcount == 0:
       continue
     course_info = cursor.fetchone()
@@ -1274,33 +1278,21 @@ def _map_course():
                                   course_info.institution.rstrip('0123456789'),
                                   course_info.discipline,
                                   course_info.catalog_number)
+    # Collect rules where the selected course is a sending course
     if request_type == 'show-receiving':
       row_template = '<tr>' + course_info_cell + '{}</tr>'
-      cursor.execute("""select c.course_id,
-                               c.offer_nbr,
-                               s.rule_id,
-                               s.source_institution,
-                               s.destination_institution,
-                               s.subject_area,
-                               s.group_number
-                        from courses c, source_courses s
-                        where s. course_id = %s
-                          and s.course_id = c.course_id
+      cursor.execute("""select distinct *
+                        from transfer_rules r
+                        where r.id in (select rule_id from source_courses where course_id = %s)
                         order by source_institution, subject_area, destination_institution
                     """, (course_info.course_id, ))
 
     else:
+      # Collect rules where the selected course is a destination course
       row_template = '<tr>{}' + course_info_cell + '</tr>'
-      cursor.execute("""select c.course_id,
-                               c.offer_nbr,
-                               d.rule_id,
-                               d.source_institution,
-                               d.destination_institution,
-                               d.subject_area,
-                               d.group_number
-                        from courses c, destination_courses d
-                        where d.course_id = %s
-                          and d.course_id = c.course_id
+      cursor.execute("""select distinct *
+                        from transfer_rules r
+                        where r.id in (select rule_id from destination courses where course_id = %s)
                         order by source_institution, subject_area, destination_institution
                     """, (course_info.course_id, ))
     all_rules = cursor.fetchall()

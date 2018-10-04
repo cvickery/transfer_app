@@ -148,6 +148,8 @@ $(function ()
     // Trim trailing semicolon
     ranges_str = ranges_str.substring(0, ranges_str.length - 1);
 
+    // Get all course_ids for courses within one of the ranges for the given discipline at an
+    // institution.
     var find_course_ids_request = $.getJSON($SCRIPT_ROOT + '/_find_course_ids',
                                            {
                                               institution: institution,
@@ -156,12 +158,7 @@ $(function ()
                                            });
     find_course_ids_request.done(function (result, status)
     {
-      course_id_list = [];
-      for (var i = 0; i < result.length; i++)
-      {
-        // course_id_list includes both course_id and offer_nbr for unambiguous course lookup
-        course_id_list.push({course_id: result[i][0], offer_nbr: result[i][1]});
-      }
+      course_id_list = result;
       update_course_count();
     });
   };
@@ -250,7 +247,7 @@ $(function ()
       colleges[c] = colleges[c].code;
     }
     colleges_row += '</tr>';
-    // Get the table body rows from /_map_courses
+    // Get the table body rows from /_map_course
     $('#show-sending, #show-receiving').prop('disabled', true);
     $('#loading').show();
     var map_request = $.getJSON($SCRIPT_ROOT + '/_map_course',
