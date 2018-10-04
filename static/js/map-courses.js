@@ -37,7 +37,7 @@ $(function ()
 
 //  Globals
 //  ===============================================================================================
-  var course_id_list = [];
+  var course_list = [];
   var institutions = [];
   var institutions_request = $.getJSON($SCRIPT_ROOT + '/_institutions');
   institutions_request.done(function (result, status)
@@ -53,7 +53,7 @@ $(function ()
   function update_course_count()
   {
     $('#show-sending, #show-receiving').prop('disabled', true);
-    switch (course_id_list.length)
+    switch (course_list.length)
     {
       case 0:
         // There were courses to look up, but none were found
@@ -63,7 +63,7 @@ $(function ()
         $('#num-courses').text('One course');
         break;
       default:
-        $('#num-courses').text(`${course_id_list.length} courses`);
+        $('#num-courses').text(`${course_list.length} courses`);
         break;
     }
     //  At least one course was selected: enable action buttons
@@ -82,7 +82,7 @@ $(function ()
 
     if ($(this).attr('id') === 'institution')
     {
-      course_id_list = [];
+      course_list = [];
       update_course_count();
       if (institution === 'none')
       {
@@ -105,7 +105,7 @@ $(function ()
 
     if (institution === 'none' || discipline === 'none' || course_groups.length === 0)
     {
-      course_id_list = [];
+      course_list = [];
       update_course_count();
       return;
     }
@@ -158,7 +158,7 @@ $(function ()
                                            });
     find_course_ids_request.done(function (result, status)
     {
-      course_id_list = result;
+      course_list = result;
       update_course_count();
     });
   };
@@ -170,7 +170,7 @@ $(function ()
     $('#course-ids').val('');
     $('#show-sending, #show-receiving').prop('disabled', true);
     $('#num-courses').text('No courses');
-    course_id_list = [];
+    course_list = [];
   });
 
   /* Type of colleges changed. Be sure at least one checkbox is checked.
@@ -252,7 +252,8 @@ $(function ()
     $('#loading').show();
     var map_request = $.getJSON($SCRIPT_ROOT + '/_map_course',
                                         {
-                                          course_id_list: JSON.stringify(course_id_list),
+                                          course_list: JSON.stringify(course_list),
+                                          discipline: $('#discipline').val(),
                                           colleges: JSON.stringify(colleges),
                                           request_type: $(this).attr('id')
                                         });

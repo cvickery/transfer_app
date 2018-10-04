@@ -1243,7 +1243,8 @@ def _numeric_part(catalog_number):
 @app.route('/_map_course')
 def _map_course():
   # Note to self: there has to be a cleaner way to pass an array from JavaScript
-  course_ids = json.loads(request.args.getlist('course_id_list')[0])
+  course_ids = json.loads(request.args.getlist('course_list')[0])
+  discipline = request.args.get('discipline')
   colleges = json.loads(request.args.getlist('colleges')[0])
 
   request_type = request.args.get('request_type', default='show-receiving')
@@ -1261,7 +1262,8 @@ def _map_course():
                               designation
                       from courses
                       where course_id = %s
-                   """, (course_id, ))
+                      and discipline = %s
+                   """, (course_id, discipline))
     if cursor.rowcount == 0:
       continue
     course_info = cursor.fetchone()
