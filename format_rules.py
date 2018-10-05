@@ -190,25 +190,26 @@ def format_rule(rule, rule_key=None):
         num_courses[source_course.discipline] += 1
       primary_discipline = sorted(num_courses.items(), key=lambda kv: kv[1])[0][0]
       print(f'*** {primary_discipline} ({num_courses[primary_discipline]}): {source_disciplines}')
-  print(f'**** {primary_discipline}')
+  print(f'**** primary_discipline for {rule_key} is {primary_discipline}')
 
-  #  Check for cross-listed courses (duplicated course_ids in query results)
+  # Sanity checks
   if len(source_courses) != len(source_course_ids):
     assert len(source_courses) > len(source_course_ids), \
         f'Not all courses found for rule {rule_key}'
     assert len(source_courses) > 0, \
         f'No courses found for rule {rule_key}'
-    courses_by_id = copy(source_courses)
-    courses_by_id.sort(key=lambda record: (record.course_id, record.offer_nbr))
-    prev = -1
-    cross_listed_with = dict()
-    for course in courses_by_id:
-      if course.course_id == prev:
-        if prev not in cross_listed_with.keys():
-          cross_listed_with[prev] = []
-        cross_listed_with[prev].append(course)
-      else:
-        prev = course.course_id
+  #  Check for cross-listed courses (duplicated course_ids in query results)
+  courses_by_id = copy(source_courses)
+  courses_by_id.sort(key=lambda record: record.course_id)
+  cross_listed_with = dict()
+  prev_course = None
+  for this_course in courses_by_id:
+    if prev_course is not None and this_course.course_id == prev_course.course_id:
+      if prev_course.course_id not in cross_listed_with.keys():
+        cross_listed_with[this_course.course_id] = [prev_course]
+      cross_listed_with[this_course.course_id].append(this_course)
+    else:
+      prev_course = this_course
 
   # Now to figure out what to do with this nice list of source course cross-listings ... which also
   # are still in source_courses. The one with the primary_discipline stays in source_courses and
@@ -217,10 +218,11 @@ def format_rule(rule, rule_key=None):
   # lowest catalog number in source_courses.
   for course_id in cross_listed_with.keys():
     print(f'{course_id} is cross-listed with')
+    for course in cross_listed_with[course_id]:
+      print(f'  {course.offer_nbr}: {course.discipline} {course.catalog_number}')
     primary_course = None
     # Find first course with primary_discipline (there has to be one)
     for course in cross_listed_with[course_id]:
-      print(f'  {course.offer_nbr}: {course.discipline} {course.catalog_number}')
       if course.discipline == primary_discipline:
         primary_course = course
         break
