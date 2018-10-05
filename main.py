@@ -23,7 +23,8 @@ from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, rule_ids
+from format_rules import format_rule, format_rules, format_rule_by_key, \
+    institution_names, rule_ids, numeric_part
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -1191,7 +1192,7 @@ def _find_course_ids():
                     from courses
                     where institution = %s and discipline = %s
                  """, (institution, discipline))
-  courses = [[course.course_id, _numeric_part(course.catalog_number)]
+  courses = [[course.course_id, numeric_part(course.catalog_number)]
              for course in cursor.fetchall()]
 
   # Filter out the deplorables
@@ -1214,20 +1215,6 @@ def _find_course_ids():
   # before returning just the array of course_ids.
   keepers.sort(key=lambda c: c[1])
   return jsonify([c[0] for c in keepers])
-
-
-# _numeric_part()
-# -------------------------------------------------------------------------------------------------
-def _numeric_part(catalog_number):
-  """ Helper function for _find_course_ids().
-  """
-  # ASSUMPTION: Catalog numbers are always less than 1,000. If larger, they are adjustments to
-  # the "no decimals in catalog numbers" edict, so reduce them to the correct range.
-  match = re.search(r'(\d+\.?\d*)', catalog_number)
-  numeric_part = float(match.group(1))
-  while numeric_part > 1000.0:
-    numeric_part = numeric_part / 10.0
-  return numeric_part
 
 
 # /_MAP_COURSE

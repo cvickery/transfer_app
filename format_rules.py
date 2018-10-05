@@ -27,6 +27,24 @@ for rule in cursor.fetchall():
 conn.close()
 
 
+# numeric_part()
+# -------------------------------------------------------------------------------------------------
+def numeric_part(catalog_number):
+  """ Helper function for format_rule and /_find_course_ids() AJAX utility.
+      Returns the numeric part of a catalog_number (ignoring letter suffixes, etc) as a real number.
+  """
+  # ASSUMPTION: Catalog numbers are always less than 1,000. If larger, they are adjustments to
+  # the "no decimals in catalog numbers" edict, so reduce them to the correct range.
+  #
+  # NOTE: this function has been added to the db so queries can select the return value from there.
+
+  match = re.search(r'(\d+\.?\d*)', catalog_number)
+  numeric_part = float(match.group(1))
+  while numeric_part > 1000.0:
+    numeric_part = numeric_part / 10.0
+  return numeric_part
+
+
 # _grade()
 # -------------------------------------------------------------------------------------------------
 def _grade(min_gpa, max_gpa):
@@ -116,7 +134,7 @@ def format_rule_by_key(rule_key):
 # format_rule()
 # -------------------------------------------------------------------------------------------------
 def format_rule(rule, rule_key=None):
-  """ Return two strings, one that represent the rule as a table row and one that is a descriptive
+  """ Return two strings, one that represents the rule as a table row and one that is a descriptive
       paragraph.
   """
   if rule_key is None:
@@ -142,6 +160,7 @@ def format_rule(rule, rule_key=None):
               c.discipline,
               d.description as discipline_name,
               trim(c.catalog_number) as catalog_number,
+              numeric_part(c.catalog_number) as cat_num,
               c.min_credits,
               c.max_credits,
               sc.min_gpa,
@@ -172,6 +191,7 @@ def format_rule(rule, rule_key=None):
       primary_discipline = sorted(num_courses.items(), key=lambda kv: kv[1])[0][0]
       print(f'*** {primary_discipline} ({num_courses[primary_discipline]}): {source_disciplines}')
   print(f'**** {primary_discipline}')
+
   #  Check for cross-listed courses (duplicated course_ids in query results)
   if len(source_courses) != len(source_course_ids):
     assert len(source_courses) > len(source_course_ids), \
@@ -189,12 +209,35 @@ def format_rule(rule, rule_key=None):
         cross_listed_with[prev].append(course)
       else:
         prev = course.course_id
+
   # Now to figure out what to do with this nice list of source course cross-listings ... which also
-  # are still in source_courses.
+  # are still in source_courses. The one with the primary_discipline stays in source_courses and
+  # gets removed from cross_listed_with. The ones in cross_listed_with get removed from
+  # source_courses. If the same discipline is repeated in the cross-listing, retain the one with the
+  # lowest catalog number in source_courses.
   for course_id in cross_listed_with.keys():
     print(f'{course_id} is cross-listed with')
+    primary_course = None
+    # Find first course with primary_discipline (there has to be one)
     for course in cross_listed_with[course_id]:
       print(f'  {course.offer_nbr}: {course.discipline} {course.catalog_number}')
+      if course.discipline == primary_discipline:
+        primary_course = course
+        break
+    # *** THIS FAILS WHEN THERE ARE TWO RULES FOR CROSS-LISTED COURSES AND ONE OF THEM IS NOT THE
+    # *** PRIMARY DISCIPLINE
+    assert primary_course is not None, \
+        f'Failed to find primary course in {cross_listed_with[course_id]}'
+    # Find the primary course with the lowest catalog_number
+    for course in cross_listed_with[course_id]:
+      if course.discipline == primary_discipline and course.cat_num < primary_course.cat_num:
+        primary_course = course
+    # Remove primary_course from cross_listed_with and remove remaining cross_listed_with courses
+    # from source_courses
+    cross_listed_with[course_id].remove(primary_course)
+    for course in cross_listed_with[course_id]:
+      source_courses.remove(course)
+      # YOU ARE HERE
 
   source_class = ''  # for the HTML credit-mismatch indicator
 
@@ -231,6 +274,9 @@ def format_rule(rule, rule_key=None):
   # Source course strings: All the courses have the same discipline, so that gets listed once,
   # with catalog numbers separated by slashes.
   # TODO: fix for cross-listed courses. All courses do not necessarily have the same discipline.
+  # Grade requirement can chage as the list of courses is traversed.
+  # Encountering a course with cross-listings: list cross-listed course(s) in parens following the
+  # catalog number. "Passing grade in LCD 108(=ANTH 108 or WCGI 101)/210"
   for course in source_courses:
     course_grade = _grade(course.min_gpa, course.max_gpa)
     if course_grade != grade:
