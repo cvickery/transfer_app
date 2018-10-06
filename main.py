@@ -1258,7 +1258,7 @@ def _map_course():
     if course_info.course_status != 'A':
       class_info = 'selected-course inactive-course'
     course_info_cell = """
-                         <th class="{}" title="course_id {}: {} {}"{}>{} {} {}</th>
+                         <th class="clickable {}" title="course_id {}: {} {}"{}>{} {} {}</th>
                        """.format(class_info,
                                   course_info.course_id,
                                   course_info.institution,
@@ -1281,23 +1281,10 @@ def _map_course():
       row_template = '<tr>{}' + course_info_cell + '</tr>'
       cursor.execute("""select distinct *
                         from transfer_rules r
-                        where r.id in (select rule_id from destination courses where course_id = %s)
+                        where r.id in (select rule_id from destination_courses where course_id = %s)
                         order by source_institution, subject_area, destination_institution
                     """, (course_info.course_id, ))
     all_rules = cursor.fetchall()
-
-    # # Find all the rules that have the same course_id repeated.
-    # repeat_counts = dict()
-    # for rule in all_rules:
-    #   rule_course_tuple = (rule.rule_id, rule.course_id)
-    #   if rule_course_tuple not in repeat_counts.keys():
-    #     repeat_counts[rule_course_tuple] = 0
-    #   repeat_counts[rule_course_tuple] += 1
-    # # remove all rules where the repeat count is 1
-    # rules_with_repeated_course_ids = set()
-    # for key in repeat_counts.keys():
-    #   if repeat_counts[key] > 1:
-    #     rules_with_repeated_course_ids.add(key)
 
     # For each destination/source institution, need the count of number of rules and a list of the
     # rules.
@@ -1322,19 +1309,22 @@ def _map_course():
     # Fill in the data cells for each college
     data_cells = ''
     for college in colleges:
-      num_rules = rule_counts[college]
-      rules_str = ':'.join(rules[college])
       class_info = ''
+      num_rules = rule_counts[college]
+      if num_rules > 0:
+        class_info = 'clickable '
+      rules_str = ':'.join(rules[college])
       if course_info.course_status == 'A' and num_rules == 0 and college != course_info.institution:
-        class_info = 'missing-rule'
+        class_info += 'missing-rule'
       if num_rules == 1 and (course_info.designation == 'MLA' or course_info.designation == 'MNL'):
-        class_info = 'blanket-credit'
+        class_info += 'blanket-credit'
       if course_info.course_status != 'A' and num_rules > 0 and college != course_info.institution:
-        class_info = 'bogus-rule'
+        class_info += 'bogus-rule'
       if num_rules > 0 and college == course_info.institution:
-        class_info = 'self-rule'
+        class_info += 'self-rule'
+      class_info = class_info.strip()
       if class_info != '':
-        class_info = ' class="{}"'.format(class_info)
+        class_info = f' class="{class_info}"'
       data_cells += '<td title="{}"{}>{}</td>'.format(rules_str, class_info, num_rules)
     table_rows.append(row_template.format(data_cells))
 

@@ -27,6 +27,23 @@ for rule in cursor.fetchall():
 conn.close()
 
 
+# andor_list()
+# -------------------------------------------------------------------------------------------------
+def andor_list(items, andor='and'):
+  """ Join a list of stings into a comma-separated con/disjunction.
+      Forms:
+        a             a
+        a and b       a or b
+        a, b, and c   a, b, or c
+  """
+  if len(items) == 1:
+    return items[0]
+  if len(items) == 2:
+    return items[0] + f' {andor} ' + items[1]
+  last_item = items.pop()
+  return ', '.join(items) + f', {andor} ' + last_item
+
+
 # numeric_part()
 # -------------------------------------------------------------------------------------------------
 def numeric_part(catalog_number):
@@ -189,8 +206,6 @@ def format_rule(rule, rule_key=None):
       for source_course in source_courses:
         num_courses[source_course.discipline] += 1
       primary_discipline = sorted(num_courses.items(), key=lambda kv: kv[1])[0][0]
-      print(f'*** {primary_discipline} ({num_courses[primary_discipline]}): {source_disciplines}')
-  print(f'**** primary_discipline for {rule_key} is {primary_discipline}')
 
   # Sanity checks
   if len(source_courses) != len(source_course_ids):
@@ -198,6 +213,7 @@ def format_rule(rule, rule_key=None):
         f'Not all courses found for rule {rule_key}'
     assert len(source_courses) > 0, \
         f'No courses found for rule {rule_key}'
+
   #  Check for cross-listed courses (duplicated course_ids in query results)
   courses_by_id = copy(source_courses)
   courses_by_id.sort(key=lambda record: record.course_id)
@@ -208,8 +224,7 @@ def format_rule(rule, rule_key=None):
       if prev_course.course_id not in cross_listed_with.keys():
         cross_listed_with[this_course.course_id] = [prev_course]
       cross_listed_with[this_course.course_id].append(this_course)
-    else:
-      prev_course = this_course
+    prev_course = this_course
 
   # Now to figure out what to do with this nice list of source course cross-listings ... which also
   # are still in source_courses. The one with the primary_discipline stays in source_courses and
@@ -217,17 +232,12 @@ def format_rule(rule, rule_key=None):
   # source_courses. If the same discipline is repeated in the cross-listing, retain the one with the
   # lowest catalog number in source_courses.
   for course_id in cross_listed_with.keys():
-    print(f'{course_id} is cross-listed with')
-    for course in cross_listed_with[course_id]:
-      print(f'  {course.offer_nbr}: {course.discipline} {course.catalog_number}')
     primary_course = None
     # Find first course with primary_discipline (there has to be one)
     for course in cross_listed_with[course_id]:
       if course.discipline == primary_discipline:
         primary_course = course
         break
-    # *** THIS FAILS WHEN THERE ARE TWO RULES FOR CROSS-LISTED COURSES AND ONE OF THEM IS NOT THE
-    # *** PRIMARY DISCIPLINE
     assert primary_course is not None, \
         f'Failed to find primary course in {cross_listed_with[course_id]}'
     # Find the primary course with the lowest catalog_number
@@ -239,7 +249,6 @@ def format_rule(rule, rule_key=None):
     cross_listed_with[course_id].remove(primary_course)
     for course in cross_listed_with[course_id]:
       source_courses.remove(course)
-      # YOU ARE HERE
 
   source_class = ''  # for the HTML credit-mismatch indicator
 
@@ -268,45 +277,50 @@ def format_rule(rule, rule_key=None):
   row_id = '{}-{}-{}'.format(rule_key, rule.source_course_ids, rule.destination_course_ids)
   min_source_credits = 0.0
   max_source_credits = 0.0
-  grade = ''
-  discipline = ''
-  catalog_number = ''
   source_course_list = ''
 
-  # Source course strings: All the courses have the same discipline, so that gets listed once,
-  # with catalog numbers separated by slashes.
-  # TODO: fix for cross-listed courses. All courses do not necessarily have the same discipline.
+  # All source courses do not necessarily have the same discipline.
   # Grade requirement can chage as the list of courses is traversed.
-  # Encountering a course with cross-listings: list cross-listed course(s) in parens following the
-  # catalog number. "Passing grade in LCD 108(=ANTH 108 or WCGI 101)/210"
+  # If course has cross-listings, list cross-listed course(s) in parens following the
+  # catalog number. AND-list within a list of courses having the same grade requirement. OR-list
+  # for cross-listed courses.
+  # Examples:
+  #   Passing grades in LCD 101 (=ANTH 101 or CMLIT 207) and LCD 102.
+  #   Passing grades in LCD 101 (=ANTH 101) and LCD 102. C- or better in LCD 103.
+
+  # First group courses by grade requirement. Not sure there will ever be a mix for one rule, if it
+  # ever happens, we’ll be ready.
+  courses_by_grade = dict()
   for course in source_courses:
-    course_grade = _grade(course.min_gpa, course.max_gpa)
-    if course_grade != grade:
-      if grade != '':
-        source_course_list = source_course_list.strip('/') + '; '
-      grade = course_grade
-      source_course_list = source_course_list.strip('/') + ' {} '.format(grade)
+    # Accumulate min/max credits for checking against destination credits
+    min_source_credits += float(course.min_credits)
+    max_source_credits += float(course.max_credits)
+    if (course.min_gpa, course.max_gpa) not in courses_by_grade.keys():
+      courses_by_grade[(course.min_gpa, course.max_gpa)] = []
+    courses_by_grade[(course.min_gpa, course.max_gpa)].append(course)
+  # For each grade requirement, sort by cat_num, and generate array of strings to AND-list together
+  by_grade_keys = [key for key in courses_by_grade.keys()]
+  by_grade_keys.sort()
 
-    if discipline != course.discipline:
-      if discipline != '':
-        source_course_list = source_course_list.strip('/') + '; '
-      discipline = course.discipline
-      discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
-                                                           course.discipline)
-      source_course_list = source_course_list.strip('/') + discipline_str + '-'
-    if catalog_number != course.catalog_number:
-      catalog_number = course.catalog_number
-      source_course_list += '<span title="course id: {}">{}</span>/'.format(course.course_id,
-                                                                            course.catalog_number)
+  for key in by_grade_keys:
+    grade_str = _grade(key[0], key[1])
+    courses = courses_by_grade[key]
+    courses.sort(key=lambda c: c.cat_num)
+    course_list = []
+    for course in courses:
+      course_str = f'{course.discipline} {course.catalog_number}'
+      if course.course_id in cross_listed_with.keys():
+        xlist_courses = []
+        for xlist_course in cross_listed_with[course.course_id]:
+          xlist_courses.append(f'{xlist_course.discipline} {xlist_course.catalog_number}')
+        course_str += '(=' + andor_list(xlist_courses, "or") + ')'
+      course_list.append(f'<span title="course_id={course.course_id}">{course_str}</span>')
+    source_course_list += f'{grade_str} {andor_list(course_list, "and")}.'
 
-      # If it’s a variable-credit course, what to do?
-      # =======================================================================
-      # ?? how often does it happen? 1859 times.
-      # So just check if the transfer credits is in the range of min to max.
-      min_source_credits += float(course.min_credits)
-      max_source_credits += float(course.max_credits)
-
-  source_course_list = source_course_list.strip('/')
+  # If it’s a variable-credit course, what to do?
+  # =======================================================================
+  # How often does it happen? 1,859 times.
+  # So just check if the transfer credits is in the range of min to max.
 
   # Build the destination part of the rule group
   destination_credits = 0.0

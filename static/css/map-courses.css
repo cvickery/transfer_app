@@ -89,6 +89,9 @@ td, th {
   text-align: center;
 }
 
+.clickable:hover {
+  cursor:pointer;
+}
 .missing-rule {
   background-color: #faa;
   color: black;
