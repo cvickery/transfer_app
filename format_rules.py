@@ -163,15 +163,15 @@ def format_rule(rule, rule_key=None):
   cursor = conn.cursor()
 
   # Source Courses
-  source_course_ids = [id for id in rule.source_course_ids.strip(':').split(':')]
+  source_course_ids = [int(id) for id in rule.source_course_ids.strip(':').split(':')]
   # There should be no duplicates in source_course_ids for the rule
   assert len(set(source_course_ids)) == len(source_course_ids), \
-      f'Duplcated course id(s) for rule {rule_key}'
-
+      f'Duplcated source course id(s) for rule {rule_key}'
+  source_course_id_str = ', '.join([f'{id}' for id in source_course_ids])
   # Get source disciplines covered by the rule
   source_disciplines = rule.source_disciplines.strip(':').split(':')
 
-  q = """
+  q = f"""
       select  c.course_id,
               c.offer_nbr,
               c.discipline,
@@ -183,7 +183,7 @@ def format_rule(rule, rule_key=None):
               sc.min_gpa,
               sc.max_gpa
        from   courses c, disciplines d, source_courses sc
-       where  c.course_id in (%s)
+       where  c.course_id in ({source_course_id_str})
          and  sc.rule_id = %s
          and  sc.course_id = c.course_id
          and  d.institution = c.institution
@@ -192,7 +192,7 @@ def format_rule(rule, rule_key=None):
                 sc.max_gpa desc,
                 substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (', '.join(source_course_ids), rule.id))
+  cursor.execute(q, (rule.id, ))
   source_courses = cursor.fetchall()
 
   # Figure out what discipline to list first in the case of multiple disciplines or cross-listings
@@ -253,8 +253,12 @@ def format_rule(rule, rule_key=None):
   source_class = ''  # for the HTML credit-mismatch indicator
 
   # Destination Courses
-  destination_course_ids = ', '.join(rule.destination_course_ids.strip(':').split(':'))
-  q = """
+  destination_course_ids = [id for id in rule.destination_course_ids.strip(':').split(':')]
+  # There should be no duplicates in destination_course_ids for the rule
+  assert len(set(destination_course_ids)) == len(destination_course_ids), \
+      f'Duplcated destination course id(s) for rule {rule_key}'
+  destination_course_id_str = ', '.join([f'{id}' for id in destination_course_ids])
+  q = f"""
       select  c.course_id,
               c.discipline,
               d.description as discipline_name,
@@ -263,14 +267,14 @@ def format_rule(rule, rule_key=None):
               c.max_credits,
               dc.transfer_credits
         from  courses c, disciplines d, destination_courses dc
-       where  c.course_id in (%s)
+       where  c.course_id in ({destination_course_id_str})
          and  dc.course_id = c.course_id
          and  dc.rule_id = %s
          and  d.institution = c.institution
          and  d.discipline = c.discipline
        order by discipline, substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (destination_course_ids, rule.id))
+  cursor.execute(q, (rule.id, ))
   destination_courses = cursor.fetchall()
 
   # The course ids parts of the table row id
