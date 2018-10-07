@@ -59,7 +59,19 @@ fh.setFormatter(formatter)
 # logger.addHandler(fh)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
-#
+
+Transfer_Rule = namedtuple('Transfer_Rule', """
+                           id
+                           source_institution
+                           destination_institution
+                           subject_area
+                           group_number
+                           source_disciplines
+                           source_course_ids
+                           destination_course_ids
+                           review_status""")
+
+
 # Overhead URIs
 # =================================================================================================
 @app.route('/favicon.ico')
@@ -476,14 +488,14 @@ def do_form_1(request, session):
     <tr>
       <td class="source-subject"><label for="source-subject-{}">{}</label></td>
       <td class="source-subject f2-cbox">{}</td>
-      <td><strong>{}</strong></td>
+      <td><strong title="{}">{}</strong></td>
       <td class="destination-subject f2-cbox">{}</td>
       <td class="destination-subject"><label for="destination-subject-{}">{}</label></td>
     </tr>
     """.format(subject, source_disciplines_str,
                source_box,
 
-               subject_names[subject],
+               subject, subject_names[subject],
 
                destination_box,
                subject, destination_disciplines_str)
@@ -609,8 +621,9 @@ def do_form_2(request, session):
   # Prepare the query to get the set of rules that match the institutions and cuny subjects
   # selected.
   source_subject_list = request.form.getlist('source_subject')
+  print(f'*** source_subject_list: {source_subject_list}')
   destination_subject_list = request.form.getlist('destination_subject')
-
+  print(f'*** destination_subject_list: {destination_subject_list}')
   # JavaScript could prevent the need for this, but it doesn't (yet):
   if len(source_subject_list) < 1 or len(destination_subject_list) < 1:
     return(render_template('transfers.html', result=Markup(
@@ -619,58 +632,57 @@ def do_form_2(request, session):
   destination_subject_params = ', '.join('%s' for s in destination_subject_list)
   source_subject_params = ', '.join('%s' for s in source_subject_list)
   q = """
-  select  r.*, s.source_course_ids, d.destination_course_ids
-    from  transfer_rules r, view_source_courses s, view_destination_courses d
+  select  r.*,
+          s.course_id as source_course_id,
+          d.course_id as destination_course_id,
+          c.discipline as source_discipline
+    from  transfer_rules r, source_courses s, destination_courses d, courses c
    where  r.source_institution in ({})
      and  r.destination_institution in ({})
      and  r.subject_area in ({})
      and  r.id = s.rule_id
      and  r.id = d.rule_id
+     and  c.course_id = s.course_id
 
-  order by  r.source_institution, r.subject_area, r.group_number, r.destination_institution
+  order by  r.source_institution, r.destination_institution, r.subject_area, r.group_number
 
   """.format(source_institution_params, destination_institution_params, source_subject_params)
   cursor.execute(q, session['source_institutions']
                  + session['destination_institutions']
                  + source_subject_list)
-
-  rules = cursor.fetchall()
-  if rules is None:
-    rules = []
-
-  # Now create something that lets you process the groups of rules in first-course-number order.
-  # ********************************************************************************************
-  # For each group, get institution, discipline, group_number, first course number. Then go through
-  # that list, picking out all courses in the group, and querying to get all destination courses
-  # too.
-  # A group is keyed by source institution, source discipline, first catalog number, group number,
-  # and destination institution. There are two (ordered) lists: source courses and destination
-  # courses. Elements in both courses lists are course id, discipline, discipline name, course
-  # number (numeric
-  # part only), and credits. In addition, courses in the source list have the grade requirement,
-  # whereas the courses in the destination list have the number of transfer credits.
-
-  # Namedtuples for the group, sourse, and destination fields of interest
-
-  # groups = []
-  # for record in records:
-  #   groups.append(Group_Info(record.source_institution,
-  #                            record.source_discipline,
-  #                            record.group_number,
-  #                            record.destination_institution,
-  #                            record.status))
+  rows = cursor.fetchall()
   cursor.close()
   conn.close()
 
+  # Build list of source and destination course_ids for each rule found
+  prev_rule_key = ''
+  rule_dict = dict()
+  for row in rows:
+    this_rule_key = (row.source_institution,
+                     row.destination_institution,
+                     row.subject_area,
+                     row.group_number)
+    if this_rule_key != prev_rule_key:
+      rule_dict[this_rule_key] = (row.id, [], [], [], row.review_status)
+    rule_dict[this_rule_key][1].append(row.source_discipline)
+    rule_dict[this_rule_key][2].append(row.source_course_id)
+    rule_dict[this_rule_key][3].append(row.destination_course_id)
+  rules = []
   num_rules = 'are no transfer rules'
+  for key in rule_dict.keys():
+    rule = Transfer_Rule(rule_dict[key][0], key[0], key[1], key[2], key[3],
+                         ':' + ':'.join([f'{s_discp}' for s_discp in rule_dict[key][1]]) + ':',
+                         ':' + ':'.join([f'{s_id}' for s_id in rule_dict[key][2]]) + ':',
+                         ':' + ':'.join([f'{d_id}' for d_id in rule_dict[key][3]]) + ':',
+                         rule_dict[key][4])
+    print(rule)
+    rules.append(rule)
+
   if len(rules) == 1:
     num_rules = 'is one transfer rule'
   if len(rules) > 1:
     num_rules = 'are {:,} transfer rules'.format(len(rules))
 
-  # groups.sort(key=lambda g: (g.source_institution,
-  #                            g.source_discipline,
-  #                            g.source_courses[0].catalog_number))
   rules_table = format_rules(rules)
 
   result = """
@@ -1281,7 +1293,7 @@ def _map_course():
       row_template = '<tr>{}' + course_info_cell + '</tr>'
       cursor.execute("""select distinct *
                         from transfer_rules r
-                        where r.id in (select rule_id from destination_courses where course_id = %s)
+                        where r.id in (select rule_id from destination_dcourses where course_id = %s)
                         order by source_institution, subject_area, destination_institution
                     """, (course_info.course_id, ))
     all_rules = cursor.fetchall()
