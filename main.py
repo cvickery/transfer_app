@@ -60,6 +60,8 @@ fh.setFormatter(formatter)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
 
+Rule_Key = namedtuple('Rule_Key',
+                      'source_institution destination_institution subject_area group_number')
 Transfer_Rule = namedtuple('Transfer_Rule', """
                            id
                            source_institution
@@ -275,8 +277,8 @@ def do_form_0(request, session):
     <h1>Step 1: Select Colleges</h1>
     <div class="instructions">
       <p>
-        This is the first step for reviewing the {:,}<sup>&dagger;</sup> existing course transfer
-        rules at CUNY.
+        <strong>This is the first step for reviewing the {:,}<sup>&dagger;</sup> existing course
+        transfer rules at CUNY. </strong>
       </p>
       <p>
         To see just the rules you are interested in, start here by selecting exactly one sending
@@ -543,17 +545,20 @@ def do_form_1(request, session):
   if remember_me == 'on':
     expire_time = expire_time + datetime.timedelta(days=90)
 
+  # Return For 2
   result = """
   <h1>Step 2: Select CUNY Subjects</h1>
   <div class="instructions">
-    There are {:,} disciplines where {}.<br/>
+    <strong>There are {:,} disciplines where {}.</strong><br/>
     Disciplines are grouped by CUNY subject area.<br/>
     Select at least one sending discipline and at least one receiving discipline.<br/>
     By default, all receiving disciplines are selected to account for all possible equivalencies,
     including electives and blanket credit.<br/>
     The next step will show all transfer rules for courses in the corresponding pairs of
     disciplines.<br/>
-    <em>Clicking on these instructions hides them, making more room for the list of subjects.</em>
+    <strong>
+      Clicking on these instructions hides them, making more room for the list of subjects.
+    </strong>
   </div>
   <form method="post" action="" id="form-2">
     <a href="/"><button>Main Menu</button></a>
@@ -600,7 +605,6 @@ def do_form_2(request, session):
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
   # the source subjects and the receiving course belongs to a receiving institution and is one of
   # the receiving subjects.
-
   try:
     source_institution_params = ', '.join('%s' for i in session['source_institutions'])
     destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
@@ -629,66 +633,93 @@ def do_form_2(request, session):
     return(render_template('transfers.html', result=Markup(
                            '<h1 class="error">Missing sending or receiving subject.</h1>')))
 
-  destination_subject_params = ', '.join('%s' for s in destination_subject_list)
   source_subject_params = ', '.join('%s' for s in source_subject_list)
+  destination_subject_params = ', '.join('%s' for s in destination_subject_list)
   q = """
   select  r.*,
           s.course_id as source_course_id,
           d.course_id as destination_course_id,
-          c.discipline as source_discipline
-    from  transfer_rules r, source_courses s, destination_courses d, courses c
+          sc.discipline as source_discipline,
+          numeric_part(sc.catalog_number) as cat_num
+    from  transfer_rules r, source_courses s, destination_courses d, courses sc, courses dc
    where  r.source_institution in ({})
      and  r.destination_institution in ({})
-     and  r.subject_area in ({})
      and  r.id = s.rule_id
      and  r.id = d.rule_id
-     and  c.course_id = s.course_id
-
+     and  sc.course_id = s.course_id
+     and  dc.course_id = d.course_id
+     and  sc.cuny_subject in ({})
+     and  dc.cuny_subject in ({})
   order by  r.source_institution, r.destination_institution, r.subject_area, r.group_number
-
-  """.format(source_institution_params, destination_institution_params, source_subject_params)
-  cursor.execute(q, session['source_institutions']
+  """.format(source_institution_params,
+             destination_institution_params,
+             source_subject_params,
+             destination_subject_params)
+  cursor.execute(q, (session['source_institutions']
                  + session['destination_institutions']
-                 + source_subject_list)
+                 + source_subject_list
+                 + destination_subject_list))
+  print(cursor.query)
   rows = cursor.fetchall()
   cursor.close()
   conn.close()
 
   # Build list of source and destination course_ids for each rule found
-  prev_rule_key = ''
+  prev_rule_key = None
   rule_dict = dict()
+  # rule_dict keys are Rule_Key tuples
+  # rule_dict values are arrays, with the following index names
+  RULE_ID = 0
+  SOURCE_DISCIPLINES = 1
+  SOURCE_COURSE_IDS = 2
+  DESTINATION_COURSE_IDS = 3
+  REVIEW_STATUS = 4
+  MIN_CAT_NUM = 5
   for row in rows:
-    this_rule_key = (row.source_institution,
-                     row.destination_institution,
-                     row.subject_area,
-                     row.group_number)
+    this_rule_key = Rule_Key(row.source_institution,
+                             row.destination_institution,
+                             row.subject_area,
+                             row.group_number)
     if this_rule_key != prev_rule_key:
-      rule_dict[this_rule_key] = (row.id, [], [], [], row.review_status)
-    rule_dict[this_rule_key][1].append(row.source_discipline)
-    rule_dict[this_rule_key][2].append(row.source_course_id)
-    rule_dict[this_rule_key][3].append(row.destination_course_id)
+      rule_dict[this_rule_key] = [row.id, [], [], [], row.review_status, row.cat_num]
+    rule_dict[this_rule_key][SOURCE_DISCIPLINES].append(row.source_discipline)
+    rule_dict[this_rule_key][SOURCE_COURSE_IDS].append(row.source_course_id)
+    rule_dict[this_rule_key][DESTINATION_COURSE_IDS].append(row.destination_course_id)
+    if row.cat_num < rule_dict[this_rule_key][MIN_CAT_NUM]:
+      rule_dict[this_rule_key][MIN_CAT_NUM] = row.cat_num
   rules = []
   num_rules = 'are no transfer rules'
   for key in rule_dict.keys():
-    rule = Transfer_Rule(rule_dict[key][0], key[0], key[1], key[2], key[3],
-                         ':' + ':'.join([f'{s_discp}' for s_discp in rule_dict[key][1]]) + ':',
-                         ':' + ':'.join([f'{s_id}' for s_id in rule_dict[key][2]]) + ':',
-                         ':' + ':'.join([f'{d_id}' for d_id in rule_dict[key][3]]) + ':',
-                         rule_dict[key][4])
-    print(rule)
-    rules.append(rule)
+    rule, min_num, discp = Transfer_Rule(
+        rule_dict[key][RULE_ID],
+        key.source_institution,
+        key.destination_institution,
+        key.subject_area,
+        key.group_number,
+        ':' + ':'.join([f'{s_discp}'
+                       for s_discp in rule_dict[key][SOURCE_DISCIPLINES]]) + ':',
+        ':' + ':'.join([f'{s_id}'
+                       for s_id in rule_dict[key][SOURCE_COURSE_IDS]]) + ':',
+        ':' + ':'.join([f'{d_id}'
+                       for d_id in rule_dict[key][DESTINATION_COURSE_IDS]]) + ':',
+        rule_dict[key][REVIEW_STATUS]), rule_dict[key][MIN_CAT_NUM], \
+        rule_dict[key][SOURCE_DISCIPLINES][0]
+    print(rule, min_num)
+    rules.append([rule, discp, min_num])
 
   if len(rules) == 1:
     num_rules = 'is one transfer rule'
   if len(rules) > 1:
     num_rules = 'are {:,} transfer rules'.format(len(rules))
+    # Sort the rules by discipline, then by the lowest catalog number of a source course
+    rules.sort(key=lambda m: (m[1], m[2]))
 
-  rules_table = format_rules(rules)
+  rules_table = format_rules([rule[0] for rule in rules])
 
   result = """
   <h1>Step 3: Review Transfer Rules</h1>
     <div class="instructions">
-      There {}.<br/>
+      <strong>There {}.</strong><br/>
       Rules that are <span class="credit-mismatch">highlighted like this</span> have a different
       number of credits taken from the number of credits transferred.
       Hover over the “=>” to see the numbers of credits.<br/>
@@ -697,7 +728,9 @@ def do_form_2(request, session):
       Rules that are <span class="evaluated">highlighted like this</span> are ones that you have
       reviewed but not yet submitted.<br/>
       Click on a rule to review it.<br/>
-      <em>Clicking on these instructions hides them, making more room for the list of rules.</em>
+      <strong>
+        Clicking on these instructions hides them, making more room for the list of rules.
+      </strong>
     </div>
     <p>
       <a href="/"><button>Main Menu</button></a>

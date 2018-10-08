@@ -13,6 +13,7 @@ DEBUG = False
 
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
 Work_Tuple = namedtuple('Work_Tuple', 'course_id offer_nbr discipline')
+
 conn = pgconnection('dbname=cuny_courses')
 cursor = conn.cursor()
 cursor.execute("select code, prompt from institutions order by lower(name)")
@@ -319,7 +320,7 @@ def format_rule(rule, rule_key=None):
           xlist_courses.append(f'{xlist_course.discipline} {xlist_course.catalog_number}')
         course_str += '(=' + andor_list(xlist_courses, "or") + ')'
       course_list.append(f'<span title="course_id={course.course_id}">{course_str}</span>')
-    source_course_list += f'{grade_str} {andor_list(course_list, "and")}.'
+    source_course_list += f'{grade_str} {andor_list(course_list, "and")}'
 
   # If it’s a variable-credit course, what to do?
   # =======================================================================
@@ -349,7 +350,7 @@ def format_rule(rule, rule_key=None):
 
   destination_course_list = destination_course_list.strip('/')
 
-  row_class = 'rule'
+  row_class = 'clickable rule'
   if destination_credits < min_source_credits or destination_credits > max_source_credits:
     row_class = 'rule credit-mismatch'
 
