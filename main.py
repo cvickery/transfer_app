@@ -403,10 +403,10 @@ def do_form_1(request, session):
   destination_disciplines = [discipline for discipline in map(Discipline._make, cursor.fetchall())]
 
   # The CUNY subjects actually used by the source and destination disciplines.
-  subjects = set([d.cuny_subject for d in source_disciplines])
-  subjects |= set([d.cuny_subject for d in destination_disciplines])
-  subjects.discard('')  # empty strings don't match anything in the subjects table.
-  subjects = sorted(subjects)
+  cuny_subjects = set([d.cuny_subject for d in source_disciplines])
+  cuny_subjects |= set([d.cuny_subject for d in destination_disciplines])
+  cuny_subjects.discard('')  # empty strings don't match anything in the subjects table.
+  cuny_subjects = sorted(cuny_subjects)
 
   cursor.close()
   conn.close()
@@ -417,12 +417,12 @@ def do_form_1(request, session):
   # ===============================================================================================
   selection_rows = ''
   num_rows = 0
-  for subject in subjects:
+  for cuny_subject in cuny_subjects:
     # Sending College Disciplines
     source_disciplines_str = ''
     source_disciplines_set = set()
     for discipline in source_disciplines:
-      if discipline.cuny_subject == subject:
+      if discipline.cuny_subject == cuny_subject:
         if sending_is_singleton:
           source_disciplines_set.add(discipline.discipline)
         else:
@@ -448,7 +448,7 @@ def do_form_1(request, session):
     destination_disciplines_str = ''
     destination_disciplines_set = set()
     for discipline in destination_disciplines:
-      if discipline.cuny_subject == subject:
+      if discipline.cuny_subject == cuny_subject:
         if receiving_is_singleton:
           destination_disciplines_set.add(discipline.discipline)
         else:
@@ -475,32 +475,32 @@ def do_form_1(request, session):
     source_box = ''
     if source_disciplines_str != '':
       source_box = """
-        <input type="checkbox" id="source-subject-{}" name="source_subject" value="{}"/>
-        """.format(subject, subject)
+        <input type="checkbox" id="source-discipline-{}" name="source_discipline" value="{}"/>
+        """.format(cuny_subject, cuny_subject)
     destination_box = ''
     if destination_disciplines_str != '':
       destination_box = """
         <input  type="checkbox"
                 checked="checked"
-                id="destination-subject-{}"
-                name="destination_subject"
+                id="destination-discipline-{}"
+                name="destination_discipline"
                 value="{}"/>
-        """.format(subject, subject)
+        """.format(cuny_subject, cuny_subject)
     selection_rows += """
     <tr>
-      <td class="source-subject"><label for="source-subject-{}">{}</label></td>
-      <td class="source-subject f2-cbox">{}</td>
+      <td class="source-discipline"><label for="source-discipline-{}">{}</label></td>
+      <td class="source-discipline f2-cbox">{}</td>
       <td><strong title="{}">{}</strong></td>
-      <td class="destination-subject f2-cbox">{}</td>
-      <td class="destination-subject"><label for="destination-subject-{}">{}</label></td>
+      <td class="destination-discipline f2-cbox">{}</td>
+      <td class="destination-discipline"><label for="destination-discipline-{}">{}</label></td>
     </tr>
-    """.format(subject, source_disciplines_str,
+    """.format(cuny_subject, source_disciplines_str,
                source_box,
 
-               subject, subject_names[subject],
+               cuny_subject, subject_names[cuny_subject],
 
                destination_box,
-               subject, destination_disciplines_str)
+               cuny_subject, destination_disciplines_str)
     num_rows += 1
 
   shortcuts = """
@@ -514,22 +514,28 @@ def do_form_1(request, session):
     <tr>
       <td class="source-subject f2-cbox" colspan="2">
         <div>
-          <label for="all-sending-subjects"><em>Select All Sending Disciplines: </em></label>
-          <input type="checkbox" id="all-sending-subjects" />
+          <label for="all-source-disciplines"><em>Select All Sending Disciplines: </em></label>
+          <input  type="checkbox"
+                  id="all-source-disciplines"
+                  name="all-source-disciplines" />
         </div>
         <div>
-          <label for="no-sending-subjects"><em>Clear All Sending Disciplines: </em></label>
-          <input type="checkbox" id="no-sending-subjects" />
+          <label for="no-source-subjects"><em>Clear All Sending Disciplines: </em></label>
+          <input type="checkbox" id="no-source-disciplines" checked="checked"/>
         </div>
       </td>
       <td class="destination-subject f2-cbox" colspan="2">
         <div>
-          <label for="all-receiving-subjects"><em>Select All Receiving Disciplines: </em></label>
-          <input type="checkbox" id="all-receiving-subjects" checked="checked" />
+          <label for="all-destination-disciplines"><em>Select All Receiving Disciplines: </em>
+          </label>
+          <input  type="checkbox"
+                  id="all-destination-disciplines"
+                  name="all-destination-disciplines"
+                  checked="checked"/>
         </div>
         <div>
-          <label for="no-receiving-subjects"><em>Clear All Receiving Disciplines: </em></label>
-          <input type="checkbox" id="no-receiving-subjects" />
+          <label for="no-destination-disciplines"><em>Clear All Receiving Disciplines: </em></label>
+          <input type="checkbox" id="no-destination-disciplines" />
         </div>
       </td>
     </tr>
@@ -545,7 +551,7 @@ def do_form_1(request, session):
   if remember_me == 'on':
     expire_time = expire_time + datetime.timedelta(days=90)
 
-  # Return For 2
+  # Return Form 2
   result = """
   <h1>Step 2: Select CUNY Subjects</h1>
   <div class="instructions">
@@ -561,7 +567,7 @@ def do_form_1(request, session):
     </strong>
   </div>
   <form method="post" action="" id="form-2">
-    <a href="/"><button>Main Menu</button></a>
+    <a href="/" class="restart">Main Menu</a>
     <a href="/review_rules" class="restart">Restart</a>
     <button type="submit">Next</button>
     <input type="hidden" name="next-function" value="do_form_2" />
@@ -570,11 +576,11 @@ def do_form_1(request, session):
       <table id="subject-table">
         <thead>
           <tr>
-            <th class="source-subject">{} Discipline(s)</th>
-            <th class="source-subject">Select Sending</th>
+            <th class="source-discipline">{} Discipline(s)</th>
+            <th class="source-discipline">Select Sending</th>
             <th>CUNY Subject</th>
-            <th class="destination-subject">Select Receiving</th>
-            <th class="destination-subject">{} Discipline(s)</th>
+            <th class="destination-discipline">Select Receiving</th>
+            <th class="destination-discipline">{} Discipline(s)</th>
           </tr>
         </thead>
         <tbody>
@@ -603,8 +609,8 @@ def do_form_2(request, session):
   cursor = conn.cursor()
 
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
-  # the source subjects and the receiving course belongs to a receiving institution and is one of
-  # the receiving subjects.
+  # the source disciplines and the receiving course belongs to a receiving institution and is one of
+  # the receiving disciplines.
   try:
     source_institution_params = ', '.join('%s' for i in session['source_institutions'])
     destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
@@ -624,41 +630,95 @@ def do_form_2(request, session):
 
   # Prepare the query to get the set of rules that match the institutions and cuny subjects
   # selected.
-  source_subject_list = request.form.getlist('source_subject')
-  print(f'*** source_subject_list: {source_subject_list}')
-  destination_subject_list = request.form.getlist('destination_subject')
-  print(f'*** destination_subject_list: {destination_subject_list}')
-  # JavaScript could prevent the need for this, but it doesn't (yet):
-  if len(source_subject_list) < 1 or len(destination_subject_list) < 1:
+  source_discipline_list = request.form.getlist('source_discipline')
+  print(f'*** source_discipline_list: {source_discipline_list}')
+  destination_discipline_list = request.form.getlist('destination_discipline')
+  print(f'*** destination_discipline_list: {destination_discipline_list}')
+  # Be sure there is the possibility there will be some rules
+  if len(source_discipline_list) < 1 or len(destination_discipline_list) < 1:
     return(render_template('transfers.html', result=Markup(
-                           '<h1 class="error">Missing sending or receiving subject.</h1>')))
+                           '<h1 class="error">Missing sending or receiving discipline.</h1>')))
 
-  source_subject_params = ', '.join('%s' for s in source_subject_list)
-  destination_subject_params = ', '.join('%s' for s in destination_subject_list)
-  q = """
-  select  r.*,
-          s.course_id as source_course_id,
-          d.course_id as destination_course_id,
-          sc.discipline as source_discipline,
-          numeric_part(sc.catalog_number) as cat_num
-    from  transfer_rules r, source_courses s, destination_courses d, courses sc, courses dc
-   where  r.source_institution in ({})
-     and  r.destination_institution in ({})
-     and  r.id = s.rule_id
-     and  r.id = d.rule_id
-     and  sc.course_id = s.course_id
-     and  dc.course_id = d.course_id
-     and  sc.cuny_subject in ({})
-     and  dc.cuny_subject in ({})
-  order by  r.source_institution, r.destination_institution, r.subject_area, r.group_number
-  """.format(source_institution_params,
-             destination_institution_params,
-             source_subject_params,
-             destination_subject_params)
-  cursor.execute(q, (session['source_institutions']
-                 + session['destination_institutions']
-                 + source_subject_list
-                 + destination_subject_list))
+  source_subject_params = ', '.join('%s' for s in source_discipline_list)
+  destination_subject_params = ', '.join('%s' for s in destination_discipline_list)
+
+  all_source_disciplines = request.form.get('all-source-disciplines')
+  all_destination_disciplines = request.form.get('all-destination-disciplines')
+  print(f'all source: {all_source_disciplines}\nall dest: {all_destination_disciplines}')
+
+  # q = """
+  # select  r.*,
+  #         s.course_id as source_course_id,
+  #         d.course_id as destination_course_id,
+  #         sc.discipline as source_discipline,
+  #         numeric_part(sc.catalog_number) as cat_num
+  #   from  transfer_rules r, source_courses s, destination_courses d, courses sc, courses dc
+  #  where  r.source_institution in ({})
+  #    and  r.destination_institution in ({})
+  #    and  r.id = s.rule_id
+  #    and  r.id = d.rule_id
+  #    and  sc.course_id = s.course_id
+  #    and  dc.course_id = d.course_id
+  #    and  sc.cuny_subject in ({})
+  #    and  dc.cuny_subject in ({})
+  # order by  r.source_institution, r.destination_institution, r.subject_area, r.group_number
+
+  # Get all potential rules
+  #   The source and destination institutions have been selected
+  #   and
+  #   The source_disciplines have been selected
+  #  *** TODO
+  # Get the destination courses from the above set of rules where the destination discipline was
+  # selected. TODO: add a shortcut here for cases where all destination disciplines were selected.
+  #  *** TODO
+  # Filter out the rules that no longer apply
+  #  *** TODO
+  # Get the source courses list for the rules that remain
+  #  *** TODO
+
+  # # Get all source courses for which there might be rules
+  # q = f"""
+  # select course_id
+  #   from courses
+  #  where institution in ({source_institution_params})
+  #    and discipline in ({source_discipline_params})
+  # """
+  # cursor.execute(q, (session['source_institutions'] + source_discipline_list))
+  # print(f'*** query all source course_ids\n{cursor.query}')
+  # all_source_course_ids = cursor.fetchall()
+
+  # # Get all the source courses for which there are rules for transferring to any of the destination
+  # # institutions.
+  # q = f"""
+  # select *
+  #   from source_courses
+  #  where course_id in ({source_course_id_params})
+  #    and destination institution in ({destination_institution_params})
+  # """
+  # cursor.execute(q, all_source_course_ids + session['destination_institutions'])
+  # print(f'*** query all source courses to get matching rules\n{cursor.query}')
+  # all_source_courses = cursor.fetchall()
+
+  # # Get list of matching rule_ids so far
+  # rule_ids = [rule_id for rule_id in set([course.rule_id for course in source_courses])]
+  # all_rule_params = ', '.join([f'{rule_id}' for rule_id in rule_ids])
+  # # Get all the destination courses for the rules so far
+  # cursor.execute(f'select * from destination_courses where rule_id in {all_rule_params}', rule_ids)
+  # all_destination_courses = cursor.fetchall()
+  # print(f'*** all destination courses\n{all_destination_courses}')
+
+  # # THIS IS STUPID. THE DISCIPLINE AS WELL AS THE COURSE_ID SHOULD BE PART OF THE SOURCE AND
+  # # DESTINATION COURSE INFO. Actually, all the disciplines are in source. It's just dest that might
+  # # be an issue.
+
+  # """.format(source_institution_params,
+  #            destination_institution_params,
+  #            source_discipline_params,
+  #            destination_discipline_params)
+  # cursor.execute(q, (session['source_institutions']
+  #                + session['destination_institutions']
+  #                + source_discipline_list
+  #                + destination_discipline_list))
   print(cursor.query)
   rows = cursor.fetchall()
   cursor.close()

@@ -99,7 +99,7 @@ $(function ()
     }
   }
 
-  // Form 1: clear or set groups of checkboxes
+  // Form 1: Button click handlers to clear or set groups of institution checkboxes
   // ----------------------------------------------------------------------------------------------
   $('#all-sources').click(function (event)
   {
@@ -156,24 +156,114 @@ $(function ()
   // ----------------------------------------------------------------------------------------------
 
   $('.f2-cbox').has('input').css('background-color', 'white');
-  $('#all-sending-subjects').click(function ()
+
+  //  When shortcut checkboxes change state
+  $('#all-source-disciplines').change(function ()
   {
-    $('.source-subject input:checkbox').prop('checked', true);
-    $('#no-sending-subjects').prop('checked', false);
-  });
-  $('#no-sending-subjects').click(function ()
-  {
-    $('.source-subject input:checkbox').prop('checked', false);
+    if (this.checked)
+    {
+      $('.source-discipline input:checkbox').prop('checked', true);
+      $('#no-source-disciplines').prop('checked', false);
+    }
   });
 
-  $('#all-receiving-subjects').click(function ()
+  $('#no-source-disciplines').change(function ()
   {
-    $('.destination-subject input:checkbox').prop('checked', true);
-    $('#no-receiving-subjects').prop('checked', false);
+    if (this.checked)
+    {
+      $('.source-discipline input:checkbox').prop('checked', false);
+      $('#all-source-disciplines').prop('checked', false);
+    }
   });
-  $('#no-receiving-subjects').click(function ()
+
+  $('#all-destination-disciplines').change(function ()
   {
-    $('.destination-subject input:checkbox').prop('checked', false);
+    if (this.checked)
+    {
+      $('.destination-discipline input:checkbox').prop('checked', true);
+      $('#no-destination-disciplines').prop('checked', false);
+    }
+  });
+
+  $('#no-destination-disciplines').change(function ()
+  {
+    if (this.checked)
+    {
+      $('.destination-discipline input:checkbox').prop('checked', false);
+      $('#all-destination-disciplines').prop('checked', false);
+    }
+  });
+
+  // When any source discipline changes state, update the "all" and "no" shortcut states.
+  $('.source-discipline input:checkbox').change(function ()
+  {
+    if (this.checked)
+    {
+      // Source Checked
+      $('#no-source-disciplines').prop('checked', false);
+      let all_checked = true;
+      $('.source-discipline input:checkbox').each(function ()
+      {
+        if (!this.checked)
+        {
+          all_checked = false;
+          return false;
+        }
+      });
+      $('#all-source-disciplines').prop('checked', all_checked);
+    }
+    else
+    {
+      // Unchecked
+      $('#all-source-disciplines').prop('checked', false);
+      // If there are none selected now, check the "none" shortcut box
+      let all_unchecked = true;
+      $('.source-discipline input:checkbox').each(function ()
+      {
+        if (this.checked)
+        {
+          all_unchecked = false;
+          return false;
+        }
+      });
+      $('#no-source-disciplines').prop('checked', all_unchecked);
+    }
+  });
+
+  // When any destination discipline changes state, update the "all" and "no" shortcut states.
+  $('.destination-discipline input:checkbox').change(function ()
+  {
+    if (this.checked)
+    {
+      // Source Checked
+      $('#no-destination-disciplines').prop('checked', false);
+      let all_checked = true;
+      $('.destination-discipline input:checkbox').each(function ()
+      {
+        if (!this.checked)
+        {
+          all_checked = false;
+          return false;
+        }
+      });
+      $('#all-destination-disciplines').prop('checked', all_checked);
+    }
+    else
+    {
+      // Unchecked
+      $('#all-destination-disciplines').prop('checked', false);
+      // If there are none selected now, check the "none" shortcut box
+      let all_unchecked = true;
+      $('.destination-discipline input:checkbox').each(function ()
+      {
+        if (this.checked)
+        {
+          all_unchecked = false;
+          return false;
+        }
+      });
+      $('#no-destination-disciplines').prop('checked', all_unchecked);
+    }
   });
 
   //  Form 2: Hide instructions
