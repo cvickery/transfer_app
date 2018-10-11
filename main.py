@@ -375,7 +375,7 @@ def do_form_1(request, session):
     receiving_is_singleton = True
     receiving_heading = '{}’s'.format(institution_names[session['destination_institutions'][0]])
     if sending_is_singleton:
-      criterion += ' or '
+      criterion += ' and '
     criterion += 'the receiving college is ' + \
         institution_names[session['destination_institutions'][0]]
 
@@ -390,8 +390,7 @@ def do_form_1(request, session):
     where institution in ({})
     """.format(source_institution_params)
   cursor.execute(q, session['source_institutions'])
-  Discipline = namedtuple('Discipline', [d[0] for d in cursor.description])
-  source_disciplines = [discipline for discipline in map(Discipline._make, cursor.fetchall())]
+  source_disciplines = cursor.fetchall()
 
   destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
   q = """
@@ -400,7 +399,7 @@ def do_form_1(request, session):
     where institution in ({})
     """.format(destination_institution_params)
   cursor.execute(q, session['destination_institutions'])
-  destination_disciplines = [discipline for discipline in map(Discipline._make, cursor.fetchall())]
+  destination_disciplines = cursor.fetchall()
 
   # The CUNY subjects actually used by the source and destination disciplines.
   cuny_subjects = set([d.cuny_subject for d in source_disciplines])
@@ -414,12 +413,17 @@ def do_form_1(request, session):
   # Build selection list. For each cuny_subject found in either sending or receiving disciplines,
   # list all disciplines for that subject, with checkboxes for selecting either the sending or
   # receiving side.
+  # The user sees College: discipline(s) in the table (source_disciplines_str), and that info is
+  # encoded as a colon-separated list of college-discipline pairs (source_disciplines_val) as the
+  # value of the corresponding cbox. *** TODO *** and then parse the value in do_form_2() ***
   # ===============================================================================================
   selection_rows = ''
   num_rows = 0
   for cuny_subject in cuny_subjects:
-    # Sending College Disciplines
+
+    # Sending College(s)’ Disciplines
     source_disciplines_str = ''
+    source_disciplines_val = ''
     source_disciplines_set = set()
     for discipline in source_disciplines:
       if discipline.cuny_subject == cuny_subject:
@@ -553,7 +557,7 @@ def do_form_1(request, session):
 
   # Return Form 2
   result = """
-  <h1>Step 2: Select CUNY Subjects</h1>
+  <h1>Step 2: Select Sending &amp; Receiving Disciplines</h1>
   <div class="instructions">
     <strong>There are {:,} disciplines where {}.</strong><br/>
     Disciplines are grouped by CUNY subject area.<br/>
@@ -628,99 +632,55 @@ def do_form_2(request, session):
 
                                                            """))
 
-  # Prepare the query to get the set of rules that match the institutions and cuny subjects
+  # Prepare the query to get the set of rules that match the institutions and disciplines
   # selected.
   source_discipline_list = request.form.getlist('source_discipline')
   print(f'*** source_discipline_list: {source_discipline_list}')
-  destination_discipline_list = request.form.getlist('destination_discipline')
-  print(f'*** destination_discipline_list: {destination_discipline_list}')
   # Be sure there is the possibility there will be some rules
-  if len(source_discipline_list) < 1 or len(destination_discipline_list) < 1:
+  if len(source_discipline_list) < 1:
     return(render_template('transfers.html', result=Markup(
-                           '<h1 class="error">Missing sending or receiving discipline.</h1>')))
+                           '<h1 class="error">No sending disciplines selected.</h1>')))
 
-  source_subject_params = ', '.join('%s' for s in source_discipline_list)
-  destination_subject_params = ', '.join('%s' for s in destination_discipline_list)
+  if request.form.get('all-source-disciplines'):
+    source_discipline_clause = ''
+  else:
+    source_disciplines_str = '|'.join(f':{s}:' for s in source_discipline_list)
+    source_disciplines_clause = f"  and '{source_disciplines_str}' ~ source_disciplines"
 
-  all_source_disciplines = request.form.get('all-source-disciplines')
-  all_destination_disciplines = request.form.get('all-destination-disciplines')
-  print(f'all source: {all_source_disciplines}\nall dest: {all_destination_disciplines}')
+  # Get all potential rules:
+  #  - The source and destination institutions have been selected
+  #  and
+  #  - The source_disciplines have been selected
+  q = f"""
+      select *
+        from transfer_rules
+       where source_institution in ({source_institution_params})
+         and destination_institution in ({destination_institution_params})
+         {source_disciplines_clause}
+         order by source_institution, destination_institution, subject_area, group_number
+      """
+  cursor.execute(q, (session['source_institutions'] + session['destination_institutions']))
+  print(f'*** {cursor.query}\n returned {cursor.rowcount} rules')
+  all_rules = cursor.fetchall()
+  for rule in all_rules:
+    print(rule)
 
-  # q = """
-  # select  r.*,
-  #         s.course_id as source_course_id,
-  #         d.course_id as destination_course_id,
-  #         sc.discipline as source_discipline,
-  #         numeric_part(sc.catalog_number) as cat_num
-  #   from  transfer_rules r, source_courses s, destination_courses d, courses sc, courses dc
-  #  where  r.source_institution in ({})
-  #    and  r.destination_institution in ({})
-  #    and  r.id = s.rule_id
-  #    and  r.id = d.rule_id
-  #    and  sc.course_id = s.course_id
-  #    and  dc.course_id = d.course_id
-  #    and  sc.cuny_subject in ({})
-  #    and  dc.cuny_subject in ({})
-  # order by  r.source_institution, r.destination_institution, r.subject_area, r.group_number
-
-  # Get all potential rules
-  #   The source and destination institutions have been selected
-  #   and
-  #   The source_disciplines have been selected
   #  *** TODO
   # Get the destination courses from the above set of rules where the destination discipline was
   # selected. TODO: add a shortcut here for cases where all destination disciplines were selected.
-  #  *** TODO
+  destination_discipline_list = request.form.getlist('destination_discipline')
+  if len(destination_discipline_list) < 1:
+    return(render_template('transfers.html', result=Markup(
+                           '<h1 class="error">No receiving disciplines selected.</h1>')))
+  print(f'*** destination_discipline_list: {destination_discipline_list}')
+  all_destination_disciplines = request.form.get('all-destination-disciplines')
+  destination_discipline_params = ', '.join('%s' for s in destination_discipline_list)
+
   # Filter out the rules that no longer apply
   #  *** TODO
   # Get the source courses list for the rules that remain
   #  *** TODO
 
-  # # Get all source courses for which there might be rules
-  # q = f"""
-  # select course_id
-  #   from courses
-  #  where institution in ({source_institution_params})
-  #    and discipline in ({source_discipline_params})
-  # """
-  # cursor.execute(q, (session['source_institutions'] + source_discipline_list))
-  # print(f'*** query all source course_ids\n{cursor.query}')
-  # all_source_course_ids = cursor.fetchall()
-
-  # # Get all the source courses for which there are rules for transferring to any of the destination
-  # # institutions.
-  # q = f"""
-  # select *
-  #   from source_courses
-  #  where course_id in ({source_course_id_params})
-  #    and destination institution in ({destination_institution_params})
-  # """
-  # cursor.execute(q, all_source_course_ids + session['destination_institutions'])
-  # print(f'*** query all source courses to get matching rules\n{cursor.query}')
-  # all_source_courses = cursor.fetchall()
-
-  # # Get list of matching rule_ids so far
-  # rule_ids = [rule_id for rule_id in set([course.rule_id for course in source_courses])]
-  # all_rule_params = ', '.join([f'{rule_id}' for rule_id in rule_ids])
-  # # Get all the destination courses for the rules so far
-  # cursor.execute(f'select * from destination_courses where rule_id in {all_rule_params}', rule_ids)
-  # all_destination_courses = cursor.fetchall()
-  # print(f'*** all destination courses\n{all_destination_courses}')
-
-  # # THIS IS STUPID. THE DISCIPLINE AS WELL AS THE COURSE_ID SHOULD BE PART OF THE SOURCE AND
-  # # DESTINATION COURSE INFO. Actually, all the disciplines are in source. It's just dest that might
-  # # be an issue.
-
-  # """.format(source_institution_params,
-  #            destination_institution_params,
-  #            source_discipline_params,
-  #            destination_discipline_params)
-  # cursor.execute(q, (session['source_institutions']
-  #                + session['destination_institutions']
-  #                + source_discipline_list
-  #                + destination_discipline_list))
-  print(cursor.query)
-  rows = cursor.fetchall()
   cursor.close()
   conn.close()
 

@@ -135,6 +135,10 @@ td a: hover {
   color: #333;
 }
 
+#subject-table label {
+  display:block;
+}
+
 .clickable:hover {
   cursor: pointer;
 }

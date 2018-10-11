@@ -147,8 +147,8 @@ $(function ()
   // Form 2 Select Disciplines
   // ==============================================================================================
   /* Given a list of sending and receiving offered disciplines, grouped by CUNY subject names, the
-   * The user must select at least one discipline group from the sending column and at least one
-   * from the receiving column. Convenience boxes let the user clear or select all items in a
+   * user must select at least one discipline group from the sending column and at least one from
+   * the receiving column. Shortcut checkboxes let the user clear or select all items in a
    * column.
    */
 
