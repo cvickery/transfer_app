@@ -149,7 +149,7 @@ $(function ()
   /* Given a list of sending and receiving offered disciplines, grouped by CUNY subject names, the
    * user must select at least one discipline group from the sending column and at least one from
    * the receiving column. Shortcut checkboxes let the user clear or select all items in a
-   * column.
+   * column. The wrinkle is that the user thinks "disciplines" but the app thinks "cuny_subjects."
    */
 
   // Form 2: Manage checkboxes
@@ -158,51 +158,51 @@ $(function ()
   $('.f2-cbox').has('input').css('background-color', 'white');
 
   //  When shortcut checkboxes change state
-  $('#all-source-disciplines').change(function ()
+  $('#all-source-subjects').change(function ()
   {
     if (this.checked)
     {
-      $('.source-discipline input:checkbox').prop('checked', true);
-      $('#no-source-disciplines').prop('checked', false);
+      $('.source-subject input:checkbox').prop('checked', true);
+      $('#no-source-subjects').prop('checked', false);
     }
   });
 
-  $('#no-source-disciplines').change(function ()
+  $('#no-source-subjects').change(function ()
   {
     if (this.checked)
     {
-      $('.source-discipline input:checkbox').prop('checked', false);
-      $('#all-source-disciplines').prop('checked', false);
+      $('.source-subject input:checkbox').prop('checked', false);
+      $('#all-source-subjects').prop('checked', false);
     }
   });
 
-  $('#all-destination-disciplines').change(function ()
+  $('#all-destination-subjects').change(function ()
   {
     if (this.checked)
     {
-      $('.destination-discipline input:checkbox').prop('checked', true);
-      $('#no-destination-disciplines').prop('checked', false);
+      $('.destination-subject input:checkbox').prop('checked', true);
+      $('#no-destination-subjects').prop('checked', false);
     }
   });
 
-  $('#no-destination-disciplines').change(function ()
+  $('#no-destination-subjects').change(function ()
   {
     if (this.checked)
     {
-      $('.destination-discipline input:checkbox').prop('checked', false);
-      $('#all-destination-disciplines').prop('checked', false);
+      $('.destination-subject input:checkbox').prop('checked', false);
+      $('#all-destination-subjects').prop('checked', false);
     }
   });
 
-  // When any source discipline changes state, update the "all" and "no" shortcut states.
-  $('.source-discipline input:checkbox').change(function ()
+  // When any source subject changes state, update the "all" and "no" shortcut states.
+  $('.source-subject input:checkbox').change(function ()
   {
     if (this.checked)
     {
       // Source Checked
-      $('#no-source-disciplines').prop('checked', false);
+      $('#no-source-subjects').prop('checked', false);
       let all_checked = true;
-      $('.source-discipline input:checkbox').each(function ()
+      $('.source-subject input:checkbox').each(function ()
       {
         if (!this.checked)
         {
@@ -210,15 +210,15 @@ $(function ()
           return false;
         }
       });
-      $('#all-source-disciplines').prop('checked', all_checked);
+      $('#all-source-subjects').prop('checked', all_checked);
     }
     else
     {
       // Unchecked
-      $('#all-source-disciplines').prop('checked', false);
+      $('#all-source-subjects').prop('checked', false);
       // If there are none selected now, check the "none" shortcut box
       let all_unchecked = true;
-      $('.source-discipline input:checkbox').each(function ()
+      $('.source-subject input:checkbox').each(function ()
       {
         if (this.checked)
         {
@@ -226,19 +226,19 @@ $(function ()
           return false;
         }
       });
-      $('#no-source-disciplines').prop('checked', all_unchecked);
+      $('#no-source-subject').prop('checked', all_unchecked);
     }
   });
 
-  // When any destination discipline changes state, update the "all" and "no" shortcut states.
-  $('.destination-discipline input:checkbox').change(function ()
+  // When any destination subject changes state, update the "all" and "no" shortcut states.
+  $('.destination-subject input:checkbox').change(function ()
   {
     if (this.checked)
     {
       // Source Checked
-      $('#no-destination-disciplines').prop('checked', false);
+      $('#no-destination-subjects').prop('checked', false);
       let all_checked = true;
-      $('.destination-discipline input:checkbox').each(function ()
+      $('.destination-subject input:checkbox').each(function ()
       {
         if (!this.checked)
         {
@@ -246,15 +246,15 @@ $(function ()
           return false;
         }
       });
-      $('#all-destination-disciplines').prop('checked', all_checked);
+      $('#all-destination-subjects').prop('checked', all_checked);
     }
     else
     {
       // Unchecked
-      $('#all-destination-disciplines').prop('checked', false);
+      $('#all-destination-subjects').prop('checked', false);
       // If there are none selected now, check the "none" shortcut box
       let all_unchecked = true;
-      $('.destination-discipline input:checkbox').each(function ()
+      $('.destination-subject input:checkbox').each(function ()
       {
         if (this.checked)
         {
@@ -262,7 +262,7 @@ $(function ()
           return false;
         }
       });
-      $('#no-destination-disciplines').prop('checked', all_unchecked);
+      $('#no-destination-subjects').prop('checked', all_unchecked);
     }
   });
 
