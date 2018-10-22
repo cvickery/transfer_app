@@ -9,8 +9,8 @@
 
     2017-09-06: Migrate to postgres to avoid the persistency problems with sqlite3 in the cloud.
 
-    2017-08-10: Using the (secure) flask session key to hold the MySession session key, but there are
-    issues of sessions closing/expiring prematurely.
+    2017-08-10: Using the (secure) flask session key to hold the MySession session key, but there
+    are issues of sessions closing/expiring prematurely.
 
       mysession = MySession(session)
       mysession[key] = anything
@@ -21,7 +21,6 @@
     Purge expired sessions somehow. (low prio: how many user sessions will there actually be%s)
       - The /_sessions entry point does this. But there seem to be a lot of my sessions being
         created.
-    Use namedtuples for session values.
 
     I think you have to read the session blob from the db for for each get and both to read and
     write it for each put.
@@ -32,7 +31,8 @@
       session_dict blob,
       expiration_time float);
 """
-import time, datetime
+import time
+import datetime
 import pickle
 import uuid
 import logging
@@ -44,7 +44,7 @@ fh = logging.FileHandler('debugging.log')
 sh = logging.StreamHandler()
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 fh.setFormatter(formatter)
-#logger.addHandler(fh)
+# logger.addHandler(fh)
 logger.addHandler(sh)
 
 sql_logger = logging.getLogger('postgres')
@@ -54,8 +54,9 @@ ssh = logging.StreamHandler()
 sformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 sfh.setFormatter(sformatter)
 ssh.setFormatter(sformatter)
-#sql_logger.addHandler(sfh)
+# sql_logger.addHandler(sfh)
 sql_logger.addHandler(ssh)
+
 
 class MySession:
 
@@ -74,11 +75,12 @@ class MySession:
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
 
-    if session_key == None:
+    if session_key is None:
       self.session_key = str(uuid.uuid1())
-      cursor.execute("insert into sessions values(%s, %s, %s)", (self.session_key,
-          pickle.dumps(dict()),
-          time.time() + datetime.timedelta(minutes=120).total_seconds()))
+      cursor.execute("insert into sessions values(%s, %s, %s)",
+                     (self.session_key,
+                      pickle.dumps(dict()),
+                      time.time() + datetime.timedelta(minutes=120).total_seconds()))
     else:
       self.session_key = session_key
 
@@ -92,9 +94,10 @@ class MySession:
           logger.warning('UUID from foreign host')
           self.session_key = str(new_uuid)
         # create substitute (empty) session
-        cursor.execute("insert into sessions values(%s, %s, %s)", (self.session_key,
-            pickle.dumps(dict()),
-            time.time() + datetime.timedelta(minutes=120).total_seconds()))
+        cursor.execute("insert into sessions values(%s, %s, %s)",
+                       (self.session_key,
+                        pickle.dumps(dict()),
+                        time.time() + datetime.timedelta(minutes=120).total_seconds()))
       else:
         # Session exists and is not expired: just update its expiration time
         self.touch()
@@ -130,7 +133,7 @@ class MySession:
     mydict[key] = value
     # logger.debug('  now mydict has {} keys'.format(len(mydict.keys())))
     cursor.execute("update sessions set session_dict = %s where session_key = %s",
-      (pickle.dumps(mydict), self.session_key))
+                   (pickle.dumps(mydict), self.session_key))
     connection.commit()
     connection.close()
     self.touch()
@@ -143,7 +146,7 @@ class MySession:
     mydict = pickle.loads(cursor.fetchone()[0])
     connection.close()
     self.touch()
-    return mydict[key] # raise KeyError if key not in session
+    return mydict[key]  # raise KeyError if key not in session
 
   def __len__(self):
     # logger.debug('*** mysession.__len__({}'.format(self.session_key))
@@ -180,7 +183,7 @@ class MySession:
     if key in mydict:
       del mydict[key]
       cursor.execute("update sessions set session_dict = %s where session_key = %s",
-        (pickle.dumps(mydict), self.session_key))
+                     (pickle.dumps(mydict), self.session_key))
       connection.commit()
       connection.close()
       return True
@@ -189,16 +192,18 @@ class MySession:
 
   def is_expired(self, session_key):
     # logger.debug('*** mysession.is_expired({}, {})'.format(self.session_key, session_key))
-    if session_key == None: return true
+    if session_key is None:
+      return true
 
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
-    cursor.execute("select expiration_time from sessions where session_key = %s",(session_key,))
+    cursor.execute("select expiration_time from sessions where session_key = %s", (session_key,))
     row = cursor.fetchone()
     connection.close()
-    if row == None or len(row) == 0: return True
+    if row is None or len(row) == 0:
+      return True
     expiration_time = row[0]
-    if expiration_time != None and expiration_time > time.time():
+    if expiration_time is not None and expiration_time > time.time():
       # logger.debug('  returning False')
       return False
     # logger.debug('  returning True')
