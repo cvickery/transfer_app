@@ -1,8 +1,6 @@
 from pgconnection import pgconnection
 from psycopg2.extras import NamedTupleCursor
 
-from collections import namedtuple
-
 import math
 import re
 from time import time
@@ -174,7 +172,7 @@ def lookup_courses(institution, active_only=True):
 # format_course()
 # --------------------------------------------------------------------------------------------------
 def format_course(course, active_only=False):
-  """ Given a namedtuple returned by institution_query or course_query, generate an html "catalog"
+  """ Given a named tuple returned by institution_query or course_query, generate an html "catalog"
       entry for the course
   """
 
@@ -247,7 +245,7 @@ def format_course(course, active_only=False):
   return html
 
 
-# main()
+# Unit Test
 # -------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
   import sys
