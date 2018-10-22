@@ -4,7 +4,6 @@
 """
 import json
 from datetime import datetime
-from collections import namedtuple
 
 from pgconnection import pgconnection
 from format_rules import format_rule
