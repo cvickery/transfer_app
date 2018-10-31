@@ -23,8 +23,8 @@ from mysession import MySession
 from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
-from format_rules import format_rule, format_rules, format_rule_by_key, \
-    institution_names, rule_ids, numeric_part
+from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, \
+    rule_ids, numeric_part, Transfer_Rule, Source_Course, Destination_Course
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -59,19 +59,6 @@ fh.setFormatter(formatter)
 # logger.addHandler(fh)
 logger.addHandler(sh)
 logger.debug('Debug: App Start')
-
-Rule_Key = namedtuple('Rule_Key',
-                      'source_institution destination_institution subject_area group_number')
-Transfer_Rule = namedtuple('Transfer_Rule', """
-                           id
-                           source_institution
-                           destination_institution
-                           subject_area
-                           group_number
-                           source_disciplines
-                           source_course_ids
-                           destination_course_ids
-                           review_status""")
 
 
 # Overhead URIs
@@ -679,29 +666,34 @@ def do_form_2(request, session):
   if request.form.get('all-destination-subjects'):
     destination_subjects_clause = ''
   else:
-    # CREATE A CLAUSE THAT MAKES SURE THE DESTINATION COURSE HAS ONE OF THE DESTINATION SUBJECTS
+    # Create a clause that makes sure the destination course has one of the destination subjects
     destination_subject_list = request.form.getlist('destination_subject')
     destination_subject_params = ', '.join(f'{s}' for s in destination_subject_list)
     destination_subjects_clause = f" and cuny_subject in ({destination_subject_params})"
 
   for rule in all_rules:
     # It’s possible some of the selected rules don’t have destination courses in any of the selected
-    # disciplines, so that has to be checked.
+    # disciplines, so that has to be checked first.
     cursor.execute(f"""
       select * from destination_courses
       where rule_id = %s {destination_subjects_clause}
     """, (rule.id, ))
     if cursor.rowcount > 0:
-      destination_courses = cursor.fetchall()
+      # The first two fields in the db are the id and rule_id, which are not part of the namedtuple
+      destination_courses = [Destination_Course._make([c[i] for i in range(2, len(c))])
+                             for c in cursor.fetchall()]
+
       cursor.execute("""
         select * from source_courses
         where rule_id = %s
         """, (rule.id, ))
       if cursor.rowcount > 0:
-        source_courses = cursor.fetchall()
+        # As above, drop the first two fields in the db row
+        source_courses = [Source_Course._make([c[i] for i in range(2, len(c))])
+                          for c in cursor.fetchall()]
 
-        # Create a rule_tuple suitable for passing to format_rules, and add it to the list of rules
-        # to pass.
+        # Create the Transfer_Rule tuple suitable for passing to format_rules, and add it to the
+        # list of rules to pass.
         selected_rules.append(Transfer_Rule._make(
             [rule.id,
              rule.source_institution,
@@ -709,9 +701,9 @@ def do_form_2(request, session):
              rule.subject_area,
              rule.group_number,
              rule.source_disciplines,
-             ':'.join([f'{c.course_id}' for c in source_courses]),
-             ':'.join([f'{c.course_id}' for c in destination_courses]),
-             rule.review_status]))
+             rule.review_status,
+             source_courses,
+             destination_courses]))
 
   cursor.close()
   conn.close()
@@ -1629,4 +1621,4 @@ def server_error(e):
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application on Google App Engine. See entrypoint in app.yaml.
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
