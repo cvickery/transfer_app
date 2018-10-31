@@ -14,6 +14,34 @@ DEBUG = False
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
 Work_Tuple = namedtuple('Work_Tuple', 'course_id offer_nbr discipline')
 
+# Named tuples for a transfer rule and its source and destination course lists.
+Transfer_Rule = namedtuple('Transfer_Rule', """
+                           rule_id
+                           source_institution
+                           destination_institution
+                           subject_area
+                           group_number
+                           source_disciplines
+                           source_subjects
+                           review_status
+                           source_courses
+                           destination_courses
+                           """)
+
+Source_Course = namedtuple('Source_Course', """
+                           course_id
+                           discipline
+                           cat_num
+                           cuny_subject
+                           min_credits
+                           max_credits
+                           min_gpa
+                           max_gpa
+                           """)
+
+Destination_Course = namedtuple('Destination_Course',
+                                'course_id discipline cat_num cuny_subject transfer_credits')
+
 conn = pgconnection('dbname=cuny_courses')
 cursor = conn.cursor()
 cursor.execute("select code, prompt from institutions order by lower(name)")
