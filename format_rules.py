@@ -192,7 +192,7 @@ def format_rule(rule, rule_key=None):
   cursor = conn.cursor()
 
   # Source Courses
-  source_course_ids = [int(id) for id in rule.source_course_ids.strip(':').split(':')]
+  source_course_ids = [course.course_id for course in rule.source_courses]
   # There should be no duplicates in source_course_ids for the rule
   assert len(set(source_course_ids)) == len(source_course_ids), \
       f'Duplcated source course id(s) for rule {rule_key}'
@@ -221,7 +221,7 @@ def format_rule(rule, rule_key=None):
                 sc.max_gpa desc,
                 substring(c.catalog_number from '\d+\.?\d*')::float
        """
-  cursor.execute(q, (rule.id, ))
+  cursor.execute(q, (rule.rule_id, ))
   source_courses = cursor.fetchall()
 
   # Figure out what discipline to list first in the case of multiple disciplines or cross-listings

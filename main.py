@@ -1,9 +1,11 @@
+# CUNY Transfer App
+# C. Vickery
+
 import sys
 import os
 import argparse
 import re
 import socket
-
 
 import json
 import uuid
@@ -289,6 +291,11 @@ def do_form_0(request, session):
           {}
         <fieldset>
           <legend>Your email address</legend>
+          <p>
+            To record your reviews of transfer rules, you need to supply a valid CUNY email address
+            for verification purposes.<br/>If you just want to view the rules, you can use a dummy
+            address: <em>nobody@cuny.edu</em>
+          </p>
           <label for="email-text">Enter a valid CUNY email address:</label>
           <div>
             <input type="text" name="email" id="email-text" value="{}"/>
@@ -671,20 +678,28 @@ def do_form_2(request, session):
     destination_subject_params = ', '.join(f'{s}' for s in destination_subject_list)
     destination_subjects_clause = f" and cuny_subject in ({destination_subject_params})"
 
+  # YOU ARE HERE AND IN FORMAT_RULES LINE 194
+  # As it stands, here we are looking up the source courses, but not noting anything about multiple
+  # offer_nbrs. But When formatting the rule, the offer_nbrs have to be looked up. So these queries
+  # should return a list of offer_nbr values, and format_rule can then look up all the needed
+  # discipline-catalog_number values.
   for rule in all_rules:
     # It’s possible some of the selected rules don’t have destination courses in any of the selected
     # disciplines, so that has to be checked first.
     cursor.execute(f"""
-      select * from destination_courses
+      select *
+      from destination_courses
       where rule_id = %s {destination_subjects_clause}
     """, (rule.id, ))
     if cursor.rowcount > 0:
-      # The first two fields in the db are the id and rule_id, which are not part of the namedtuple
+      # The first two fields in the db are the row id and rule_id, which are not part of the
+      # namedtuple
       destination_courses = [Destination_Course._make([c[i] for i in range(2, len(c))])
                              for c in cursor.fetchall()]
 
       cursor.execute("""
-        select * from source_courses
+        select *
+        from source_courses
         where rule_id = %s
         """, (rule.id, ))
       if cursor.rowcount > 0:
@@ -701,10 +716,10 @@ def do_form_2(request, session):
              rule.subject_area,
              rule.group_number,
              rule.source_disciplines,
+             rule.source_subjects,
              rule.review_status,
              source_courses,
              destination_courses]))
-
   cursor.close()
   conn.close()
 
@@ -941,7 +956,7 @@ def history(rule):
 # # -------------------------------------------------------------------------------------------------
 # # Lookup all the rules that involve a course.
 # # This page is not used any more. Map Courses does the job better.
-# #
+# # Also, deleting the regex tutorial.
 # @app.route('/lookup', methods=['GET'])
 # def lookup():
 #   """ Prompt for a course (or set of courses in a discipline) at an institution, and display
@@ -1601,12 +1616,12 @@ def courses():
   return render_template('courses.html', result=Markup(result))
 
 
-# /REGEX
-# =================================================================================================
-# A help page for entering regular expressions as course catalog numbers.
-@app.route('/regex')
-def regex():
-  return render_template('regex.html')
+# # /REGEX obsoletificization.
+# # ================================================================================================
+# # A help page for entering regular expressions as course catalog numbers.
+# @app.route('/regex')
+# def regex():
+#   return render_template('regex.html')
 
 
 @app.errorhandler(500)
