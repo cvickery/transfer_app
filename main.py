@@ -689,7 +689,8 @@ def do_form_2(request, session):
     cursor.execute(f"""
       select *
       from destination_courses
-      where rule_id = %s {destination_subjects_clause}
+      where rule_id = %s
+        {destination_subjects_clause}
     """, (rule.id, ))
     if cursor.rowcount > 0:
       # The first two fields in the db are the row id and rule_id, which are not part of the
