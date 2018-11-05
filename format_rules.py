@@ -41,6 +41,7 @@ Source_Course = namedtuple('Source_Course', """
                            max_credits
                            min_gpa
                            max_gpa
+                           discipline_name
                            """)
 
 Destination_Course = namedtuple('Destination_Course', """
@@ -51,6 +52,7 @@ Destination_Course = namedtuple('Destination_Course', """
                                 cat_num
                                 cuny_subject
                                 transfer_credits
+                                discipline_name
                                 """)
 
 conn = pgconnection('dbname=cuny_courses')
@@ -221,52 +223,17 @@ def format_rule(rule, rule_key=None):
   assert len(set(destination_course_ids)) == len(destination_course_ids), \
       f'Duplcated destination course id(s) for rule {rule_key}'
 
-  # Figure out what discipline to list first in the case of multiple disciplines or cross-listings
-  primary_discipline = source_courses[0].discipline   # default
-  if rule.subject_area in source_disciplines:
-    primary_discipline = rule.subject_area
-  else:
-    # Take the most frequently occurring discipline if there is a choice
-    if len(source_disciplines) > 1:
-      num_courses = dict([(d, 0) for d in source_disciplines])
-      for source_course in source_courses:
-        num_courses[source_course.discipline] += 1
-      primary_discipline = sorted(num_courses.items(), key=lambda kv: kv[1])[0][0]
-
-  #  Check for cross-listed source courses. Look up their disciplines and catalog_numbers.
+  #  Check for any cross-listed source courses. Look up their disciplines and catalog_numbers.
   cross_listed_with = dict()
   for course in source_courses:
     if course.offer_count > 1:
-      cursor.execute('select discipline, catalog_number from courses where course-id = $s',
+      cursor.execute("""select discipline, catalog_number, cuny_subject
+                          from courses
+                         where course-id = $s""",
                      (course.course_id,))
       assert cursor.rowcount == course.offer_count, \
           f'cross-listed source course counts do not match'
       cross_listed_with[course.course_id] = cursor.fetchall()
-      print('*** source cross-listing:\n', course, cross_listed_with[course.course_id])
-
-  # Now to figure out what to do with this nice list of source course cross-listings ... which also
-  # are still in source_courses. The one with the primary_discipline stays in source_courses and
-  # gets removed from cross_listed_with. The ones in cross_listed_with get removed from
-  # source_courses. If the same discipline is repeated in the cross-listing, retain the one with the
-  # lowest catalog number in source_courses.
-  for course_id in cross_listed_with.keys():
-    primary_course = None
-    # Find first course with primary_discipline (there has to be one)
-    for course in cross_listed_with[course_id]:
-      if course.discipline == primary_discipline:
-        primary_course = course
-        break
-    assert primary_course is not None, \
-        f'Failed to find primary course in {cross_listed_with[course_id]}'
-    # Find the primary course with the lowest catalog_number
-    for course in cross_listed_with[course_id]:
-      if course.discipline == primary_discipline and course.cat_num < primary_course.cat_num:
-        primary_course = course
-    # Remove primary_course from cross_listed_with and remove remaining cross_listed_with courses
-    # from source_courses
-    cross_listed_with[course_id].remove(primary_course)
-    for course in cross_listed_with[course_id]:
-      source_courses.remove(course)
 
   source_class = ''  # for the HTML credit-mismatch indicator
 
@@ -333,8 +300,11 @@ def format_rule(rule, rule_key=None):
                                                            course.discipline)
       destination_course_list = destination_course_list.strip('/ ') + discipline_str + '-'
 
-    if abs(float(course.min_credits) - course.transfer_credits) > 0.09:
-      course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
+    # TODO: show how many credits are transfered ##############################################################################
+    # the problem is the source_course has the credit range for the rule, and the course itself has the min/max for the source
+    # course itself, but it's gone missing, so we're never doing the credit comparison at all.
+    # if abs(float(course.min_credits) - course.transfer_credits) > 0.09:
+    #   course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
     destination_course_list += \
         '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
 

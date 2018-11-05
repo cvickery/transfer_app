@@ -687,10 +687,14 @@ def do_form_2(request, session):
     # It’s possible some of the selected rules don’t have destination courses in any of the selected
     # disciplines, so that has to be checked first.
     cursor.execute(f"""
-      select *
-      from destination_courses
-      where rule_id = %s
+      select dc.*, dn.description
+      from destination_courses dc, disciplines dn, transfer_rules r
+      where dc.rule_id = %s
+        and r.id = dc.rule_id
+        and dn.institution = r.destination_institution
+        and dn.discipline = dc.discipline
         {destination_subjects_clause}
+       order by discipline, cat_num
     """, (rule.id, ))
     if cursor.rowcount > 0:
       # The first two fields in the db are the row id and rule_id, which are not part of the
@@ -699,9 +703,13 @@ def do_form_2(request, session):
                              for c in cursor.fetchall()]
 
       cursor.execute("""
-        select *
-        from source_courses
-        where rule_id = %s
+        select sc.*, dn.description
+        from source_courses sc, disciplines dn, transfer_rules r
+        where sc.rule_id = %s
+          and r.id = sc.rule_id
+          and dn.institution = r.source_institution
+          and dn.discipline = sc.discipline
+        order by discipline, cat_num
         """, (rule.id, ))
       if cursor.rowcount > 0:
         # As above, drop the first two fields in the db row
