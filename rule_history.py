@@ -1,24 +1,16 @@
 from collections import namedtuple
 from pgconnection import pgconnection
-from format_rules import format_rule, rule_ids
+from format_rules import format_rule_by_key, rule_ids
 
 
 # rule_history()
 # -------------------------------------------------------------------------------------------------
 def rule_history(rule_key):
-  """ Generate HTML for the review history of a transfer rule.
+  """ Generate HTML for the review-history of a transfer rule.
   """
   rule_id = rule_ids[rule_key]
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute("""
-                 select  r.*, s.source_course_ids, d.destination_course_ids
-                   from  transfer_rules r, view_source_courses s, view_destination_courses d
-                  where  r.id = %s
-                    and  r.id = s.rule_id
-                    and  r.id = d.rule_id
-                 """, (rule_id, ))
-  rule = cursor.fetchone()
   q = """
         select  s.description,
                 e.who,
@@ -57,5 +49,5 @@ def rule_history(rule_key):
               </tr>
               {}
             </table>
-           """.format(rule_key, format_rule(rule)[1], history_rows)
+           """.format(rule_key, format_rule_by_key(rule_key)[1], history_rows)
   return result

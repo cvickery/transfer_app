@@ -86,24 +86,6 @@ def andor_list(items, andor='and'):
   return ', '.join(items) + f', {andor} ' + last_item
 
 
-# numeric_part()
-# -------------------------------------------------------------------------------------------------
-def numeric_part(catalog_number):
-  """ Helper function for format_rule and /_find_course_ids() AJAX utility.
-      Returns the numeric part of a catalog_number (ignoring letter suffixes, etc) as a real number.
-  """
-  # ASSUMPTION: Catalog numbers are always less than 1,000. If larger, they are adjustments to
-  # the "no decimals in catalog numbers" edict, so reduce them to the correct range.
-  #
-  # NOTE: this function has been added to the db so queries can select the return value from there.
-
-  match = re.search(r'(\d+\.?\d*)', catalog_number)
-  numeric_part = float(match.group(1))
-  while numeric_part > 1000.0:
-    numeric_part = numeric_part / 10.0
-  return numeric_part
-
-
 # _grade()
 # -------------------------------------------------------------------------------------------------
 def _grade(min_gpa, max_gpa):
@@ -216,13 +198,13 @@ def format_rule(rule, rule_key=None):
   # There should be no duplicates in source_course_ids for the rule
   assert len(set(source_course_ids)) == len(source_course_ids), \
       f'Duplcated source course id(s) for rule {rule_key}'
-  source_course_id_str = ', '.join([f'{id}' for id in source_course_ids])
+  source_course_id_str = ':'.join([f'{id}' for id in source_course_ids])
 
   destination_course_ids = [course.course_id for course in rule.destination_courses]
   # There should be no duplicates in destination_course_ids for the rule
   assert len(set(destination_course_ids)) == len(destination_course_ids), \
       f'Duplcated destination course id(s) for rule {rule_key}'
-
+  destination_course_id_str = ':'.join([f'{id}' for id in destination_course_ids])
   #  Check for any cross-listed source courses. Look up their disciplines and catalog_numbers.
   cross_listed_with = dict()
   for course in source_courses:
@@ -238,7 +220,7 @@ def format_rule(rule, rule_key=None):
   source_class = ''  # for the HTML credit-mismatch indicator
 
   # The course ids parts of the table row id
-  row_id = '{}-{}-{}'.format(rule_key, source_course_ids, destination_course_ids)
+  row_id = '{}-{}-{}'.format(rule_key, source_course_id_str, destination_course_id_str)
   min_source_credits = 0.0
   max_source_credits = 0.0
   source_course_list = ''
@@ -252,8 +234,8 @@ def format_rule(rule, rule_key=None):
   #   Passing grades in LCD 101 (=ANTH 101 or CMLIT 207) and LCD 102.
   #   Passing grades in LCD 101 (=ANTH 101) and LCD 102. C- or better in LCD 103.
 
-  # First group courses by grade requirement. Not sure there will ever be a mix for one rule, if it
-  # ever happens, we’ll be ready.
+  # First group courses by grade requirement. Not sure there will ever be a mix for one rule, but
+  # if it ever happens, we’ll be ready.
   courses_by_grade = dict()
   for course in source_courses:
     # Accumulate min/max credits for checking against destination credits
@@ -281,11 +263,6 @@ def format_rule(rule, rule_key=None):
       course_list.append(f'<span title="course_id={course.course_id}">{course_str}</span>')
     source_course_list += f'{grade_str} {andor_list(course_list, "and")}'
 
-  # If it’s a variable-credit course, what to do?
-  # =======================================================================
-  # How often does it happen? 1,859 times.
-  # So just check if the transfer credits is in the range of min to max.
-
   # Build the destination part of the rule group
   destination_credits = 0.0
   discipline = ''
@@ -300,9 +277,6 @@ def format_rule(rule, rule_key=None):
                                                            course.discipline)
       destination_course_list = destination_course_list.strip('/ ') + discipline_str + '-'
 
-    # TODO: show how many credits are transfered ##############################################################################
-    # the problem is the source_course has the credit range for the rule, and the course itself has the min/max for the source
-    # course itself, but it's gone missing, so we're never doing the credit comparison at all.
     # if abs(float(course.min_credits) - course.transfer_credits) > 0.09:
     #   course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
     destination_course_list += \

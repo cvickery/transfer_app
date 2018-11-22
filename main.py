@@ -26,7 +26,7 @@ from sendtoken import send_token
 from reviews import process_pending
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, \
-    rule_ids, numeric_part, Transfer_Rule, Source_Course, Destination_Course
+    rule_ids, Transfer_Rule, Source_Course, Destination_Course
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -668,8 +668,8 @@ def do_form_2(request, session):
   selected_rules = []
   # Get the source and destination course lists from the above set of rules where the destination
   # subject was selected. It's possible to have selected rules that don’t transfer to any of the
-  # selected destination subjects, so those rules have to be dropped while building the
-  # selected-rules list.
+  # selected destination subjects, so those rules are dropped while building the selected-rules
+  # list.
   if request.form.get('all-destination-subjects'):
     destination_subjects_clause = ''
   else:
@@ -678,43 +678,49 @@ def do_form_2(request, session):
     destination_subject_params = ', '.join(f'{s}' for s in destination_subject_list)
     destination_subjects_clause = f" and cuny_subject in ({destination_subject_params})"
 
-  # YOU ARE HERE AND IN FORMAT_RULES LINE 194
-  # As it stands, here we are looking up the source courses, but not noting anything about multiple
-  # offer_nbrs. But When formatting the rule, the offer_nbrs have to be looked up. So these queries
-  # should return a list of offer_nbr values, and format_rule can then look up all the needed
-  # discipline-catalog_number values.
   for rule in all_rules:
     # It’s possible some of the selected rules don’t have destination courses in any of the selected
     # disciplines, so that has to be checked first.
     cursor.execute(f"""
-      select dc.*, dn.description
-      from destination_courses dc, disciplines dn, transfer_rules r
+      select  dc.course_id,
+              dc.offer_count,
+              dc.discipline,
+              dc.catalog_number,
+              dc.cat_num,
+              dc.cuny_subject,
+              dc.transfer_credits,
+              dn.description
+      from courses c, destination_courses dc, disciplines dn
       where dc.rule_id = %s
-        and r.id = dc.rule_id
-        and dn.institution = r.destination_institution
+        and c.course_id = dc.course_id
+        and dn.institution = %s
         and dn.discipline = dc.discipline
         {destination_subjects_clause}
        order by discipline, cat_num
-    """, (rule.id, ))
+    """, (rule.id, rule.destination_institution))
     if cursor.rowcount > 0:
-      # The first two fields in the db are the row id and rule_id, which are not part of the
-      # namedtuple
-      destination_courses = [Destination_Course._make([c[i] for i in range(2, len(c))])
-                             for c in cursor.fetchall()]
+      destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
 
       cursor.execute("""
-        select sc.*, dn.description
-        from source_courses sc, disciplines dn, transfer_rules r
+        select  sc.course_id,
+                sc.offer_count,
+                sc.discipline,
+                sc.catalog_number,
+                sc.cat_num,
+                sc.cuny_subject,
+                sc.min_credits,
+                sc.max_credits,
+                sc.min_gpa,
+                sc.max_gpa,
+                dn.description
+        from source_courses sc, disciplines dn
         where sc.rule_id = %s
-          and r.id = sc.rule_id
-          and dn.institution = r.source_institution
+          and dn.institution = %s
           and dn.discipline = sc.discipline
         order by discipline, cat_num
-        """, (rule.id, ))
+        """, (rule.id, rule.source_institution))
       if cursor.rowcount > 0:
-        # As above, drop the first two fields in the db row
-        source_courses = [Source_Course._make([c[i] for i in range(2, len(c))])
-                          for c in cursor.fetchall()]
+        source_courses = [Source_Course._make(c)for c in cursor.fetchall()]
 
         # Create the Transfer_Rule tuple suitable for passing to format_rules, and add it to the
         # list of rules to pass.
@@ -1256,12 +1262,11 @@ def _find_course_ids():
   ranges_str = request.args.get('ranges_str')
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute("""select course_id, catalog_number
+  cursor.execute("""select course_id, numeric_part(catalog_number) as cat_num
                     from courses
                     where institution = %s and discipline = %s
                  """, (institution, discipline))
-  courses = [[course.course_id, numeric_part(course.catalog_number)]
-             for course in cursor.fetchall()]
+  courses = [[c.course_id, c.cat_num] for c in cursor.fetchall()]
 
   # Filter out the deplorables
   # Range string syntax: all | min:max [;...]
