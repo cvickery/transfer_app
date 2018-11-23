@@ -157,19 +157,65 @@ def format_rules(rules):
 # format_rule_by_key()
 # -------------------------------------------------------------------------------------------------
 def format_rule_by_key(rule_key):
-  """ Generate a rule tuple given the key.
+  """ Generate a Transfer_Rule tuple given the key.
   """
   rule_id = rule_ids[rule_key]
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute("""select t.*, s.source_course_ids, d.destination_course_ids
-                      from transfer_rules t, view_source_courses s, view_destination_courses d
-                     where t.id = %s
-                       and t.id = s.rule_id
-                       and t.id = d.rule_id
-                     order by t. source_institution, t.destination_institution, t.subject_area
-                 """, (rule_id, ))
-  return format_rule(cursor.fetchone(), rule_key)
+  cursor.execute('select * from transfer_rules where id = %s', (rule_id, ))
+  rule = cursor.fetchone()
+
+  cursor.execute("""
+    select  sc.course_id,
+            sc.offer_count,
+            sc.discipline,
+            sc.catalog_number,
+            sc.cat_num,
+            sc.cuny_subject,
+            sc.min_credits,
+            sc.max_credits,
+            sc.min_gpa,
+            sc.max_gpa,
+            dn.description
+    from source_courses sc, disciplines dn
+    where sc.rule_id = %s
+      and dn.institution = %s
+      and dn.discipline = sc.discipline
+    order by discipline, cat_num
+    """, (rule.id, rule.source_institution))
+  source_courses = [Source_Course._make(c)for c in cursor.fetchall()]
+
+  cursor.execute("""
+    select  dc.course_id,
+            dc.offer_count,
+            dc.discipline,
+            dc.catalog_number,
+            dc.cat_num,
+            dc.cuny_subject,
+            dc.transfer_credits,
+            dn.description
+     from destination_courses dc, disciplines dn
+    where dc.rule_id = %s
+      and dn.institution = %s
+      and dn.discipline = dc.discipline
+    order by discipline, cat_num
+    """, (rule.id, rule.destination_institution))
+  destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
+
+  the_rule = Transfer_Rule._make(
+      [rule.id,
+       rule.source_institution,
+       rule.destination_institution,
+       rule.subject_area,
+       rule.group_number,
+       rule.source_disciplines,
+       rule.source_subjects,
+       rule.review_status,
+       source_courses,
+       destination_courses])
+  cursor.close()
+  conn.close()
+  return format_rule(the_rule, rule_key)
 
 
 # format_rule()
@@ -211,7 +257,7 @@ def format_rule(rule, rule_key=None):
     if course.offer_count > 1:
       cursor.execute("""select discipline, catalog_number, cuny_subject
                           from courses
-                         where course-id = $s""",
+                         where course_id = %s""",
                      (course.course_id,))
       assert cursor.rowcount == course.offer_count, \
           f'cross-listed source course counts do not match'
@@ -320,15 +366,15 @@ def format_rule(rule, rule_key=None):
                             destination_course_list,
                             status_cell)
   description = """
-        <div class="{}">
-          {} at {}, {} credits, transfers to {} as {}, {} credits.
-        </div>""".format(row_class,
-                         source_course_list,
-                         institution_names[rule.source_institution],
-                         source_credits_str,
-                         institution_names[rule.destination_institution],
-                         destination_course_list,
-                         destination_credits)
+      <div><span class="{}" style="padding:0.5em;">
+        {} at {}, {} credits, transfers to {} as {}, {} credits.</span>
+      </div>""".format(row_class,
+                       source_course_list,
+                       institution_names[rule.source_institution],
+                       source_credits_str,
+                       institution_names[rule.destination_institution],
+                       destination_course_list,
+                       destination_credits)
   description = description.replace('Pass', 'Passing grade in')
   return row, description
 

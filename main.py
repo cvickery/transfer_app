@@ -690,9 +690,8 @@ def do_form_2(request, session):
               dc.cuny_subject,
               dc.transfer_credits,
               dn.description
-      from courses c, destination_courses dc, disciplines dn
+      from destination_courses dc, disciplines dn
       where dc.rule_id = %s
-        and c.course_id = dc.course_id
         and dn.institution = %s
         and dn.discipline = dc.discipline
         {destination_subjects_clause}

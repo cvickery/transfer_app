@@ -11,17 +11,16 @@ def rule_history(rule_key):
   rule_id = rule_ids[rule_key]
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  q = """
-        select  s.description,
-                e.who,
-                e.what,
-                to_char(e.event_time, 'YYYY-MM-DD HH12:MI am') as event_time
-          from  events e, review_status_bits s
-         where  e.rule_id = %s
-           and  s.abbr = e.event_type
+  cursor.execute("""
+      select  s.description,
+              e.who,
+              e.what,
+              to_char(e.event_time, 'YYYY-MM-DD HH12:MI am') as event_time
+        from  events e, review_status_bits s
+       where  e.rule_id = %s
+         and  s.abbr = e.event_type
        order by e.event_time desc
-      """
-  cursor.execute(q, (rule_id, ))
+                 """, (rule_id, ))
   history_rows = ''
   if cursor.rowcount < 1:
     history_rows = '<tr><td colspan="3">There is no review history for this rule</td></tr>'
