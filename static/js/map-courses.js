@@ -279,7 +279,7 @@ $(function ()
         catalog_request.done(function (result, status)
         {
           $('#pop-up-content').html(result[0].html);
-          $('#pop-up-div').show().draggable();
+          $('#pop-up-div').show().draggable().resizable();
         });
       });
 
@@ -299,7 +299,7 @@ $(function ()
         rules_to_html_request.done(function (result, status)
         {
           $('#pop-up-content').html(result);
-          $('#pop-up-div').show().draggable();
+          $('#pop-up-div').show().draggable().resizable();
         });
       });
     });

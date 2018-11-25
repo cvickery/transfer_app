@@ -89,10 +89,12 @@ def andor_list(items, andor='and'):
 # _grade()
 # -------------------------------------------------------------------------------------------------
 def _grade(min_gpa, max_gpa):
-  """ Convert numerical gpa range to description of required grade in letter-grade form
-        below <letter> (when max < 4.0) (should check min < 0.7)
-        <letter> or better (when min is > 0.7) (should check max >= 4.0)
-        TODO Report anything that doesn't fit one of those two models
+  """ Convert numerical gpa range to description of required grade in letter-grade form.
+        “<letter> or above” when min is > 0.7 and max is 4.0+
+        “below <letter>” when min is 0.7 and max is < 4.0
+        “between <letter> and <letter>” when min is > 0.7 and max is < 4.0
+        “Pass” when neither of the above
+
         GPA Letter 3×GPA
         4.3 A+      12.9
         4.0 A       12.0
@@ -107,14 +109,22 @@ def _grade(min_gpa, max_gpa):
         1.0 D        3.0
         0.7 D-       2.1
   """
-  if max_gpa >= 4.0:
-    if min_gpa > 1.0:
-      letter = letters[int(round(min_gpa * 3))]
-      return letter + ' or above in'
-    else:
-      return 'Pass'
-  letter = letters[int(round(max_gpa * 3))]
-  return 'below ' + letter + ' in'
+  # Ad hoc fix bogus gpa ranges
+  if min_gpa < 0.7:
+    min_gpa = 0.7
+  if (max_gpa < min_gpa) or max_gpa > 4.3:
+    max_gpa = 4.3
+
+  # We don’t handle “greater than min but less than max” because it seems not to occur.
+  if min_gpa > 0.7 and max_gpa > 3.9:
+    letter = letters[int(round(min_gpa * 3))]
+    return letter + ' or above in'
+  if min_gpa < 0.8 and max_gpa < 3.9:
+    letter = letters[int(round(max_gpa * 3))]
+    return 'below ' + letter + ' in'
+  if min_gpa > 0.8 and max_gpa < 3.9:
+    return f'between {letters[int(round(min_gpa * 3))]} and {letters[int(round(max_gpa * 3))]} in'
+  return 'Pass'
 
 
 # format_rules()
@@ -122,6 +132,14 @@ def _grade(min_gpa, max_gpa):
 def format_rules(rules):
   """ Generate HTML table with information about each transfer rule.
   """
+
+  # Sort the rules by discipline-cat-num of first source_course
+  #   First, order by decreasing stringency of GPA requiements
+  rules.sort(key=lambda r: (r.source_courses[0].min_gpa, r.source_courses[0].max_gpa), reverse=True)
+  #   Then, order by increasing discipline-cat_num
+  rules.sort(key=lambda r: (r.source_courses[0].discipline, r.source_courses[0].cat_num))
+
+  # Generate the table
   table = """
     <table id="rules-table">
       <thead>
@@ -136,18 +154,6 @@ def format_rules(rules):
       <tbody>
       """
   for rule in rules:
-    # The id attribute for each table row is the rule_key plus lists of course_ids:
-    #   Source Institution        |
-    #   hyphen                    |
-    #   Destination Institution   | R K
-    #   hyphen                    | U E
-    #   Subject Area              | L Y
-    #   hyphen                    | E
-    #   Group Number              |
-    #   hyphen
-    #   Colon-separated list of source course_ids
-    #   hyphen
-    #   Colon-separated list of destination courses_ids
     row, description = format_rule(rule)
     table += row
   table += '</tbody></table>'
@@ -304,7 +310,9 @@ def format_rule(rule, rule_key=None):
       if course.course_id in cross_listed_with.keys():
         xlist_courses = []
         for xlist_course in cross_listed_with[course.course_id]:
-          xlist_courses.append(f'{xlist_course.discipline} {xlist_course.catalog_number}')
+          if xlist_course.discipline != course.discipline or \
+             xlist_course.catalog_number != course.catalog_number:
+            xlist_courses.append(f'{xlist_course.discipline} {xlist_course.catalog_number}')
         course_str += '(=' + andor_list(xlist_courses, "or") + ')'
       course_list.append(f'<span title="course_id={course.course_id}">{course_str}</span>')
     source_course_list += f'{grade_str} {andor_list(course_list, "and")}'

@@ -1486,10 +1486,7 @@ def lookup_rules():
 # the rules. Acts as an interface to format_rule().
 @app.route('/_rules_to_html')
 def _rules_to_html():
-  if args.debug:
-    print('_rules_to_html()')
   rule_keys = request.args.get('rule_keys').split(':')
-  print(rule_keys)
   return jsonify('<hr>'.join([format_rule_by_key(rule_key)[0] for rule_key in rule_keys]))
 
 
