@@ -1354,7 +1354,7 @@ def _map_course():
       row_template = '<tr>{}' + course_info_cell + '</tr>'
       cursor.execute("""select distinct *
                         from transfer_rules r
-                        where r.id in (select rule_id from destination_dcourses where course_id = %s)
+                        where r.id in (select rule_id from destination_courses where course_id = %s)
                         order by source_institution, subject_area, destination_institution
                     """, (course_info.course_id, ))
     all_rules = cursor.fetchall()
