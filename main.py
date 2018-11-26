@@ -1198,8 +1198,9 @@ def map_courses():
     </div>
   </div>
   <div id="pop-up-div">
-    <div id="dismiss-bar">x</div>
-    <div id="pop-up-content">
+    <div id="pop-up-container">
+      <div id="dismiss-bar">x</div>
+      <div id="pop-up-content"></div>
     </div>
   </div>
   """.format(institution_select)

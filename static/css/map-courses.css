@@ -184,25 +184,29 @@ td, th {
   color: #e00;
 }
 
-#pop-up-div {
+#pop-up-div { /* draggable */
   border: 1px solid #333;
   border-radius: 0.25em;
   background-color: #eee;
   color: #111;
-  max-width: 30em;
-  height: 10em;
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  position: fixed !important;
+  width:auto;
+  height:auto;
+  top: 100px;
+  left: 100px;
   margin: auto;
   padding: 0.5em;
 }
 
+#pop-up-container { /* resizable */
+  width: 30em;
+  height: 10em;
+}
+
 #pop-up-content {
   height: 9em;
-  overflow-y: auto;
+  overflow-x: scroll;
+  overflow-y: scroll;
 }
 
 .catalog-entry {
