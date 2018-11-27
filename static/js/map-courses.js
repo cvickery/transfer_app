@@ -206,7 +206,7 @@ $(function ()
   /*  Show Receiving and Show Sending event handlers
    *  ---------------------------------------------------------------------------------------------
    */
-  $('#show-receiving, #show-sending').mouseup(function ()
+  var show_handler = function ()
   {
     var request_type = $(this).attr('id');
     if (request_type === 'show-sending')
@@ -305,6 +305,9 @@ $(function ()
         });
       });
     });
-  });
+  };
+  $('#show-receiving, #show-sending').mouseup(show_handler);
+  $('#show-receiving, #show-sending').keypress(show_handler);
+
 
 });

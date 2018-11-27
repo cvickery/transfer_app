@@ -1120,20 +1120,6 @@ def map_courses():
         <span id="num-courses">No courses</span> selected.
       </p>
       <div>
-          <input  type="checkbox"
-                  id="bachelors"
-                  name="which-colleges"
-                  value="bachelors"
-                  checked>
-          <label for="bachelors" class="radio-label"">Include Bachelor’s Degree Colleges</label>
-          <input  type="checkbox"
-                  id="associates"
-                  name="which-colleges"
-                  value="assocociates"
-                  checked>
-          <label for="associates" class="radio-label">Include Associates Degree Colleges</label>
-      </div>
-      <div>
         <button id="show-receiving">show receiving courses</button>
         <strong>or</strong>
         <button id="show-sending">show sending courses</button>
@@ -1142,6 +1128,20 @@ def map_courses():
           <span class="two">.</span>
           <span class="three">.</span>
         </span>
+      </div>
+      <div>
+          <input  type="checkbox"
+                  id="associates"
+                  name="which-colleges"
+                  value="assocociates"
+                  checked>
+          <label for="associates" class="radio-label">Include Associates Degree Colleges</label>
+          <input  type="checkbox"
+                  id="bachelors"
+                  name="which-colleges"
+                  value="bachelors"
+                  checked>
+          <label for="bachelors" class="radio-label"">Include Bachelor’s Degree Colleges</label>
       </div>
     </form>
   </div>

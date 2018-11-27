@@ -109,13 +109,13 @@ def _grade(min_gpa, max_gpa):
         1.0 D        3.0
         0.7 D-       2.1
   """
-  # Ad hoc fix bogus gpa ranges
+  # Put gpa values into “canonical form”
   if min_gpa < 0.7:
     min_gpa = 0.7
   if (max_gpa < min_gpa) or max_gpa > 4.3:
     max_gpa = 4.3
 
-  # We don’t handle “greater than min but less than max” because it seems not to occur.
+  # Generate the letter grade requirement string
   if min_gpa > 0.7 and max_gpa > 3.9:
     letter = letters[int(round(min_gpa * 3))]
     return letter + ' or above in'
