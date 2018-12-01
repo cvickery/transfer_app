@@ -43,8 +43,7 @@ select  c.course_id                       as course_id,
         c.designation                     as rd,
        rd.description                     as designation,
         c.course_status                   as course_status,
-        c.attributes                      as attributes,
-        c.attribute_descriptions          as attribute_descriptions
+        c.attributes                      as attributes
 
   from  courses           c,
         institutions      i,
@@ -52,6 +51,7 @@ select  c.course_id                       as course_id,
         cuny_subjects     s,
         cuny_careers      cc,
         designations      rd
+
  where  c.institution = %s
    {}
    and  i.code = c.institution
@@ -84,8 +84,7 @@ select  c.course_id                       as course_id,
         c.designation                     as rd,
        rd.description                     as designation,
         c.course_status                   as course_status,
-        c.attributes                      as attributes,
-        c.attribute_descriptions          as attribute_descriptions
+        c.attributes                      as attributes
 
   from  courses           c,
         institutions      i,
@@ -93,6 +92,7 @@ select  c.course_id                       as course_id,
         cuny_subjects     s,
         cuny_careers      cc,
         designations      rd
+
  where  c.course_id = %s
    and  c.offer_nbr = %s
    {}
@@ -193,13 +193,14 @@ def format_course(course, active_only=False):
 
   title_str = f"""
                 <strong>{course.discipline} {course.catalog_number}: {course.title}</strong>
-                (<em>{course.career}, {course.cuny_subject}, {course.attributes}</em>)
                 <br/>Requisites: {course.requisites}"""
+  properties_str = f"""(<em>{course.career}; {course.cuny_subject}; {course.designation};
+                   {', '.join(course.attributes.split(';'))}</em>)"""
   if course.course_id in cross_listed:
     # For cross-listed courses, it’s normal for the cuny_subject and requisites to change across
     # members of the group.
     # But it would be an error for career, requisites, description, designation, etc. to vary, so
-    # we assume they don’t. (There are two known cases of career errors, which OUR is correctins
+    # we assume they don’t. (There are two known cases of career errors, which OUR is correcting
     # as we speak. There are no observed  errors of the other types.)
     # There is no way to get a different attributes list, because those depend only on course_id.
     title_str += '<br/>Cross-listed with:'
@@ -235,12 +236,14 @@ def format_course(course, active_only=False):
   <p class="catalog-entry" title="course id: {}">{}
     <br/>{}
     <br/>{}
+    <br/>{}
   </p>
   {}
   """.format(course.course_id,
              title_str,
              credits_str,
              course.description,
+             properties_str,
              note)
   return html
 
@@ -248,10 +251,16 @@ def format_course(course, active_only=False):
 # Unit Test
 # -------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-  import sys
-  try:
-    courses = lookup_courses(sys.argv[1])
-    print(courses)
-  except Exception as e:
-    print(e)
-    print('Usage: python course_lookup.py institution')
+  import argparse
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--debug', '-d', action='store_true')
+  parser.add_argument('--institution', '-i', nargs=1)
+  parser.add_argument('--course', '-c', nargs=1)
+  args = parser.parse_args()
+
+  if args.institution:
+    print(lookup_courses(args.institution[0]))
+  elif args.course:
+    print(lookup_course(int(args.course[0])))
+  else:
+    print("Specify either an institution or a course_id")
