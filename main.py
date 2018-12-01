@@ -1591,8 +1591,8 @@ def courses():
 
       result = """
         <h1>{} Courses</h1><p class='subtitle'>{:,} active courses as of {}</p>
-        <p><em>Information in parenthesis following course titles:</em></p>
-        <ul><li>Career</li><li>CUNY Subject</li><li>Course Attributes</li></ul>
+        <p><em>Information in parenthesis following course descriptions:</em></p>
+        <ul><li>Career</li><li>CUNY Subject</li><li>Designation</li><li>Course Attributes</li></ul>
         <p id="need-js" class="error">Loading catalog information ...</p>
         """.format(institution_name, num_active_courses, date_updated)
       result = result + lookup_courses(institution_code)
