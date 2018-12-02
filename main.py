@@ -27,6 +27,7 @@ from reviews import process_pending
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, \
     rule_ids, Transfer_Rule, Source_Course, Destination_Course
+from course_lookup import course_attribute_rows
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
@@ -1590,16 +1591,39 @@ def courses():
       num_active_courses = cursor.fetchone()[0]
 
       result = """
-        <h1>{} Courses</h1><p class='subtitle'>{:,} active courses as of {}</p>
-        <p><em>Information in parenthesis following course descriptions:</em></p>
-        <ul>
-          <li>Career;</li>
-          <li>CUNY Subject;</li>
-          <li>Requirement Designation;</li>
-          <li>Course Attributes</li>
-        </ul>
+        <h1>{} Courses</h1>
+        <div class="instructions">
+          <p class='subtitle'>{:,} active courses as of {}</p>
+          <p>
+            <em>
+              The following course properties are shown in parentheses following the catalog
+              description:
+            </em>
+          </p>
+          <ul>
+            <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
+            <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
+            <li title="Each course has exactly one Requirement Designation (RD).">
+              Requirement Designation;</li>
+            <li id="show-attributes"
+                title="A course can have any number of attributes. Click here to see descriptions.">
+              Course Attributes (a comma-separated list of name:value attribute pairs).
+            </li>
+          </ul>
+          <em>Hover over above list for more information.</em>
+          <br><em>Click to hide these instructions. Type ? to get them back.</em>
+          <div id="pop-up-div">
+            <div id="pop-up-inner">
+              <div id="dismiss-bar">x</div>
+              <table>
+                <tr><th>Name</th><th>Value</th><th>Description</th></tr>
+                {}
+              </table>
+            </div>
+          </div>
+        </div>
         <p id="need-js" class="error">Loading catalog information ...</p>
-        """.format(institution_name, num_active_courses, date_updated)
+        """.format(institution_name, num_active_courses, date_updated, course_attribute_rows)
       result = result + lookup_courses(institution_code)
 
   if num_active_courses == 0:

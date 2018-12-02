@@ -20,6 +20,14 @@ query = """
         """
 cursor.execute(query)
 cross_listed = [id.course_id for id in cursor.fetchall()]
+
+# Public copy of the course_attributes table, formatted as table rows
+cursor.execute('select * from course_attributes order by name, value')
+course_attribute_rows = '\n    '.join([f"""
+    <tr>
+      <td>{r.name}</td><td>{r.value}</td><td>{r.description}</td>
+    </tr>
+    """ for r in cursor.fetchall()])
 cursor.close()
 conn.close()
 
