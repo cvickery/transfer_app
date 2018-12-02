@@ -384,3 +384,8 @@ button: disabled {
 h2 + div {
   margin-left: 2em;
 }
+
+.description {
+  padding: 0.5em;
+  cursor: text;
+}

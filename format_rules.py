@@ -342,7 +342,7 @@ def format_rule(rule, rule_key=None):
 
   row_class = 'clickable rule'
   if destination_credits < min_source_credits or destination_credits > max_source_credits:
-    row_class = 'rule credit-mismatch'
+    row_class += ' credit-mismatch'
 
   if min_source_credits != max_source_credits:
     source_credits_str = f'{min_source_credits}-{max_source_credits}'
@@ -373,8 +373,10 @@ def format_rule(rule, rule_key=None):
                             rule.destination_institution.rstrip('0123456789'),
                             destination_course_list,
                             status_cell)
+
+  row_class = row_class.replace('clickable', '').strip()
   description = """
-      <div><span class="{}" style="padding:0.5em;">
+      <div><span class="{} description">
         {} at {}, {} credits, transfers to {} as {}, {} credits.</span>
       </div>""".format(row_class,
                        source_course_list,
