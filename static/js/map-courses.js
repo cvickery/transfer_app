@@ -267,6 +267,7 @@ $(function ()
 
       // Event handlers for this table
       // ==========================================================================================
+
       // Clicking on a selected course pops up the catalog description
       // ----------------------------------------------------------------------------------------------
       $('.selected-course').click(function ()
@@ -305,12 +306,21 @@ $(function ()
           $('#pop-up-div').show().draggable();
         });
       });
+
       //  Clicking on a rule in the pop-up brings up the catalog descriptions for the courses
       //  involved in that same pop-up. Back arrow takes you back to the list of rules.
       //  -----------------------------------------------------------------------------------
+      /*  The row id is rule_key-source_ids-dest_ids
+       */
       $('#pop-up-content .clickable').click(function ()
       {
-        ;
+        // save curent pop-up-content
+        // get row id
+        // split it by hyphens
+        // split source and dest ids by colons
+        // request catalog info for source and dest courses
+        // when they come back, populate the pop-up
+        // activate backarrow to restore saved pop-up-content
       });
     });
   };
