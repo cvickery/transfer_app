@@ -280,13 +280,14 @@ $(function ()
         {
           $('#pop-up-content').html(result[0].html);
           $('#pop-up-div').show().draggable();
-          $('#pop-up-container').resizable();
         });
       });
 
       //  Clicking on a data cell pops up a description of all the rules, if there are any.
+      //  ---------------------------------------------------------------------------------
       $('td').click(function ()
       {
+        $(document.body).css({cursor: 'wait'});
         var title_string = $(this).attr('title');
         if (title_string === '')
         {
@@ -299,10 +300,17 @@ $(function ()
                                                });
         rules_to_html_request.done(function (result, status)
         {
+          $(document.body).css({cursor: 'auto'})
           $('#pop-up-content').html(result);
           $('#pop-up-div').show().draggable();
-          $('#pop-up-container').resizable();
         });
+      });
+      //  Clicking on a rule in the pop-up brings up the catalog descriptions for the courses
+      //  involved in that same pop-up. Back arrow takes you back to the list of rules.
+      //  -----------------------------------------------------------------------------------
+      $('#pop-up-content .clickable').click(function ()
+      {
+        ;
       });
     });
   };
