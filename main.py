@@ -78,7 +78,7 @@ def image_file(file_name):
 
 def error():
   result = "<h1>Error</h1>"
-  return render_template('transfers.html', result=Markup(result))
+  return render_template('review_rules.html', result=Markup(result))
 
 # QC Applications
 # =================================================================================================
@@ -326,7 +326,7 @@ def do_form_0(request, session):
                catalog_date,
                rules_date)
 
-  response = make_response(render_template('transfers.html', result=Markup(result)))
+  response = make_response(render_template('review_rules.html', result=Markup(result)))
   response.set_cookie('mysession',
                       session.session_key)
 
@@ -593,7 +593,7 @@ def do_form_1(request, session):
   </form>
   """.format(len(source_disciplines) + len(destination_disciplines), criterion,
              shortcuts, sending_heading, receiving_heading, selection_rows)
-  response = make_response(render_template('transfers.html', result=Markup(result)))
+  response = make_response(render_template('review_rules.html', result=Markup(result)))
   response.set_cookie('email', email, expires=expire_time)
   response.set_cookie('remember-me', 'on', expires=expire_time)
   return response
@@ -603,7 +603,7 @@ def do_form_1(request, session):
 # -------------------------------------------------------------------------------------------------
 def do_form_2(request, session):
   """
-      Process CUNY Subject list from form 2 and add to session.
+      Process CUNY Subject list from form 2.
       Generate form_3: the selected transfer rules for review
   """
   logger.debug('*** do_form_2({})'.format(session))
@@ -618,7 +618,7 @@ def do_form_2(request, session):
     destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
   except KeyError:
     # the session is expired or invalid. Go back to Step 1.
-    return render_template('transfers.html', result=Markup("""
+    return render_template('review_rules.html', result=Markup("""
                                                            <h1>Session Expired</h1>
                                                            <p>
                                                              <a href="/">
@@ -635,10 +635,10 @@ def do_form_2(request, session):
   destination_subject_list = request.form.getlist('destination_subject')
 
   if len(source_subject_list) < 1:
-    return render_template('transfers.html', result=Markup(
+    return render_template('review_rules.html', result=Markup(
                            '<h1 class="error">No sending disciplines selected.</h1>'))
   if len(destination_subject_list) < 1:
-    return render_template('transfers.html', result=Markup(
+    return render_template('review_rules.html', result=Markup(
                            '<h1 class="error">No receiving disciplines selected.</h1>'))
 
   # Prepare the query to get the set of rules that match the institutions and cuny_subjects
@@ -663,7 +663,7 @@ def do_form_2(request, session):
       """
   cursor.execute(q, (session['source_institutions'] + session['destination_institutions']))
   if cursor.rowcount < 1:
-    return render_template('transfers.html', result=Markup(
+    return render_template('review_rules.html', result=Markup(
                            '<h1 class="error">There are no matching rules.</h1>'))
   all_rules = cursor.fetchall()
   selected_rules = []
@@ -778,7 +778,7 @@ def do_form_2(request, session):
     {}
     </div>
   """.format(num_rules, rules_table)
-  return render_template('transfers.html', result=Markup(result))
+  return render_template('review_rules.html', result=Markup(result))
 
 
 # do_form_3()
@@ -879,7 +879,7 @@ def do_form_3(request, session):
       <a href="/review_rules" class="restart">Restart</a>
 
       """.format(email, message_tail)
-  return render_template('transfers.html', result=Markup(result))
+  return render_template('review_rules.html', result=Markup(result))
 
 
 # PENDING PAGE
@@ -909,7 +909,7 @@ def pending():
   {}
   <p><a href="/"><button>main menu</button></a></p>
   """.format(table)
-  return render_template('transfers.html', result=Markup(result))
+  return render_template('review_rules.html', result=Markup(result))
 
 
 # format_pending()
@@ -952,7 +952,7 @@ def confirmation(token):
   <p>Review Report ID: {}</p>
   {}
     """.format(token, msg)
-  return render_template('transfers.html', result=Markup(result))
+  return render_template('review_rules.html', result=Markup(result))
 
 
 # HISTORY PAGE
@@ -964,7 +964,7 @@ def history(rule):
   """ Look up all events for the rule, and report back to the visitor.
   """
   result = rule_history(rule)
-  return render_template('transfers.html', result=Markup(result))
+  return render_template('review_rules.html', result=Markup(result))
 
 
 # # LOOKUP PAGE
