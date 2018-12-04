@@ -51,6 +51,10 @@ input[type="text"] {
   width:10em;
 }
 
+table {
+  border-collapse: collapse;
+}
+
 #grouping-div {
   margin-top: 0.5em;
 }
@@ -89,9 +93,10 @@ td, th {
   text-align: center;
 }
 
-.clickable:hover {
-  cursor:pointer;
+.rule:hover {
+  cursor: pointer;
 }
+
 .missing-rule {
   background-color: #faa;
   color: black;
@@ -205,7 +210,7 @@ td, th {
 
 #pop-up-content {
   height: 10em;
-  width: 30em;
+  max-width: 40em;
   overflow-x: scroll;
   overflow-y: scroll;
 }
@@ -217,4 +222,17 @@ td, th {
 .credit-mismatch {
   background-color: #ffa;
   color: black;
+}
+
+.rule td:nth-child(3n+2) {
+  text-align: left;
+}
+#catalogs-for-rule>:nth-child(1) {
+  width:45%;
+  float: left;
+}
+
+#catalogs-for-rule>:nth-child(2) {
+  width:45%;
+  float: right;
 }

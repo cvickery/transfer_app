@@ -4,7 +4,7 @@ $(function ()
   //  =============================================================================================
   $('#need-js, #loading, #discipline-span, #transfers-map-div, #pop-up-div').hide();
   $('#show-sending, #show-receiving').prop('disabled', true);
-
+  var pop_up_content = 'None';
   $('form').submit(function (event)
   {
     event.preventDefault();
@@ -17,9 +17,14 @@ $(function ()
     {
       $('#pop-up-div').hide();
     }
-    if (event.key === '?')
+    else if (event.key === '?')
     {
       $('.instructions').show();
+    }
+    else if (event.keyCode === 37 && !($('#pop-up-div').is(':hidden')))
+    {
+      // backarrow in pop-up
+      $('#pop-up-content').html(pop_up_content);
     }
   });
 
@@ -279,7 +284,8 @@ $(function ()
                                         {course_ids: course_id});
         catalog_request.done(function (result, status)
         {
-          $('#pop-up-content').html(result[0].html);
+          pop_up_content = result[0].html;
+          $('#pop-up-content').html(pop_up_content);
           $('#pop-up-div').show().draggable();
         });
       });
@@ -301,31 +307,80 @@ $(function ()
                                                });
         rules_to_html_request.done(function (result, status)
         {
-          $(document.body).css({cursor: 'auto'})
-          $('#pop-up-content').html(result);
+          $(document.body).css({cursor: 'auto'});
+          pop_up_content = `<div><strong>Double-click a rule for catalog info.
+          Type ⇦ to return here; Esc to dismiss.</strong></div>
+          <table>${result.replace(/<hr>/gi, '')}</table>`;
+          $('#pop-up-content').html(pop_up_content);
           $('#pop-up-div').show().draggable();
         });
-      });
-
-      //  Clicking on a rule in the pop-up brings up the catalog descriptions for the courses
-      //  involved in that same pop-up. Back arrow takes you back to the list of rules.
-      //  -----------------------------------------------------------------------------------
-      /*  The row id is rule_key-source_ids-dest_ids
-       */
-      $('#pop-up-content .clickable').click(function ()
-      {
-        // save curent pop-up-content
-        // get row id
-        // split it by hyphens
-        // split source and dest ids by colons
-        // request catalog info for source and dest courses
-        // when they come back, populate the pop-up
-        // activate backarrow to restore saved pop-up-content
       });
     });
   };
   $('#show-receiving, #show-sending').mouseup(show_handler);
   $('#show-receiving, #show-sending').keypress(show_handler);
 
+  //  Double-clicking on a rule in the pop-up brings up the catalog descriptions for the courses
+  //  involved in that same pop-up. Back arrow takes you back to the list of rules.
+  //  -----------------------------------------------------------------------------------
+  /*  The row id is rule_key-source_ids-dest_ids
+   */
+   $('#pop-up-content').dblclick(function (event)
+   {
+     // Find row id
+     let target = event.target;
+     while (target.tagName != 'TR' && target.tagName != 'BODY')
+     {
+      target = target.parentNode;
+     }
+     if (target.tagName != 'TR')
+     {
+      return;
+     }
+     let row_id = target.id;
+
+     // split it by hyphens
+     let hyphenated = row_id.split('-');
+     // source and dest ids
+     let source_ids = hyphenated[4];
+     let destination_ids = hyphenated[5];
+     let suffix = (source_ids.indexOf(':') === -1) ? '' : 's';
+     let source_heading = `${hyphenated[0].replace(/\d+/, '')} Course${suffix}`;
+     suffix = (destination_ids.indexOf(':') === -1) ? '' : 's';
+     let destination_heading = `${hyphenated[1].replace(/\d+/, '')} Course${suffix}`;
+     // Clear the pop-up and request catalog info for source and dest courses
+     $('#pop-up-content').html(`<div id="catalogs-for-rule">
+                                  <div>${source_heading}
+                                    <div id="source-catalog-info">Loading ...</div>
+                                  </div>
+                                  <div>${destination_heading}
+                                    <div id="destination-catalog-info">Loading ...</div>
+                                  </div>
+                                </div>`);
+     let source_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: source_ids});
+     let dest_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: destination_ids});
+     // when they come back, populate the pop-up
+     // Populate the source catalog entries in the review form when they arrive
+     source_request.done(function (data, text_status)
+     {
+       let html_str = '';
+       for (var i = 0; i < data.length; i++)
+       {
+         html_str += `${data[i].html} <hr/>`;
+       }
+       $('#source-catalog-info').html(html_str);
+     });
+
+     // Populate the destination catalog entries in the review form when they arrive
+     dest_request.done(function (data, text_status)
+     {
+       let html_str = '';
+       for (var i = 0; i < data.length; i++)
+       {
+         html_str += `${data[i].html}<hr/>`;
+       }
+       $('#destination-catalog-info').html(html_str);
+     });
+   });
 
 });
