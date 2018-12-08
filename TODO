@@ -1,0 +1,50 @@
+2018-12-03
+
+Need to show number of blanket credits that transfer when the dest consists of a course + blanket
+
+Need cursor change when clicking on a cell in do_form_2() when loading the selected rules.
+
+Color codes in map are screwy. Use red for no good (missing or self-referential); yellow for
+warnings (blanket-only); green for good. Gray for inactive sending courses; red for inactive
+receiving courses.
+
+In Map Courses: clicking on a cell with zero rules should not change cursor to "wait"
+In Map Courses: if all rules in a cell transfer as blanket-only the whole cell should be yellow
+
+When looking at the rules for a map cell:
+  * the link to event history needs to be implemented.
+  * resizeable still not working after much head-scratching
+
+In format_rule()
+  * Show RDs for cross-listed courses
+  * Indicate rules with future effective date
+
+  =================================================================================================
+  $ gcloud auth application-default login
+  Your browser has been opened to visit:
+
+      https://accounts.google.com/o/oauth2/auth?redirect_uri=http%3A%2F%2Flocalhost%3A8085%2F&prompt=select_account&response_type=code&client_id=764086051850-6qr4p6gpi6hn506pt8ejuq83di341hur.apps.googleusercontent.com&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&access_type=offline
+
+
+
+  Credentials saved to file: [/Users/vickery/.config/gcloud/application_default_credentials.json]
+
+  These credentials will be used by any library that requests
+  Application Default Credentials.
+
+  To generate an access token for other uses, run:
+    gcloud auth application-default print-access-token
+
+  To change zones
+  $ gcloud init
+
+  To view logs
+  $ gcloud app logs tail -s default
+
+  To try logging in again
+  $ gcloud auth login
+
+  To see what's running
+  $ gcloud app instances list
+
+
