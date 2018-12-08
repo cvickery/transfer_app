@@ -18,30 +18,38 @@ class pgconnection:
       for operational connection functions (commit() and close()).
   """
   def __init__(self, conn_str='dbname=cuny_courses'):
-    """ If proxy server is not running or USE_LOCAL_DB is set, use local db
-        Else bind to GAE db through the proxy server.
+    """ Connect to the database. Handles three cases:
+        1. Development on local machine (local host, local user, standard port)
+        2. Development using GAE database (local host, user postgres, proxy port)
+        3. Deployed on GAE (cloud host, user postgres, standard port)
     """
+    # Development on local machine using local db?
+    dbname = os.environ.get('USE_LOCAL_DB')
+    if dbname is not None:
+      self._connection = psycopg2.connect('dbname={}'.format(dbname))
+      return
 
-    # is the proxy server running? (If so, it liatens on port 5431)
+    # Connect to the Cloud db from either a development machine or from GAE.
+    # Is proxy server running?
     s = socket.socket()
     try:
       s.bind(('localhost', 5431))
-      proxy_running = True
-    except OSError as e:
-      proxy_running = False
-    s.close()
-
-    # Check environment override of proxy
-    use_local = 'USE_LOCAL_DB' in os.environ.keys()
-
-    if proxy_running and not use_local:
+      # Port 5431 is available, so the proxy server is not running, which means we
+      # are running the app on GAE, and need to augment the connection string.
       conn_str += """
                   host=/cloudsql/provost-access-148820:us-east1:cuny-courses
                   user=postgres
                   password=cuny-postgres
-                  port=5431
                   """
+    except OSError as e:
+      # Port 5431 is not available, so the proxy server must be running, which means
+      # we running the app locally, but using the Cloud db.
+      pass
+    s.close()
+
+    print('***', conn_str)
     self._connection = psycopg2.connect(conn_str)
+    return
 
   # Connection shims
   def commit(self):

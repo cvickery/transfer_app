@@ -1,5 +1,5 @@
-Flask == 0.12.3
-gunicorn == 19.7.1
-gevent >= 0.13
-psycopg2 == 2.7.3
-sendgrid >= 5.0.0
+Flask >= 1.0
+#gunicorn == 19.7.1
+#gevent >= 0.13
+psycopg2 >= 2.7.5
+sendgrid >= 5.5
