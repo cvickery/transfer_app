@@ -2,8 +2,5 @@
 __pycache__/
 client ID and secret.txt
 /debugging.log
-/static/db/cuny_catalog.db
 /env/
-/gcloud_info.txt
-/rules.html
 /app.yaml
