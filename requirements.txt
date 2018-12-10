@@ -3,3 +3,4 @@ Flask >= 1.0
 #gevent >= 0.13
 psycopg2 >= 2.7.5
 sendgrid >= 5.5
+google-python-cloud-debugger

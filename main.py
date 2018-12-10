@@ -32,6 +32,12 @@ from course_lookup import course_attribute_rows
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
 
+try:
+  import googleclouddebugger
+  googleclouddebugger.enable()
+except ImportError:
+  pass
+
 
 def date2str(date):
   """Takes a string in YYYY-MM-DD form and returns a text string with the date in full English form.
