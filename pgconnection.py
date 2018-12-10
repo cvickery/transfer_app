@@ -47,7 +47,6 @@ class pgconnection:
       pass
     s.close()
 
-    print('***', conn_str)
     self._connection = psycopg2.connect(conn_str)
     return
 
