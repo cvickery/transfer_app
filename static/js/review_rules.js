@@ -381,7 +381,7 @@ $(function ()
                            value="${source_institution}" />
                     <input type="hidden" name="dest_institution"
                            value="${destination_institution}" />
-                    <input type="hidden" name="rule-id" value="${rule_key}" />
+                    <input type="hidden" name="rule-key" value="${rule_key}" />
                     <button class="ok-cancel"
                             id="review-submit"
                             type="button"

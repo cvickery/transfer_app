@@ -59,13 +59,13 @@ conn = pgconnection('dbname=cuny_courses')
 cursor = conn.cursor()
 cursor.execute("select code, prompt from institutions order by lower(name)")
 institution_names = {row.code: row.prompt for row in cursor}
-cursor.execute('select * from transfer_rules')
-rule_ids = dict()
-for rule in cursor.fetchall():
-  rule_ids['{}-{}-{}-{}'.format(rule.source_institution,
-                                rule.destination_institution,
-                                rule.subject_area,
-                                rule.group_number)] = rule.id
+# cursor.execute('select * from transfer_rules')
+# rule_ids = dict()
+# for rule in cursor.fetchall():
+#   rule_ids['{}-{}-{}-{}'.format(rule.source_institution,
+#                                 rule.destination_institution,
+#                                 rule.subject_area,
+#                                 rule.group_number)] = rule.id
 conn.close()
 
 
@@ -165,10 +165,15 @@ def format_rules(rules):
 def format_rule_by_key(rule_key):
   """ Generate a Transfer_Rule tuple given the key.
   """
-  rule_id = rule_ids[rule_key]
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
-  cursor.execute('select * from transfer_rules where id = %s', (rule_id, ))
+  cursor.execute("""
+  select * from transfer_rules
+   where source_institution = %s
+     and destination_institution = %s
+     and subject_area = %s
+     and group_number = %s
+  """, rule_key.split('-'))
   rule = cursor.fetchone()
 
   cursor.execute("""

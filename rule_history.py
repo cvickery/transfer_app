@@ -1,6 +1,6 @@
 from collections import namedtuple
 from pgconnection import pgconnection
-from format_rules import format_rule_by_key, rule_ids
+from format_rules import format_rule_by_key
 
 
 # rule_history()
@@ -8,7 +8,6 @@ from format_rules import format_rule_by_key, rule_ids
 def rule_history(rule_key):
   """ Generate HTML for the review-history of a transfer rule.
   """
-  rule_id = rule_ids[rule_key]
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   cursor.execute("""
@@ -17,10 +16,14 @@ def rule_history(rule_key):
               e.what,
               to_char(e.event_time, 'YYYY-MM-DD HH12:MI am') as event_time
         from  events e, review_status_bits s
-       where  e.rule_id = %s
+       where  e.rule_id = (select id from transfer_rules
+                            where source_institution = %s
+                              and destination_institution = %s
+                              and subject_area = %s
+                              and group_number = %s)
          and  s.abbr = e.event_type
        order by e.event_time desc
-                 """, (rule_id, ))
+                 """, rule_key.split('-'))
   history_rows = ''
   if cursor.rowcount < 1:
     history_rows = '<tr><td colspan="3">There is no review history for this rule</td></tr>'

@@ -23,33 +23,30 @@ def process_pending(row):
   cursor = conn.cursor()
 
   for review in reviews:
-
+    cursor.execute("""
+      select id, review_status
+        from transfer_rules
+       where source_institution = %s
+         and destination_institution = %s
+         and subject_area = %s
+         and group_number = %s
+      """, review['rule_key'].split('-'))
+    rule_id, old_status = cursor.fetchone()
     # Generate an event for this review
     q = """
     insert into events (rule_id, event_type,
                         who, what, event_time)
                        values (%s, %s, %s, %s, %s)"""
-    cursor.execute(q, (review['rule_id'],
+    cursor.execute(q, (rule_id,
                        review['event_type'],
                        email,
                        review['comment_text'],
                        when_entered))
 
     # Update the review state for this rule.
-    cursor.execute("""
-                   select * from transfer_rules
-                    where id = %s
-                   """, (review['rule_id'],))
-    rows = cursor.fetchall()
-    if len(rows) != 1:
-      summaries = """
-      <tr><td class="error">Found {} transfer rules for {}</td></tr>
-      """.format(len(rows), review['rule_key'])
-      break
-    old_status = rows[0].review_status
     new_status = old_status | abbr_to_bitmask[review['event_type']]
     q = 'update transfer_rules set review_status = %s where id = %s'
-    cursor.execute(q, (new_status, review['rule_id']))
+    cursor.execute(q, (new_status, rule_id))
 
     # Generate a summary of this review
     old_status_str = status_string(old_status)
