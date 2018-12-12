@@ -35,27 +35,7 @@ import time
 import datetime
 import pickle
 import uuid
-import logging
 from pgconnection import pgconnection
-
-logger = logging.getLogger('mysession')
-logger.setLevel(logging.DEBUG)
-# fh = logging.FileHandler('debugging.log')
-sh = logging.StreamHandler()
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-# fh.setFormatter(formatter)
-# logger.addHandler(fh)
-logger.addHandler(sh)
-
-sql_logger = logging.getLogger('postgres')
-sql_logger.setLevel(logging.DEBUG)
-# sfh = logging.FileHandler('debugging.log')
-ssh = logging.StreamHandler()
-sformatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-# sfh.setFormatter(sformatter)
-ssh.setFormatter(sformatter)
-# sql_logger.addHandler(sfh)
-sql_logger.addHandler(ssh)
 
 
 class MySession:
@@ -69,8 +49,6 @@ class MySession:
            expired, initialize a new session using the provided key, provided the provided key is
            from the same node (hardware address).
     """
-    # Debugging constructor during development:
-    # logger.debug('*** mysession.__init__(---, {})'.format(session_key))
 
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
@@ -91,7 +69,6 @@ class MySession:
         # silently substitute a new uuid if the one provided is not from this machine
         new_uuid = uuid.uuid1()
         if uuid.UUID(self.session_key).node != new_uuid.node:
-          logger.warning('UUID from foreign host')
           self.session_key = str(new_uuid)
         # create substitute (empty) session
         cursor.execute("insert into sessions values(%s, %s, %s)",
@@ -105,7 +82,6 @@ class MySession:
     connection.close()
 
   def __str__(self):
-    # logger.debug('*** mysession.__str__({})'.format(self.session_key))
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = %s", (self.session_key,))
@@ -115,7 +91,6 @@ class MySession:
     return 'MySession.{} [{}]'.format(self.session_key, ', '.join(mydict.keys()))
 
   def __del__(self):
-    # logger.debug('*** mysession.__del__({})'.format(self.session_key))
     if self.is_expired(self.session_key):
       connection = pgconnection('dbname=cuny_courses')
       cursor = connection.cursor()
@@ -124,14 +99,11 @@ class MySession:
       connection.close()
 
   def __setitem__(self, key, value):
-    # logger.debug('*** mysession.__setitem__({}, {}, {}'.format(self.session_key, key, value))
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = %s", (self.session_key,))
     mydict = pickle.loads(cursor.fetchone()[0])
-    # logger.debug('  retrieved {} keys from sessions mydict'.format(len(mydict.keys())))
     mydict[key] = value
-    # logger.debug('  now mydict has {} keys'.format(len(mydict.keys())))
     cursor.execute("update sessions set session_dict = %s where session_key = %s",
                    (pickle.dumps(mydict), self.session_key))
     connection.commit()
@@ -139,7 +111,6 @@ class MySession:
     self.touch()
 
   def __getitem__(self, key):
-    # logger.debug('*** mysession.__getitem__({}, {})'.format(self.session_key, key))
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = %s", (self.session_key,))
@@ -149,7 +120,6 @@ class MySession:
     return mydict[key]  # raise KeyError if key not in session
 
   def __len__(self):
-    # logger.debug('*** mysession.__len__({}'.format(self.session_key))
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = %s", (self.session_key,))
@@ -159,12 +129,10 @@ class MySession:
     return len(mydict)
 
   def __bool__(self):
-    # logger.debug('*** mysession.__bool__({})'.format(self.session_key))
     self.touch()
     return True
 
   def keys(self):
-    # logger.debug('*** mysession.keys({})'.format(self.session_key))
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
     cursor.execute("select session_dict from sessions where session_key = %s", (self.session_key,))
@@ -174,7 +142,6 @@ class MySession:
     return [key for key in mydict]
 
   def remove(self, key):
-    # logger.debug('*** mysession.remove({}, {})'.format(self.session_key, key))
     self.touch()
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
@@ -191,7 +158,6 @@ class MySession:
     return False
 
   def is_expired(self, session_key):
-    # logger.debug('*** mysession.is_expired({}, {})'.format(self.session_key, session_key))
     if session_key is None:
       return true
 
@@ -204,17 +170,14 @@ class MySession:
       return True
     expiration_time = row[0]
     if expiration_time is not None and expiration_time > time.time():
-      # logger.debug('  returning False')
       return False
-    # logger.debug('  returning True')
     return True
 
   def touch(self):
-    # logger.debug('*** mysession.touch({})'.format(self.session_key))
     connection = pgconnection('dbname=cuny_courses')
     cursor = connection.cursor()
     cursor.execute("""
         update sessions set expiration_time = %s where session_key = %s
-        """,(time.time() + datetime.timedelta(minutes=120).total_seconds(), self.session_key,))
+        """, (time.time() + datetime.timedelta(minutes=120).total_seconds(), self.session_key,))
     connection.commit()
     connection.close()
