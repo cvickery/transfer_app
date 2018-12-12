@@ -1,5 +1,5 @@
 Flask >= 1.0
-#gunicorn == 19.7.1
+gunicorn >= 19.9
 #gevent >= 0.13
 psycopg2 >= 2.7.5
 sendgrid >= 5.5

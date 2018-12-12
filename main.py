@@ -32,42 +32,32 @@ from course_lookup import course_attribute_rows
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
 
-try:
-  import googleclouddebugger
-  googleclouddebugger.enable()
-except ImportError:
-  pass
-
-
-def date2str(date):
-  """Takes a string in YYYY-MM-DD form and returns a text string with the date in full English form.
-  """
-  months = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December']
-  year, month, day = date.split('-')
-  return '{} {}, {}'.format(months[int(month) - 1], int(day), year)
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--debug', '-d', action='store_true')
-parser.add_argument('--args', '-a', action='store_true')
-args = parser.parse_args()
-
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-#
-# Module Initialization
+# Debugging: local
+DEBUG = False
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-# fh = logging.FileHandler('debugging.log')
-sh = logging.StreamHandler()
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-# fh.setFormatter(formatter)
-# logger.addHandler(fh)
-logger.addHandler(sh)
-logger.debug('Debug: App Start')
+# Debugging: GAE
+# try:
+#   import googleclouddebugger
+#   googleclouddebugger.enable()
+# except ImportError:
+#   pass
+
+#
+# Debug logging setup.
+
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
+# # fh = logging.FileHandler('debugging.log')
+# sh = logging.StreamHandler()
+# formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+# # fh.setFormatter(formatter)
+# # logger.addHandler(fh)
+# logger.addHandler(sh)
+# if DEBUG:
+#   print('Debug: App Start')
 
 
 # Overhead URIs
@@ -85,6 +75,17 @@ def image_file(file_name):
 def error():
   result = "<h1>Error</h1>"
   return render_template('review_rules.html', result=Markup(result))
+
+
+# date2str()
+# --------------------------------------------------------------------------------------------------
+def date2str(date):
+  """Takes a string in YYYY-MM-DD form and returns a text string with the date in full English form.
+  """
+  months = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December']
+  year, month, day = date.split('-')
+  return '{} {}, {}'.format(months[int(month) - 1], int(day), year)
 
 # QC Applications
 # =================================================================================================
@@ -167,7 +168,8 @@ def transfers():
   """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
       if any, the user submitted.
   """
-  logger.debug('*** {} / ***'.format(request.method))
+  if DEBUG:
+    print('*** {} / ***'.format(request.method))
   mysession = MySession(request.cookies.get('mysession'))
 
   # Dispatcher for forms
@@ -199,7 +201,8 @@ def do_form_0(request, session):
       No form submitted yet; generate the Step 1 page.
       Display form_1 to get aource and destination institutions; user's email.
   """
-  logger.debug('*** do_form_0({})'.format(session))
+  if DEBUG:
+    print('*** do_form_0({})'.format(session))
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
@@ -347,7 +350,8 @@ def do_form_1(request, session):
       them to the session.
       Generate Form 2 to select discipline(s)
   """
-  logger.debug('*** do_form_1({})'.format(session))
+  if DEBUG:
+     print('*** do_form_1({})'.format(session))
 
   # Add institutions selected to user's session
   session['source_institutions'] = request.form.getlist('source')
@@ -612,7 +616,8 @@ def do_form_2(request, session):
       Process CUNY Subject list from form 2.
       Generate form_3: the selected transfer rules for review
   """
-  logger.debug('*** do_form_2({})'.format(session))
+  if DEBUG:
+    print('*** do_form_2({})'.format(session))
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
@@ -790,7 +795,8 @@ def do_form_2(request, session):
 # do_form_3()
 # -------------------------------------------------------------------------------------------------
 def do_form_3(request, session):
-  logger.debug('*** do_form_3({})'.format(session))
+  if DEBUG:
+      print('*** do_form_3({})'.format(session))
   reviews = json.loads(request.form['reviews'])
   kept_reviews = [e for e in reviews if e['include']]
   email = session['email']
@@ -1679,4 +1685,9 @@ def server_error(e):
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application on Google App Engine. See entrypoint in app.yaml.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', '-d', action='store_true')
+    args = parser.parse_args()
+    if args.debug:
+      DEBUG = True
     app.run(host='0.0.0.0', port=5000, debug=True)
