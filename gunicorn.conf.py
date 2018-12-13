@@ -1,4 +1,5 @@
 import multiprocessing
+workers = multiprocessing.cpu_count() * 2 + 1
 
 """
   App Engine terminates the HTTPS connection at the load balancer and forwards the request to your
@@ -17,8 +18,9 @@ import multiprocessing
 
   We recommend setting the number of workers to 2-4 times the number of cpu_countU cores for your
   instance plus one. You can specify this in gunicorn.conf.py as:
+
 """
- workers = multiprocessing.cpu_count() * 2 + 1
+# workers = multiprocessing.cpu_count() * 2 + 1
 
 """
   Trying an async model to deal with 502 errors.

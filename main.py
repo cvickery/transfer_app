@@ -14,8 +14,6 @@ import time
 
 from pgconnection import pgconnection
 
-import logging
-
 from collections import namedtuple
 from collections import defaultdict
 from collections import Counter
@@ -35,29 +33,7 @@ from flask import Flask, url_for, render_template, make_response,\
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# Debugging: local
 DEBUG = False
-
-# Debugging: GAE
-# try:
-#   import googleclouddebugger
-#   googleclouddebugger.enable()
-# except ImportError:
-#   pass
-
-#
-# Debug logging setup.
-
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
-# # fh = logging.FileHandler('debugging.log')
-# sh = logging.StreamHandler()
-# formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-# # fh.setFormatter(formatter)
-# # logger.addHandler(fh)
-# logger.addHandler(sh)
-# if DEBUG:
-#   print('Debug: App Start')
 
 
 # Overhead URIs
@@ -1675,7 +1651,6 @@ def courses():
 
 @app.errorhandler(500)
 def server_error(e):
-    logging.exception('An error occurred during a request.')
     return """
     An internal error occurred: <pre>{}</pre>
     See logs for full stacktrace.
@@ -1685,9 +1660,4 @@ def server_error(e):
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application on Google App Engine. See entrypoint in app.yaml.
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', '-d', action='store_true')
-    args = parser.parse_args()
-    if args.debug:
-      DEBUG = True
     app.run(host='0.0.0.0', port=5000, debug=True)
