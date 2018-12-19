@@ -3,7 +3,6 @@
 
 import sys
 import os
-import argparse
 import re
 import socket
 
