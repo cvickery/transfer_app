@@ -32,7 +32,7 @@ from flask import Flask, url_for, render_template, make_response,\
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-DEBUG = False
+DEBUG = True
 
 
 # Overhead URIs

@@ -1,0 +1,12 @@
+#! /usr/local/bin/bash
+#
+# Start the transfer-app
+if [[ -r gunicorn.pid ]]
+then kill `cat gunicorn.pid`
+     prefix='re'
+fi
+rm -f gunicorn.pid
+
+gunicorn --config ./gunicorn.conf.py main:app &
+echo $! > gunicorn.pid
+echo gunicorn ${prefix}started with pid $!

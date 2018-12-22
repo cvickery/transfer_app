@@ -266,6 +266,11 @@ $(function ()
     }
   });
 
+  $('#form-2').submit(function ()
+  {
+    $('#form-2').css('cursor', 'wait');
+  });
+
   //  Form 2: Hide instructions
   // ----------------------------------------------------------------------------------------------
   $('.instructions').click(function ()

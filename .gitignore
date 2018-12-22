@@ -4,3 +4,5 @@ client ID and secret.txt
 /debugging.log
 /env/
 /app.yaml
+
+/gunicorn.pid
