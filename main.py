@@ -32,7 +32,11 @@ from flask import Flask, url_for, render_template, make_response,\
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-DEBUG = True
+# During local development, enable more detailed log messages from the app.
+if os.getenv('DEVELOPMENT') is not None:
+  DEBUG = True
+else:
+  DEBUG = False
 
 
 # Overhead URIs
