@@ -596,7 +596,8 @@ def do_form_2(request, session):
       Generate form_3: the selected transfer rules for review
   """
   if DEBUG:
-    print('*** do_form_2({})'.format(session))
+    print(f'*** do_form_2()')
+    elapsed = time.perf_counter()
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
@@ -638,23 +639,29 @@ def do_form_2(request, session):
   else:
     source_subjects_str = '|'.join(f':{s}:' for s in source_subject_list)
     source_subjects_clause = f"  and '{source_subjects_str}' ~ source_subjects"
+    source_subjects = ', '.join(f"'{s}'" for s in source_subject_list)
+    source_subjects_clause = f"  and id in (select rule_id from subject_rule_map where subject in ({source_subjects}))"
 
   # Get all the rules where,
   #  - The source and destination institutions have been selected
   #  and
   #  - The source_subjects have been selected
+  if DEBUG:
+    elapsed = time.perf_counter() - elapsed
+    print(f'*** start get rules:\t{elapsed:0.3f}')
   q = f"""
-      select *
-        from transfer_rules
-       where source_institution in ({source_institution_params})
-         and destination_institution in ({destination_institution_params})
-         {source_subjects_clause}
-         order by source_institution, destination_institution, subject_area, group_number
-      """
+  select *
+    from transfer_rules
+   where source_institution in (%s)
+     and destination_institution in (%s)
+     {source_subjects_clause}
+  order by source_institution, destination_institution, subject_area, group_number"""
   cursor.execute(q, (session['source_institutions'] + session['destination_institutions']))
+
   if cursor.rowcount < 1:
     return render_template('review_rules.html', result=Markup(
                            '<h1 class="error">There are no matching rules.</h1>'))
+
   all_rules = cursor.fetchall()
   selected_rules = []
   # Get the source and destination course lists from the above set of rules where the destination
@@ -670,6 +677,9 @@ def do_form_2(request, session):
     destination_subjects_clause = f" and cuny_subject in ({destination_subject_params})"
 
   for rule in all_rules:
+    if DEBUG:
+      elapsed = time.perf_counter() - elapsed
+      print(f'*** start get destination courses for rule \t{rule.id}: {elapsed:0.3f}')
     # It’s possible some of the selected rules don’t have destination courses in any of the selected
     # disciplines, so that has to be checked first.
     cursor.execute(f"""
@@ -690,7 +700,9 @@ def do_form_2(request, session):
     """, (rule.id, rule.destination_institution))
     if cursor.rowcount > 0:
       destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
-
+      if DEBUG:
+        elapsed = time.perf_counter() - elapsed
+        print(f'*** start get source courses for rule\t\t{rule.id}: {elapsed:0.3f}')
       cursor.execute("""
         select  sc.course_id,
                 sc.offer_count,
@@ -711,6 +723,9 @@ def do_form_2(request, session):
         """, (rule.id, rule.source_institution))
       if cursor.rowcount > 0:
         source_courses = [Source_Course._make(c)for c in cursor.fetchall()]
+      if DEBUG:
+        elapsed = time.perf_counter() - elapsed
+        print(f'*** end get source courses for rule\t\t{rule.id}: {elapsed:0.3f}')
 
         # Create the Transfer_Rule tuple suitable for passing to format_rules, and add it to the
         # list of rules to pass.
@@ -768,6 +783,9 @@ def do_form_2(request, session):
     {}
     </div>
   """.format(num_rules, rules_table)
+  if DEBUG:
+    elapsed = time.perf_counter() - elapsed
+    print(f'*** return:\t{elapsed:0.3f}')
   return render_template('review_rules.html', result=Markup(result))
 
 
