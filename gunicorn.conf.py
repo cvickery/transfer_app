@@ -1,13 +1,18 @@
 import os
 import multiprocessing
+
 workers = multiprocessing.cpu_count() * 2 + 1
 bind = '0.0.0.0:5000'
+accesslog = '/Users/vickery/Logs/transfer-app.log'
+errorlog = '/Users/vickery/Logs/transfer-app.log'
+access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s'
+
 if os.getenv('DEVELOPMENT') is not None:
   loglevel = 'DEBUG'
-  accesslog = '/Users/vickery/Logs/transfer-app.log'
-  errorlog = '/Users/vickery/Logs/transfer-app.log'
-  access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s'
   reload = True
+else:
+  loglevel = 'INFO'
+  reload = False
 
 """
   App Engine terminates the HTTPS connection at the load balancer and forwards the request to your
