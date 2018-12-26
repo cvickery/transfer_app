@@ -743,6 +743,8 @@ def do_form_2(request, session):
   cursor.close()
   conn.close()
 
+  if len(selected_rules) == 0:
+    num_rules = 'are no transfer rules'
   if len(selected_rules) == 1:
     num_rules = 'is one transfer rule'
   if len(selected_rules) > 1:
