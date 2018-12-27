@@ -26,6 +26,8 @@ from format_rules import format_rule, format_rules, format_rule_by_key, institut
     Transfer_Rule, Source_Course, Destination_Course
 from course_lookup import course_attribute_rows
 
+from system_status import app_available, app_unavailable, get_reason, \
+    start_update_db, end_update_db, start_maintenance, end_maintenance
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
 
@@ -51,10 +53,29 @@ def image_file(file_name):
   return send_file('static/images/' + file_name + '.png')
 
 
-def error():
-  result = "<h1>Error</h1>"
-  return render_template('review_rules.html', result=Markup(result))
+# _STATUS
+# -------------------------------------------------------------------------------------------------
+@app.route('/_status/<new_status>')
+def _status(new_status):
+  """ Start/End DB Update / Maintenance
+      TODO: Need to add user authentication to this.
+  """
 
+  dispatcher = {
+      'start_update': start_update_db,
+      'end_update': end_update_db,
+      'start_maintenance': start_maintenance,
+      'end_maintenance': end_maintenance,
+      'check': app_available
+  }
+
+  if new_status in dispatcher.keys():
+    if dispatcher[new_status]():
+      return top_menu()
+    else:
+      return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+  else:
+    return ''
 
 # date2str()
 # --------------------------------------------------------------------------------------------------
@@ -66,33 +87,15 @@ def date2str(date):
   year, month, day = date.split('-')
   return '{} {}, {}'.format(months[int(month) - 1], int(day), year)
 
-# QC Applications
-# =================================================================================================
-# /queens: Require user to sign in using  QC email address, and provide a menu of applications.
-# /assessment: Demonstrate accessing G-Suite Assessment repository info.
-
-
-# QUEENS PAGE
-# -------------------------------------------------------------------------------------------------
-@app.route('/queens')
-def queens():
-  return render_template('queens.html')
-
-
-# ASSESSMENT PAGE
-# -------------------------------------------------------------------------------------------------
-@app.route('/assessment')
-def assessment():
-  return render_template('assessment.html')
-
 
 #
 # CUNY Applications
 # =================================================================================================
-# Transfer Pages: A sequence of pages for reviewing transfer rules.
+# Map Courses: Look at rules for courses across campuses.
+# Review Rules: A sequence of pages for reviewing transfer rules.
 # Courses Page: Display the complete catalog of currently active courses for any college.
 
-# TRANSFERS PAGES
+# REVIEW RULES PAGES
 # -------------------------------------------------------------------------------------------------
 #   Not posted: display form_1, which displays email prompt, source, and destination lists. User
 #   must provide email and select exactly one institution from one of the lists and 1+ institutions
@@ -113,6 +116,9 @@ def assessment():
 @app.route('/', methods=['POST', 'GET'])
 @app.route('/index/', methods=['POST', 'GET'])
 def top_menu():
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
   """ Display menu of available features.
   """
   conn = pgconnection('dbname=cuny_courses')
@@ -136,14 +142,16 @@ def top_menu():
     <p><sup>&dagger;</sup>{:,} transfer rules as of {}.</p>
   </div>
             """.format(num_rules, rules_date)
-  response = make_response(render_template('top-menu.html', result=Markup(result)))
-  return response
+  return make_response(render_template('top-menu.html', result=Markup(result)))
 
 
 # REVIEW_RULES PAGE
 # =================================================================================================
 @app.route('/review_rules/', methods=['POST', 'GET'])
-def transfers():
+def review_rules():
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
   """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
       if any, the user submitted.
   """
@@ -673,8 +681,8 @@ def do_form_2(request, session):
   else:
     # Create a clause that makes sure the destination course has one of the destination subjects
     destination_subject_list = request.form.getlist('destination_subject')
-    destination_subject_params = ', '.join(f'{s}' for s in destination_subject_list)
-    destination_subjects_clause = f" and cuny_subject in ({destination_subject_params})"
+    destination_subject_params = ', '.join(f"'{s}'" for s in destination_subject_list)
+    destination_subjects_clause = f" and dc.cuny_subject in ({destination_subject_params})"
 
   for rule in all_rules:
     if DEBUG:
@@ -897,6 +905,9 @@ def pending():
   """ Display pending reviews.
       TODO: Implement login option so defined users can manage this table.
   """
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   cursor.execute("""
@@ -938,6 +949,9 @@ def format_pending(item):
 # This is the handler for clicks in the confirmation email.
 @app.route('/confirmation/<token>', methods=['GET'])
 def confirmation(token):
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
   # Make sure the token is received and is in the pending table.
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
@@ -969,6 +983,9 @@ def confirmation(token):
 #
 @app.route('/history/<rule>', methods=['GET'])
 def history(rule):
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
   """ Look up all events for the rule, and report back to the visitor.
   """
   result = rule_history(rule)
@@ -1065,6 +1082,9 @@ def map_courses():
       view-only information about rules that involve that or those courses.
       Display a CSV-downloadable table.
   """
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   cursor.execute('select code, prompt from institutions order by prompt')
@@ -1571,6 +1591,9 @@ def _sessions():
 # Allow institution to come from the URL
 @app.route('/courses/', methods=['POST', 'GET'])
 def courses():
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   num_active_courses = 0
