@@ -55,8 +55,8 @@ def image_file(file_name):
 
 # _STATUS
 # -------------------------------------------------------------------------------------------------
-@app.route('/_status/<new_status>')
-def _status(new_status):
+@app.route('/_status/<command>')
+def _status(command):
   """ Start/End DB Update / Maintenance
       TODO: Need to add user authentication to this.
   """
@@ -69,13 +69,15 @@ def _status(new_status):
       'check': app_available
   }
 
-  if new_status in dispatcher.keys():
-    if dispatcher[new_status]():
+  if command in dispatcher.keys():
+    current_status = dispatcher[command]()
+    if current_status:
       return top_menu()
     else:
       return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
   else:
     return ''
+
 
 # date2str()
 # --------------------------------------------------------------------------------------------------
@@ -89,7 +91,7 @@ def date2str(date):
 
 
 #
-# CUNY Applications
+# Transfer App Functions
 # =================================================================================================
 # Map Courses: Look at rules for courses across campuses.
 # Review Rules: A sequence of pages for reviewing transfer rules.

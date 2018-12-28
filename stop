@@ -5,5 +5,7 @@ then
   pid=`cat gunicorn.pid`
   kill $pid
   echo killed $pid
+else
+  echo Not running
 fi
 rm -f gunicorn.pid
