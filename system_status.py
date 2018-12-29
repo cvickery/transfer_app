@@ -59,10 +59,10 @@ def get_reason():
     end_update = events['update_db'] + timedelta(seconds=1800)
     if time_now < end_update:
       time_remaining = end_update - time_now
-      when = 'complete within {}:{:02} min:sec.'
+      when = 'complete within {}:{:02} (min:sec).'
     else:
       time_remaining = time_now - end_update
-      when = 'have completed {}:{:02} min:sec ago.'
+      when = 'have completed {}:{:02} (min:sec) ago.'
     days = time_remaining.days
     hours, remainder = divmod(time_remaining.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -75,7 +75,7 @@ def get_reason():
     hours, remainder = divmod(time_elapsed.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     return_val += f"""<h2>Maintenance began
-        {days} days, {hours}:{minutes:02}:{seconds:02} hr:min:sec ago.</h2>"""
+        {days} days, {hours}:{minutes:02}:{seconds:02} (hr:min:sec) ago.</h2>"""
 
   if return_val == '':
     return_val = 'Application is available.'
