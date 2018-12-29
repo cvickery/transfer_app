@@ -59,15 +59,15 @@ def get_reason():
     end_update = events['update_db'] + timedelta(seconds=1800)
     if time_now < end_update:
       time_remaining = end_update - time_now
-      when = 'complete within {}:{:02} (min:sec).'
+      when = 'in {}:{:02} (min:sec).'
     else:
       time_remaining = time_now - end_update
-      when = 'have completed {}:{:02} (min:sec) ago.'
+      when = '{}:{:02} (min:sec) ago.'
     days = time_remaining.days
     hours, remainder = divmod(time_remaining.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     when = when.format(minutes, seconds)
-    return_val = f'<h2>Database update should {when}</h2>'
+    return_val = f'<h2>Database update expected to complete {when}</h2>'
 
   if events['maintenance']:
     time_elapsed = time_now - events['maintenance']
