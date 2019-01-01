@@ -7,7 +7,7 @@ from datetime import datetime
 
 from pgconnection import pgconnection
 from format_rules import format_rule
-from status_utils import abbr_to_bitmask, status_string
+from reviews_status_utils import abbr_to_bitmask, status_string
 
 
 def process_pending(row):
