@@ -56,7 +56,7 @@ def get_reason():
 
   time_now = datetime.now()
   if events['update_db']:
-    end_update = events['update_db'] + timedelta(seconds=1800)
+    end_update = events['update_db'] + timedelta(seconds=3600)
     if time_now < end_update:
       time_remaining = end_update - time_now
       when = 'in {}:{:02} (min:sec).'
