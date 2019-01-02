@@ -34,6 +34,7 @@ $(function ()
   $('#all-sources, #all-destinations').prop('disabled', false);
   $('#no-sources, #no-destinations').prop('disabled', false);
   var ok_to_submit_1 = error_msg === '';
+  validate_form_1();
 
   // validate_form_1()
   // ----------------------------------------------------------------------------------------------

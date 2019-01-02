@@ -650,7 +650,8 @@ def do_form_2(request, session):
     source_subjects_str = '|'.join(f':{s}:' for s in source_subject_list)
     source_subjects_clause = f"  and '{source_subjects_str}' ~ source_subjects"
     source_subjects = ', '.join(f"'{s}'" for s in source_subject_list)
-    source_subjects_clause = f"  and id in (select rule_id from subject_rule_map where subject in ({source_subjects}))"
+    source_subjects_clause = f"""
+      and id in (select rule_id from subject_rule_map where subject in ({source_subjects}))"""
 
   # Get all the rules where,
   #  - The source and destination institutions have been selected
@@ -737,35 +738,35 @@ def do_form_2(request, session):
         elapsed = time.perf_counter() - elapsed
         print(f'*** end get source courses for rule\t\t{rule.id}: {elapsed:0.3f}')
 
-        # Create the Transfer_Rule tuple suitable for passing to format_rules, and add it to the
-        # list of rules to pass.
-        selected_rules.append(Transfer_Rule._make(
-            [rule.id,
-             rule.source_institution,
-             rule.destination_institution,
-             rule.subject_area,
-             rule.group_number,
-             rule.source_disciplines,
-             rule.source_subjects,
-             rule.review_status,
-             source_courses,
-             destination_courses]))
+      # Create the Transfer_Rule tuple suitable for passing to format_rules, and add it to the
+      # list of rules to pass.
+      selected_rules.append(Transfer_Rule._make(
+          [rule.id,
+           rule.source_institution,
+           rule.destination_institution,
+           rule.subject_area,
+           rule.group_number,
+           rule.source_disciplines,
+           rule.source_subjects,
+           rule.review_status,
+           source_courses,
+           destination_courses]))
   cursor.close()
   conn.close()
 
   if len(selected_rules) == 0:
-    num_rules = 'are no transfer rules'
+    num_rules = 'No matching transfer rules found.'
   if len(selected_rules) == 1:
-    num_rules = 'is one transfer rule'
+    num_rules = 'There is one matching transfer rule.'
   if len(selected_rules) > 1:
-    num_rules = 'are {:,} transfer rules'.format(len(selected_rules))
+    num_rules = 'There are {:,} matching transfer rules.'.format(len(selected_rules))
 
   rules_table = format_rules(selected_rules)
 
-  result = """
+  result = f"""
   <h1>Step 3: Review Transfer Rules</h1>
     <div class="instructions">
-      <strong>There {}.</strong><br/>
+      <strong>{num_rules}</strong><br/>
       Rules that are <span class="credit-mismatch">highlighted like this</span> have a different
       number of credits taken from the number of credits transferred.
       Hover over the “=>” to see the numbers of credits.<br/>
@@ -792,9 +793,9 @@ def do_form_2(request, session):
       </form>
     </fieldset>
     <div id="rules-table-div" class="selection-table-div">
-    {}
+    {rules_table}
     </div>
-  """.format(num_rules, rules_table)
+  """
   if DEBUG:
     elapsed = time.perf_counter() - elapsed
     print(f'*** return:\t{elapsed:0.3f}')
