@@ -8,7 +8,6 @@ import psycopg2
 from psycopg2.extras import NamedTupleCursor
 
 from time import perf_counter
-from memcache import Client
 
 APP_AVAILABLE = True
 
