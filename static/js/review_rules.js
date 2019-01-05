@@ -274,12 +274,12 @@ $(function ()
 
   //  Form 2: Hide instructions
   // ----------------------------------------------------------------------------------------------
-  $('.instructions').click(function ()
-  {
-    var this_height = $(this).height();
-    $(this).hide();
-    $('.selection-table-div').height($('.selection-table-div').height() + this_height);
-  });
+  // $('.instructions').click(function ()
+  // {
+  //   var this_height = $(this).height();
+  //   $(this).hide();
+  //   $('.selection-table-div').height($('.selection-table-div').height() + this_height);
+  // });
 
 
 

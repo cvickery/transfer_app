@@ -35,10 +35,10 @@ $(function ()
   });
 
   // Clicking on the instructions hides them.
-  $('.instructions').click(function ()
-  {
-    $(this).hide();
-  });
+  // $('.instructions').click(function ()
+  // {
+  //   $(this).hide();
+  // });
 
 //  Globals
 //  ===============================================================================================
@@ -203,8 +203,8 @@ $(function ()
   $('#show-setup').mouseup(function ()
   {
     $('#pop-up-div').hide();
-    $('#setup-div').show();
     $('#transfers-map-div').hide();
+    $('#setup-div').show();
   });
 
 
@@ -216,11 +216,13 @@ $(function ()
     var request_type = $(this).attr('id');
     if (request_type === 'show-sending')
     {
-      $('#map-direction').text('from');
+      $('.to-from').text('from');
+      $('.left-right').text('right');
     }
     else
     {
-      $('#map-direction').text('to');
+      $('.to-from').text('to');
+      $('.left-right').text('left');
     }
 
     // Header row: "Sending" or "Receiving" Course and list of receiving colleges

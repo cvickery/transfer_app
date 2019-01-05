@@ -263,11 +263,12 @@ def do_form_0(request, session):
   # Return Form 1
   result = """
     <h1>Step 1: Select Colleges</h1>
-    <div class="instructions">
-      <p>
-        <strong>This is the first step for reviewing the {:,}<sup>&dagger;</sup> existing course
-        transfer rules at CUNY. </strong>
-      </p>
+    <details class="instructions">
+      <summary>
+        This is the first step for reviewing the {:,}<sup>&dagger;</sup> existing course
+        transfer rules at CUNY.
+      </summary>
+      <hr>
       <p>
         To see just the rules you are interested in, start here by selecting exactly one sending
         college and at least one receiving college, or exactly one receiving college and one or more
@@ -283,7 +284,7 @@ def do_form_0(request, session):
             href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE">
             Reviewing CUNY Transfer Rules</a> document.
       </p>
-    </div>
+    </details>
     <fieldset>
       <form method="post" action="" id="form-1">
           {}
@@ -555,18 +556,16 @@ def do_form_1(request, session):
   # Return Form 2
   result = """
   <h1>Step 2: Select Sending &amp; Receiving Disciplines</h1>
-  <div class="instructions">
-    <strong>There are {:,} disciplines where {}.</strong><br/>
+  <details class="instructions">
+  <summary>There are {:,} disciplines where {}.</summary>
+    <hr>
     Disciplines are grouped by CUNY subject area.<br/>
     Select at least one sending discipline and at least one receiving discipline.<br/>
     By default, all receiving disciplines are selected to account for all possible equivalencies,
     including electives and blanket credit.<br/>
     The next step will show all transfer rules for courses in the corresponding pairs of
     disciplines.<br/>
-    <strong>
-      Clicking on these instructions hides them, making more room for the list of subjects.
-    </strong>
-  </div>
+  </details>
   <form method="post" action="" id="form-2">
     <a href="/" class="restart">Main Menu</a>
     <a href="/review_rules" class="restart">Restart</a>
@@ -765,8 +764,9 @@ def do_form_2(request, session):
 
   result = f"""
   <h1>Step 3: Review Transfer Rules</h1>
-    <div class="instructions">
-      <strong>{num_rules}</strong><br/>
+    <details class="instructions">
+      <summary>{num_rules}</summary>
+      <hr>
       Rules that are <span class="credit-mismatch">highlighted like this</span> have a different
       number of credits taken from the number of credits transferred.
       Hover over the “=>” to see the numbers of credits.<br/>
@@ -775,10 +775,7 @@ def do_form_2(request, session):
       Rules that are <span class="evaluated">highlighted like this</span> are ones that you have
       reviewed but not yet submitted.<br/>
       Click on a rule to review it.<br/>
-      <strong>
-        Clicking on these instructions hides them, making more room for the list of rules.
-      </strong>
-    </div>
+    </details>
     <p>
       <a href="/"><button>Main Menu</button></a>
       <a href="/review_rules" class="restart">Restart</a>
@@ -1104,14 +1101,15 @@ def map_courses():
   result = """
   <h1>Map Course Transfers</h1>
   <div id="setup-div">
-    <h2>Setup</h2>
-    <div class="instructions">
+    <details class="instructions">
+    <summary>Select Courses to Map</summary>
+    <hr>
       <p>
         Select courses of interest, then indicate whether you want to map how these courses transfer
         <em>to</em> courses at other institutions (<em>receiving</em> courses) or <em>from</em>
         courses at other institutions (<em>sending courses</em>).
       </p>
-    </div>
+    </details>
     <form action="" method="POST">
       <fieldset>
         <h2>
@@ -1179,54 +1177,54 @@ def map_courses():
   </div>
   <div id="transfers-map-div">
     <h2>Transfers Map</h2>
-    <div class="instructions">
+    <details class="instructions">
+      <summary>
+        Each row of the table below shows the number of ways each course listed on the
+        <span class="left-right">left</span> transfers <span class="to-from">to</span> other CUNY
+        colleges.
+      </summary>
+      <hr>
       <p>
-        Each row of the table below shows the number of ways each course selected during setup
-        transfers <span id="map-direction">to</span> other CUNY colleges.
+        If a cell contains zero, there are no rules for transferring the course
+        <span class="to-from">to</span> that college. Values greater than one occur when there are
+        multiple rules, for example when a course transfers as a particular destination course only
+        if the student earned a minimum grade.
       </p>
       <p>
-        If a cell contains zero there are no transfer rules for the course and that college. Values
-        greater than one occur when there are multiple rules, for example when a course transfers as
-        a particular destination course only if the student earned a minimum grade, and as blanket
-        credit otherwise.
+        If a course is <span class="inactive-course">highlighted like this</span>, it is inactive,
+        and non-zero rule counts are <span class="bogus-rule">highlighted like this</span>. For
+        sending courses, it is possible the rule would be used for students who completed the course
+        before it became inactive. But for receiving courses, the rule is definitely an error.
       </p>
       <p>
-        If a course is<span class="inactive-course"> highlighted like this, </span>it is inactive,
-        and non-zero rule counts are<span class="bogus-rule"> highlighted like this.</span> If this
-        is a sending course, it is possible the rule would be used for students who completed the
-        course before it became inactive. But if this is a receiving course, the rule is definitely
-        an error.
+        If the table is empty, it means that all the courses selected are inactive and there are no
+        rules for transferring them from any college. This is correct for inactive courses.
       </p>
       <p>
-        If the table is empty, it means that all the selected courses are inactive and there are no
-        transfer rules for them with any college. (A good thing.)
-      </p>
-      <p>
-        If a course is active but has zero values for some colleges, they are<span
-        class="missing-rule"> highlighted like this.</span>
+        If a course is active but has zero values for some colleges, they are <span
+        class="missing-rule">highlighted like this</span>.
       </p>
       <p>
         If a course transfers only as blanket credit, it is <span class="blanket-credit">highlighted
-        like this.</span>
+        like this</span>.
       </p>
       <p>
-        If there are any rules that maps courses to their own institution, they are<span
-        class="self-rule"> highlighted like this.</span>
+        If there are any rules that maps courses to their own institution, they are <span
+        class="self-rule">highlighted like this</span>.
       </p>
       <p>
-        Click on courses to see their catalog information. Click on non-zero cells to see details
-        about those rule(s).
+        Click on courses on the <span class="left-right">left</span> to see their catalog
+        information.
       </p>
-      <p class="hide-show">
-        Click anywhere in these instructions to hide them.<br>
-        Type a question mark to see them again.
+      <p>
+        Click on non-zero cells to see details about those rule(s).
       </p>
-    </div>
+    </details>
     <table id="transfers-map-table">
     </table>
     <div>
       <a href="/"><button>main menu</button></a>
-      <button id="show-setup">return to setup</button>
+      <button id="show-setup">change courses or direction</button>
     </div>
   </div>
   <div id="pop-up-div">
