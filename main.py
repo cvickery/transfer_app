@@ -662,12 +662,13 @@ def do_form_2(request, session):
   q = f"""
   select *
     from transfer_rules
-   where source_institution in (%s)
-     and destination_institution in (%s)
+   where source_institution in ({source_institution_params})
+     and destination_institution in ({destination_institution_params})
      {source_subjects_clause}
   order by source_institution, destination_institution, subject_area, group_number"""
   cursor.execute(q, (session['source_institutions'] + session['destination_institutions']))
-
+  if DEBUG:
+    print(cursor.query)
   if cursor.rowcount < 1:
     return render_template('review_rules.html', result=Markup(
                            '<h1 class="error">There are no matching rules.</h1>'))
