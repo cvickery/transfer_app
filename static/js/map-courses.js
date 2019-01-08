@@ -214,7 +214,7 @@ $(function ()
   var show_handler = function ()
   {
     var request_type = $(this).attr('id');
-    if (request_type === 'show-sending')
+    if (request_type === 'show-receiving')
     {
       $('.to-from').text('from');
       $('.left-right').text('right');
@@ -241,7 +241,7 @@ $(function ()
     var header_row = `<tr>
                         <th rowspan="2">Sending Course</th>
                         <th colspan="${colleges.length}">Receiving College</th></tr>`;
-    if (request_type === 'show-sending')
+    if (request_type === 'show-receiving')
     {
       header_row = `<tr>
                       <th colspan="${colleges.length}">Sending College</th>

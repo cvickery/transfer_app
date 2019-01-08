@@ -1107,8 +1107,8 @@ def map_courses():
     <hr>
       <p>
         Select courses of interest, then indicate whether you want to map how these courses transfer
-        <em>to</em> courses at other institutions (<em>receiving</em> courses) or <em>from</em>
-        courses at other institutions (<em>sending courses</em>).
+        <em>to</em> courses at other institutions (<em>sending</em> rules) or <em>from</em>
+        courses at other institutions (<em>receiving rules</em>).
       </p>
     </details>
     <form action="" method="POST">
@@ -1151,9 +1151,9 @@ def map_courses():
         <span id="num-courses">No courses</span> selected.
       </p>
       <div>
-        <button id="show-receiving">show receiving courses</button>
+        <button id="show-sending">show sending rules</button>
         <strong>or</strong>
-        <button id="show-sending">show sending courses</button>
+        <button id="show-receiving">show receiving rules</button>
         <span id="loading">Loading
           <span class="one">.</span>
           <span class="two">.</span>
@@ -1338,7 +1338,7 @@ def _map_course():
   discipline = request.args.get('discipline')
   colleges = json.loads(request.args.getlist('colleges')[0])
 
-  request_type = request.args.get('request_type', default='show-receiving')
+  request_type = request.args.get('request_type', default='show-sending')
 
   table_rows = []
   conn = pgconnection('dbname=cuny_courses')
@@ -1372,7 +1372,7 @@ def _map_course():
                                   course_info.discipline,
                                   course_info.catalog_number)
     # Collect rules where the selected course is a sending course
-    if request_type == 'show-receiving':
+    if request_type == 'show-sending':
       row_template = '<tr>' + course_info_cell + '{}</tr>'
       cursor.execute("""select distinct *
                         from transfer_rules r
@@ -1399,7 +1399,7 @@ def _map_course():
                                       rule.destination_institution,
                                       rule.subject_area,
                                       rule.group_number)
-      if request_type == 'show-receiving':
+      if request_type == 'show-sending':
         rule_counts[rule.destination_institution] += 1
         rules[rule.destination_institution].append(rule_key)
       else:
