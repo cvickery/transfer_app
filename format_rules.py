@@ -4,7 +4,6 @@ import json
 import re
 import argparse
 
-from course_lookup import lookup_course
 from pgconnection import pgconnection
 from reviews_status_utils import status_string
 from copy import copy
