@@ -914,35 +914,37 @@ def pending():
   cursor.execute("""
     select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
       from pending_reviews""")
-  rows = ''
+  if cursor.rowcount == 0:
+    return render_template('review_rules.html', result=Markup("""
+        <h1>There are no pending reviews.</h1>
+        <p>
+          <a href="/"><button>main menu</button></a>
+          <a href="/review_rules"><button>Review Transfer Rules</button></a>
+        </p>
+        """))
+  result = '<h1>Pending Reviews</h1>'
   for pending in cursor.fetchall():
-    rows += format_pending(pending)
+    reviews = json.loads(pending.reviews)
+    suffix = 's'
+    if len(reviews) == 1:
+      suffix = ''
+    result += f"""
+    <details>
+      <summary>{len(reviews)} review{suffix} by {pending.email} on {pending.when_entered}</summary>
+      <table>
+        <tr><th>Rule</th><th>Type</th><th>Comment</th></tr>"""
+    for review in reviews:
+      result += f"<tr><td>{review['rule_key']}</td><td>{review['event_type']}</td><td>{review['comment_text']}</td></tr>"
+    result += '</table></details>'
   cursor.close()
   conn.close()
 
-  if rows == '':
-    table = '<h2>There are no pending reviews.</h2>'
-  else:
-    table = '<table>{}</table>'.format(rows)
-  result = """
-  <h1>Pending Reviews</h1>
-  {}
-  <p><a href="/"><button>main menu</button></a></p>
-  """.format(table)
+  result += """
+  <p>
+    <a href="/"><button>main menu</button></a>
+    <a href="/review_rules"><button>Review Transfer Rules</button></a>
+  </p>"""
   return render_template('review_rules.html', result=Markup(result))
-
-
-# format_pending()
-# -------------------------------------------------------------------------------------------------
-def format_pending(item):
-  """ Generate a table row that describes pending reviews.
-  """
-  reviews = json.loads(item['reviews'])
-  suffix = 's'
-  if len(reviews) == 1:
-    suffix = ''
-  return """<tr><td>{} review{} by {} on {}</td></tr>
-  """.format(len(reviews), suffix, item['email'], item['when_entered'])
 
 
 # CONFIRMATION PAGE
@@ -974,6 +976,7 @@ def confirmation(token):
   <h1>Confirmation</h1>
   <p>Review Report ID: {}</p>
   {}
+  <p><a href="/"><button>main menu</button></a></p>
     """.format(token, msg)
   return render_template('review_rules.html', result=Markup(result))
 

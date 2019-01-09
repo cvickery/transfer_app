@@ -51,5 +51,6 @@ def rule_history(rule_key):
               </tr>
               {}
             </table>
+            <p><a href="/"><button>main menu</button></a></p>
            """.format(rule_key, format_rule_by_key(rule_key)[1], history_rows)
   return result

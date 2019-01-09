@@ -16,16 +16,19 @@ body {
   font-style: italic;
 }
 
-.instructions {
+summary, .instructions {
   margin: 0.5em;
   padding: 0.5em;
-  width: 50vw;
+  max-width: 600px;
   background-color: #fff;
   color: #666;
   border: 1px solid #999;
   border-radius: 0.5em;
 }
 
+details table {
+  margin: 0 1em;
+}
 button:disabled {
   color:#999;
 }
