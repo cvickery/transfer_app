@@ -873,10 +873,10 @@ def do_form_3(request, session):
     review_rows += '</table>'
     # Send the email
     hostname = os.environ.get('HOSTNAME')
-    if hostname == 'babbage.cs.qc.cuny.edu' or (hostname and hostname.endswith('.local')):
+    if hostname and hostname.endswith('.local'):
       hostname = 'http://localhost:5000'
     else:
-      hostname = 'https://provost-access-148820.appspot.com'
+      hostname = 'https://transfer-app.qc.cuny.edu'
     url = hostname + '/confirmation/' + token
 
     response = send_token(email, url, review_rows)
@@ -991,87 +991,6 @@ def history(rule):
   """
   result = rule_history(rule)
   return render_template('review_rules.html', result=Markup(result))
-
-
-# # LOOKUP PAGE
-# # -------------------------------------------------------------------------------------------------
-# # Lookup all the rules that involve a course.
-# # This page is not used any more. Map Courses does the job better.
-# # Also, deleting the regex tutorial.
-# @app.route('/lookup', methods=['GET'])
-# def lookup():
-#   """ Prompt for a course (or set of courses in a discipline) at an institution, and display
-#       view-only information about rules that involve that or those courses.
-#   """
-#   conn = pgconnection('dbname=cuny_courses')
-#   cursor = conn.cursor()
-#   cursor.execute('select code, prompt from institutions order by prompt')
-#   options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
-#   conn.close()
-#   institution_select = """
-#   <select id="institution" name="institution">
-#     <option value="none" selected="selected">Select a College</option>
-#     {}
-#   </select>
-#   """.format('\n'.join(options))
-#   # Supply colleges from db now, but use ajax to get a college's disciplines
-
-#   result = """
-#   <h1>Lookup Transfer Rules</h1>
-#   <div class="instructions">
-#     <p>
-#       Select a college and discipline, and enter a course catalog number to see what transfer
-#       rules involve that course CUNY-wide. You can limit the search to rules where the course is
-#       on the sending instituion side or the receiving institution side, or leave the default and
-#       get both sets.
-#     </p>
-#     <p>
-#       The Catalog Number field can be entered as a simple course number but is actually a ”regular
-#       expression” that can select a group of courses. So if you wanted to do something like find the
-#       rules for all 100-level courses in a discipline, you might want to look at the <a
-#       href="/regex" target="_blank">regular expression</a> web page for more information about this
-#       field. And if you enter a simple course number but get back information for some additional
-#       courses, that web page explains what’s going on in that case, too.
-#     </p>
-#   </div>
-#   <form action="" method="POST">
-#     <div>
-#       <label for="institution">College:</label>
-#       {}
-#     </div>
-#     <div>
-#       <label for="Discipline">Discipline:</label>
-#       <input type="text" id="discipline" />
-#     </div>
-#     <div>
-#       <label for="catalog-number">Catalog Number:</label>
-#       <input type="text" id="catalog-number" />
-#     </div>
-#     <div id="radios">
-#       <div>
-#         <input type="radio" id="sending-only" name="which-rules" value="1">
-#         <label for="sending-only" class="radio-label">Sending Rules Only</label>
-#       </div>
-#       <div>
-#         <input type="radio" id="receiving-only" name="which-rules" value="2">
-#         <label for="receiving-only" class="radio-label"">Receiving Rules Only</label>
-#       </div>
-#       <div>
-#         <input type="radio" id="both" name="which-rules" value="3" checked="checked">
-#         <label for="both" class="radio-label">Both Sending and Receiving Rules
-#         </label>
-#       </div>
-#     </div>
-#   </form>
-#   <hr>
-#   <h2>Sending Rules</h2>
-#   <div id="sending-rules">
-#   </div>
-#   <h2>Receiving Rules</h2>
-#   <div id="receiving-rules">
-#   </div>
-#   """.format(institution_select)
-#   return render_template('lookup.html', result=Markup(result))
 
 
 # MAP_COURSES PAGE
@@ -1687,14 +1606,6 @@ def courses():
   cursor.close()
   conn.close()
   return render_template('courses.html', result=Markup(result))
-
-
-# # /REGEX obsoletificization.
-# # ================================================================================================
-# # A help page for entering regular expressions as course catalog numbers.
-# @app.route('/regex')
-# def regex():
-#   return render_template('regex.html')
 
 
 @app.errorhandler(500)
