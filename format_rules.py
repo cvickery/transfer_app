@@ -145,7 +145,7 @@ def format_rules(rules):
         <tr>
           <th>Sending</th>
           <th>Courses</th>
-          <th></th>
+          <th>Credits</th>
           <th>Receiving</th>
           <th>Courses</th><th>Review Status</th>
         </tr>
@@ -363,7 +363,7 @@ def format_rule(rule, rule_key=None):
   row = """<tr id="{}" class="{}">
               <td title="{}">{}</td>
               <td>{}</td>
-              <td title="{}">=></td>
+              <td>{}</td>
               <td title="{}">{}</td>
               <td>{}</td>
               <td>{}</td>
@@ -371,8 +371,7 @@ def format_rule(rule, rule_key=None):
                             institution_names[rule.source_institution],
                             rule.source_institution.rstrip('0123456789'),
                             source_course_list,
-                            '{} cr. :: {} cr.'
-                            .format(source_credits_str, destination_credits),
+                            f'{source_credits_str} => {destination_credits}',
                             institution_names[rule.destination_institution],
                             rule.destination_institution.rstrip('0123456789'),
                             destination_course_list,

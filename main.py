@@ -474,12 +474,16 @@ def do_form_1(request, session):
             format(institution_names[college], ', '.join(colleges[college]))
 
     # We are showing disciplines, but reporting cuny_subjects.
+    source_label = ''
     source_box = ''
     if source_disciplines_str != '':
+      source_label = f"""
+      <label for="source-subject-{cuny_subject}">{source_disciplines_str}</label>"""
       source_box = """
         <input type="checkbox" id="source-subject-{}" name="source_subject" value="{}"/>
         """.format(cuny_subject, cuny_subject)
     destination_box = ''
+    destination_label = ''
     if destination_disciplines_str != '':
       destination_box = """
         <input  type="checkbox"
@@ -488,21 +492,23 @@ def do_form_1(request, session):
                 name="destination_subject"
                 value="{}"/>
         """.format(cuny_subject, cuny_subject)
+      destination_label = f"""
+      <label for="destination-subject-{cuny_subject}">{destination_disciplines_str}</label>"""
     selection_rows += """
     <tr>
-      <td class="source-subject"><label for="source-subject-{}">{}</label></td>
+      <td class="source-subject">{}</td>
       <td class="source-subject f2-cbox">{}</td>
       <td><strong title="{}">{}</strong></td>
       <td class="destination-subject f2-cbox">{}</td>
-      <td class="destination-subject"><label for="destination-subject-{}">{}</label></td>
+      <td class="destination-subject">{}</td>
     </tr>
-    """.format(cuny_subject, source_disciplines_str,
+    """.format(source_label,
                source_box,
 
                cuny_subject, subject_names[cuny_subject],
 
                destination_box,
-               cuny_subject, destination_disciplines_str)
+               destination_label)
     num_rows += 1
 
   shortcuts = """
@@ -781,10 +787,10 @@ def do_form_2(request, session):
       <a href="/"><button>Main Menu</button></a>
       <a href="/review_rules" class="restart">Restart</a>
     </p>
-    <fieldset id="verification-fieldset">
+    <fieldset id="verification-fieldset"><legend>Review Reviews</legend>
         <p id="num-pending">You have not reviewed any transfer rules yet.</p>
         <button type="text" id="send-email" disabled="disabled">
-        Preview Your Submissions
+        Review Your Reviews
       </button>
       <form method="post" action="" id="review-form">
         Waiting for rules to finish loading ...
@@ -1034,7 +1040,7 @@ def map_courses():
       </p>
     </details>
     <form action="" method="POST">
-      <fieldset>
+      <fieldset><legend>Which Courses</legend>
         <h2>
           Select one or more of the following groups of courses.
         </h2>
@@ -1063,7 +1069,7 @@ def map_courses():
           <label for="institution">College:</label>
           {}
           <span id="discipline-span">
-            <label for="Discipline">Discipline:</label>
+            <label for="discipline">Discipline:</label>
             <input type="text" id="discipline" />
           </span>
         </div>
@@ -1082,7 +1088,7 @@ def map_courses():
           <span class="three">.</span>
         </span>
       </div>
-      <div>
+      <fieldset><legend>Which Colleges</legend>
           <input  type="checkbox"
                   id="associates"
                   name="which-colleges"
@@ -1095,7 +1101,7 @@ def map_courses():
                   value="bachelors"
                   checked>
           <label for="bachelors" class="radio-label"">Include Bachelor’s Degree Colleges</label>
-      </div>
+      </fieldset>>
     </form>
   </div>
   <div id="transfers-map-div">

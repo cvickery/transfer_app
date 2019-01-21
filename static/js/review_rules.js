@@ -380,6 +380,7 @@ $(function ()
                       <input type="radio" name="reviewed" id="other" value="other"/>
                       <label for="other">Other</label>
                     </div>
+                    <label for="comment-text">Annotation:</label>
                     <textarea id="comment-text"
                               placeholder="Explain problem or “Other” here."
                               minlength="12" />
