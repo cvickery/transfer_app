@@ -2,9 +2,10 @@
 
 Reporting:  blanket credit transfers
             review process progress
-Need to show number of blanket credits that transfer when the dest consists of a course + blanket
 
-Need cursor change when clicking on a cell in do_form_2() when loading the selected rules.
+Need a rule editor for creating/changing rule groups. Output to be Oracle SQL.
+
+Need to show number of blanket credits that transfer when the dest consists of a course + blanket
 
 Color codes in map are screwy. Use red for no good (missing or self-referential); yellow for
 warnings (blanket-only); green for good. Gray for inactive sending courses; red for inactive
