@@ -5,6 +5,9 @@ module.exports = {
         "node": true,
         "jquery": true
     },
+    "globals": {
+        "$SCRIPT_ROOT": false
+    },
     "extends": "eslint:recommended",
     "parserOptions": {
         "ecmaVersion": 2016
