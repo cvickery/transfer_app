@@ -69,7 +69,7 @@ select  c.course_id                       as course_id,
    and  cc.institution = c.institution
    and  cc.career = c.career
    and  rd.designation = c.designation
- order by discipline, catalog_number
+ order by discipline, numeric_part(catalog_number)
 """
 
 # Course info for a single course_id
@@ -111,7 +111,7 @@ select  c.course_id                       as course_id,
    and  cc.institution = c.institution
    and  cc.career = c.career
    and  rd.designation = c.designation
- order by discipline, catalog_number
+ order by discipline, numeric_part(catalog_number)
 """
 
 
