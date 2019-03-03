@@ -3,6 +3,7 @@ from psycopg2.extras import NamedTupleCursor
 
 import math
 import re
+import json
 from time import time
 
 """ Globals
@@ -256,19 +257,81 @@ def format_course(course, active_only=False):
   return html
 
 
+def course_search(search_str, include_inactive=False, debug=False):
+  """ Parse search string to get institution, discipline, and catalog_number, then find all matching
+      courses and return an array of catalog entries.
+      Search strings by example
+        qns csci *  All CSCI courses at QC
+        * csci 101 CSCI-101 at any college
+        QNS01 CSCI101 CSCI 101 at QC
+        QNS csci-101  CSCI 100 at QC
+  """
+  if debug:
+    print(f'\n*** couirse_search("{search_str}", {include_inactive})')
+  parts = search_str.split()
+  if len(parts) < 2 or len(parts) > 3:
+    raise ValueError('invalid search string')
+  institution = parts[0]
+  if len(parts) == 2:
+    discipline, catalog_number = re.match(r'^\s*([a-z]+)-?(.+)\s*$', parts[1], re.I).groups()
+  else:
+    discipline, catalog_number = parts[1], parts[2]
+
+  catalog_number = re.match(r'^\s*(\*|[\d\.]+)\D*$', catalog_number).group(1)
+
+  if include_inactive:
+    status_str = "course_status = 'A' or course_status = 'I'"
+  else:
+    status_str = "course_status = 'A' and can_schedule = 'Y'"
+
+  if institution != '*':
+    institution_str = f"and institution ~* '{institution}'"
+  else:
+    institution_str = ''
+
+  if catalog_number != '*':
+    under = float(catalog_number) - 0.5
+    over = under + 1.0
+    cat_num_str = """and numeric_part(catalog_number) > {} and numeric_part(catalog_number) < {}
+                  """.format(under, over)
+  else:
+    cat_num_str = ''
+
+  query = f"""
+    select course_id, offer_nbr, course_status, institution, discipline, catalog_number
+    from courses
+    where {status_str}
+    {institution_str}
+    and discipline ~* %s
+    {cat_num_str}
+    """
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  cursor.execute(query, (discipline, ))
+  return_list = []
+  for row in cursor.fetchall():
+    return_list.append(lookup_course(row.course_id, offer_nbr=row.offer_nbr)[1])
+  return json.dumps(return_list)
+
+
 # Unit Test
 # -------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
   import argparse
   parser = argparse.ArgumentParser()
-  parser.add_argument('--debug', '-d', action='store_true')
-  parser.add_argument('--institution', '-i', nargs=1)
-  parser.add_argument('--course', '-c', nargs=1)
+  parser.add_argument('-d', '--debug', action='store_true')
+  parser.add_argument('-i', '--institution')
+  parser.add_argument('-c', '--course')
+  parser.add_argument('-s', '--search_string')
   args = parser.parse_args()
 
   if args.institution:
-    print(lookup_courses(args.institution[0]))
+    print(args.institution)
+    exit()
+    print(lookup_courses(args.institution))
   elif args.course:
-    print(lookup_course(int(args.course[0])))
+    print(lookup_course(int(args.course)))
+  elif args.search_string:
+    print(course_search(args.search_string))
   else:
     print("Specify either an institution or a course_id")
