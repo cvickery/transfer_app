@@ -24,7 +24,7 @@ from reviews import process_pending
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, \
     Transfer_Rule, Source_Course, Destination_Course
-from course_lookup import course_attribute_rows
+from course_lookup import course_attribute_rows, course_search
 
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
@@ -1476,6 +1476,15 @@ def _courses():
                           'html': html})
   return jsonify(return_list)
 
+
+# /_COURSE_SEARCH
+# =================================================================================================
+#   AJAX search for a course, given the institution, discipline, and catalog number.
+#   May return multiple matching courses, so return a list of html rather than just "the one".
+@app.route('/_course_search')
+def _course_search():
+  search_str = request.args.get('search_string')
+  return course_search(search_str)
 
 # /_SESSIONS
 # =================================================================================================
