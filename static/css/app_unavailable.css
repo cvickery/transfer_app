@@ -5,12 +5,13 @@ body {
  }
 h1 {
   text-align: center;
-  margin:2em;
+  margin:2em 0;
   font-variant: small-caps;
   letter-spacing: 0.15em;
   }
 h2 {
-  margin:1em;
+  text-align: center;
+  font-family:sans-serif;
   }
 p {
   margin: 2em;
