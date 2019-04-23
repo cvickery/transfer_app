@@ -69,7 +69,7 @@ def get_reason():
     minutes = remainder // 60
     if minutes == 1:
       when = when.replace('{} minutes', 'one minute')
-    if minutes == 0:
+    elif minutes == 0:
       when = when.replace('{} minutes', 'less than a minute')
     else:
       when = when.format(minutes)
