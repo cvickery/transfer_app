@@ -1101,7 +1101,7 @@ def map_courses():
                   value="bachelors"
                   checked>
           <label for="bachelors" class="radio-label"">Include Bachelor’s Degree Colleges</label>
-      </fieldset>>
+      </fieldset>
     </form>
   </div>
   <div id="transfers-map-div">
