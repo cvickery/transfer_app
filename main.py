@@ -26,6 +26,9 @@ from format_rules import format_rule, format_rules, format_rule_by_key, institut
     Transfer_Rule, Source_Course, Destination_Course
 from course_lookup import course_attribute_rows, course_search
 
+from registered_programs import fix_title
+from known_institutions import known_institutions
+
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
 from flask import Flask, url_for, render_template, make_response,\
@@ -1624,6 +1627,110 @@ def courses():
   cursor.close()
   conn.close()
   return render_template('courses.html', result=Markup(result))
+
+# REGISTERED PROGRAMS PAGE
+# =================================================================================================
+#
+@app.route('/registered_programs/', methods=['GET'], defaults=({'institution': None}))
+def registered_programs(institution):
+  """ Show the academic programs registered with NYS Department of Education for any CUNY college.
+  """
+  if institution is None:
+    institution = request.args.get('institution', None)
+
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute("""
+                 select distinct r.target_institution as inst, i.name
+                 from registered_programs r, institutions i
+                 where i.code = upper(r.target_institution||'01')
+                 order by i.name
+                 """)
+
+  if cursor.rowcount < 1:
+    result = """
+    <h1>There is no registered-program information for CUNY colleges available at this time.</h1>
+    """
+    return render_template('registered_programs.html', result=Markup(result))
+
+  if cursor.rowcount == 1:
+    suffix = ''
+  else:
+    suffix = 's'
+
+  known_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
+  options = '\n'.join([f'<option value="{inst}">{known_institutions[inst]}</option>'
+                      for inst in known_institutions])
+
+  if institution is None or institution not in known_institutions.keys():
+    h1 = '<h1>Select a CUNY College</h1>'
+    table = ''
+  else:
+    institution_name = known_institutions[institution]
+    h1 = f'<h1>Registered Academic Programs for {institution_name}</h1>'
+    headings = ['Program Code',
+                'Registration Office',
+                'Institution',
+                'Title',
+                'Award',
+                'HEGIS',
+                'Certificate or License',
+                'Accreditation',
+                'First Registration Date',
+                'Last Registration Date',
+                'TAP', 'APTS', 'VVTA']
+    heading_row = '<tr>' + ''.join([f'<th>{head}</th>' for head in headings]) + '</tr>\n'
+    cursor.execute("""
+                   select * from registered_programs
+                   where target_institution = %s
+                   order by program_code, title
+                   """, (institution,))
+    data_rows = []
+    for row in cursor.fetchall():
+      if row.is_variant:
+        class_str = ' class="variant"'
+      else:
+        class_str = ''
+      values = list(row)
+      # The first value is the target_institution, and the last value is the variant status.
+      values.pop()
+      values.pop(0)
+      data_rows.append(f'<tr{class_str}>'
+                       + ''.join([f'<td>{value}</td>' for value in values])
+                       + '</tr>')
+    table_rows = heading_row + '\n'.join(data_rows)
+    table = f"<table>{table_rows}</table>"
+  result = f"""
+      {h1}
+      <div>
+        <form action="/registered_programs/" method="GET" id="select-institution">
+          <select name="institution" >
+          {options}
+          </select>
+        </form>
+      </div>
+      <p>
+          <button type="select" form="select-institution">Show Selected College</button>
+          or
+          <button><a href="/">Main Menu</a></button>
+      </p>
+      <div class="instructions">
+        <p>
+          Highlighted rows are for programs with more than one variant, such as multiple institutions
+          and/or multiple awards.
+        </p>
+        <p>
+          Programs are registered either with either the Office of the Professions (OP) or the Office
+          of College and University Evaluation (OCUE).
+        </p>
+        <p>
+          The last three columns show financial aid eligibility.
+        </p>
+      </div>
+      <hr>
+      {table}
+"""
+  return render_template('registered_programs.html', result=Markup(result))
 
 
 @app.errorhandler(500)
