@@ -26,7 +26,6 @@ from format_rules import format_rule, format_rules, format_rule_by_key, institut
     Transfer_Rule, Source_Course, Destination_Course
 from course_lookup import course_attribute_rows, course_search
 
-from registered_programs import fix_title
 from known_institutions import known_institutions
 
 from system_status import app_available, app_unavailable, get_reason, \
@@ -84,13 +83,28 @@ def _status(command):
 
 # date2str()
 # --------------------------------------------------------------------------------------------------
-def date2str(date):
+def date2str(date_str):
   """Takes a string in YYYY-MM-DD form and returns a text string with the date in full English form.
   """
-  months = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December']
-  year, month, day = date.split('-')
-  return '{} {}, {}'.format(months[int(month) - 1], int(day), year)
+  return datetime.datetime.fromisoformat(date_str).strftime('%B %e, %Y').replace('  ', ' ')
+
+
+# fix_title()
+# -------------------------------------------------------------------------------------------------
+def fix_title(str):
+  """ Create a better titlecase string, taking specifics of the registered_programs dataset into
+      account.
+  """
+  return (str.strip(' *')
+             .title()
+             .replace('Cuny', 'CUNY')
+             .replace('Mhc', 'MHC')
+             .replace('Suny', 'SUNY')
+             .replace('\'S', '’s')
+             .replace('1St', '1st')
+             .replace('6Th', '6th')
+             .replace(' And ', ' and ')
+             .replace(' Of ', ' of '))
 
 
 #
@@ -1638,8 +1652,20 @@ def registered_programs(institution):
   if institution is None:
     institution = request.args.get('institution', None)
 
+  # Allow users to supply the institution in QNS01 or qns01 format; force to internal format ('qns')
+  if institution is not None:
+    institution = institution.lower().strip('10')
+
+  # See when the db was last updated
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
+  try:
+    cursor.execute("select update_date from updates where table_name='registered_programs'")
+    update_date = date2str(cursor.fetchone().update_date)
+  except (KeyError, ValueError):
+    update_date = '<em>Unknown</em>'
+
+  # Find out what CUNY colleges are in the db
   cursor.execute("""
                  select distinct r.target_institution as inst, i.name
                  from registered_programs r, institutions i
@@ -1653,21 +1679,19 @@ def registered_programs(institution):
     """
     return render_template('registered_programs.html', result=Markup(result))
 
-  if cursor.rowcount == 1:
-    suffix = ''
-  else:
-    suffix = 's'
+  cuny_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
+  options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]}</option>'
+                      for inst in cuny_institutions])
 
-  known_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
-  options = '\n'.join([f'<option value="{inst}">{known_institutions[inst]}</option>'
-                      for inst in known_institutions])
-
-  if institution is None or institution not in known_institutions.keys():
+  if institution is None or institution not in cuny_institutions.keys():
     h1 = '<h1>Select a CUNY College</h1>'
     table = ''
   else:
-    institution_name = known_institutions[institution]
+    # Generate the HTML table
+    institution_name = cuny_institutions[institution]
     h1 = f'<h1>Registered Academic Programs for {institution_name}</h1>'
+
+    # Heading row
     headings = ['Program Code',
                 'Registration Office',
                 'Institution',
@@ -1680,6 +1704,8 @@ def registered_programs(institution):
                 'Last Registration Date',
                 'TAP', 'APTS', 'VVTA']
     heading_row = '<tr>' + ''.join([f'<th>{head}</th>' for head in headings]) + '</tr>\n'
+
+    # Data rows
     cursor.execute("""
                    select * from registered_programs
                    where target_institution = %s
@@ -1691,10 +1717,18 @@ def registered_programs(institution):
         class_str = ' class="variant"'
       else:
         class_str = ''
+
+      # Fix-ups: get rid of columns not to be displayed
       values = list(row)
       # The first value is the target_institution, and the last value is the variant status.
       values.pop()
       values.pop(0)
+
+      # If the institution column is a numeric string, it’s a non-CUNY partner school, but the
+      # name is available in the known_institutions dict.
+      if values[2].isdecimal():
+        values[2] = fix_title(known_institutions[values[2]][1])
+
       data_rows.append(f'<tr{class_str}>'
                        + ''.join([f'<td>{value}</td>' for value in values])
                        + '</tr>')
@@ -1704,7 +1738,8 @@ def registered_programs(institution):
       {h1}
       <div>
         <form action="/registered_programs/" method="GET" id="select-institution">
-          <select name="institution" >
+          <select name="institution">
+          <option value="none">Select College</option>
           {options}
           </select>
         </form>
@@ -1716,15 +1751,18 @@ def registered_programs(institution):
       </p>
       <div class="instructions">
         <p>
-          Highlighted rows are for programs with more than one variant, such as multiple institutions
-          and/or multiple awards.
+          Highlighted rows are for programs with more than one variant, such as multiple
+          institutions and/or multiple awards.
         </p>
         <p>
-          Programs are registered either with either the Office of the Professions (OP) or the Office
-          of College and University Evaluation (OCUE).
+          Programs are registered either with either the Office of the Professions (OP) or the
+          Office of College and University Evaluation (OCUE).
         </p>
         <p>
           The last three columns show financial aid eligibility.
+        </p>
+        <p>
+          Latest NYS Department of Education access was {update_date}.
         </p>
       </div>
       <hr>
