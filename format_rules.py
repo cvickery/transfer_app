@@ -89,10 +89,13 @@ def andor_list(items, andor='and'):
 # -------------------------------------------------------------------------------------------------
 def _grade(min_gpa, max_gpa):
   """ Convert numerical gpa range to description of required grade in letter-grade form.
+      The issue is that gpa values are not represented uniformly across campuses, and the strings
+      used have to be floating point values, which lead to imprecise boundaries between letter
+      names.
         “<letter> or above” when min is > 0.7 and max is 4.0+
         “below <letter>” when min is 0.7 and max is < 4.0
         “between <letter> and <letter>” when min is > 0.7 and max is < 4.0
-        “Pass” when neither of the above
+        “Pass” when none of the above
 
         GPA Letter 3×GPA
         4.3 A+      12.9
@@ -109,15 +112,18 @@ def _grade(min_gpa, max_gpa):
         0.7 D-       2.1
   """
   # Put gpa values into “canonical form”
-  if min_gpa < 0.7:
+  assert min_gpa <= max_gpa, f'min_gpa {min_gpa} greater than {max_gpa}'
+  # Courses transfer only if the student passed the course, so force the min acceptable grade
+  # to be a passing (D-) grade.
+  if min_gpa < 1.0:
     min_gpa = 0.7
-  if (max_gpa < min_gpa) or max_gpa > 4.3:
-    max_gpa = 4.3
+  if max_gpa > 4.0:
+    max_gpa = 4.0
 
   # Generate the letter grade requirement string
   if min_gpa > 0.7 and max_gpa > 3.9:
     letter = letters[int(round(min_gpa * 3))]
-    return letter + ' or above in'
+    return f'{letter} or above in'
   if min_gpa < 0.8 and max_gpa < 3.9:
     letter = letters[int(round(max_gpa * 3))]
     return 'below ' + letter + ' in'
@@ -355,7 +361,7 @@ def format_rule(rule, rule_key=None):
 
   # If the rule has been evaluated, the last column is a link to the review history. But if it
   # hasn't been evaluated yet, the last column is just the text that says so.
-  status_cell = status_string(rule.review_status)
+  status_cell = status_string(RULE.review_status)
   if rule.review_status != 0:
     status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule_key,
                                                                         status_cell)
@@ -394,9 +400,12 @@ def format_rule(rule, rule_key=None):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser('Testing transfer rule groups')
   parser.add_argument('--debug', '-d', action='store_true', default=False)
+  parser.add_argument('--grade', nargs=2)
   args = parser.parse_args()
 
   if args.debug:
     DEBUG = true
-
-  print('Unit test not implemented')
+  if args.grade:
+    min_gpa = float(args.grade[0])
+    max_gpa = float(args.grade[1])
+    print(_grade(min_gpa, max_gpa))
