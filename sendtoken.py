@@ -2,6 +2,7 @@ import os
 import sendgrid
 from sendgrid.helpers import mail
 
+
 def send_token(email, url, evaluation_rows):
   """
       Send email with a link to confirm evaluations.
@@ -21,7 +22,7 @@ def send_token(email, url, evaluation_rows):
     this_these = 'this'
 
   button_text = 'submit {} review{}'.format(this_these, suffix).title()
-  html_body = mail.Content('text/html',"""
+  html_body = mail.Content('text/html', """
   <p>
     Use the link below to confirm that you want to record the following transfer rule
     review{}.<br/>
