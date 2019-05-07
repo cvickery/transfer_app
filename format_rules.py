@@ -361,7 +361,7 @@ def format_rule(rule, rule_key=None):
 
   # If the rule has been evaluated, the last column is a link to the review history. But if it
   # hasn't been evaluated yet, the last column is just the text that says so.
-  status_cell = status_string(RULE.review_status)
+  status_cell = status_string(rule.review_status)
   if rule.review_status != 0:
     status_cell = '<a href="/history/{}" target="_blank">{}</a>'.format(rule_key,
                                                                         status_cell)
@@ -408,4 +408,4 @@ if __name__ == "__main__":
   if args.grade:
     min_gpa = float(args.grade[0])
     max_gpa = float(args.grade[1])
-    print(_grade(min_gpa, max_gpa))
+    print(f'"{_grade(min_gpa, max_gpa)}"')
