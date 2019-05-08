@@ -3,18 +3,35 @@ from sendgrid import SendGridAPIClient
 
 
 class Struct:
-    """ A structure that can have any fields defined.
-        Thank you: Peter Norvig. https://norvig.com/python-iaq.html
+    """ A structure that can have any fields defined. Allows dotted access to members without the
+        constraints of namedtuples.
+        Used only in this module, but should be moved to a more meaningful place if more widely
+        adopted.
+        Thank you to Peter Norvig. https://norvig.com/python-iaq.html
     """
     def __init__(self, **entries):
       self.__dict__.update(entries)
 
 
-def send_token(email, url, review_rows):
-  """ Use SendGrid to send email with a link for confirming transfer rule evaluations.
+def send_email(message):
+  """ Sent an email message using SendGrid.
+      The message object must include personalizations, subject, from, and content fields.
+      Personalizations is an array of recipients and subject lines.
+      See https://sendgrid.com/docs/for-developers/sending-email/personalizations/ for rationale.
   """
   assert os.environ.get('SENDGRID_API_KEY') is not None, 'Email not configured'
   sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+  try:
+    response = sg.send(message)
+  except Exception as error:
+    return Struct(status_code='Failed', body=error)
+  return response
+
+
+def send_token(email, url, review_rows):
+  """ Format a message with a link for confirming transfer rule evaluations, and email it to the
+      reviewer.
+  """
 
   # Format the message body, depending on how many rules were reviewed
   suffix = 's'
@@ -52,8 +69,4 @@ def send_token(email, url, review_rows):
              'content': [{'type': 'text/html',
                           'value': html_body}]
              }
-  try:
-    response = sg.send(message)
-  except Exception as error:
-    return Struct(status_code='Failed', body=error)
-  return response
+  return send_email(message)
