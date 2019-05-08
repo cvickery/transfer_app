@@ -30,6 +30,7 @@ from known_institutions import known_institutions
 
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
+
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
 
@@ -990,10 +991,11 @@ def confirmation(token):
   msg = ''
   if len(rows) == 0:
     msg = '<p class="error">This report has either expired or already been recorded.</p>'
-  if len(rows) > 1:
-    msg = '<p class="error">Program Error: multiple pending_reviews.</p>'
-  if len(rows) == 1:
+  elif len(rows) != 1:
+    msg = f'<p class="error">Program Error: {len(rows)} pending_reviews.</p>'
+  else:
     msg = process_pending(rows[0])
+
   result = """
 
   <h1>Confirmation</h1>
