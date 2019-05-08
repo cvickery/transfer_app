@@ -1731,9 +1731,8 @@ def registered_programs(institution):
       if values[2].isdecimal():
         values[2] = fix_title(known_institutions[values[2]][1])
 
-      data_rows.append(f'<tr{class_str}>'
-                       + ''.join([f'<td>{value}</td>' for value in values])
-                       + '</tr>')
+      cells = ''.join([f'<td>{value}</td>' for value in values])
+      data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '\n'.join(data_rows)
     table = f"<table>{table_rows}</table>"
   result = f"""
