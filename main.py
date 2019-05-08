@@ -1663,7 +1663,7 @@ def registered_programs(institution):
     cursor.execute("select update_date from updates where table_name='registered_programs'")
     update_date = date2str(cursor.fetchone().update_date)
   except (KeyError, ValueError):
-    update_date = '<em>Unknown</em>'
+    update_date = '<em>None (or in progress)</em>'
 
   # Find out what CUNY colleges are in the db
   cursor.execute("""
