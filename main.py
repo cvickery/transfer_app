@@ -1647,6 +1647,16 @@ def courses():
 # REGISTERED PROGRAMS PAGE
 # =================================================================================================
 #
+@app.route('/download_csv/<filename>')
+def download_csv(filename):
+  """ Download csv file with the registered programs information for a college.
+      THIS IS FRAGILE: The project directory for scraping the NYS DOE website must be located in
+      the same folder as this app’s project directory, and it must be named registered_programs.
+  """
+  return send_file(os.path.join(app.root_path,
+                                f'../registered_programs/csv_files/{filename}'))
+
+
 @app.route('/registered_programs/', methods=['GET'], defaults=({'institution': None}))
 def registered_programs(institution):
   """ Show the academic programs registered with NYS Department of Education for any CUNY college.
@@ -1689,11 +1699,20 @@ def registered_programs(institution):
     h1 = '<h1>Select a CUNY College</h1>'
     table = ''
   else:
-    # Generate the HTML table
+    # Complete the page heading
     institution_name = cuny_institutions[institution]
+
+    # Link to the current csv file, if there is one.
+    csv_link = ''
+    csv_dir = '../registered_programs/csv_files'
+    for filename in os.listdir(csv_dir):
+      if filename.startswith(institution.upper()):
+        csv_link = f"""<p><button><a download href="/download_csv/{filename}">
+                       Download {filename}</a></button></p>"""
+        break
     h1 = f'<h1>Registered Academic Programs for {institution_name}</h1>'
 
-    # Heading row
+    # Generate the HTML table: headings
     headings = ['Program Code',
                 'Registration Office',
                 'Institution',
@@ -1707,7 +1726,7 @@ def registered_programs(institution):
                 'TAP', 'APTS', 'VVTA']
     heading_row = '<tr>' + ''.join([f'<th>{head}</th>' for head in headings]) + '</tr>\n'
 
-    # Data rows
+    # Generate the HTML table: data rows
     cursor.execute("""
                    select * from registered_programs
                    where target_institution = %s
@@ -1765,6 +1784,7 @@ def registered_programs(institution):
         <p>
           Latest NYS Department of Education access was {update_date}.
         </p>
+        {csv_link}
       </div>
       <hr>
       {table}
