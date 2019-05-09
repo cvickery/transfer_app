@@ -979,8 +979,8 @@ def confirmation(token):
   else:
     msg = process_pending(rows[0])
     # Notify the proper person that this review has been submitted
-    notification_msg = {'personalizations': [{'to': [{'email': 'cvickery@qc.cuny.edu'}],
-                                              'cc': [{'email': 'cvickery@gmail.com'}],
+    notification_msg = {'personalizations': [{'to': [{'email': 'OUR@cuny.edu'}],
+                                              'cc': [{'email': 'cvickery@qc.cuny.edu'}],
                                               'subject': 'Transfer Rule Evaluation Received'}],
                         'from': {'email': 'cvickery@qc.cuny.edu',
                                  'name': 'CUNY Transfer App'},
