@@ -988,7 +988,6 @@ def confirmation(token):
                                      'value':
                                      msg.replace('/history', request.url_root + 'history')}]
                         }
-    print(notification_msg)
     response = send_email(notification_msg)
     if response.status_code != 202:
       msg += f'<p>Error sending notification: {response.body}</p>'
