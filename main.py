@@ -19,7 +19,7 @@ from collections import Counter
 
 from course_lookup import lookup_courses, lookup_course
 from mysession import MySession
-from sendtoken import send_token
+from sendtoken import send_token, send_email
 from reviews import process_pending
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, \
@@ -680,9 +680,6 @@ def do_form_2(request, session):
   #  - The source and destination institutions have been selected
   #  and
   #  - The source_subjects have been selected
-  if DEBUG:
-    elapsed = time.perf_counter() - elapsed
-    print(f'*** start get rules:\t{elapsed:0.3f}')
   q = f"""
   select *
     from transfer_rules
@@ -691,8 +688,6 @@ def do_form_2(request, session):
      {source_subjects_clause}
   order by source_institution, destination_institution, subject_area, group_number"""
   cursor.execute(q, (session['source_institutions'] + session['destination_institutions']))
-  if DEBUG:
-    print(cursor.query)
   if cursor.rowcount < 1:
     return render_template('review_rules.html', result=Markup(
                            '<h1 class="error">There are no matching rules.</h1>'))
@@ -712,9 +707,6 @@ def do_form_2(request, session):
     destination_subjects_clause = f" and dc.cuny_subject in ({destination_subject_params})"
 
   for rule in all_rules:
-    if DEBUG:
-      elapsed = time.perf_counter() - elapsed
-      print(f'*** start get destination courses for rule \t{rule.id}: {elapsed:0.3f}')
     # It’s possible some of the selected rules don’t have destination courses in any of the selected
     # disciplines, so that has to be checked first.
     cursor.execute(f"""
@@ -735,9 +727,6 @@ def do_form_2(request, session):
     """, (rule.id, rule.destination_institution))
     if cursor.rowcount > 0:
       destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
-      if DEBUG:
-        elapsed = time.perf_counter() - elapsed
-        print(f'*** start get source courses for rule\t\t{rule.id}: {elapsed:0.3f}')
       cursor.execute("""
         select  sc.course_id,
                 sc.offer_count,
@@ -758,9 +747,6 @@ def do_form_2(request, session):
         """, (rule.id, rule.source_institution))
       if cursor.rowcount > 0:
         source_courses = [Source_Course._make(c)for c in cursor.fetchall()]
-      if DEBUG:
-        elapsed = time.perf_counter() - elapsed
-        print(f'*** end get source courses for rule\t\t{rule.id}: {elapsed:0.3f}')
 
       # Create the Transfer_Rule tuple suitable for passing to format_rules, and add it to the
       # list of rules to pass.
@@ -818,9 +804,6 @@ def do_form_2(request, session):
     {rules_table}
     </div>
   """
-  if DEBUG:
-    elapsed = time.perf_counter() - elapsed
-    print(f'*** return:\t{elapsed:0.3f}')
   return render_template('review_rules.html', result=Markup(result))
 
 
@@ -995,14 +978,28 @@ def confirmation(token):
     msg = f'<p class="error">Program Error: {len(rows)} pending_reviews.</p>'
   else:
     msg = process_pending(rows[0])
+    # Notify the proper person that this review has been submitted
+    notification_msg = {'personalizations': [{'to': [{'email': 'cvickery@qc.cuny.edu'}],
+                                              'cc': [{'email': 'cvickery@gmail.com'}],
+                                              'subject': 'Transfer Rule Evaluation Received'}],
+                        'from': {'email': 'cvickery@qc.cuny.edu',
+                                 'name': 'CUNY Transfer App'},
+                        'content': [{'type': 'text/html',
+                                     'value':
+                                     msg.replace('/history', request.url_root + 'history')}]
+                        }
+    print(notification_msg)
+    response = send_email(notification_msg)
+    if response.status_code != 202:
+      msg += f'<p>Error sending notification: {response.body}</p>'
 
-  result = """
-
+  result = f"""
   <h1>Confirmation</h1>
-  <p>Review Report ID: {}</p>
-  {}
+  <p>Review Report ID: {token}</p>
+  {msg}
   <p><a href="/"><button>main menu</button></a></p>
-    """.format(token, msg)
+  """
+
   return render_template('review_rules.html', result=Markup(result))
 
 
