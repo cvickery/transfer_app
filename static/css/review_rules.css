@@ -392,3 +392,8 @@ h2 + div {
   padding: 0.5em;
   cursor: text;
 }
+
+.catalog-entry {
+  font-size: 0.8em;
+  max-width: 40em;
+}
