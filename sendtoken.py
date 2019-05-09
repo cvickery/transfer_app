@@ -63,7 +63,7 @@ def send_token(email, url, review_rows):
   <p>This link will expire in 48 hours.</p>
   """
   message = {'personalizations': [{'to': [{'email': email}],
-             'subject': 'Confirming your transfer rule review{suffix}'}],
+             'subject': f'Confirming your transfer rule review{suffix}'}],
              'from': {'email': 'poffice@qc.cuny.edu',
                       'name': 'CUNY Transfer App'},
              'content': [{'type': 'text/html',
