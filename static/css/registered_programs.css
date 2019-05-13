@@ -53,7 +53,7 @@ form>* {
 }
 
 button {
-  color:#666;
+  color:#333;
   background-color: white;
   font-size: 0.8em;
   padding: 0.5em;
@@ -63,7 +63,7 @@ button {
 
 button a {
   display:block;
-  color:#666;
+  color:#333;
   text-decoration:none;
 }
 

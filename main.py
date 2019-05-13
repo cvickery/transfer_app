@@ -1761,9 +1761,10 @@ def registered_programs(institution):
         </form>
       </div>
       <p>
-          <button type="select" form="select-institution">Show Selected College</button>
-          or
-          <button><a href="/">Main Menu</a></button>
+        <span id="submit-button">
+          <button type="submit" form="select-institution">Show Selected College</button>
+          or</span>
+          <button><a href="/">Return to Main Menu</a></button>
       </p>
       <div class="instructions">
         <p>
