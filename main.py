@@ -1718,7 +1718,7 @@ def registered_programs(institution):
                 'Certificate or License',
                 'Accreditation',
                 'First Registration Date',
-                'Last Registration Date',
+                'Latest Reg. Action',
                 'TAP', 'APTS', 'VVTA']
     heading_row = '<tr>' + ''.join([f'<th>{head}</th>' for head in headings]) + '</tr>\n'
 
