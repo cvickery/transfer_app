@@ -1667,6 +1667,7 @@ def registered_programs(institution):
   # See when the db was last updated
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
+  plan_cursor = conn.cursor()
   try:
     cursor.execute("select update_date from updates where table_name='registered_programs'")
     update_date = date2str(cursor.fetchone().update_date)
@@ -1704,7 +1705,8 @@ def registered_programs(institution):
     for filename in os.listdir(csv_dir):
       if filename.startswith(institution.upper()):
         csv_link = f"""<p><button><a download href="/download_csv/{filename}">
-                       Download {filename}</a></button></p>"""
+                       Download {filename}</a></button>
+                       (<em>Does not include the “CUNY Program(s)” column &hellip; yet.</em>)</p>"""
         break
     h1 = f'<h1>Registered Academic Programs for {institution_name}</h1>'
 
@@ -1713,8 +1715,9 @@ def registered_programs(institution):
                 'Registration Office',
                 'Institution',
                 'Title',
-                'Award',
                 'HEGIS',
+                'Award',
+                'CUNY Program(s)',
                 'Certificate or License',
                 'Accreditation',
                 'First Registration Date',
@@ -1724,7 +1727,19 @@ def registered_programs(institution):
 
     # Generate the HTML table: data rows
     cursor.execute("""
-                   select * from registered_programs
+                   select program_code,
+                          unit_code,
+                          institution,
+                          title,
+                          hegis,
+                          award,
+                          certificate_license,
+                          accreditation,
+                          first_registration_date,
+                          last_registration_action,
+                          tap, apts, vvta,
+                          is_variant
+                   from registered_programs
                    where target_institution = %s
                    order by program_code, title
                    """, (institution,))
@@ -1735,17 +1750,18 @@ def registered_programs(institution):
       else:
         class_str = ''
 
-      # Fix-ups: get rid of columns not to be displayed
       values = list(row)
-      # The first value is the target_institution, and the last value is the variant status.
-      values.pop()
-      values.pop(0)
+      values.pop()  # Don’t display is_variant value: it is indicated by the row’s class.
 
       # If the institution column is a numeric string, it’s a non-CUNY partner school, but the
       # name is available in the known_institutions dict.
       if values[2].isdecimal():
         values[2] = fix_title(known_institutions[values[2]][1])
 
+      # Insert list of all CUNY “plans” for this program code
+      plan_cursor.execute('select academic_plan from academic_plans where program_id = %s',
+                          (values[0],))
+      values.insert(6, ', '.join([p.academic_plan for p in plan_cursor.fetchall()]))
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '\n'.join(data_rows)
