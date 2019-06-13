@@ -1846,7 +1846,7 @@ def academic_plan(institution, plan, catalog_year):
                       from requirement_blocks
                      where institution = %s
                        and block_value = %s
-                  order by period_start
+                  order by period_start desc
                   """, (institution, plan))
   result = f'<h1>Program Requirements for {plan} at {cuny_institutions[institution]}</h1>'
   result += f'<p>DegreeWorks information as of {last_update}</p>'
