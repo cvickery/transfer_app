@@ -1851,8 +1851,8 @@ def academic_plan(institution, plan, catalog_year):
   result = f'<h1>Program Requirements for {plan} at {cuny_institutions[institution]}</h1>'
   result += f'<p>DegreeWorks information as of {last_update}</p>'
   for row in cursor.fetchall():
-    start = row.period_start.strip('U').replace('-20', '-')
-    stop = row.period_stop.strip('U').replace('-20', '-')
+    start = row.period_start.strip('UG').replace('-20', '-')
+    stop = row.period_stop.strip('UG').replace('-20', '-')
     stop = re.sub('9{3,}', 'Now', stop)
     result += f'<h2>Academic Years {start} to {stop}</h2>'
     requirement_text = [line.replace('(CLOB)', '').strip()
