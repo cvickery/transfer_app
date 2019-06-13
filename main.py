@@ -1668,6 +1668,8 @@ def registered_programs(institution):
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   plan_cursor = conn.cursor()
+  dgw_conn = pgconnection('dbname=cuny_programs')
+  dgw_cursor = dgw_conn.cursor()
   try:
     cursor.execute("select update_date from updates where table_name='registered_programs'")
     update_date = date2str(cursor.fetchone().update_date)
@@ -1706,7 +1708,7 @@ def registered_programs(institution):
       if filename.startswith(institution.upper()):
         csv_link = f"""<p><button><a download href="/download_csv/{filename}">
                        Download {filename}</a></button>
-                       (<em>Does not include the “CUNY Program(s)” column &hellip; yet.</em>)</p>"""
+                       (<em>Does not include the “CUNY Program(s)” column.</em>)</p>"""
         break
     h1 = f'<h1>Registered Academic Programs for {institution_name}</h1>'
 
@@ -1759,9 +1761,24 @@ def registered_programs(institution):
         values[2] = fix_title(known_institutions[values[2]][1])
 
       # Insert list of all CUNY “plans” for this program code
-      plan_cursor.execute('select academic_plan from academic_plans where program_id = %s',
-                          (values[0],))
-      values.insert(6, ', '.join([p.academic_plan for p in plan_cursor.fetchall()]))
+      plan_cursor.execute('select * from academic_plans where program_id = %s', (values[0],))
+      plans = plan_cursor.fetchall()
+      # If there is a dgw requirement block for the plan, use link to it
+      plan_items = []
+      for plan in plans:
+        dgw_cursor.execute("""
+                           select *
+                             from requirement_blocks
+                            where institution = %s
+                              and block_value = %s
+                           """, (institution, plan.academic_plan))
+        if dgw_cursor.rowcount == 0:
+          plan_items.append(plan.academic_plan)
+        else:
+          plan_items.append('<a href="/academic_plan/{}/{}">{}</a>'
+                            .format(institution, plan.academic_plan, plan.academic_plan))
+      values.insert(6, ', '.join(plan_items))
+      dgw_cursor
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '\n'.join(data_rows)
@@ -1803,6 +1820,42 @@ def registered_programs(institution):
       {table}
 """
   return render_template('registered_programs.html', result=Markup(result))
+
+
+@app.route('/academic_plan/<institution>/<plan>/',
+           methods=['GET'],
+           defaults=({'catalog_year': 'current'}))
+def academic_plan(institution, plan, catalog_year):
+  conn = pgconnection('dbname=cuny_courses')
+  cursor = conn.cursor()
+  cursor.execute("""
+                 select distinct r.target_institution as inst, i.name
+                 from registered_programs r, institutions i
+                 where i.code = upper(r.target_institution||'01')
+                 order by i.name
+                 """)
+  cuny_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
+
+  conn = pgconnection('dbname=cuny_programs')
+  cursor = conn.cursor()
+
+  cursor.execute("""select *
+                      from requirement_blocks
+                     where institution = %s
+                       and block_value = %s
+                  order by period_start
+                  """, (institution, plan))
+  result = f'<h1>Program Requirements for {plan} at {cuny_institutions[institution]}</h1>'
+  for row in cursor.fetchall():
+    start = row.period_start.strip('U').replace('-20', '-')
+    stop = row.period_stop.strip('U').replace('-20', '-')
+    stop = re.sub('9{3,}', 'Now', stop)
+    result += f'<h2>Academic Years {start} to {stop}</h2>'
+    requirement_text = [line.replace('(CLOB)', '').strip()
+                        for line in row.requirement_text.splitlines()
+                        if line.strip() != '' and not line.lower().startswith('log:')]
+    result += f"<pre>{'<br>'.join(requirement_text)}</pre>"
+  return render_template('academic_program.html', result=Markup(result))
 
 
 @app.errorhandler(500)

@@ -5,6 +5,9 @@ import os
 import re
 import socket
 
+# This module was needed when the app was deployed to the Google Application Environment.
+# I've left that functionality, but commented it out, for historical reference.
+
 
 class pgconnection:
   """ Wrappers for psycopg2 connect() and cursor().
@@ -17,37 +20,37 @@ class pgconnection:
       The cursor will use the NamedTupleCursor cursor_factory unless overridden. It includes shims
       for operational connection functions (commit() and close()).
   """
-  def __init__(self, conn_str='dbname=cuny_courses'):
+  def __init__(self, conn_string='dbname=cuny_courses'):
     """ Connect to the database. Handles three cases:
         1. Development on local machine (local host, local user, standard port)
         2. Development using GAE database (local host, user postgres, proxy port)
         3. Deployed on GAE (cloud host, user postgres, standard port)
     """
     # Development on local machine using local db?
-    dbname = os.environ.get('USE_LOCAL_DB')
-    if dbname is not None:
-      self._connection = psycopg2.connect('dbname={}'.format(dbname))
-      return
+    # dbname = os.environ.get('USE_LOCAL_DB')
+    # if dbname is not None:
+    #   self._connection = psycopg2.connect('dbname={}'.format(dbname))
+    #   return
 
     # Connect to the Cloud db from either a development machine or from GAE.
     # Is proxy server running?
-    s = socket.socket()
-    try:
-      s.bind(('localhost', 5431))
-      # Port 5431 is available, so the proxy server is not running, which means we
-      # are running the app on GAE, and need to augment the connection string.
-      conn_str += """
-                  host=/cloudsql/provost-access-148820:us-east1:cuny-courses
-                  user=postgres
-                  password=cuny-postgres
-                  """
-    except OSError as e:
-      # Port 5431 is not available, so the proxy server must be running, which means
-      # we running the app locally, but using the Cloud db.
-      pass
-    s.close()
+    # s = socket.socket()
+    # try:
+    #   s.bind(('localhost', 5431))
+    #   # Port 5431 is available, so the proxy server is not running, which means we
+    #   # are running the app on GAE, and need to augment the connection string.
+    #   conn_str += """
+    #               host=/cloudsql/provost-access-148820:us-east1:cuny-courses
+    #               user=postgres
+    #               password=cuny-postgres
+    #               """
+    # except OSError as e:
+    #   # Port 5431 is not available, so the proxy server must be running, which means
+    #   # we running the app locally, but using the Cloud db.
+    #   pass
+    # s.close()
 
-    self._connection = psycopg2.connect(conn_str)
+    self._connection = psycopg2.connect(conn_string)
     return
 
   # Connection shims
