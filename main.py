@@ -1839,6 +1839,9 @@ def academic_plan(institution, plan, catalog_year):
   conn = pgconnection('dbname=cuny_programs')
   cursor = conn.cursor()
 
+  cursor.execute('select last_update from updates where institution = %s', (institution, ))
+  last_update = cursor.fetchone().last_update.strftime('%B %d, %Y')
+
   cursor.execute("""select *
                       from requirement_blocks
                      where institution = %s
@@ -1846,6 +1849,7 @@ def academic_plan(institution, plan, catalog_year):
                   order by period_start
                   """, (institution, plan))
   result = f'<h1>Program Requirements for {plan} at {cuny_institutions[institution]}</h1>'
+  result += f'<p>DegreeWorks information as of {last_update}</p>'
   for row in cursor.fetchall():
     start = row.period_start.strip('U').replace('-20', '-')
     stop = row.period_stop.strip('U').replace('-20', '-')
