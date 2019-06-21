@@ -8,3 +8,5 @@ client ID and secret.txt
 /gunicorn.pid
 
 /.gitignore
+
+/test_sendgrid.py
