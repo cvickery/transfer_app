@@ -941,7 +941,12 @@ def pending():
       <table>
         <tr><th>Rule</th><th>Type</th><th>Comment</th></tr>"""
     for review in reviews:
-      result += f"<tr><td>{review['rule_key']}</td><td>{review['event_type']}</td><td>{review['comment_text']}</td></tr>"
+      result += f"""
+                    <tr>
+                      <td>{review['rule_key']}</td>
+                      <td>{review['event_type']}</td>
+                      <td>{review['comment_text']}</td>
+                    </tr>"""
     result += '</table></details>'
   cursor.close()
   conn.close()
@@ -957,28 +962,37 @@ def pending():
 # CONFIRMATION PAGE
 # -------------------------------------------------------------------------------------------------
 # This is the handler for clicks in the confirmation email.
+# Notifications go to university_registrar, webmaster, and anyone identified with any sending or
+# receiving college in the covered rules.
 @app.route('/confirmation/<token>', methods=['GET'])
 def confirmation(token):
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
-  # Make sure the token is received and is in the pending table.
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
+  # Get list of colleges involved in the reviews
+  #
+  q = 'select * from person_roles where role'
+  # Make sure the token is received and is in the pending table.
+  msg = ''
   q = 'select * from pending_reviews where token = %s'
   cursor.execute(q, (token,))
-  rows = cursor.fetchall()
-  cursor.close()
-  conn.close()
-
-  msg = ''
-  if len(rows) == 0:
+  if cursor.rowcount == 0:
     msg = '<p class="error">This report has either expired or already been recorded.</p>'
-  elif len(rows) != 1:
-    msg = f'<p class="error">Program Error: {len(rows)} pending_reviews.</p>'
+  elif cursor.rowcount != 1:
+    msg = f'<p class="error">Program Error: {cursor.rowcount} pending_reviews.</p>'
   else:
-    msg = process_pending(rows[0])
-    # Notify the proper person that this review has been submitted
+    msg, colleges = process_pending(cursor.fetchone())
+    # Get list of people to notify
+    q = """ select * from person_roles
+            where role in ('cuny_registrar', 'webmaster')
+               or institution in ({})""".format(', '.join([f"'{c}'" for c in colleges]))
+    cursor.execute(q)
+    print('------------------')
+    print(cursor.fetchall())
+    # Notify the college people that these reviews have been submitted.
+    # Add University Registrar as Cc; Webmaster as Bcc
     notification_msg = {'personalizations': [{'to': [{'email': 'OUR@cuny.edu'}],
                                               'cc': [{'email': 'cvickery@qc.cuny.edu'}],
                                               'subject': 'Transfer Rule Evaluation Received'}],
@@ -988,9 +1002,14 @@ def confirmation(token):
                                      'value':
                                      msg.replace('/history', request.url_root + 'history')}]
                         }
-    response = send_email(notification_msg)
-    if response.status_code != 202:
-      msg += f'<p>Error sending notification: {response.body}</p>'
+    print('------------------')
+    print(notification_msg)
+    print('------------------')
+    # response = send_email(notification_msg)
+    # if response.status_code != 202:
+    #   msg += f'<p>Error sending notification: {response.body}</p>'
+  cursor.close()
+  conn.close()
 
   result = f"""
   <h1>Confirmation</h1>

@@ -8,6 +8,13 @@ from datetime import datetime
 from pgconnection import pgconnection
 from format_rules import format_rule
 from reviews_status_utils import abbr_to_bitmask, status_string
+from collections import namedtuple
+
+RuleKey = namedtuple('RuleKey', """ source_institution
+                                    destination_institution
+                                    subject_area
+                                    group_number
+                                """)
 
 
 def process_pending(row):
@@ -22,7 +29,11 @@ def process_pending(row):
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
+  institutions = set()
   for review in reviews:
+    key = RuleKey._make(review['rule_key'].split('-'))
+    institutions.add(key.source_institution)
+    institutions.add(key.destination_institution)
     cursor.execute("""
       select id, review_status
         from transfer_rules
@@ -30,7 +41,7 @@ def process_pending(row):
          and destination_institution = %s
          and subject_area = %s
          and group_number = %s
-      """, review['rule_key'].split('-'))
+      """, key)
     rule_id, old_status = cursor.fetchone()
     # Generate an event for this review
     q = """
@@ -73,6 +84,7 @@ def process_pending(row):
   suffix = 's'
   if len(reviews) == 1:
     suffix = ''
+  # Return summary as an html table, and the set of institutions affected.
   return """
   <p>Recorded {} review{} made by <em>{}</em> on {}.</p>
     <table>
@@ -87,4 +99,4 @@ def process_pending(row):
                suffix,
                email,
                when_entered.strftime('%B %d, %Y at %I:%M %p'),
-               summaries)
+               summaries), institutions
