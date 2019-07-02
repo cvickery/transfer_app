@@ -82,11 +82,13 @@ def process_pending(row):
   conn.close()
 
   suffix = 's'
+  have_has = 'have'
   if len(reviews) == 1:
     suffix = ''
+    have_has = 'has'
   # Return summary as an html table, and the set of institutions affected.
   return """
-  <p>Recorded {} review{} made by <em>{}</em> on {}.</p>
+  <p>The following {} transfer rule review{} {} been submitted by <em>{}</em> on {}.</p>
     <table>
       <tr>
         <th>Rule</th>
@@ -96,7 +98,7 @@ def process_pending(row):
       {}
     </table>
     """.format(len(reviews),
-               suffix,
+               suffix, have_has,
                email,
                when_entered.strftime('%B %d, %Y at %I:%M %p'),
                summaries), institutions

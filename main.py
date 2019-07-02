@@ -19,7 +19,7 @@ from collections import Counter
 
 from course_lookup import lookup_courses, lookup_course
 from mysession import MySession
-from sendtoken import send_token, send_email
+from sendemail import send_token, send_message
 from reviews import process_pending
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, \
@@ -989,25 +989,43 @@ def confirmation(token):
             where role in ('cuny_registrar', 'webmaster')
                or institution in ({})""".format(', '.join([f"'{c}'" for c in colleges]))
     cursor.execute(q)
-    print('------------------')
-    print(cursor.fetchall())
-    # Notify the college people that these reviews have been submitted.
-    # Add University Registrar as Cc; Webmaster as Bcc
-    notification_msg = {'personalizations': [{'to': [{'email': 'OUR@cuny.edu'}],
-                                              'cc': [{'email': 'cvickery@qc.cuny.edu'}],
-                                              'subject': 'Transfer Rule Evaluation Received'}],
-                        'from': {'email': 'cvickery@qc.cuny.edu',
-                                 'name': 'CUNY Transfer App'},
-                        'content': [{'type': 'text/html',
-                                     'value':
-                                     msg.replace('/history', request.url_root + 'history')}]
-                        }
-    print('------------------')
-    print(notification_msg)
-    print('------------------')
-    # response = send_email(notification_msg)
-    # if response.status_code != 202:
-    #   msg += f'<p>Error sending notification: {response.body}</p>'
+    to_people = set()
+    cc_people = set()
+    bc_people = set()
+    for person_role in cursor.fetchall():
+      if person_role.role == 'cuny_registrar':
+        cc_people.add(person_role)
+      elif person_role.role == 'webmaster':
+        bc_people.add(person_role)
+      else:
+        to_people.add(person_role)
+    to_list = [{'email': p.email, 'name': p.name} for p in to_people]
+    cc_list = [{'email': p.email, 'name': p.name} for p in cc_people]
+    bcc_list = [{'email': p.email, 'name': p.name} for p in bc_people]
+    try:
+     from_person = bc_people.pop()
+     from_addr = {'email': from_person.email, 'name': from_person.name}
+    except KeyError:
+      from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'}
+    html_body = msg.replace('/history', request.url_root + 'history')
+    # notification_msg = {'personalizations': [{'to': to_list,
+    #                                           'cc': cc_list,
+    #                                           'bcc': bc_list,
+    #                                           'subject': 'Transfer Rule Evaluation Received'}],
+    #                     'from': {'email': from_addr,
+    #                              'name': 'CUNY Transfer App'},
+    #                     'content': [{'type': 'text/html',
+    #                                  'value':
+    #                                  msg.replace('/history', request.url_root + 'history')}]
+    #                     }
+    response = send_message(to_list,
+                            from_addr,
+                            subject='Transfer Rule Evaluation Received',
+                            html_msg=html_body,
+                            cc_list=cc_list,
+                            bcc_list=bcc_list)
+    if response.status_code != 202:
+      msg += f'<p>Error sending notification: {response.body}</p>'
   cursor.close()
   conn.close()
 
@@ -1736,14 +1754,18 @@ def registered_programs(institution):
                 'Registration Office',
                 'Institution',
                 'Title',
+                """<a href="http://www.nysed.gov/college-university-evaluation/format-definitions">
+                   Formats</a>""",
                 'HEGIS',
                 'Award',
                 'CUNY Program(s)',
                 'Certificate or License',
                 'Accreditation',
-                'First Registration Date',
+                'First Reg. Date',
                 'Latest Reg. Action',
-                'TAP', 'APTS', 'VVTA']
+                '<span title="Tuition Assistance Program">TAP</span>',
+                '<span title="Aid for Part-Time Study">APTS</span>',
+                '<span title="Veteran’s Tuition Assistance">VVTA</span>']
     heading_row = '<tr>' + ''.join([f'<th>{head}</th>' for head in headings]) + '</tr>\n'
 
     # Generate the HTML table: data rows
@@ -1752,6 +1774,7 @@ def registered_programs(institution):
                           unit_code,
                           institution,
                           title,
+                          formats,
                           hegis,
                           award,
                           certificate_license,
@@ -1813,10 +1836,8 @@ def registered_programs(institution):
         </form>
       </div>
       <p>
-        <span id="submit-button">
-          <button type="submit" form="select-institution">Show Selected College</button>
-          or</span>
-          <button><a href="/">Return to Main Menu</a></button>
+          <button id="submit-button" type="submit" form="select-institution">
+          Show Selected College</button>
       </p>
       <div class="instructions">
         <p>
@@ -1824,16 +1845,18 @@ def registered_programs(institution):
           institutions and/or multiple awards.
         </p>
         <p>
-          Programs are registered either with either the Office of the Professions (OP) or the
+          The Registration Office is either the Office of the Professions (OP) or the
           Office of College and University Evaluation (OCUE).
         </p>
         <p>
-          The last three columns show financial aid eligibility.
+          The last three columns show financial aid eligibility. (Hover over the headings for
+          full names.)
         </p>
         <p>
           Latest NYS Department of Education access was {update_date}.
         </p>
         {csv_link}
+        <button><a href="/">Return to Main Menu</a></button>
       </div>
       <hr>
       {table}

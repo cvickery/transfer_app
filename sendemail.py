@@ -1,5 +1,15 @@
 import os
+
+from html2text import html2text
 from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Cc, Bcc, Content, MimeType
+
+""" This module sends email!
+
+    For now, it uses the SendGrid API and the SendGrid credentials that I set up, and which works
+    from any client, including when I am on a development machine that isn’t configured for sending
+    email. But the production implementation could use the native Python library.
+"""
 
 
 class Struct:
@@ -13,17 +23,37 @@ class Struct:
       self.__dict__.update(entries)
 
 
-def send_email(message):
+def send_message(to_list, from_addr, subject, html_msg, cc_list=None, bcc_list=None):
   """ Sent an email message using SendGrid.
-      The message object must include personalizations, subject, from, and content fields.
-      Personalizations is an array of recipients and subject lines.
-      See https://sendgrid.com/docs/for-developers/sending-email/personalizations/ for rationale.
+
+      THIS IS THE CODE THAT HAS TO CHANGE if not using SendGrid.
   """
   assert os.environ.get('SENDGRID_API_KEY') is not None, 'Email not configured'
   sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+
+  """ The SendGrid message object must include personalizations, subject, from, and content fields.
+      Personalizations is an array of recipients and subject lines.
+      See https://sendgrid.com/docs/for-developers/sending-email/personalizations/ for rationale.
+  """
+  # Build a SendGrid message object from the function arguments.
+  to_emails = [(person['email'], person['name']) for person in to_list]
+  sg_message = Mail(from_email=(from_addr['email'], from_addr['name']),
+                    to_emails=to_emails,
+                    subject=subject)
+  sg_message.content = [Content(MimeType.html, html_msg),
+                        Content(MimeType.text, html2text(html_msg))]
+  print('***To:', sg_message)
+  # if cc_list is not None:
+  #   sg_message.cc = [Cc(person['email'], person['name']) for person in cc_list]
+  #   print('*** Cc:', sg_message)
+  # if bcc_list is not None:
+  #   sg_message.bcc = [Bcc(person['email'], person['name']) for person in bcc_list]
+  #   print('*** Bcc:', sg_message)
+
   try:
-    response = sg.send(message)
+    response = sg.send(sg_message)
   except Exception as error:
+    print(str(error))
     return Struct(status_code='Failed', body=error)
   return response
 
@@ -33,7 +63,7 @@ def send_token(email, url, review_rows):
       reviewer.
   """
 
-  # Format the message body, depending on how many rules were reviewed
+  # Format the message body and subject line, depending on how many rules were reviewed
   suffix = 's'
   it_them = 'them'
   this_these = 'these'
@@ -42,7 +72,7 @@ def send_token(email, url, review_rows):
     suffix = ''
     it_them = 'it'
     this_these = 'this'
-
+  subject_line = f'Confirming your transfer rule review{suffix}'
   button_text = 'submit {} review{}'.format(this_these, suffix).title()
   html_body = f"""
   <p>
@@ -62,11 +92,7 @@ def send_token(email, url, review_rows):
   </h2>
   <p>This link will expire in 48 hours.</p>
   """
-  message = {'personalizations': [{'to': [{'email': email}],
-             'subject': f'Confirming your transfer rule review{suffix}'}],
-             'from': {'email': 'poffice@qc.cuny.edu',
-                      'name': 'CUNY Transfer App'},
-             'content': [{'type': 'text/html',
-                          'value': html_body}]
-             }
-  return send_email(message)
+  return send_message(to_list=[{'email': email, 'name': ''}],
+                      from_addr={'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'},
+                      subject=subject_line,
+                      html_msg=html_body)
