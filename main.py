@@ -1741,11 +1741,13 @@ def registered_programs(institution):
 
     # Link to the current csv file, if there is one.
     csv_dir = '../registered_programs/csv_files'
+    all_clause = '(<em>Does not include the “CUNY Program(s)” column.</em>)'
     for filename in os.listdir(csv_dir):
       if filename.startswith(institution.upper()):
+        if filename == 'all':
+          all_clause = ''
         csv_link = f"""<p><button><a download href="/download_csv/{filename}">
-                       Download {filename}</a></button>
-                       (<em>Does not include the “CUNY Program(s)” column.</em>)</p>"""
+                       Download {filename}</a></button>{all_clause}</p>"""
         break
     h1 = f'<h1>Registered Academic Programs for {institution_name}</h1>'
 
@@ -1766,7 +1768,8 @@ def registered_programs(institution):
                 '<span title="Tuition Assistance Program">TAP</span>',
                 '<span title="Aid for Part-Time Study">APTS</span>',
                 '<span title="Veteran’s Tuition Assistance">VVTA</span>']
-    heading_row = '<tr>' + ''.join([f'<th>{head}</th>' for head in headings]) + '</tr>\n'
+    heading_row = '<thead><tr>' + ''.join([f'<th>{head}</th>' for head in headings])
+    heading_row += '</tr></thead>\n'
 
     # Generate the HTML table: data rows
     if institution == 'all':
@@ -1825,7 +1828,7 @@ def registered_programs(institution):
       dgw_cursor
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
-    table_rows = heading_row + '\n'.join(data_rows)
+    table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
     table = f"<table>{table_rows}</table>"
   result = f"""
       {h1}

@@ -29,6 +29,16 @@ th {
 .variant {
   background-color: #fef;
 }
+/*
+They should make table bodies scrollable
+thead, tbody {
+  display:block;
+}
+tbody {
+  overflow-y:auto;
+  height: 500px;
+}
+*/
 
 div {
   max-width:30em;
