@@ -1004,7 +1004,7 @@ def confirmation(token):
     bcc_list = [{'email': p.email, 'name': p.name} for p in bc_people]
     try:
      from_person = bc_people.pop()
-     from_addr = {'email': from_person.email, 'name': from_person.name}
+     from_addr = {'email': from_person.email, 'name': 'CUNY Transfer App'}
     except KeyError:
       from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'}
     html_body = msg.replace('/history', request.url_root + 'history')
@@ -1025,7 +1025,7 @@ def confirmation(token):
                             cc_list=cc_list,
                             bcc_list=bcc_list)
     if response.status_code != 202:
-      msg += f'<p>Error sending notification: {response.body}</p>'
+      msg += f'<p>Error sending notifications: {response.body}</p>'
   cursor.close()
   conn.close()
 
@@ -1728,9 +1728,9 @@ def registered_programs(institution):
     return render_template('registered_programs.html', result=Markup(result))
 
   cuny_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
+  cuny_institutions['all'] = 'All CUNY Colleges'
   options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]}</option>'
                       for inst in cuny_institutions])
-
   csv_link = ''
   if institution is None or institution not in cuny_institutions.keys():
     h1 = '<h1>Select a CUNY College</h1>'
@@ -1769,6 +1769,8 @@ def registered_programs(institution):
     heading_row = '<tr>' + ''.join([f'<th>{head}</th>' for head in headings]) + '</tr>\n'
 
     # Generate the HTML table: data rows
+    if institution == 'all':
+      institution = ''  # regex will match all values
     cursor.execute("""
                    select program_code,
                           unit_code,
@@ -1784,7 +1786,7 @@ def registered_programs(institution):
                           tap, apts, vvta,
                           is_variant
                    from registered_programs
-                   where target_institution = %s
+                   where target_institution ~ %s
                    order by program_code, title
                    """, (institution,))
     data_rows = []

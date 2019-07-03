@@ -2,7 +2,6 @@ import os
 
 from html2text import html2text
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail, Cc, Bcc, Content, MimeType
 
 """ This module sends email!
 
@@ -36,24 +35,26 @@ def send_message(to_list, from_addr, subject, html_msg, cc_list=None, bcc_list=N
       See https://sendgrid.com/docs/for-developers/sending-email/personalizations/ for rationale.
   """
   # Build a SendGrid message object from the function arguments.
-  to_emails = [(person['email'], person['name']) for person in to_list]
-  sg_message = Mail(from_email=(from_addr['email'], from_addr['name']),
-                    to_emails=to_emails,
-                    subject=subject)
-  sg_message.content = [Content(MimeType.html, html_msg),
-                        Content(MimeType.text, html2text(html_msg))]
-  print('***To:', sg_message)
-  # if cc_list is not None:
-  #   sg_message.cc = [Cc(person['email'], person['name']) for person in cc_list]
-  #   print('*** Cc:', sg_message)
-  # if bcc_list is not None:
-  #   sg_message.bcc = [Bcc(person['email'], person['name']) for person in bcc_list]
-  #   print('*** Bcc:', sg_message)
-
+  to_emails = [{'email': person['email'], 'name': person['name']} for person in to_list]
+  sg_message = {'personalizations': [{'to': to_emails,
+                                     'subject': subject}],
+                'from': from_addr,
+                'content': [{'type': 'text/plain', 'value': html2text(html_msg)},
+                            {'type': 'text/html', 'value': html_msg}]}
+  if cc_list is not None:
+    sg_message['personalizations'][0]['cc'] = [{'email': person['email'],
+                                                'name': person['name']} for person in cc_list]
+  if bcc_list is not None:
+    sg_message['personalizations'][0]['bcc'] = [{'email': person['email'],
+                                                 'name': person['name']} for person in bcc_list]
+  print('*** Personalizations:\n', sg_message['personalizations'])
+  print('*** From:\n', sg_message['from'])
+  print('*** Content\n', sg_message['content'])
   try:
     response = sg.send(sg_message)
   except Exception as error:
     print(str(error))
+    print('*** Message:\n', sg_message)
     return Struct(status_code='Failed', body=error)
   return response
 
