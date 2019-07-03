@@ -27,6 +27,14 @@ h2 {
   margin: 0 auto;
 }
 
+a {
+  text-decoration: none;
+}
+a:hover {
+  color:#eff;
+  background-color: #333;
+  padding:0.25em;
+}
 dl {
   margin: 1em;
   padding: 0.5em;
@@ -34,6 +42,10 @@ dl {
   border-radius: 0.25em;
   background-color:white;
   max-width:40em;
+}
+dt {
+  font-size:1.1em;
+  font-weight:bold;
 }
 dd {
   margin: 0.5em;
