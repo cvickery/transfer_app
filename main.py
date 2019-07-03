@@ -1741,13 +1741,13 @@ def registered_programs(institution):
 
     # Link to the current csv file, if there is one.
     csv_dir = '../registered_programs/csv_files'
-    all_clause = '(<em>Does not include the “CUNY Program(s)” column.</em>)'
+    all_clause = ' (<em>Does not include the “CUNY Program(s)” column.</em>)'
     for filename in os.listdir(csv_dir):
       if filename.startswith(institution.upper()):
-        if filename == 'all':
+        if institution == 'all':
           all_clause = ''
-        csv_link = f"""<p><button><a download href="/download_csv/{filename}">
-                       Download {filename}</a></button>{all_clause}</p>"""
+        csv_link = f"""<button><a download href="/download_csv/{filename}">
+                       Download {filename}</a></button>{all_clause}<br/>"""
         break
     h1 = f'<h1>Registered Academic Programs for {institution_name}</h1>'
 
@@ -1860,8 +1860,10 @@ def registered_programs(institution):
         <p>
           Latest NYS Department of Education access was {update_date}.
         </p>
-        {csv_link}
-        <button><a href="/">Return to Main Menu</a></button>
+        <p>
+          {csv_link}
+          <button><a href="/">Return to Main Menu</a></button>
+        </p>
       </div>
       <hr>
       {table}
