@@ -83,9 +83,13 @@ def process_pending(row):
 
   suffix = 's'
   have_has = 'have'
-  if len(reviews) == 1:
+  num_reviews = len(reviews)
+  if num_reviews == 1:
     suffix = ''
     have_has = 'has'
+  if num_reviews < 13:
+    num_reviews = ['', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+                   'eleven', 'twelve'][num_reviews - 1]
   # Return summary as an html table, and the set of institutions affected.
   return """
   <p>The following {} transfer rule review{} {} been submitted by <em>{}</em> on {}.</p>
@@ -97,7 +101,7 @@ def process_pending(row):
       </tr>
       {}
     </table>
-    """.format(len(reviews),
+    """.format(num_reviews,
                suffix, have_has,
                email,
                when_entered.strftime('%B %d, %Y at %I:%M %p'),
