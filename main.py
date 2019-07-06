@@ -822,8 +822,8 @@ def do_form_3(request, session):
     if len(kept_reviews) > 1:
       num_reviews = len(kept_reviews)
       if num_reviews < 13:
-        num_reviews = ['two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-                       'eleven', 'twelve'][num_reviews - 2]
+        num_reviews = ['', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+                       'eleven', 'twelve'][num_reviews - 1]
       message_tail = '{} reviews'.format(num_reviews)
 
     # Insert these reviews into the pending_reviews table of the db.
@@ -1007,17 +1007,14 @@ def confirmation(token):
      from_addr = {'email': from_person.email, 'name': 'CUNY Transfer App'}
     except KeyError:
       from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'}
-    html_body = msg.replace('/history', request.url_root + 'history')
-    # notification_msg = {'personalizations': [{'to': to_list,
-    #                                           'cc': cc_list,
-    #                                           'bcc': bc_list,
-    #                                           'subject': 'Transfer Rule Evaluation Received'}],
-    #                     'from': {'email': from_addr,
-    #                              'name': 'CUNY Transfer App'},
-    #                     'content': [{'type': 'text/html',
-    #                                  'value':
-    #                                  msg.replace('/history', request.url_root + 'history')}]
-    #                     }
+    html_body = """ <style>
+                      table {border-collapse: collapse;}
+                      td, th {
+                        border: 1px solid blue;
+                        padding:0.25em;
+                      }
+                    </style>
+                """ + msg.replace('/history', request.url_root + 'history')
     response = send_message(to_list,
                             from_addr,
                             subject='Transfer Rule Evaluation Received',
@@ -1676,6 +1673,7 @@ def courses():
   cursor.close()
   conn.close()
   return render_template('courses.html', result=Markup(result))
+
 
 # REGISTERED PROGRAMS PAGE
 # =================================================================================================

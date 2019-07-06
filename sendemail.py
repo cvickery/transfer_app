@@ -2,7 +2,7 @@ import os
 
 from html2text import html2text
 from sendgrid import SendGridAPIClient
-from pprint import pprint
+
 """ This module sends email!
 
     For now, it uses the SendGrid API and the SendGrid credentials that I set up, and which works
@@ -52,7 +52,6 @@ def send_message(to_list, from_addr, subject, html_msg, cc_list=None, bcc_list=N
     assert type(bcc_list) is list
     sg_message['personalizations'][0]['bcc'] = [{'email': person['email'],
                                                  'name': person['name']} for person in bcc_list]
-  pprint(sg_message)
   try:
     response = sg.send(sg_message)
   except Exception as error:
