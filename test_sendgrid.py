@@ -3,8 +3,17 @@ import os
 from pprint import pprint
 from sendgrid import SendGridAPIClient
 
-message = {'personalizations': [{'to': [{'email': 'cvickery@qc.cuny.edu',
-                                         'name': 'Test Recipient'}],
+import psycopg2
+from psycopg2.extras import NamedTupleCursor
+
+conn = psycopg2.connect('dbname=cuny_courses')
+cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+cursor.execute('select * from person_roles')
+people = dict()
+for person in cursor.fetchall():
+  people[person.role] = {'name': person.name, 'email': person.email}
+
+message = {'personalizations': [{'to': [people['webmaster']],
                                  # 'cc': [{'email': 'cvickery@gmail.com',
                                  #        'name': 'Test at Google'},
                                  #        {'name': 'CC Tester',
@@ -29,7 +38,6 @@ def send_message(message):
     print(response.headers)
   except Exception as e:
     print(e)
-
 # $ test_sendgrid.py
 # {'content': [{'type': 'text/plain', 'value': 'Don’t worry at all.'},
 #              {'type': 'text/html',
@@ -154,7 +162,7 @@ td, th {
 </style>
   </head>
   <body>
-<p>The following 1 transfer rule review has been submitted by <em>cvickery@qc.cuny.edu</em> on July 03, 2019 at 06:17 PM.</p>
+<p>The following transfer rule review has been submitted by <em>cvickery@qc.cuny.edu</em> on July 03, 2019 at 06:17 PM.</p>
     <table>
       <tr>
         <th>Rule</th>
@@ -172,11 +180,11 @@ td, th {
 """
 
 if __name__ == '__main__':
-  message['personalizations'][0]['cc'] = [{'email': 'cvickery@gmail.com',
-                                           'name': 'Test at Google'},
-                                          {'name': 'Test at QC',
-                                           'email': 'christopher.vickery@qc.cuny.edu'}]
-  message['personalizations'][0]['bcc'] = [{'email': 'poffice@qc.cuny.edu', 'name': 'QC Provost'}]
-  message['content'][1] = {'type': 'text/html', 'value': html_value}
+  # message['personalizations'][0]['cc'] = [{'email': 'cvickery@gmail.com',
+  #                                          'name': 'Test at Google'},
+  #                                         {'name': 'Test at QC',
+  #                                          'email': 'christopher.vickery@qc.cuny.edu'}]
+  # message['personalizations'][0]['bcc'] = [{'email': 'poffice@qc.cuny.edu', 'name': 'QC Provost'}]
+  # message['content'][1] = {'type': 'text/html', 'value': html_value}
   pprint(message)
   send_message(message)
