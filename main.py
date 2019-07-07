@@ -1007,14 +1007,15 @@ def confirmation(token):
      from_addr = {'email': from_person.email, 'name': 'CUNY Transfer App'}
     except KeyError:
       from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'}
-    html_body = """ <style>
+    # Embed the html table in a complete web page
+    html_body = """ <html><head><style>
                       table {border-collapse: collapse;}
                       td, th {
                         border: 1px solid blue;
                         padding:0.25em;
                       }
-                    </style>
-                """ + msg.replace('/history', request.url_root + 'history')
+                    </style></head><body>
+                """ + msg.replace('/history', request.url_root + 'history') + '</body></html>'
     response = send_message(to_list,
                             from_addr,
                             subject='Transfer Rule Evaluation Received',
