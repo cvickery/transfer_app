@@ -39,19 +39,37 @@ def send_message(to_list, from_addr, subject, html_msg, cc_list=None, bcc_list=N
       See https://sendgrid.com/docs/for-developers/sending-email/personalizations/ for rationale.
   """
   # Build a SendGrid message object from the function arguments.
+  # Apparently, SendGrid chokes if the same email address appears more than once in the To, Cc, or
+  # Bcc lists, so first analyze those lists and remove duplicates.
+  unique_set = set()
+  for person in to_list:
+    if person['email'].lower() in unique_set:
+      to_emails.remove(person)
+    else:
+      unique_set.add(person['email'].lower())
   to_emails = [{'email': person['email'], 'name': person['name']} for person in to_list]
   sg_message = {'personalizations': [{'to': to_emails, 'subject': subject}],
                 'from': from_addr,
                 'content': [{'type': 'text/plain', 'value': html2text(html_msg)},
                             {'type': 'text/html', 'value': html_msg}]}
   if cc_list is not None:
-    assert type(cc_list) is list
-    sg_message['personalizations'][0]['cc'] = [{'email': person['email'],
-                                                'name': person['name']} for person in cc_list]
+    for person in cc_list:
+      if person['email'].lower() in unique_set:
+        cc_list.remove(person)
+      else:
+        unique_set.add(person['email'].lower())
+    if len(cc_list) > 0:
+      sg_message['personalizations'][0]['cc'] = [{'email': person['email'],
+                                                  'name': person['name']} for person in cc_list]
   if bcc_list is not None:
-    assert type(bcc_list) is list
-    sg_message['personalizations'][0]['bcc'] = [{'email': person['email'],
-                                                 'name': person['name']} for person in bcc_list]
+    for person in cc_list:
+      if person['email'].tolower() in unique_set:
+        bcc_list.remove(person)
+      else:
+        unique_set.add(person['email'].lower())
+    if len(bcc_list) > 0:
+      sg_message['personalizations'][0]['bcc'] = [{'email': person['email'],
+                                                   'name': person['name']} for person in bcc_list]
   try:
     response = sg.send(sg_message)
   except Exception as error:
