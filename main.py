@@ -1648,31 +1648,32 @@ def courses():
 
   if num_active_courses == 0:
     # No courses yet (bogus or missing institution): prompt user to select an institution
-    prompt = """
-    <h1>List Active Courses</h1><p>Pick a college and say “Please”.</p>
+    result = """
+    <h1>List Active Courses</h1>
+    <p id="need-js" class="error">This app requires JavaScript.</p>
+    <p>Pick a college and say “Please”.</p>
+    <form method="post" action="#">
     <fieldset><legend>Select a College</legend>"""
     cursor.execute("select * from institutions order by code")
     n = 0
+    college_list = ''
     for row in cursor:
       n += 1
-      prompt = prompt + """
+      college_list += """
       <div class='institution-select'>
-        <input type="radio" name="inst" id="inst-{}" value="{}">
+        <input type="radio" name="inst" id="inst-{}" value="{}"/>
         <label for="inst-{}">{}</label>
       </div>
       """.format(n, row.code, n, row.name)
-    result = """
-    <p id="need-js" class="error">This app requires JavaScript.</p>
-    <form method="post" action="#">
-      {}
+    cursor.close()
+    conn.close()
+    result += f"""
+      {college_list}
       <div>
-        <button type="submit">Please
-        </button>
+        <button type="submit">Please</button>
       </div>
-    </form></fieldset>
-    """.format(prompt)
-  cursor.close()
-  conn.close()
+    </fieldset></form>
+    """
   return render_template('courses.html', result=Markup(result))
 
 

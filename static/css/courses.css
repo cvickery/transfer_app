@@ -19,15 +19,16 @@ p+ul {
   font-variant: small-caps;
 }
 
-button {
+button, a.button {
+    border: 1px solid #999;
+    border-radius: 0.25em;
+    text-decoration: none;
     background-color: white;
+    color: black;
     font-size: 0.8em;
     padding: 0.5em;
     margin: 1em;
-}
-
-a.button {
-  appearance: button;
+    appearance: button;
 }
 
 fieldset {
