@@ -1089,7 +1089,7 @@ def map_courses():
         courses at other institutions (<em>receiving rules</em>).
       </p>
     </details>
-    <form action="" method="POST">
+    <form action="." method="POST">
       <fieldset><legend>Which Courses</legend>
         <h2>
           Select one or more of the following groups of courses.
@@ -1142,7 +1142,7 @@ def map_courses():
           <input  type="checkbox"
                   id="associates"
                   name="which-colleges"
-                  value="assocociates"
+                  value="associates"
                   checked>
           <label for="associates" class="radio-label">Include Associates Degree Colleges</label>
           <input  type="checkbox"
@@ -1150,7 +1150,7 @@ def map_courses():
                   name="which-colleges"
                   value="bachelors"
                   checked>
-          <label for="bachelors" class="radio-label"">Include Bachelor’s Degree Colleges</label>
+          <label for="bachelors" class="radio-label">Include Bachelor’s Degree Colleges</label>
       </fieldset>
     </form>
   </div>
@@ -1202,7 +1202,7 @@ def map_courses():
     <table id="transfers-map-table">
     </table>
     <div>
-      <a href="/"><button>main menu</button></a>
+      <a href="/" class="button">main menu</a>
       <button id="show-setup">change courses or direction</button>
     </div>
   </div>

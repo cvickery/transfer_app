@@ -79,9 +79,10 @@ button {
   background-color:#fff;
 }
 
-a {
+a.button {
   text-decoration: none;
   font-variant: small-caps;
+  appearance: button;
 }
 
 #transfers-map-table {
