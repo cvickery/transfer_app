@@ -1669,7 +1669,7 @@ def courses():
         <button type="submit">Please
         </button>
       </div>
-    <form>
+    </form></fieldset>
     """.format(prompt)
   cursor.close()
   conn.close()

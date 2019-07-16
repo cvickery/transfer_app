@@ -26,6 +26,9 @@ button {
     margin: 1em;
 }
 
+a.button {
+  appearance: button;
+}
 
 fieldset {
     border-radius:0.5em;
