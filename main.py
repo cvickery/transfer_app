@@ -304,7 +304,7 @@ def do_form_0(request, session):
       </p>
     </details>
     <fieldset>
-      <form method="post" action="" id="form-1">
+      <form method="post" action="#" id="form-1">
           {}
           {}
         <fieldset>
@@ -330,7 +330,7 @@ def do_form_0(request, session):
         </fieldset>
       </form>
     </fieldset>
-    <p><button><a href="/">Main Menu</a></button></p>
+    <p><a href="/" class="button">Main Menu</a></p>
     <div id="update-info">
       <p><sup>&dagger;</sup>Catalog information last updated {}</p>
       <p>Transfer rules information last updated {}</p>
@@ -590,8 +590,8 @@ def do_form_1(request, session):
     The next step will show all transfer rules for courses in the corresponding pairs of
     disciplines.<br/>
   </details>
-  <form method="post" action="" id="form-2">
-    <a href="/" class="restart">Main Menu</a>
+  <form method="post" action="#" id="form-2">
+    <a href="/" class="restart button">Main Menu</a>
     <a href="/review_rules" class="restart">Restart</a>
     <button type="submit">Next</button>
     <input type="hidden" name="next-function" value="do_form_2" />
@@ -645,10 +645,10 @@ def do_form_2(request, session):
     return render_template('review_rules.html', result=Markup("""
                                                            <h1>Session Expired</h1>
                                                            <p>
-                                                             <a href="/">
-                                                                <button>Main Menu</button></a>
+                                                             <a href="/" class="button">
+                                                                Main Menu</a>
                                                              <a href="/review_rules"
-                                                                  class="restart">Restart
+                                                                  class="restart button">Restart
                                                               </a>
                                                            </p>
 
@@ -788,15 +788,15 @@ def do_form_2(request, session):
       Click on a rule to review it.<br/>
     </details>
     <p>
-      <a href="/"><button>Main Menu</button></a>
-      <a href="/review_rules" class="restart">Restart</a>
+      <a href="/" class="button">Main Menu</a>
+      <a href="/review_rules" class="restart button">Restart</a>
     </p>
     <fieldset id="verification-fieldset"><legend>Review Reviews</legend>
         <p id="num-pending">You have not reviewed any transfer rules yet.</p>
         <button type="text" id="send-email" disabled="disabled">
         Review Your Reviews
       </button>
-      <form method="post" action="" id="review-form">
+      <form method="post" action="#" id="review-form">
         Waiting for rules to finish loading ...
       </form>
     </fieldset>
@@ -899,7 +899,7 @@ def do_form_3(request, session):
       <p>
         Thank you for your work!
       </p>
-      <a href="/"><button>Main Menu</button></a>
+      <a href="/" class="button">Main Menu</a>
       <a href="/review_rules" class="restart">Restart</a>
 
       """.format(email, message_tail)
@@ -953,8 +953,8 @@ def pending():
 
   result += """
   <p>
-    <a href="/"><button>main menu</button></a>
-    <a href="/review_rules"><button>Review Transfer Rules</button></a>
+    <a href="/" class="button">Main Menu</a>
+    <a href="/review_rules" class="button">Review Transfer Rules</a>
   </p>"""
   return render_template('review_rules.html', result=Markup(result))
 
@@ -1089,7 +1089,7 @@ def map_courses():
         courses at other institutions (<em>receiving rules</em>).
       </p>
     </details>
-    <form action="." method="POST">
+    <form action="#" method="POST">
       <fieldset><legend>Which Courses</legend>
         <h2>
           Select one or more of the following groups of courses.
@@ -1663,7 +1663,7 @@ def courses():
       """.format(n, row.code, n, row.name)
     result = """
     <p id="need-js" class="error">This app requires JavaScript.</p>
-    <form method="post" action="">
+    <form method="post" action="#">
       {}
       <div>
         <button type="submit">Please
@@ -1861,7 +1861,7 @@ def registered_programs(institution):
         </p>
         <p>
           {csv_link}
-          <button><a href="/">Return to Main Menu</a></button>
+          <a href="/" class="button">Return to Main Menu</a>
         </p>
       </div>
       <hr>

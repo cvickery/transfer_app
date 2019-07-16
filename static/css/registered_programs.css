@@ -71,13 +71,13 @@ button {
   border-radius:0.25em;
 }
 
-button a {
+button a.button {
   display:block;
   color:#333;
   text-decoration:none;
 }
 
-button:hover, button>a:hover {
+button:hover, .button:hover {
   cursor:pointer;
   color:white;
   background-color: #666;

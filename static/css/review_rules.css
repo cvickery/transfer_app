@@ -47,7 +47,7 @@ h2 {
   margin: 0 auto;
 }
 
-button, .restart {
+button, .restart, a.button {
     border: 1px solid #999;
     border-radius: 0.25em;
     text-decoration: none;
@@ -55,6 +55,10 @@ button, .restart {
     color: black;
     font-size: 0.8em;
     padding: 0.5em;
+}
+
+a.button {
+  appearance: button;
 }
 
 #submit-form-1 {
