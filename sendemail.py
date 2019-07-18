@@ -129,18 +129,30 @@ def send_token(email, url, review_rows):
 # Command Line Interface
 # =================================================================================================
 
+class ParseError(Exception):
+  """Malformed email addresses raise this one.
+  """
+  def __init__(self, expression, message):
+    self.expression = expression
+    self.message = message
+
+  def __str__(self):
+    return f'{self.__class__.__name__}: {self.expression}: {self.message}'
+
+
 def parse_addr_str(str, strict=False):
   """ Extract display_name, username and domain from a string.
-      Return None, , or an object with email and, if available, name fields.
+      Return a dict with email and name fields.
+      If str is malformed, raise ParseError if strict; otherwise return None
   """
   m = re.search(r'^\s*(<.+>)?\s*(\S+)@(\S+)\s*$', str)
   if m is None:
     if strict:
-      exit(f'parse_addr_str: {str} is not a valid email string')
+      raise ParseError(str, 'invalid email string')
     return None
   email = f'{m[2]}@{m[3]}'
   if m[1] is None:
-    return {'email': email}
+    return {'email': email, 'name': email.title().replace('.', ' ')}
   else:
     return {'email': email, 'name': m[1].strip('> <')}
 
@@ -168,22 +180,26 @@ if __name__ == '__main__':
   whoami = f'{parser.prog} error:'
 
   # Be sure sender and all recipients are valid
-  from_addr = parse_addr_str(args.from_addr, strict=True)
-  if from_addr is None:
-    exit(f'{whoami} “{args.from_addr}” is not a valid return address')
-  if args.reply_addr is not None:
-    reply_addr = parse_addr_str(args.reply_addr, strict=True)
-  else:
-    reply_addr = None
-  to_list = [parse_addr_str(person, strict=True) for person in args.to_addr]
-  if args.cc_addr is None:
-    cc_list = None
-  else:
-    cc_list = [parse_addr_str(person) for person in args.cc_addr]
-  if args.bcc_addr is None:
-    bcc_list = None
-  else:
-    bcc_list = [parse_addr_str(person) for person in args.bcc_addr]
+  try:
+    from_addr = parse_addr_str(args.from_addr, strict=True)
+    if from_addr is None:
+      exit(f'{whoami} “{args.from_addr}” is not a valid return address')
+    if args.reply_addr is not None:
+      reply_addr = parse_addr_str(args.reply_addr, strict=True)
+    else:
+      reply_addr = None
+    to_list = [parse_addr_str(person, strict=True) for person in args.to_addr]
+    if args.cc_addr is None:
+      cc_list = None
+    else:
+      cc_list = [parse_addr_str(person) for person in args.cc_addr]
+    if args.bcc_addr is None:
+      bcc_list = None
+    else:
+      bcc_list = [parse_addr_str(person) for person in args.bcc_addr]
+  except ParseError as err:
+    print(err)
+    exit(1)
 
   # Read plain text body from stdin if no files specified
   if args.html_file is None and args.text_file is None:
