@@ -1,7 +1,12 @@
+#! /usr/local/bin/python3
 import os
+import re
+import argparse
 
 from html2text import html2text
 from sendgrid import SendGridAPIClient
+
+from pprint import pprint
 
 """ This module sends email!
 
@@ -22,22 +27,25 @@ class Struct:
       self.__dict__.update(entries)
 
 
-def send_message(to_list, from_addr, subject, html_msg, cc_list=None, bcc_list=None):
+# **************** THIS IS THE CODE THAT HAS TO CHANGE IF NOT USING SENDGRID ***********************
+def send_message(to_list, from_addr, subject, html_msg,
+                 text_msg=None, cc_list=None, bcc_list=None, reply_addr=None):
   """ Sent an email message using SendGrid.
-
-      THIS IS THE CODE THAT HAS TO CHANGE if not using SendGrid.
   """
   assert os.environ.get('SENDGRID_API_KEY') is not None, 'Email not configured'
   sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-  assert type(to_list) is list
-  assert type(from_addr) is dict
-  assert type(subject) is str
-  assert type(html_msg) is str
-
+  assert type(to_list) is list, f'send_message: to_list ({to_list}) is not a list'
+  assert type(from_addr) is dict, f'send_message: from_addr ({from_addr}) is not a dict'
+  assert type(subject) is str, f'send_message: subject ({subject}) is not a string'
+  assert type(html_msg) is str, f'send_message: html_msg ({html_msg}) is not a string'
   """ The SendGrid message object must include personalizations, subject, from, and content fields.
       Personalizations is an array of recipients and subject lines.
       See https://sendgrid.com/docs/for-developers/sending-email/personalizations/ for rationale.
   """
+  # Plain text is optional: generate it if not provided
+  if text_msg is None:
+    text_msg = html2text(html_msg)
+
   # Build a SendGrid message object from the function arguments.
   # Apparently, SendGrid chokes if the same email address appears more than once in the To, Cc, or
   # Bcc lists, so first analyze those lists and remove duplicates.
@@ -47,11 +55,12 @@ def send_message(to_list, from_addr, subject, html_msg, cc_list=None, bcc_list=N
       to_emails.remove(person)
     else:
       unique_set.add(person['email'].lower())
-  to_emails = [{'email': person['email'], 'name': person['name']} for person in to_list]
-  sg_message = {'personalizations': [{'to': to_emails, 'subject': subject}],
+  sg_message = {'personalizations': [{'to': to_list, 'subject': subject}],
                 'from': from_addr,
-                'content': [{'type': 'text/plain', 'value': html2text(html_msg)},
+                'content': [{'type': 'text/plain', 'value': text_msg},
                             {'type': 'text/html', 'value': html_msg}]}
+  if reply_addr is not None:
+    sg_message['reply_to'] = reply_addr
   if cc_list is not None:
     for person in cc_list:
       if person['email'].lower() in unique_set:
@@ -115,3 +124,100 @@ def send_token(email, url, review_rows):
                       from_addr={'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'},
                       subject=subject_line,
                       html_msg=html_body)
+
+
+# Command Line Interface
+# =================================================================================================
+
+def parse_addr_str(str, strict=False):
+  """ Extract display_name, username and domain from a string.
+      Return None, , or an object with email and, if available, name fields.
+  """
+  m = re.search(r'^\s*(<.+>)?\s*(\S+)@(\S+)\s*$', str)
+  if m is None:
+    if strict:
+      exit(f'parse_addr_str: {str} is not a valid email string')
+    return None
+  email = f'{m[2]}@{m[3]}'
+  if m[1] is None:
+    return {'email': email}
+  else:
+    return {'email': email, 'name': m[1].strip('> <')}
+
+
+if __name__ == '__main__':
+  """ Use the same arguments as mail.py, but send using the mail service (SendGrid) implemented
+      above.
+  """
+  parser = argparse.ArgumentParser(description='Commandline interface to sendmail.py',
+                                   add_help=False)
+  parser.add_argument('-?', '--help', action='help')
+  parser.add_argument('-s', '--subject', default='Test Message')
+  parser.add_argument('-c', '--cc_addr', nargs='+')
+  parser.add_argument('-b', '--bcc_addr', nargs='+')
+  parser.add_argument('-r', '--reply_addr')
+  parser.add_argument('-h', '--html_file', type=argparse.FileType('r'))
+  parser.add_argument('-t', '--text_file', type=argparse.FileType('r'))
+  parser.add_argument('-d', '--debug', type=int, default=0)
+  parser.add_argument('-f', '--from_addr',
+                      default=f"<{os.getenv('USER')}> {os.getenv('USER')}@{os.getenv('HOSTNAME')}")
+  parser.add_argument('to_addr', nargs='+')
+  args = parser.parse_args()
+
+  # Prefix for error reporting
+  whoami = f'{parser.prog} error:'
+
+  # Be sure sender and all recipients are valid
+  from_addr = parse_addr_str(args.from_addr, strict=True)
+  if from_addr is None:
+    exit(f'{whoami} “{args.from_addr}” is not a valid return address')
+  if args.reply_addr is not None:
+    reply_addr = parse_addr_str(args.reply_addr, strict=True)
+  else:
+    reply_addr = None
+  to_list = [parse_addr_str(person, strict=True) for person in args.to_addr]
+  if args.cc_addr is None:
+    cc_list = None
+  else:
+    cc_list = [parse_addr_str(person) for person in args.cc_addr]
+  if args.bcc_addr is None:
+    bcc_list = None
+  else:
+    bcc_list = [parse_addr_str(person) for person in args.bcc_addr]
+
+  # Read plain text body from stdin if no files specified
+  if args.html_file is None and args.text_file is None:
+    text_body = ''
+    while True:
+        try:
+            line = input()
+        except EOFError:
+            break
+        if not line:
+            break
+        text_body += line + '\n'
+
+  # Plain text part
+  if args.text_file is not None:
+    text_body = args.text_file.read()
+
+  # HTML part
+  if args.html_file is not None:
+    html_body = args.html_file.read()
+  else:
+    html_body = f'<pre>{text_body}</pre>'
+
+  # Send the message
+  try:
+    send_message(to_list,
+                 from_addr,
+                 args.subject,
+                 html_body,
+                 text_body,
+                 cc_list,
+                 bcc_list,
+                 reply_addr)
+  except Exception as e:
+    exit(f'{whoami} sending failed: {e}')
+
+  exit(0)
