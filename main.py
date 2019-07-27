@@ -1714,9 +1714,9 @@ def registered_programs(institution):
     update_date = '<em>None (or in progress)</em>'
   try:
     dgw_cursor.execute("select last_update from updates where institution = %s", (institution, ))
-    dgw_update_date = date2str(str(dgw_cursor.fetchone().last_update))
+    dgw_update_date = 'latest update was ' + date2str(str(dgw_cursor.fetchone().last_update))
   except (KeyError, ValueError, AttributeError) as e:
-    dgw_update_date = 'None'
+    dgw_update_date = 'not available (or not shown for “all” CUNY Colleges)'
   # Find out what CUNY colleges are in the db
   cursor.execute("""
                  select distinct r.target_institution as inst, i.name
@@ -1863,7 +1863,7 @@ def registered_programs(institution):
         <p>
           Latest NYS Department of Education access was {update_date}.
           <br>
-          Degree Works information (links in the Awards column) last updated {dgw_update_date}
+          Links to Degree Works information in the Award column: {dgw_update_date}
         </p>
         <p>
           {csv_link}
