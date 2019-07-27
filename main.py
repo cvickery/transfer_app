@@ -1712,7 +1712,11 @@ def registered_programs(institution):
     update_date = date2str(cursor.fetchone().update_date)
   except (KeyError, ValueError):
     update_date = '<em>None (or in progress)</em>'
-
+  try:
+    dgw_cursor.execute("select last_update from updates where institution = %s", (institution, ))
+    dgw_update_date = date2str(str(dgw_cursor.fetchone().last_update))
+  except (KeyError, ValueError, AttributeError) as e:
+    dgw_update_date = 'None'
   # Find out what CUNY colleges are in the db
   cursor.execute("""
                  select distinct r.target_institution as inst, i.name
@@ -1825,7 +1829,6 @@ def registered_programs(institution):
           plan_items.append('<a href="/academic_plan/{}/{}">{}</a>'
                             .format(institution, plan.academic_plan, plan.academic_plan))
       values.insert(6, ', '.join(plan_items))
-      dgw_cursor
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
@@ -1850,8 +1853,8 @@ def registered_programs(institution):
           institutions and/or multiple awards.
         </p>
         <p>
-          The Registration Office is either the Office of the Professions (OP) or the
-          Office of College and University Evaluation (OCUE).
+          The Registration Office is either the Department of Education’s Office of the Professions
+          (OP) or its Office of College and University Evaluation (OCUE).
         </p>
         <p>
           The last three columns show financial aid eligibility. (Hover over the headings for
@@ -1859,6 +1862,8 @@ def registered_programs(institution):
         </p>
         <p>
           Latest NYS Department of Education access was {update_date}.
+          <br>
+          Degree Works information (links in the Awards column) last updated {dgw_update_date}
         </p>
         <p>
           {csv_link}
