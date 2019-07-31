@@ -34,6 +34,8 @@ from system_status import app_available, app_unavailable, get_reason, \
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
 
+from propose_rules import _propose_rules
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
@@ -128,6 +130,10 @@ def fix_title(str):
 #   for confirmation. When user replies to the email, mark all matching items as confirmed and
 #   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
 #   (This allows people to accidentally deny their work without losing it.)
+
+@app.route('/propose_rules', methods=['POST', 'GET'])
+def propose_rules():
+  return make_response(render_template('propose_rules.html', result=Markup(_propose_rules())))
 
 
 # INDEX PAGE: Top-level Menu
