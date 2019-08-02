@@ -72,7 +72,7 @@ def send_message(to_list, from_addr, subject, html_msg,
                                                   'name': person['name']} for person in cc_list]
   if bcc_list is not None:
     for person in cc_list:
-      if person['email'].tolower() in unique_set:
+      if person['email'].lower() in unique_set:
         bcc_list.remove(person)
       else:
         unique_set.add(person['email'].lower())
