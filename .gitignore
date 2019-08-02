@@ -9,3 +9,9 @@ client ID and secret.txt
 
 /.gitignore
 
+
+/static/js/.eslintrc.js
+
+/package-lock.json
+
+/node_modules/
