@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CUNY Transfer App</title>
+    <link rel='stylesheet' href='/static/css/propose_rules.css' />
+    <script type=text/javascript>
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="/static/js/propose_rules.js"></script>
+  </head>
+  <body>
+    <h1>Propose Transfer Rule(s)</h1>
+    <div id="need-js">
+      <p>Waiting for JavaScript to initialize &hellip;</p>
+      <p>
+        <strong>Note:</strong> Obsolete browsers, such as Internet Explorer, do not support current
+        versions of the JavaScript language and will not work with this application.
+      </p>
+    </div>
+    <div>
+      {{ result }}
+    </div>
+  </body>
+</html>

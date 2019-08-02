@@ -1,0 +1,37 @@
+body {
+  font-family: sans-serif;
+  border: 1em;
+  padding: 0 1em;
+  background-color: #eff;
+  color:#333;
+  max-width:40em;
+}
+
+.error {
+  color: #922;
+  font-size: 1em;
+}
+
+.warning {
+  color: #611;
+  font-style: italic;
+}
+
+h1 {
+  margin:0;
+  font-size:1.4em;
+}
+
+h2 {
+  font-size:1.2em;
+  margin: 0 auto;
+}
+
+a {
+  text-decoration: none;
+}
+a:hover {
+  color:#eff;
+  background-color: #333;
+  padding:0.25em;
+}

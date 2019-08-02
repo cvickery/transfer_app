@@ -34,6 +34,8 @@ from system_status import app_available, app_unavailable, get_reason, \
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
 
+from propose_rules import _propose_rules
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
@@ -128,6 +130,10 @@ def fix_title(str):
 #   for confirmation. When user replies to the email, mark all matching items as confirmed and
 #   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
 #   (This allows people to accidentally deny their work without losing it.)
+
+@app.route('/propose_rules', methods=['POST', 'GET'])
+def propose_rules():
+  return make_response(render_template('propose_rules.html', result=Markup(_propose_rules())))
 
 
 # INDEX PAGE: Top-level Menu
@@ -1712,7 +1718,11 @@ def registered_programs(institution):
     update_date = date2str(cursor.fetchone().update_date)
   except (KeyError, ValueError):
     update_date = '<em>None (or in progress)</em>'
-
+  try:
+    dgw_cursor.execute("select last_update from updates where institution = %s", (institution, ))
+    dgw_update_date = 'latest update was ' + date2str(str(dgw_cursor.fetchone().last_update))
+  except (KeyError, ValueError, AttributeError) as e:
+    dgw_update_date = 'not available (or not shown for “all” CUNY Colleges)'
   # Find out what CUNY colleges are in the db
   cursor.execute("""
                  select distinct r.target_institution as inst, i.name
@@ -1825,7 +1835,6 @@ def registered_programs(institution):
           plan_items.append('<a href="/academic_plan/{}/{}">{}</a>'
                             .format(institution, plan.academic_plan, plan.academic_plan))
       values.insert(6, ', '.join(plan_items))
-      dgw_cursor
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
@@ -1850,8 +1859,8 @@ def registered_programs(institution):
           institutions and/or multiple awards.
         </p>
         <p>
-          The Registration Office is either the Office of the Professions (OP) or the
-          Office of College and University Evaluation (OCUE).
+          The Registration Office is either the Department of Education’s Office of the Professions
+          (OP) or its Office of College and University Evaluation (OCUE).
         </p>
         <p>
           The last three columns show financial aid eligibility. (Hover over the headings for
@@ -1859,6 +1868,8 @@ def registered_programs(institution):
         </p>
         <p>
           Latest NYS Department of Education access was {update_date}.
+          <br>
+          Links to Degree Works information in the Award column: {dgw_update_date}
         </p>
         <p>
           {csv_link}
