@@ -71,7 +71,7 @@ def send_message(to_list, from_addr, subject, html_msg,
       sg_message['personalizations'][0]['cc'] = [{'email': person['email'],
                                                   'name': person['name']} for person in cc_list]
   if bcc_list is not None:
-    for person in cc_list:
+    for person in bcc_list:
       if person['email'].lower() in unique_set:
         bcc_list.remove(person)
       else:
