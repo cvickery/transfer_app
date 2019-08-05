@@ -42,13 +42,20 @@ $(function ()
 
 //  Globals
 //  ===============================================================================================
-  var course_list = [];
-  var institutions = [];
-  var institutions_request = $.getJSON($SCRIPT_ROOT + '/_institutions');
+  let course_list = [];
+  let institutions = [];
+  const institutions_request = $.getJSON($SCRIPT_ROOT + '/_institutions');
   institutions_request.done(function (result, status)
-                           {
-                              institutions = result;
-                           });
+  {
+    if (status !== 'success')
+    {
+      alert(status);
+    }
+    else
+    {
+      institutions = result;
+    }
+  });
 
 //  update_course_count()
 //  -----------------------------------------------------------------------------------------------
@@ -79,11 +86,11 @@ $(function ()
   //  =============================================================================================
   /* Any change in the controls for institution, discipline, and course groups.
    */
-  var part_a_change = function ()
+  const part_a_change = function ()
   {
-    var institution = $('#institution').val();
-    var discipline = $('#discipline').val();
-    var course_groups = $('#course-groups').val();
+    const institution = $('#institution').val();
+    const discipline = $('#discipline').val();
+    const course_groups = $('#course-groups').val();
 
     if ($(this).attr('id') === 'institution')
     {
@@ -97,12 +104,19 @@ $(function ()
       {
         var discipline_request = $.getJSON($SCRIPT_ROOT + '/_disciplines',
                                            {institution: institution});
-        discipline_request.done(function (discipline_select, text_status)
+        discipline_request.done(function (discipline_select, status)
         {
-          $('#discipline').replaceWith(discipline_select);
-          $('#discipline').val('none');
-          $('#discipline').change(part_a_change);
-          $('#discipline-span').show();
+          if (status !== 'success')
+          {
+            alert(status);
+          }
+          else
+          {
+            $('#discipline').replaceWith(discipline_select);
+            $('#discipline').val('none');
+            $('#discipline').change(part_a_change);
+            $('#discipline-span').show();
+          }
         });
         return;
       }
@@ -116,8 +130,8 @@ $(function ()
     }
 
     // Create course_groups_string from the array.
-    ranges_str = '';
-    for (cg = 0; cg < course_groups.length; cg++)
+    let ranges_str = '';
+    for (let cg = 0; cg < course_groups.length; cg++)
     {
       switch (course_groups[cg])
       {
@@ -163,8 +177,15 @@ $(function ()
                                            });
     find_course_ids_request.done(function (result, status)
     {
-      course_list = result;
-      update_course_count();
+      if (status !== 'success')
+      {
+        alert(status);
+      }
+      else
+      {
+        course_list = result;
+        update_course_count();
+      }
     });
   };
 
@@ -266,11 +287,18 @@ $(function ()
                                         });
     map_request.done(function (result, status)
     {
-      $('#loading').hide();
-      $('#show-sending, #show-receiving').prop('disabled', false);
-      $('#transfers-map-table').html(header_row + colleges_row + result);
-      $('#setup-div').hide();
-      $('#transfers-map-div').show();
+      if (status !== 'success')
+      {
+        alert(status);
+      }
+      else
+      {
+        $('#loading').hide();
+        $('#show-sending, #show-receiving').prop('disabled', false);
+        $('#transfers-map-table').html(header_row + colleges_row + result);
+        $('#setup-div').hide();
+        $('#transfers-map-div').show();
+      }
 
       // Event handlers for this table
       // ==========================================================================================
@@ -286,9 +314,16 @@ $(function ()
                                         {course_ids: course_id});
         catalog_request.done(function (result, status)
         {
-          pop_up_content = result[0].html;
-          $('#pop-up-content').html(pop_up_content);
-          $('#pop-up-div').show().draggable();
+          if (status !== 'success')
+          {
+            alert(status);
+          }
+          else
+          {
+            pop_up_content = result[0].html;
+            $('#pop-up-content').html(pop_up_content);
+            $('#pop-up-div').show().draggable();
+          }
         });
       });
 
@@ -309,12 +344,19 @@ $(function ()
                                                });
         rules_to_html_request.done(function (result, status)
         {
-          $(document.body).css({cursor: 'auto'});
-          pop_up_content = `<div><strong>Double-click a rule for catalog info.
-          Type ⇦ to return here; Esc to dismiss.</strong></div>
-          <table>${result.replace(/<hr>/gi, '')}</table>`;
-          $('#pop-up-content').html(pop_up_content);
-          $('#pop-up-div').show().draggable();
+          if (status !== 'success')
+          {
+            alert(status);
+          }
+          else
+          {
+            $(document.body).css({cursor: 'auto'});
+            pop_up_content = `<div><strong>Double-click a rule for catalog info.
+            Type ⇦ to return here; Esc to dismiss.</strong></div>
+            <table>${result.replace(/<hr>/gi, '')}</table>`;
+            $('#pop-up-content').html(pop_up_content);
+            $('#pop-up-div').show().draggable();
+          }
         });
       });
     });
@@ -327,62 +369,75 @@ $(function ()
   //  -----------------------------------------------------------------------------------
   /*  The row id is rule_key-source_ids-dest_ids
    */
-   $('#pop-up-content').dblclick(function (event)
-   {
-     // Find row id
-     let target = event.target;
-     while (target.tagName != 'TR' && target.tagName != 'BODY')
-     {
-      target = target.parentNode;
-     }
-     if (target.tagName != 'TR')
-     {
-      return;
-     }
-     let row_id = target.id;
+  $('#pop-up-content').dblclick(function (event)
+  {
+    // Find row id
+    let target = event.target;
+    while (target.tagName !== 'TR' && target.tagName !== 'BODY')
+    {
+    target = target.parentNode;
+    }
+    if (target.tagName !== 'TR')
+    {
+    return;
+    }
+    let row_id = target.id;
 
-     // split it by hyphens
-     let hyphenated = row_id.split('-');
-     // source and dest ids
-     let source_ids = hyphenated[4];
-     let destination_ids = hyphenated[5];
-     let suffix = (source_ids.indexOf(':') === -1) ? '' : 's';
-     let source_heading = `${hyphenated[0].replace(/\d+/, '')} Course${suffix}`;
-     suffix = (destination_ids.indexOf(':') === -1) ? '' : 's';
-     let destination_heading = `${hyphenated[1].replace(/\d+/, '')} Course${suffix}`;
-     // Clear the pop-up and request catalog info for source and dest courses
-     $('#pop-up-content').html(`<div id="catalogs-for-rule">
-                                  <div>${source_heading}
-                                    <div id="source-catalog-info">Loading ...</div>
-                                  </div>
-                                  <div>${destination_heading}
-                                    <div id="destination-catalog-info">Loading ...</div>
-                                  </div>
-                                </div>`);
-     let source_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: source_ids});
-     let dest_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: destination_ids});
-     // when they come back, populate the pop-up
-     // Populate the source catalog entries in the review form when they arrive
-     source_request.done(function (data, text_status)
-     {
-       let html_str = '';
-       for (var i = 0; i < data.length; i++)
-       {
-         html_str += `${data[i].html} <hr/>`;
-       }
-       $('#source-catalog-info').html(html_str);
-     });
+    // split it by hyphens
+    let hyphenated = row_id.split('-');
+    // source and dest ids
+    let source_ids = hyphenated[4];
+    let destination_ids = hyphenated[5];
+    let suffix = (source_ids.indexOf(':') === -1) ? '' : 's';
+    let source_heading = `${hyphenated[0].replace(/\d+/, '')} Course${suffix}`;
+    suffix = (destination_ids.indexOf(':') === -1) ? '' : 's';
+    let destination_heading = `${hyphenated[1].replace(/\d+/, '')} Course${suffix}`;
+    // Clear the pop-up and request catalog info for source and dest courses
+    $('#pop-up-content').html(`<div id="catalogs-for-rule">
+                                <div>${source_heading}
+                                  <div id="source-catalog-info">Loading ...</div>
+                                </div>
+                                <div>${destination_heading}
+                                  <div id="destination-catalog-info">Loading ...</div>
+                                </div>
+                              </div>`);
+    let source_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: source_ids});
+    let dest_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: destination_ids});
+    // when they come back, populate the pop-up
+    // Populate the source catalog entries in the review form when they arrive
+    source_request.done(function (data, status)
+    {
+    if (status !== 'success')
+    {
+      alert(status);
+    }
+    else
+    {
+      let html_str = '';
+      for (var i = 0; i < data.length; i++)
+      {
+        html_str += `${data[i].html} <hr/>`;
+      }
+      $('#source-catalog-info').html(html_str);
+    }
+  });
 
-     // Populate the destination catalog entries in the review form when they arrive
-     dest_request.done(function (data, text_status)
-     {
-       let html_str = '';
-       for (var i = 0; i < data.length; i++)
-       {
-         html_str += `${data[i].html}<hr/>`;
-       }
-       $('#destination-catalog-info').html(html_str);
-     });
-   });
-
+    // Populate the destination catalog entries in the review form when they arrive
+    dest_request.done(function (data, status)
+  {
+    if (status !== 'success')
+    {
+      alert(status);
+    }
+    else
+    {
+      let html_str = '';
+      for (var i = 0; i < data.length; i++)
+      {
+       html_str += `${data[i].html}<hr/>`;
+      }
+      $('#destination-catalog-info').html(html_str);
+    }
+    });
+  });
 });
