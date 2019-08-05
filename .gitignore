@@ -6,12 +6,3 @@ client ID and secret.txt
 /app.yaml
 
 /gunicorn.pid
-
-/.gitignore
-
-
-/static/js/.eslintrc.js
-
-/package-lock.json
-
-/node_modules/
