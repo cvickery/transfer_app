@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/cvickery/transfer-app/issues"
   },
-  "homepage": "https://github.com/cvickery/transfer-app#readme"
+  "homepage": "https://github.com/cvickery/transfer-app#readme",
+  "dependencies": {
+    "eslint": "^6.1.0"
+  }
 }
