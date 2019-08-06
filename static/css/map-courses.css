@@ -70,18 +70,17 @@ table {
   margin: 0em;
 }
 
-button {
+button, .button {
   margin: 1em;
   padding: 0.5em;
   font-size: 1em;
   font-family: sans-serif;
   font-variant: small-caps;
-  background-color:#fff;
-}
-
-a.button {
   text-decoration: none;
-  font-variant: small-caps;
+  background-color:#fff;
+  display: inline-block;
+  -webkit-appearance: button;
+  -moz-appearance: button;
   appearance: button;
 }
 

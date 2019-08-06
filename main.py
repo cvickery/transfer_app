@@ -1873,7 +1873,9 @@ def registered_programs(institution):
         </p>
         <p>
           {csv_link}
-          <a href="/" class="button">Return to Main Menu</a>
+          <button>
+            <a href="/" class="button">Return to Main Menu</a>
+          </button>
         </p>
       </div>
       <hr>

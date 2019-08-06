@@ -28,6 +28,8 @@ button, a.button {
     font-size: 0.8em;
     padding: 0.5em;
     margin: 1em;
+    -moz-appearance: button;
+    -webkit-appearance: button;
     appearance: button;
 }
 

@@ -48,16 +48,15 @@ h2 {
 }
 
 button, .restart, a.button {
-    border: 1px solid #999;
-    border-radius: 0.25em;
-    text-decoration: none;
-    background-color: white;
-    color: black;
-    font-size: 0.8em;
-    padding: 0.5em;
-}
-
-a.button {
+  border: 1px solid #999;
+  border-radius: 0.25em;
+  text-decoration: none;
+  background-color: white;
+  color: black;
+  font-size: 0.8em;
+  padding: 0.5em;
+  -moz-appearance: button;
+  -webkit-appearance: button;
   appearance: button;
 }
 

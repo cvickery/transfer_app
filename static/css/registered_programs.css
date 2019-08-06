@@ -62,19 +62,16 @@ form>* {
   margin:auto;
 }
 
-button {
+button, button a {
   color:#333;
   background-color: white;
   font-size: 0.8em;
   padding: 0.5em;
-  margin: 1em auto;
-  border-radius:0.25em;
-}
-
-button a.button {
-  display:block;
-  color:#333;
+  border:none;
   text-decoration:none;
+  -moz-appearance: button;
+  -webkit-appearance: button;
+  appearance: button;
 }
 
 button:hover, .button:hover {
