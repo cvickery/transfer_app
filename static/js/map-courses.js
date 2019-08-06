@@ -4,7 +4,7 @@ $(function ()
   //  =============================================================================================
   $('#need-js, #loading, #discipline-span, #transfers-map-div, #pop-up-div').hide();
   $('#show-sending, #show-receiving').prop('disabled', true);
-  var pop_up_content = 'None';
+  let pop_up_content = 'None';
   $('form').submit(function (event)
   {
     event.preventDefault();
@@ -102,7 +102,7 @@ $(function ()
       }
       else
       {
-        var discipline_request = $.getJSON($SCRIPT_ROOT + '/_disciplines',
+        const discipline_request = $.getJSON($SCRIPT_ROOT + '/_disciplines',
                                            {institution: institution});
         discipline_request.done(function (discipline_select, status)
         {
@@ -169,7 +169,7 @@ $(function ()
 
     // Get all course_ids for courses within one of the ranges for the given discipline at an
     // institution.
-    var find_course_ids_request = $.getJSON($SCRIPT_ROOT + '/_find_course_ids',
+    const find_course_ids_request = $.getJSON($SCRIPT_ROOT + '/_find_course_ids',
                                            {
                                               institution: institution,
                                               discipline: discipline,
@@ -232,9 +232,9 @@ $(function ()
   /*  Show Receiving and Show Sending event handlers
    *  ---------------------------------------------------------------------------------------------
    */
-  var show_handler = function ()
+  const show_handler = function ()
   {
-    var request_type = $(this).attr('id');
+    const request_type = $(this).attr('id');
     if (request_type === 'show-receiving')
     {
       $('.to-from').text('from');
@@ -247,10 +247,10 @@ $(function ()
     }
 
     // Header row: "Sending" or "Receiving" Course and list of receiving colleges
-    var colleges = [];
-    var associates = $('#associates').prop('checked');
-    var bachelors = $('#bachelors').prop('checked');
-    for (var i = 0; i < institutions.length; i++)
+    let colleges = [];
+    const associates = $('#associates').prop('checked');
+    const bachelors = $('#bachelors').prop('checked');
+    for (let i = 0; i < institutions.length; i++)
     {
       if ((institutions[i].bachelors && bachelors) ||
           (institutions[i].associates && associates))
@@ -259,7 +259,7 @@ $(function ()
       }
     }
 
-    var header_row = `<tr>
+    let header_row = `<tr>
                         <th rowspan="2">Sending Course</th>
                         <th colspan="${colleges.length}">Receiving College</th></tr>`;
     if (request_type === 'show-receiving')
@@ -268,8 +268,8 @@ $(function ()
                       <th colspan="${colleges.length}">Sending College</th>
                       <th rowspan="2">Receiving Course</th></tr>`;
     }
-    var colleges_row = '<tr>';
-    for (var c = 0; c < colleges.length; c++)
+    let colleges_row = '<tr>';
+    for (let c = 0; c < colleges.length; c++)
     {
       colleges_row += `<th title="${colleges[c].name}">${colleges[c].code.replace('01', '')}</th>`;
       colleges[c] = colleges[c].code;
@@ -278,13 +278,13 @@ $(function ()
     // Get the table body rows from /_map_course
     $('#show-sending, #show-receiving').prop('disabled', true);
     $('#loading').show();
-    var map_request = $.getJSON($SCRIPT_ROOT + '/_map_course',
-                                        {
-                                          course_list: JSON.stringify(course_list),
-                                          discipline: $('#discipline').val(),
-                                          colleges: JSON.stringify(colleges),
-                                          request_type: $(this).attr('id')
-                                        });
+    const map_request = $.getJSON($SCRIPT_ROOT + '/_map_course',
+                                  {
+                                    course_list: JSON.stringify(course_list),
+                                    discipline: $('#discipline').val(),
+                                    colleges: JSON.stringify(colleges),
+                                    request_type: $(this).attr('id')
+                                  });
     map_request.done(function (result, status)
     {
       if (status !== 'success')
@@ -307,10 +307,10 @@ $(function ()
       // ----------------------------------------------------------------------------------------------
       $('.selected-course').click(function ()
       {
-        var title_string = $(this).attr('title');
-        var matches = title_string.match(/course_id (\d+):/);
-        var course_id = matches[1];
-        var catalog_request = $.getJSON($SCRIPT_ROOT + '/_courses',
+        const title_string = $(this).attr('title');
+        const matches = title_string.match(/course_id (\d+):/);
+        const course_id = matches[1];
+        const catalog_request = $.getJSON($SCRIPT_ROOT + '/_courses',
                                         {course_ids: course_id});
         catalog_request.done(function (result, status)
         {
@@ -331,33 +331,36 @@ $(function ()
       //  ---------------------------------------------------------------------------------
       $('td').click(function ()
       {
-        $(document.body).css({cursor: 'wait'});
-        var title_string = $(this).attr('title');
-        if (title_string === '')
+        if ($(this).text() !== '0')
         {
-          $('#pop-up-div').hide();
-          return;
+          $(document.body).css({cursor: 'wait'});
+          const title_string = $(this).attr('title');
+          if (title_string === '')
+          {
+            $('#pop-up-div').hide();
+            return;
+          }
+          const rules_to_html_request = $.getJSON($SCRIPT_ROOT + '/_rules_to_html',
+                                                 {
+                                                   rule_keys: title_string
+                                                 });
+          rules_to_html_request.done(function (result, status)
+          {
+            if (status !== 'success')
+            {
+              alert(status);
+            }
+            else
+            {
+              $(document.body).css({cursor: 'auto'});
+              pop_up_content = `<div><strong>Double-click a rule for catalog info.
+              Type ⇦ to return here; Esc to dismiss this panel.</strong></div>
+              <table>${result.replace(/<hr>/gi, '')}</table>`;
+              $('#pop-up-content').html(pop_up_content);
+              $('#pop-up-div').show().draggable();
+            }
+          });
         }
-        var rules_to_html_request = $.getJSON($SCRIPT_ROOT + '/_rules_to_html',
-                                               {
-                                                 rule_keys: title_string
-                                               });
-        rules_to_html_request.done(function (result, status)
-        {
-          if (status !== 'success')
-          {
-            alert(status);
-          }
-          else
-          {
-            $(document.body).css({cursor: 'auto'});
-            pop_up_content = `<div><strong>Double-click a rule for catalog info.
-            Type ⇦ to return here; Esc to dismiss.</strong></div>
-            <table>${result.replace(/<hr>/gi, '')}</table>`;
-            $('#pop-up-content').html(pop_up_content);
-            $('#pop-up-div').show().draggable();
-          }
-        });
       });
     });
   };
@@ -414,7 +417,7 @@ $(function ()
     else
     {
       let html_str = '';
-      for (var i = 0; i < data.length; i++)
+      for (let i = 0; i < data.length; i++)
       {
         html_str += `${data[i].html} <hr/>`;
       }
@@ -432,7 +435,7 @@ $(function ()
     else
     {
       let html_str = '';
-      for (var i = 0; i < data.length; i++)
+      for (let i = 0; i < data.length; i++)
       {
        html_str += `${data[i].html}<hr/>`;
       }
