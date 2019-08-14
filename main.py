@@ -1838,25 +1838,24 @@ def registered_programs(institution):
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
-    table = f"<table>{table_rows}</table>"
+    table = f'<div class="table-height"><table>{table_rows}</table></div>'
   result = f"""
       {h1}
-      <div>
         <form action="/registered_programs/" method="GET" id="select-institution">
           <select name="institution">
-          <option value="none">Select College</option>
+          <option value="none">No College Selected</option>
           {options}
           </select>
-        </form>
-      </div>
-      <p>
+        <p>
           <button id="submit-button" type="submit" form="select-institution">
           Show Selected College</button>
-      </p>
-      <div class="instructions">
+        </p>
+      </form>
+      <details>
+        <summary>Instructions and Options</summary>
         <p>
-          Highlighted rows are for programs with more than one variant, such as multiple
-          institutions and/or multiple awards.
+          <span class="variant">Highlighted rows</span> are for programs with more than one variant,
+          such as multiple institutions and/or multiple awards.
         </p>
         <p>
           The Registration Office is either the Department of Education’s Office of the Professions
@@ -1877,7 +1876,7 @@ def registered_programs(institution):
             <a href="/" class="button">Return to Main Menu</a>
           </button>
         </p>
-      </div>
+      </details>
       <hr>
       {table}
 """

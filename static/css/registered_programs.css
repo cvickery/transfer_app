@@ -29,45 +29,42 @@ th {
 .variant {
   background-color: #fef;
 }
-/*
-They should make table bodies scrollable
-thead, tbody {
-  display:block;
-}
-tbody {
-  overflow-y:auto;
-  height: 500px;
-}
-*/
 
-div {
+form {
   max-width:30em;
   margin:auto;
+}
+
+select {
+  display:block;
+  margin:auto;
+}
+
+div.table-height {
+  margin: 0;
+  border: 0;
+  padding: 0;
 }
 
 p {
   text-align:center;
 }
 
-.instructions {
+details {
   max-width:60em;
-}
-
-.instructions p {
-  text-align:left;
-  margin 1em;
-}
-form>* {
-  display:block;
   margin:auto;
 }
 
-button, button a {
+details p {
+  text-align:left;
+  padding-left: 1em;
+}
+
+button, .button {
   color:#333;
   background-color: white;
   font-size: 0.8em;
   padding: 0.5em;
-  border:none;
   text-decoration:none;
   -moz-appearance: button;
   -webkit-appearance: button;
