@@ -77,12 +77,8 @@ button, .button {
   appearance: button;
 }
 
-button:hover {
-  cursor:pointer;
-  color:white;
-  background-color: #666;
-}
-.button:hover {
-  cursor:pointer;
-  color:#000;
+button:hover, .button:hover {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color:green;
 }
