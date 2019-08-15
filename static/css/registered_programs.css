@@ -12,10 +12,11 @@ h1 {
   text-align: center;
 }
 table {
-  margin: 0 2px;
+  margin: 0 auto;
   border-collapse: collapse;
   border: 1px solid #666;
 }
+
 td, th {
   border:1px solid #666;
   padding: 0.25em;
@@ -68,7 +69,7 @@ details p {
 button, .button {
   color:#333;
   background-color: white;
-  font-size: 0.8em;
+  font-size: 1em;
   padding: 0.5em;
   text-decoration:none;
   -moz-appearance: button;
@@ -76,12 +77,12 @@ button, .button {
   appearance: button;
 }
 
-button:hover, .button:hover {
+button:hover {
   cursor:pointer;
   color:white;
   background-color: #666;
 }
-
-table {
-  margin:auto;
+.button:hover {
+  cursor:pointer;
+  color:#000;
 }
