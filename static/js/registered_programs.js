@@ -10,6 +10,12 @@ $(function()
   });
 });
 
+//  set_height()
+//  -----------------------------------------------------------------------------------------------
+/*  Set the height of all table-height divs in preparation for adjusting the scrollable tables
+ *  contained therein.
+ *  Calls adjust_tables() after (re-)setting heights.
+ */
 const set_height = () =>
 {
   //  Make the (only) table on this page fill the current viewport, and no more.
@@ -25,8 +31,14 @@ const set_height = () =>
   }
 };
 
+//  Page Load Event Listener
+//  -----------------------------------------------------------------------------------------------
+/*  Make initial call to set_height() and set up  set_heights listeners for window resize and
+ *  details toggle events.
+ */
 window.addEventListener('load', function (event)
 {
+  // Adjust tables on initial page load.
   set_height(event);
   // Need to re-process tables when viewport is resized.
   window.addEventListener('resize', set_height);
@@ -40,7 +52,3 @@ window.addEventListener('load', function (event)
     }
   }
 });
-
-// Wait for the document to load or resize, and adjust all scrollable tables on the page.
-// window.addEventListener('load', adjust_tables);
-// window.addEventListener('resize', adjust_tables);

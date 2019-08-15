@@ -1,12 +1,14 @@
 html {
-  background-color: #ccc;
+  background-color:white;
 }
 body {
-  margin:0.5em;
+  margin:0;
   padding:0.5em;
   background-color:white;
   color:#666;
   font-family: sans-serif;
+  overflow-y:auto;
+  overflow-x:auto;
 }
 h1 {
   text-align: center;
@@ -14,7 +16,6 @@ h1 {
 table {
   margin: 0 auto;
   border-collapse: collapse;
-  border: 1px solid #666;
 }
 
 td, th {
