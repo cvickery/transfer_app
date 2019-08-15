@@ -20,6 +20,7 @@ td, th {
   border:1px solid #666;
   padding: 0.25em;
 }
+
 th {
   background-color:#ccc;
   color:#333;
@@ -30,6 +31,10 @@ th {
   background-color: #fef;
 }
 
+.scrollable tbody {
+  overflow-y: scroll;
+  overflow-x: auto;
+}
 form {
   max-width:30em;
   margin:auto;

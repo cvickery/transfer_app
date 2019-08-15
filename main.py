@@ -1838,7 +1838,7 @@ def registered_programs(institution):
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
-    table = f'<div class="table-height"><table>{table_rows}</table></div>'
+    table = f'<div class="table-height"><table class="scrollable">{table_rows}</table></div>'
   result = f"""
       {h1}
         <form action="/registered_programs/" method="GET" id="select-institution">
@@ -1880,6 +1880,7 @@ def registered_programs(institution):
       <hr>
       {table}
 """
+  conn.close()
   return render_template('registered_programs.html', result=Markup(result))
 
 
