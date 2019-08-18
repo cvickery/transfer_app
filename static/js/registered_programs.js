@@ -26,7 +26,8 @@ const set_height = () =>
     const table_height_div = table_height_divs[0];
     const table_top = table_height_div.offsetTop;
     const viewport_height = window.innerHeight;
-    table_height_div.style.height = (viewport_height - table_top) + 'px';
+    const fudge = 20; //  Room for bottom scrollbar and padding to be sure bottom of table shows
+    table_height_div.style.height = (viewport_height - (table_top + fudge)) + 'px';
     adjust_tables({type: 'set-height'});
   }
 };
