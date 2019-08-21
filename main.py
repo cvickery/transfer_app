@@ -1800,7 +1800,7 @@ def registered_programs(institution):
                           is_variant
                    from registered_programs
                    where target_institution ~ %s
-                   order by program_code, title
+                   order by title, program_code
                    """, (institution,))
     data_rows = []
     for row in cursor.fetchall():
