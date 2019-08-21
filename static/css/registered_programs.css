@@ -62,7 +62,7 @@ p {
 
 details {
   max-width:60em;
-  margin:auto;
+  margin: 0 auto 0.5em;
 }
 
 details p {
@@ -79,6 +79,7 @@ button, .button {
   -moz-appearance: button;
   -webkit-appearance: button;
   appearance: button;
+  margin-top: 0.25em;
 }
 
 button:hover, .button:hover {

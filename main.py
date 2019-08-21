@@ -1874,8 +1874,8 @@ def registered_programs(institution):
           {csv_link}
           <a href="/" class="button">Return to Main Menu</a>
         </p>
+        <hr>
       </details>
-      <hr>
       {table}
 """
   conn.close()
