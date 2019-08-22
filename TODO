@@ -1,4 +1,8 @@
-2018-12-03
+Scrolling tables
+  In map courses
+  In review rules
+
+Parse Degreeworks program descriptions.
 
 Reporting:  blanket credit transfers
             review process progress
@@ -6,12 +10,12 @@ Reporting:  blanket credit transfers
 Need a rule editor for creating/changing rule groups. Output to be Oracle SQL.
 
 Need to show number of blanket credits that transfer when the dest consists of a course + blanket
+- Take credits source info into account
 
 Color codes in map are screwy. Use red for no good (missing or self-referential); yellow for
 warnings (blanket-only); green for good. Gray for inactive sending courses; red for inactive
 receiving courses.
 
-In Map Courses: clicking on a cell with zero rules should not change cursor to "wait"
 In Map Courses: if all rules in a cell transfer as blanket-only the whole cell should be yellow
 
 When looking at the rules for a map cell:
