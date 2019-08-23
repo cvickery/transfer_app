@@ -1834,7 +1834,7 @@ def registered_programs(institution):
         else:
           plan_items.append('<a href="/academic_plan/{}/{}">{}</a>'
                             .format(institution, plan.academic_plan, plan.academic_plan))
-      values.insert(6, ', '.join(plan_items))
+      values.insert(7, ', '.join(plan_items))
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
@@ -1848,7 +1848,8 @@ def registered_programs(institution):
           </select>
         <p>
           <button id="submit-button" type="submit" form="select-institution">
-          Show Selected College</button>
+          Show Selected College</button> or
+          <a href="/" class="button">Return to Main Menu</a>
         </p>
       </form>
       <details>
@@ -1872,7 +1873,6 @@ def registered_programs(institution):
         </p>
         <p>
           {csv_link}
-          <a href="/" class="button">Return to Main Menu</a>
         </p>
         <hr>
       </details>
