@@ -1874,7 +1874,8 @@ def registered_programs(institution):
         </p>
         <p>
           Latest NYS Department of Education access was on {update_date}.
-          <br>
+        </p>
+        <p>
           The CUNY Programs column shows matching programs from CUNYfirst. Links in that column
           show the program’s requirements as given in Degreeworks. Degreeworks information
           {dgw_update_date}
