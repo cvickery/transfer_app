@@ -1697,7 +1697,7 @@ def download_csv(filename):
 
 
 @app.route('/registered_programs/', methods=['GET'], defaults=({'institution': None}))
-def registered_programs(institution):
+def registered_programs(institution, default=None):
   """ Show the academic programs registered with NYS Department of Education for any CUNY college.
   """
   if institution is None:
@@ -1706,6 +1706,8 @@ def registered_programs(institution):
   # Allow users to supply the institution in QNS01 or qns01 format; force to internal format ('qns')
   if institution is not None:
     institution = institution.lower().strip('10')
+  else:
+    institution = 'none'
 
   # See when the db was last updated
   conn = pgconnection('dbname=cuny_courses')
