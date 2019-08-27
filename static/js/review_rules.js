@@ -7,6 +7,7 @@
 
 $(function ()
 {
+
   $('#need-js').hide();
   $('#review-form').hide();
 
@@ -164,7 +165,14 @@ $(function ()
 
   $('.f2-cbox')
     .has('input')
-    .css('background-color', 'white');
+    .css('background-color', 'white')
+    .click(function (event)
+    {
+      $(event.target).children().each(function ()
+      {
+        $(this).prop('checked', !$(this).prop('checked')).trigger('change');
+      });
+    });
 
   //  When shortcut checkboxes change state
   $('#all-source-subjects').change(function ()
@@ -324,13 +332,13 @@ $(function ()
     const source_course_ids = first_parse[4].split(':');
     const destination_course_ids = first_parse[5].split(':');
     const source_request = $.getJSON($SCRIPT_ROOT + '/_courses',
-    {
-      course_ids: first_parse[4]
-    });
+      {
+        course_ids: first_parse[4]
+      });
     const dest_request = $.getJSON($SCRIPT_ROOT + '/_courses',
-    {
-      course_ids: first_parse[5]
-    });
+      {
+        course_ids: first_parse[5]
+      });
 
     const source_suffix = source_course_ids.length !== 1 ? 's' : '';
     const source_catalog_div = `<div id="source-catalog-div">
