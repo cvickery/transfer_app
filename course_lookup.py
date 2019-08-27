@@ -32,47 +32,6 @@ course_attribute_rows = '\n    '.join([f"""
 cursor.close()
 conn.close()
 
-# Course info for all courses at an institution
-institution_query = """
-select  c.course_id                       as course_id,
-        c.offer_nbr                       as offer_nbr,
-        i.name                            as institution,
-        s.description                     as cuny_subject,
-        d.description                     as department,
-        c.discipline                      as discipline,
-        trim(both from c.catalog_number)  as catalog_number,
-        c.title                           as title,
-        c.primary_component               as primary_component,
-        c.components                      as components,
-        c.min_credits                     as min_credits,
-        c.max_credits                     as max_credits,
-        c.requisites                      as requisites,
-        c.description                     as description,
-       cc.description                     as career,
-        c.designation                     as rd,
-       rd.description                     as designation,
-        c.course_status                   as course_status,
-        c.attributes                      as attributes
-
-  from  courses           c,
-        institutions      i,
-        cuny_departments  d,
-        cuny_subjects     s,
-        cuny_careers      cc,
-        designations      rd
-
- where  c.institution = %s
-   {}
-   and  i.code = c.institution
-   and  d.institution = c.institution
-   and  d.department = c.department
-   and  s.subject = c.cuny_subject
-   and  cc.institution = c.institution
-   and  cc.career = c.career
-   and  rd.designation = c.designation
- order by discipline, numeric_part(catalog_number)
-"""
-
 # Course info for a single course_id
 course_query = """
 select  c.course_id                       as course_id,
@@ -149,8 +108,9 @@ def lookup_course(course_id, active_only=False, offer_nbr=1):
 
 # lookup_courses()
 # --------------------------------------------------------------------------------------------------
-def lookup_courses(institution, active_only=True):
+def lookup_courses(institution, active_only=True, department=None, discipline=None):
   """ Lookup all the active courses for an institution. Return giant html string.
+      Can restrict to courses offered by a particular department and/or in a particular discipline.
   """
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
@@ -167,7 +127,57 @@ def lookup_courses(institution, active_only=True):
     which_courses = """
     and c.can_schecule = 'Y'
     """
-  cursor.execute(institution_query.format(which_courses), (institution,))
+  if department is None:
+    department_clause = ''
+  else:
+    department_clause = f"and c.department = '{department}'"
+  if discipline is None:
+    discipline_clause = ''
+  else:
+    discipline_clause = f"and c.discipline = '{discipline}'"
+    # Course info for all courses at an institution
+  institution_query = f"""
+  select  c.course_id                       as course_id,
+          c.offer_nbr                       as offer_nbr,
+          i.name                            as institution,
+          s.description                     as cuny_subject,
+          d.description                     as department,
+          c.discipline                      as discipline,
+          trim(both from c.catalog_number)  as catalog_number,
+          c.title                           as title,
+          c.primary_component               as primary_component,
+          c.components                      as components,
+          c.min_credits                     as min_credits,
+          c.max_credits                     as max_credits,
+          c.requisites                      as requisites,
+          c.description                     as description,
+         cc.description                     as career,
+          c.designation                     as rd,
+         rd.description                     as designation,
+          c.course_status                   as course_status,
+          c.attributes                      as attributes
+
+    from  courses           c,
+          institutions      i,
+          cuny_departments  d,
+          cuny_subjects     s,
+          cuny_careers      cc,
+          designations      rd
+
+   where  c.institution = %s
+     {which_courses}
+     and  i.code = c.institution
+     and  d.institution = c.institution
+     and  d.department = c.department
+     and  s.subject = c.cuny_subject
+     and  cc.institution = c.institution
+     and  cc.career = c.career
+     and  rd.designation = c.designation
+     {department_clause} {discipline_clause}
+   order by discipline, numeric_part(catalog_number)
+  """
+  cursor.execute(institution_query, (institution,))
+  print(cursor.query)
 
   html = ''
   for course in cursor.fetchall():

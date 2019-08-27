@@ -1555,6 +1555,7 @@ def _course_search():
   search_str = request.args.get('search_string')
   return course_search(search_str)
 
+
 # /_SESSIONS
 # =================================================================================================
 # This route is intended as a utility for pruning dead "mysession" entries from the db. A periodic
@@ -1604,73 +1605,120 @@ def courses():
 
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
+  institution_code = None
+  discipline_code = None
+  department_code = None
+  institution_name = 'Unknown'
+  date_updated = 'Unknown'
   num_active_courses = 0
+  discipline_clause = ''
+  discipline_name = ''
+  department_clause = ''
+  department_str = ''
   if request.method == 'POST':
     institution_code = request.form['inst']
   else:
-    institution_code = request.args.get('college')
-  if institution_code:
+    institution_code = request.args.get('college', None)
+    discipline_code = request.args.get('discipline', None)
+    department_code = request.args.get('department', None)
+    if institution_code is not None:
+      if not re.search(r'\d\d$', institution_code):
+        institution_code += '01'
+      institution_code = institution_code.upper()
+      if discipline_code is not None:
+        discipline_code = discipline_code.upper()
+        discipline_clause = f"and discipline = '{discipline_code}'"
+        cursor.execute(f"""select description
+                            from disciplines
+                           where institution = '{institution_code}'
+                             and discipline = '{discipline_code}'
+                        """)
+        if cursor.rowcount == 1:
+          discipline_name = cursor.fetchone().description
+      if department_code is not None:
+        department_code = department_code.upper()
+        department_clause = f"and department = '{department_code}'"
+        cursor.execute(f"""select description
+                             from cuny_departments
+                            where institution = '{institution_code}'
+                              and department = '{department_code}'
+                        """)
+        if cursor.rowcount == 1:
+          department_str = f'Offered By the {cursor.fetchone().description} Department'
+
+  if institution_code is not None:
     cursor.execute("""
               select name, date_updated
                 from institutions
                where code ~* %s
                """, (institution_code,))
     if cursor.rowcount == 1:
-      # Found a college: assuming it offers some courses
+      # Found a college: find out if it offers some courses
       row = cursor.fetchone()
       institution_name = row.name
       date_updated = row.date_updated.strftime('%B %d, %Y')
-      cursor.execute("""
+      cursor.execute(f"""
           select count(*) from courses
-           where institution ~* %s
+           where institution ~* %s {discipline_clause} {department_clause}
              and course_status = 'A'
              and can_schedule = 'Y'
              and discipline_status = 'A'
           """, (institution_code,))
       num_active_courses = cursor.fetchone()[0]
 
-      result = """
-        <h1>{} Courses</h1>
-        <details><summary style="border:1px solid #ccc;">Legend and Details</summary>
-          <div class="instructions">
-            <p>{:,} active courses as of {}</p>
-            <p>
-              <em>
-                The following course properties are shown in parentheses following the catalog
-                description:
-              </em>
-            </p>
-            <ul>
-              <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
-              <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
-              <li title="Each course has exactly one Requirement Designation (RD).">
-                Requirement Designation;</li>
-              <li id="show-attributes"
-                  title="A course can have any number of attributes. Click here to see descriptions.">
-                Course Attributes (a comma-separated list of name:value attribute pairs).
-              </li>
-            </ul>
-            <em>Hover over above list for more information.</em>
-            <br><em>Click to hide these instructions. Type ? to get them back.</em>
-            <div id="pop-up-div">
-              <div id="pop-up-inner">
-                <div id="dismiss-bar">x</div>
-                <table>
-                  <tr><th>Name</th><th>Value</th><th>Description</th></tr>
-                  {}
-                </table>
-              </div>
+    if discipline_name == '' and department_str == '':
+      quantifier = 'All'
+    else:
+      quantifier = ''
+    result = f"""
+      <h1>{quantifier} {institution_name} {discipline_name} Courses {department_str}</h1>
+      <details><summary style="border:1px solid #ccc;">Legend and Details</summary>
+        <div class="instructions">
+          <p>{num_active_courses:,} active courses as of {date_updated}</p>
+          <p>
+            <em>
+              The following course properties are shown in parentheses following the catalog
+              description:
+            </em>
+          </p>
+          <ul>
+            <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
+            <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
+            <li title="Each course has exactly one Requirement Designation (RD).">
+              Requirement Designation;</li>
+            <li id="show-attributes"
+                title="A course can have any number of attributes. Click here to see descriptions.">
+              Course Attributes (a comma-separated list of name:value attribute pairs).
+            </li>
+          </ul>
+          <em>Hover over above list for more information.</em>
+          <br><em>Click to hide these instructions. Type ? to get them back.</em>
+          <div id="pop-up-div">
+            <div id="pop-up-inner">
+              <div id="dismiss-bar">x</div>
+              <table>
+                <tr><th>Name</th><th>Value</th><th>Description</th></tr>
+                {course_attribute_rows}
+              </table>
             </div>
           </div>
-        </details>
-        <p id="need-js" class="error">Loading catalog information ...</p>
-        """.format(institution_name, num_active_courses, date_updated, course_attribute_rows)
-      result = result + lookup_courses(institution_code)
+        </div>
+      </details>
+      <p id="need-js" class="error">Loading catalog information ...</p>
+      """
+    result = result + lookup_courses(institution_code,
+                                     department=department_code,
+                                     discipline=discipline_code)
 
   if num_active_courses == 0:
     # No courses yet (bogus or missing institution): prompt user to select an institution
-    result = """
-    <h1>List Active Courses</h1>
+    if (institution_code is not None or discipline_code is not None or department_code is not None):
+      msg = '<p class="error">No Courses Found</p>'
+    else:
+      msg = ''
+      print('inst discp dept: ', institution_code, discipline_clause, department_clause)
+    result = f"""
+    <h1>List Active Courses</h1>{msg}
     <p id="need-js" class="error">This app requires JavaScript.</p>
     <p>Pick a college and say “Please”.</p>
     <form method="post" action="#">
