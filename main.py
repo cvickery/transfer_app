@@ -1712,7 +1712,7 @@ def download_csv(filename):
 
 
 @app.route('/registered_programs/', methods=['GET'], defaults=({'institution': None}))
-def registered_programs(institution):
+def registered_programs(institution, default=None):
   """ Show the academic programs registered with NYS Department of Education for any CUNY college.
   """
   if institution is None:
@@ -1721,6 +1721,8 @@ def registered_programs(institution):
   # Allow users to supply the institution in QNS01 or qns01 format; force to internal format ('qns')
   if institution is not None:
     institution = institution.lower().strip('10')
+  else:
+    institution = 'none'
 
   # See when the db was last updated
   conn = pgconnection('dbname=cuny_courses')
@@ -1735,9 +1737,15 @@ def registered_programs(institution):
     update_date = '<em>None (or in progress)</em>'
   try:
     dgw_cursor.execute("select last_update from updates where institution = %s", (institution, ))
-    dgw_update_date = 'latest update was ' + date2str(str(dgw_cursor.fetchone().last_update))
+    dgw_update_date = 'was last updated on ' + date2str(str(dgw_cursor.fetchone().last_update))
   except (KeyError, ValueError, AttributeError) as e:
-    dgw_update_date = 'not available (or not shown for “all” CUNY Colleges)'
+    if institution == 'none':
+      dgw_update_date = 'is not available until you select a college.'
+    elif institution == 'all':
+      dgw_update_date = 'is not available when “All CUNY Colleges” is selected.'
+    else:
+      dgw_update_date = 'is not available.'
+
   # Find out what CUNY colleges are in the db
   cursor.execute("""
                  select distinct r.target_institution as inst, i.name
@@ -1882,9 +1890,12 @@ def registered_programs(institution):
           full names.)
         </p>
         <p>
-          Latest NYS Department of Education access was {update_date}.
-          <br>
-          Links to Degree Works information in the Award column: {dgw_update_date}
+          Latest NYS Department of Education access was on {update_date}.
+        </p>
+        <p>
+          The CUNY Programs column shows matching programs from CUNYfirst. Links in that column
+          show the program’s requirements as given in Degreeworks. Degreeworks information
+          {dgw_update_date}
         </p>
         <p>
           {csv_link}
