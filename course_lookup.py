@@ -177,7 +177,6 @@ def lookup_courses(institution, active_only=True, department=None, discipline=No
    order by discipline, numeric_part(catalog_number)
   """
   cursor.execute(institution_query, (institution,))
-  print(cursor.query)
 
   html = ''
   for course in cursor.fetchall():
