@@ -1692,7 +1692,6 @@ def courses():
             </li>
           </ul>
           <em>Hover over above list for more information.</em>
-          <br><em>Click to hide these instructions. Type ? to get them back.</em>
           <div id="pop-up-div">
             <div id="pop-up-inner">
               <div id="dismiss-bar">x</div>
