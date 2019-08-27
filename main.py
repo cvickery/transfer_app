@@ -586,15 +586,17 @@ def do_form_1(request, session):
   # Return Form 2
   result = """
   <h1>Step 2: Select Sending &amp; Receiving Disciplines</h1>
-  <details class="instructions">
-  <summary>There are {:,} disciplines where {}.</summary>
-    <hr>
+  <details>
+  <summary>Instructions</summary>
+  <div class="instructions">
+    <p>There are {:,} disciplines where {}.</p>
     Disciplines are grouped by CUNY subject area.<br/>
     Select at least one sending discipline and at least one receiving discipline.<br/>
     By default, all receiving disciplines are selected to account for all possible equivalencies,
     including electives and blanket credit.<br/>
     The next step will show all transfer rules for courses in the corresponding pairs of
-    disciplines.<br/>
+    disciplines.
+  </div>
   </details>
   <form method="post" action="#" id="form-2">
     <a href="/" class="restart button">Main Menu</a>
@@ -1086,14 +1088,25 @@ def map_courses():
   result = """
   <h1>Map Course Transfers</h1>
   <div id="setup-div">
-    <details class="instructions">
-    <summary>Select Courses to Map</summary>
-    <hr>
+    <details>
+    <summary>Instructions</summary>
+    <div class="instructions">
       <p>
-        Select courses of interest, then indicate whether you want to map how these courses transfer
-        <em>to</em> courses at other institutions (<em>sending</em> rules) or <em>from</em>
-        courses at other institutions (<em>receiving rules</em>).
+        Select courses of interest in the “Which Courses” section. The number of courses selected
+        will be shown.
       </p>
+      <p>
+        Then use the <span class="pseudo-button">show sending rules</span> button if you want to map
+        how these courses transfer <em>to</em> courses at other institutions, or use the <span
+        class="pseudo-button">show receiving rules</span> button if you want to map how these
+        courses transfer <em>from</em> other institutions.
+      </p>
+      <p>
+        If it takes too long to load the transfer map, reduce the number of courses selected. You
+        can also limit the set of colleges mapped to senior, community, or comprehensives using the
+        options in the “Which Colleges” section.
+      </p>
+  </div>
     </details>
     <form action="#" method="POST">
       <fieldset><legend>Which Courses</legend>
@@ -1129,11 +1142,10 @@ def map_courses():
             <input type="text" id="discipline" />
           </span>
         </div>
+        <p>
+          <strong id="num-courses">No courses</strong> selected.
+        </p>
       </fieldset>
-
-      <p>
-        <span id="num-courses">No courses</span> selected.
-      </p>
       <div>
         <button id="show-sending">show sending rules</button>
         <strong>or</strong>
@@ -1144,7 +1156,7 @@ def map_courses():
           <span class="three">.</span>
         </span>
       </div>
-      <fieldset><legend>Which Colleges</legend>
+      <fieldset><legend>Which Colleges To Map</legend>
           <input  type="checkbox"
                   id="associates"
                   name="which-colleges"
@@ -1198,11 +1210,12 @@ def map_courses():
         class="self-rule">highlighted like this</span>.
       </p>
       <p>
-        Click on courses on the <span class="left-right">left</span> to see their catalog
-        information.
+        Hover on courses on the <span class="left-right">left</span> to see their titles. Click on
+        them to see complete catalog information.
       </p>
       <p>
-        Click on non-zero cells to see details about those rule(s).
+        Click on non-zero cells to see details about those rules. (Hovering gives information for
+        locating them in CUNYfirst.)
       </p>
     </details>
     <table id="transfers-map-table">
@@ -1613,41 +1626,43 @@ def courses():
              and course_status = 'A'
              and can_schedule = 'Y'
              and discipline_status = 'A'
-          """, [institution_code])
+          """, (institution_code,))
       num_active_courses = cursor.fetchone()[0]
 
       result = """
         <h1>{} Courses</h1>
-        <div class="instructions">
-          <p class='subtitle'>{:,} active courses as of {}</p>
-          <p>
-            <em>
-              The following course properties are shown in parentheses following the catalog
-              description:
-            </em>
-          </p>
-          <ul>
-            <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
-            <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
-            <li title="Each course has exactly one Requirement Designation (RD).">
-              Requirement Designation;</li>
-            <li id="show-attributes"
-                title="A course can have any number of attributes. Click here to see descriptions.">
-              Course Attributes (a comma-separated list of name:value attribute pairs).
-            </li>
-          </ul>
-          <em>Hover over above list for more information.</em>
-          <br><em>Click to hide these instructions. Type ? to get them back.</em>
-          <div id="pop-up-div">
-            <div id="pop-up-inner">
-              <div id="dismiss-bar">x</div>
-              <table>
-                <tr><th>Name</th><th>Value</th><th>Description</th></tr>
-                {}
-              </table>
+        <details><summary style="border:1px solid #ccc;">Legend and Details</summary>
+          <div class="instructions">
+            <p>{:,} active courses as of {}</p>
+            <p>
+              <em>
+                The following course properties are shown in parentheses following the catalog
+                description:
+              </em>
+            </p>
+            <ul>
+              <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
+              <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
+              <li title="Each course has exactly one Requirement Designation (RD).">
+                Requirement Designation;</li>
+              <li id="show-attributes"
+                  title="A course can have any number of attributes. Click here to see descriptions.">
+                Course Attributes (a comma-separated list of name:value attribute pairs).
+              </li>
+            </ul>
+            <em>Hover over above list for more information.</em>
+            <br><em>Click to hide these instructions. Type ? to get them back.</em>
+            <div id="pop-up-div">
+              <div id="pop-up-inner">
+                <div id="dismiss-bar">x</div>
+                <table>
+                  <tr><th>Name</th><th>Value</th><th>Description</th></tr>
+                  {}
+                </table>
+              </div>
             </div>
           </div>
-        </div>
+        </details>
         <p id="need-js" class="error">Loading catalog information ...</p>
         """.format(institution_name, num_active_courses, date_updated, course_attribute_rows)
       result = result + lookup_courses(institution_code)
