@@ -1715,7 +1715,6 @@ def courses():
       msg = '<p class="error">No Courses Found</p>'
     else:
       msg = ''
-      print('inst discp dept: ', institution_code, discipline_clause, department_clause)
     result = f"""
     <h1>List Active Courses</h1>{msg}
     <p id="need-js" class="error">This app requires JavaScript.</p>
