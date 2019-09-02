@@ -676,7 +676,7 @@ def do_form_2(request, session):
   # Prepare the query to get the set of rules that match the institutions and cuny_subjects
   # selected.
   if request.form.get('all-source-subjects'):
-    source_subject_clause = ''
+    source_subjects_clause = ''
   else:
     source_subjects_str = '|'.join(f':{s}:' for s in source_subject_list)
     source_subjects_clause = f"  and '{source_subjects_str}' ~ source_subjects"
