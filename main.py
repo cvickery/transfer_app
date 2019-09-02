@@ -36,6 +36,8 @@ from flask import Flask, url_for, render_template, make_response,\
 
 from propose_rules import _propose_rules
 
+from program_requirements import Requirements
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
@@ -1979,18 +1981,22 @@ def academic_plan(institution, plan, catalog_year):
                      where institution = %s
                        and block_value = %s
                   order by period_start desc
-                  """, (institution, plan))
+                  """, (institution, plan.upper()))
   result = f'<h1>Program Requirements for {plan} at {cuny_institutions[institution]}</h1>'
   result += f'<p>DegreeWorks information as of {last_update}</p>'
-  for row in cursor.fetchall():
-    start = row.period_start.strip('UG').replace('-20', '-')
-    stop = row.period_stop.strip('UG').replace('-20', '-')
-    stop = re.sub('9{3,}', 'Now', stop)
-    result += f'<h2>Academic Years {start} to {stop}</h2>'
-    requirement_text = [line.replace('(CLOB)', '').strip()
-                        for line in row.requirement_text.splitlines()
-                        if line.strip() != '' and not line.lower().startswith('log:')]
-    result += f"<pre>{'<br>'.join(requirement_text)}</pre>"
+  # for row in cursor.fetchall():
+  #   start = row.period_start.strip('UG').replace('-20', '-')
+  #   stop = row.period_stop.strip('UG').replace('-20', '-')
+  #   stop = re.sub('9{3,}', 'Now', stop)
+  #   result += f'<h2>Academic Years {start} to {stop}</h2>'
+  #   requirement_text = [line.replace('(CLOB)', '').strip()
+  #                       for line in row.requirement_text.splitlines()
+  #                       if line.strip() != '' and not line.lower().startswith('log:')]
+  #   result += f"<pre>{'<br>'.join(requirement_text)}</pre>"
+  row = cursor.fetchone()
+  requirements = Requirements(row.requirement_text, row.period_start, row.period_stop)
+  conn.close()
+  result += requirements.html()
   return render_template('academic_program.html', result=Markup(result))
 
 
