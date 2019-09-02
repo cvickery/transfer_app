@@ -77,12 +77,14 @@ def andor_list(items, andor='and'):
         a and b       a or b
         a, b, and c   a, b, or c
   """
-  if len(items) == 1:
-    return items[0]
-  if len(items) == 2:
-    return items[0] + f' {andor} ' + items[1]
-  last_item = items.pop()
-  return ', '.join(items) + f', {andor} ' + last_item
+  return_str = ', '.join(items)
+  k = return_str.rfind(',')
+  if k > 0:
+    k += 1
+    return_str = return_str[:k] + f' {andor}' + return_str[k:]
+  if return_str.count(',') == 1:
+    return_str = return_str.replace(',', '')
+  return return_str
 
 
 # _grade()
