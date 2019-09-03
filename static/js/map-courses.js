@@ -1,3 +1,4 @@
+
 $(function ()
 {
   //  Initial Settings
@@ -34,14 +35,9 @@ $(function ()
     $('#pop-up-div').hide();
   });
 
-  // Clicking on the instructions hides them.
-  // $('.instructions').click(function ()
-  // {
-  //   $(this).hide();
-  // });
 
-//  Globals
-//  ===============================================================================================
+  //  Globals
+  //  ===============================================================================================
   let course_list = [];
   let institutions = [];
   const institutions_request = $.getJSON($SCRIPT_ROOT + '/_institutions');
@@ -57,26 +53,26 @@ $(function ()
     }
   });
 
-//  update_course_count()
-//  -----------------------------------------------------------------------------------------------
-/*  Utility to show user how many courses have been selected, and to enable course map activators if
- *  that number is greater than zero.
- */
+  //  update_course_count()
+  // -----------------------------------------------------------------------------------------------
+  /*  Utility to show user how many courses have been selected, and to enable course map activators if
+   *  that number is greater than zero.
+   */
   function update_course_count()
   {
     $('#show-sending, #show-receiving').prop('disabled', true);
     switch (course_list.length)
     {
-      case 0:
-        // There were courses to look up, but none were found
-        $('#num-courses').text('No courses');
-        return;
-      case 1:
-        $('#num-courses').text('One course');
-        break;
-      default:
-        $('#num-courses').text(`${course_list.length} courses`);
-        break;
+    case 0:
+      // There were courses to look up, but none were found
+      $('#num-courses').text('No courses');
+      return;
+    case 1:
+      $('#num-courses').text('One course');
+      break;
+    default:
+      $('#num-courses').text(`${course_list.length} courses`);
+      break;
     }
     //  At least one course was selected: enable action buttons
     $('#show-sending, #show-receiving').prop('disabled', false);
@@ -103,7 +99,7 @@ $(function ()
       else
       {
         const discipline_request = $.getJSON($SCRIPT_ROOT + '/_disciplines',
-                                           {institution: institution});
+          {institution: institution});
         discipline_request.done(function (discipline_select, status)
         {
           if (status !== 'success')
@@ -135,33 +131,33 @@ $(function ()
     {
       switch (course_groups[cg])
       {
-        case 'all':
-          ranges_str += '0:1000000000;';
-          break;
-        case 'below':
-          ranges_str += '0:100;';
-          break;
-        case '100':
-          ranges_str += '100:200;';
-          break;
-        case '200':
-          ranges_str += '200:300;';
-          break;
-        case '300':
-          ranges_str += '300:400;';
-          break;
-        case '400':
-          ranges_str += '400:500;';
-          break;
-        case '500':
-          ranges_str += '500:600;';
-          break;
-        case '600':
-          ranges_str += '600:700;';
-          break;
-        case 'above':
-          ranges_str += '700:1000000000;';
-          break;
+      case 'all':
+        ranges_str += '0:1000000000;';
+        break;
+      case 'below':
+        ranges_str += '0:100;';
+        break;
+      case '100':
+        ranges_str += '100:200;';
+        break;
+      case '200':
+        ranges_str += '200:300;';
+        break;
+      case '300':
+        ranges_str += '300:400;';
+        break;
+      case '400':
+        ranges_str += '400:500;';
+        break;
+      case '500':
+        ranges_str += '500:600;';
+        break;
+      case '600':
+        ranges_str += '600:700;';
+        break;
+      case 'above':
+        ranges_str += '700:1000000000;';
+        break;
       }
     }
     // Trim trailing semicolon
@@ -170,11 +166,11 @@ $(function ()
     // Get all course_ids for courses within one of the ranges for the given discipline at an
     // institution.
     const find_course_ids_request = $.getJSON($SCRIPT_ROOT + '/_find_course_ids',
-                                           {
-                                              institution: institution,
-                                              discipline: discipline,
-                                              ranges_str: ranges_str
-                                           });
+      {
+        institution: institution,
+        discipline: discipline,
+        ranges_str: ranges_str
+      });
     find_course_ids_request.done(function (result, status)
     {
       if (status !== 'success')
@@ -279,12 +275,12 @@ $(function ()
     $('#show-sending, #show-receiving').prop('disabled', true);
     $('#loading').show();
     const map_request = $.getJSON($SCRIPT_ROOT + '/_map_course',
-                                  {
-                                    course_list: JSON.stringify(course_list),
-                                    discipline: $('#discipline').val(),
-                                    colleges: JSON.stringify(colleges),
-                                    request_type: $(this).attr('id')
-                                  });
+      {
+        course_list: JSON.stringify(course_list),
+        discipline: $('#discipline').val(),
+        colleges: JSON.stringify(colleges),
+        request_type: $(this).attr('id')
+      });
     map_request.done(function (result, status)
     {
       if (status !== 'success')
@@ -304,14 +300,13 @@ $(function ()
       // ==========================================================================================
 
       // Clicking on a selected course pops up the catalog description
-      // ----------------------------------------------------------------------------------------------
+      // ------------------------------------------------------------------------------------------
       $('.selected-course').click(function ()
       {
         const title_string = $(this).attr('title');
         const matches = title_string.match(/course_id (\d+):/);
         const course_id = matches[1];
-        const catalog_request = $.getJSON($SCRIPT_ROOT + '/_courses',
-                                        {course_ids: course_id});
+        const catalog_request = $.getJSON($SCRIPT_ROOT + '/_courses', {course_ids: course_id});
         catalog_request.done(function (result, status)
         {
           if (status !== 'success')
@@ -341,9 +336,9 @@ $(function ()
             return;
           }
           const rules_to_html_request = $.getJSON($SCRIPT_ROOT + '/_rules_to_html',
-                                                 {
-                                                   rule_keys: title_string
-                                                 });
+            {
+              rule_keys: title_string
+            });
           rules_to_html_request.done(function (result, status)
           {
             if (status !== 'success')
@@ -352,10 +347,14 @@ $(function ()
             }
             else
             {
+              let html = result.replace(/<hr>/gi, '');
+              // Remove the last cell of each row
+              // DOES NOT WORK:
+              // html = html.replace(/<td>.+?<\/td>[\s\S]<\/tr>/gi, '</tr>');
               $(document.body).css({cursor: 'auto'});
               pop_up_content = `<div><strong>Double-click a rule for catalog info.
               Type ⇦ to return here; Esc to dismiss this panel.</strong></div>
-              <table>${result.replace(/<hr>/gi, '')}</table>`;
+              <table>${html}</table>`;
               $('#pop-up-content').html(pop_up_content);
               $('#pop-up-div').show().draggable();
             }
@@ -378,11 +377,11 @@ $(function ()
     let target = event.target;
     while (target.tagName !== 'TR' && target.tagName !== 'BODY')
     {
-    target = target.parentNode;
+      target = target.parentNode;
     }
     if (target.tagName !== 'TR')
     {
-    return;
+      return;
     }
     let row_id = target.id;
 
@@ -410,37 +409,37 @@ $(function ()
     // Populate the source catalog entries in the review form when they arrive
     source_request.done(function (data, status)
     {
-    if (status !== 'success')
-    {
-      alert(status);
-    }
-    else
-    {
-      let html_str = '';
-      for (let i = 0; i < data.length; i++)
+      if (status !== 'success')
       {
-        html_str += `${data[i].html} <hr/>`;
+        alert(status);
       }
-      $('#source-catalog-info').html(html_str);
-    }
-  });
+      else
+      {
+        let html_str = '';
+        for (let i = 0; i < data.length; i++)
+        {
+          html_str += `${data[i].html} <hr/>`;
+        }
+        $('#source-catalog-info').html(html_str);
+      }
+    });
 
     // Populate the destination catalog entries in the review form when they arrive
     dest_request.done(function (data, status)
-  {
-    if (status !== 'success')
     {
-      alert(status);
-    }
-    else
-    {
-      let html_str = '';
-      for (let i = 0; i < data.length; i++)
+      if (status !== 'success')
       {
-       html_str += `${data[i].html}<hr/>`;
+        alert(status);
       }
-      $('#destination-catalog-info').html(html_str);
-    }
+      else
+      {
+        let html_str = '';
+        for (let i = 0; i < data.length; i++)
+        {
+          html_str += `${data[i].html}<hr/>`;
+        }
+        $('#destination-catalog-info').html(html_str);
+      }
     });
   });
 });
