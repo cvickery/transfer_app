@@ -194,8 +194,8 @@ def format_rule_by_key(rule_key):
             sc.max_credits,
             sc.min_gpa,
             sc.max_gpa,
-            dn.description
-    from source_courses sc, disciplines dn
+            dn.discipline_name
+    from source_courses sc, cuny_disciplines dn
     where sc.rule_id = %s
       and dn.institution = %s
       and dn.discipline = sc.discipline
@@ -211,8 +211,8 @@ def format_rule_by_key(rule_key):
             dc.cat_num,
             dc.cuny_subject,
             dc.transfer_credits,
-            dn.description
-     from destination_courses dc, disciplines dn
+            dn.discipline_name
+     from destination_courses dc, cuny_disciplines dn
     where dc.rule_id = %s
       and dn.institution = %s
       and dn.discipline = dc.discipline

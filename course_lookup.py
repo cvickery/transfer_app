@@ -37,7 +37,7 @@ course_query = """
 select  c.course_id                       as course_id,
         c.offer_nbr                       as offer_nbr,
         i.name                            as institution,
-        s.description                     as cuny_subject,
+        s.subject_name                    as cuny_subject,
         d.department_name                 as department,
         c.discipline                      as discipline,
         trim(both from c.catalog_number)  as catalog_number,
@@ -140,7 +140,7 @@ def lookup_courses(institution, active_only=True, department=None, discipline=No
   select  c.course_id                       as course_id,
           c.offer_nbr                       as offer_nbr,
           i.name                            as institution,
-          s.description                     as cuny_subject,
+          s.subject_name                    as cuny_subject,
           d.department_name                 as department,
           c.discipline                      as discipline,
           trim(both from c.catalog_number)  as catalog_number,
@@ -226,7 +226,7 @@ def format_course(course, active_only=False):
     cursor = conn.cursor(cursor_factory=NamedTupleCursor)
     cursor.execute("""
         select c.discipline, c.catalog_number, c.title,
-          cc. description as career, s.description as cuny_subject,
+          cc. description as career, s.subject_name as cuny_subject,
           c.designation, c.requisites, c.attributes
         from courses c, cuny_subjects s, cuny_careers cc
         where course_id = %s

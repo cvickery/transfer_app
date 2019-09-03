@@ -380,7 +380,7 @@ def do_form_1(request, session):
 
   # The CUNY Subjects table, for getting subject descriptions from their abbreviations
   cursor.execute("select * from cuny_subjects order by subject")
-  subject_names = {row.subject: row.description for row in cursor}
+  subject_names = {row.subject: row.subject_name for row in cursor}
 
   # Generate table headings for source and destination institutions
   sending_is_singleton = False
@@ -407,7 +407,7 @@ def do_form_1(request, session):
   source_institution_params = ', '.join('%s' for i in session['source_institutions'])
   q = """
   select *
-     from disciplines
+     from cuny_disciplines
     where institution in ({})
     """.format(source_institution_params)
   cursor.execute(q, session['source_institutions'])
@@ -416,7 +416,7 @@ def do_form_1(request, session):
   destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
   q = """
   select *
-     from disciplines
+     from cuny_disciplines
     where institution in ({})
     """.format(destination_institution_params)
   cursor.execute(q, session['destination_institutions'])
@@ -727,8 +727,8 @@ def do_form_2(request, session):
               dc.cat_num,
               dc.cuny_subject,
               dc.transfer_credits,
-              dn.description
-      from destination_courses dc, disciplines dn
+              dn.discipline_name
+      from destination_courses dc, cuny_disciplines dn
       where dc.rule_id = %s
         and dn.institution = %s
         and dn.discipline = dc.discipline
@@ -748,8 +748,8 @@ def do_form_2(request, session):
                 sc.max_credits,
                 sc.min_gpa,
                 sc.max_gpa,
-                dn.description
-        from source_courses sc, disciplines dn
+                dn.discipline_name
+        from source_courses sc, cuny_disciplines dn
         where sc.rule_id = %s
           and dn.institution = %s
           and dn.discipline = sc.discipline
