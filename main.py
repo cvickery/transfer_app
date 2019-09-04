@@ -1265,7 +1265,7 @@ def _disciplines():
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
   cursor.execute("""select discipline
-                      from disciplines
+                      from cuny_disciplines
                       where cuny_subject != 'MESG'
                         and institution = %s
                       order by discipline""", (institution,))
@@ -1630,8 +1630,8 @@ def courses():
       if discipline_code is not None:
         discipline_code = discipline_code.upper()
         discipline_clause = f"and discipline = '{discipline_code}'"
-        cursor.execute(f"""select description
-                            from disciplines
+        cursor.execute(f"""select discipline_name
+                            from cuny_disciplines
                            where institution = '{institution_code}'
                              and discipline = '{discipline_code}'
                         """)
@@ -1640,7 +1640,7 @@ def courses():
       if department_code is not None:
         department_code = department_code.upper()
         department_clause = f"and department = '{department_code}'"
-        cursor.execute(f"""select description
+        cursor.execute(f"""select department_name
                              from cuny_departments
                             where institution = '{institution_code}'
                               and department = '{department_code}'
