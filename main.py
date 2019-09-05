@@ -1889,7 +1889,7 @@ def registered_programs(institution, default=None):
         values[2] = fix_title(known_institutions[values[2]][1])
 
       # Insert list of all CUNY “plans” for this program code
-      plan_cursor.execute('select * from academic_plans where program_id = %s', (values[0],))
+      plan_cursor.execute('select * from cuny_plans where nys_program_code = %s', (values[0],))
       plans = plan_cursor.fetchall()
       # If there is a dgw requirement block for the plan, use link to it
       plan_items = []
@@ -1900,12 +1900,11 @@ def registered_programs(institution, default=None):
                             where institution = %s
                               and block_value = %s
                            """, (institution, plan.academic_plan))
-        if dgw_cursor.rowcount == 0:
-          plan_items.append(plan.academic_plan)
-        else:
-          plan_items.append('<a href="/academic_plan/{}/{}">{}</a>'
-                            .format(institution, plan.academic_plan, plan.academic_plan))
-      values.insert(7, ', '.join(plan_items))
+        plan_items.append(f'{plan.academic_plan} ({plan.department})<br>{plan.description}')
+        if dgw_cursor.rowcount > 0:
+          plan_items.append('<a href="/academic_plan/{}/{}">Requirements</a>'
+                            .format(institution, plan.academic_plan))
+      values.insert(7, '<br>'.join(plan_items))
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
