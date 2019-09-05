@@ -1782,7 +1782,7 @@ def registered_programs(institution, default=None):
     cursor.execute("select update_date from updates where table_name='registered_programs'")
     update_date = date2str(cursor.fetchone().update_date)
   except (KeyError, ValueError):
-    update_date = '<em>None (or in progress)</em>'
+    update_date = '(<em>None or in progress</em>)'
   try:
     dgw_cursor.execute("select last_update from updates where institution = %s", (institution, ))
     dgw_update_date = 'was last updated on ' + date2str(str(dgw_cursor.fetchone().last_update))
@@ -1888,23 +1888,37 @@ def registered_programs(institution, default=None):
       if values[2].isdecimal():
         values[2] = fix_title(known_institutions[values[2]][1])
 
-      # Insert list of all CUNY “plans” for this program code
-      plan_cursor.execute('select * from cuny_plans where nys_program_code = %s', (values[0],))
+      # Insert list of all CUNY programs (plans) for this program code
+      plan_cursor.execute("""
+                            select * from cuny_programs
+                             where nys_program_code = %s
+                             and program_status = 'A'""", (values[0],))
       plans = plan_cursor.fetchall()
-      # If there is a dgw requirement block for the plan, use link to it
-      plan_items = []
+      print(plans)
+      program_departments = []
+      program = None
+      program_title = None
       for plan in plans:
-        dgw_cursor.execute("""
-                           select *
-                             from requirement_blocks
-                            where institution = %s
-                              and block_value = %s
-                           """, (institution, plan.academic_plan))
-        plan_items.append(f'{plan.academic_plan} ({plan.department})<br>{plan.description}')
-        if dgw_cursor.rowcount > 0:
-          plan_items.append('<a href="/academic_plan/{}/{}">Requirements</a>'
-                            .format(institution, plan.academic_plan))
-      values.insert(7, '<br>'.join(plan_items))
+        # There is just one program and description, but the program may be shared among
+        # multiple departments.
+        assert program is None or program == plan.academic_plan, \
+            f'{program} {plan.academic_plan}'
+        program = plan.academic_plan
+        assert program_title is None or program_title == plan.description, \
+            f'{program_title} {plan.description}'
+        program_title = plan.description
+        program_departments.append(plan.department)
+      cell_content = f"{program} ({','.join(program_departments)}<br>{program_title})"
+      # If there is a dgw requirement block for the plan, use link to it
+      dgw_cursor.execute("""
+                         select *
+                           from requirement_blocks
+                          where institution = %s
+                            and block_value = %s
+                         """, (institution, plan.academic_plan))
+      if dgw_cursor.rowcount > 0:
+        cell_content += f'<br><a href="/academic_plan/{institution}/{program}">Requirements</a>'
+      values.insert(7, cell_content)
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
