@@ -48,6 +48,8 @@ form {
 select {
   display:block;
   margin:auto;
+  font-size:1.4em;
+  font-variant:small-caps;
 }
 
 div.table-height {
