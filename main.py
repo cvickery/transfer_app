@@ -1820,6 +1820,17 @@ def registered_programs(institution, default=None):
     # Complete the page heading
     institution_name = cuny_institutions[institution]
 
+    # List of short CUNY institution names plus known non-CUNY names
+    # Start with the list of all known institutions, then replace CUNY names with their short names.
+    short_names = dict()
+    for key in known_institutions.keys():
+      short_names[key] = known_institutions[key][1]  # value is (prog_code, name, is_cuny)
+    cursor.execute("""
+                      select code, prompt
+                        from institutions
+                   """)
+    for row in cursor.fetchall():
+      short_names[row.code.lower()[0:3]] = row.prompt
     # Link to the current csv file, if there is one.
     csv_dir = '../registered_programs/csv_files'
     all_clause = ' (<em>Does not include the “CUNY Program(s)” column.</em>)'
@@ -1905,7 +1916,6 @@ def registered_programs(institution, default=None):
         program_title = None
         for plan in plans:
           institution_key = plan.institution.lower()[0:3]
-          print(f'************* {values[0]} {institution_key} ******************')
           if institution_key not in program_info.keys():
             program_info[institution_key] = Program_Info._make([plan.academic_plan,
                                                                plan.description,
@@ -1914,39 +1924,35 @@ def registered_programs(institution, default=None):
           program_info[institution_key].departments.append(plan.department)
 
         # Add information for this institution to the table cell
-        program = program_info[institution].program
-        program_title = program_info[institution].program_title
-        departments_str = andor_list(program_info[institution].departments)
-        cell_content = f"{program} ({departments_str})<br>{program_title}"
-        # If there is a dgw requirement block for the plan, use link to it
-        dgw_cursor.execute("""
-                           select *
-                             from requirement_blocks
-                            where institution = %s
-                              and block_value = %s
-                           """, (institution, plan.academic_plan))
-        if dgw_cursor.rowcount > 0:
-          cell_content += f'<br><a href="/academic_plan/{institution}/{program}">Requirements</a>'
-
-        # If there is another institution, add its information to the cell, too.
-        del program_info[institution]
-        if len(program_info.keys()) > 0:
-          cell_content += '<br>Shared with:<br>'
-          for other_inst in program_info.keys():
-            program = program_info[other_inst].program
-            program_title = program_info[other_inst].program_title
-            departments_str = andor_list(program_info[other_inst].departments)
-            cell_content = f"{program} ({departments_str})<br>{program_title}"
-            # If there is a dgw requirement block for the plan, use link to it
-            dgw_cursor.execute("""
-                               select *
-                                 from requirement_blocks
-                                where institution = %s
-                                  and block_value = %s
-                               """, (institution, plan.academic_plan))
-            if dgw_cursor.rowcount > 0:
-              cell_content += (f'<br><a href="/academic_plan/{institution}/{program}">'
-                               'Requirements</a>')
+        if len(program_info.keys()) > 1:
+          cell_content += '— <em>Multiple Institutions</em> —<br>'
+          show_institution = True
+        else:
+          show_institution = False
+        for inst in program_info.keys():
+          program = program_info[inst].program
+          program_title = program_info[inst].program_title
+          if show_institution:
+            if inst in short_names.keys():
+              inst_str = f'{short_names[inst]}: '
+            else:
+              inst_str = f'{inst}: '
+          else:
+            inst_str = ''
+          departments_str = andor_list(program_info[inst].departments)
+          cell_content += f" {inst_str}{program} ({departments_str})<br>{program_title}"
+          # If there is a dgw requirement block for the plan, use link to it
+          dgw_cursor.execute("""
+                             select *
+                               from requirement_blocks
+                              where institution = %s
+                                and block_value = %s
+                             """, (institution, plan.academic_plan))
+          if dgw_cursor.rowcount > 0:
+            cell_content += (f'<br><a href="/academic_plan/{institution}/{program}">'
+                             'Requirements</a>')
+          if show_institution:
+            cell_content += '<br>'
 
       values.insert(7, cell_content)
       cells = ''.join([f'<td>{value}</td>' for value in values])
