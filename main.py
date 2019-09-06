@@ -23,7 +23,7 @@ from sendemail import send_token, send_message
 from reviews import process_pending
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, \
-    Transfer_Rule, Source_Course, Destination_Course
+    Transfer_Rule, Source_Course, Destination_Course, andor_list
 from course_lookup import course_attribute_rows, course_search
 
 from known_institutions import known_institutions
@@ -1893,31 +1893,61 @@ def registered_programs(institution, default=None):
                             select * from cuny_programs
                              where nys_program_code = %s
                              and program_status = 'A'""", (values[0],))
-      plans = plan_cursor.fetchall()
-      print(plans)
-      program_departments = []
-      program = None
-      program_title = None
-      for plan in plans:
-        # There is just one program and description, but the program may be shared among
-        # multiple departments.
-        assert program is None or program == plan.academic_plan, \
-            f'{program} {plan.academic_plan}'
-        program = plan.academic_plan
-        assert program_title is None or program_title == plan.description, \
-            f'{program_title} {plan.description}'
-        program_title = plan.description
-        program_departments.append(plan.department)
-      cell_content = f"{program} ({','.join(program_departments)}<br>{program_title})"
-      # If there is a dgw requirement block for the plan, use link to it
-      dgw_cursor.execute("""
-                         select *
-                           from requirement_blocks
-                          where institution = %s
-                            and block_value = %s
-                         """, (institution, plan.academic_plan))
-      if dgw_cursor.rowcount > 0:
-        cell_content += f'<br><a href="/academic_plan/{institution}/{program}">Requirements</a>'
+      cell_content = ''
+      if plan_cursor.rowcount > 0:
+        plans = plan_cursor.fetchall()
+        # There is just one program and description per college, but the program may be shared
+        # among multiple departments at a college.
+        Program_Info = namedtuple('Program_Info', 'program program_title departments')
+        program_info = dict()
+        program_departments = []
+        program = None
+        program_title = None
+        for plan in plans:
+          institution_key = plan.institution.lower()[0:3]
+          print(f'************* {values[0]} {institution_key} ******************')
+          if institution_key not in program_info.keys():
+            program_info[institution_key] = Program_Info._make([plan.academic_plan,
+                                                               plan.description,
+                                                               []
+                                                                ])
+          program_info[institution_key].departments.append(plan.department)
+
+        # Add information for this institution to the table cell
+        program = program_info[institution].program
+        program_title = program_info[institution].program_title
+        departments_str = andor_list(program_info[institution].departments)
+        cell_content = f"{program} ({departments_str})<br>{program_title}"
+        # If there is a dgw requirement block for the plan, use link to it
+        dgw_cursor.execute("""
+                           select *
+                             from requirement_blocks
+                            where institution = %s
+                              and block_value = %s
+                           """, (institution, plan.academic_plan))
+        if dgw_cursor.rowcount > 0:
+          cell_content += f'<br><a href="/academic_plan/{institution}/{program}">Requirements</a>'
+
+        # If there is another institution, add its information to the cell, too.
+        del program_info[institution]
+        if len(program_info.keys()) > 0:
+          cell_content += '<br>Shared with:<br>'
+          for other_inst in program_info.keys():
+            program = program_info[other_inst].program
+            program_title = program_info[other_inst].program_title
+            departments_str = andor_list(program_info[other_inst].departments)
+            cell_content = f"{program} ({departments_str})<br>{program_title}"
+            # If there is a dgw requirement block for the plan, use link to it
+            dgw_cursor.execute("""
+                               select *
+                                 from requirement_blocks
+                                where institution = %s
+                                  and block_value = %s
+                               """, (institution, plan.academic_plan))
+            if dgw_cursor.rowcount > 0:
+              cell_content += (f'<br><a href="/academic_plan/{institution}/{program}">'
+                               'Requirements</a>')
+
       values.insert(7, cell_content)
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
@@ -1927,7 +1957,7 @@ def registered_programs(institution, default=None):
       {h1}
         <form action="/registered_programs/" method="GET" id="select-institution">
           <select name="institution">
-          <option value="none">No College Selected</option>
+          <option value="none" style="font-size:3m; color:red;">No College Selected</option>
           {options}
           </select>
         <p>
@@ -1947,16 +1977,17 @@ def registered_programs(institution, default=None):
           (OP) or its Office of College and University Evaluation (OCUE).
         </p>
         <p>
-          The last three columns show financial aid eligibility. (Hover over the headings for
-          full names.)
+          The CUNY Programs column shows matching programs from CUNYfirst with the department that
+          offers the program in parentheses. (Some programs are shared by multiple departments.)
+          “Requirements” links in that column show the program’s requirements as given in
+          Degreeworks. Degreeworks information {dgw_update_date}
+        </p>
+        <p>
+          The last three columns show financial aid eligibility. Hover over the headings for
+          full names.
         </p>
         <p>
           Latest NYS Department of Education access was on {update_date}.
-        </p>
-        <p>
-          The CUNY Programs column shows matching programs from CUNYfirst. Links in that column
-          show the program’s requirements as given in Degreeworks. Degreeworks information
-          {dgw_update_date}
         </p>
         <p>
           {csv_link}
