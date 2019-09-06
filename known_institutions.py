@@ -3,6 +3,8 @@
       institution.
       For each institution, the institution id number (as a string), the institution name,
       as spelled on the NYS website, and a boolean to indicate whether it is a CUNY college or not.
+
+      NOTE:THESE VALUES ARE NOT UPDATED AUTOMATICALLY
 """
 known_institutions = {}
 known_institutions['bar'] = ('33050', 'CUNY BARUCH COLLEGE', True)
@@ -32,9 +34,9 @@ known_institutions['yrk'] = ('33500', 'CUNY YORK COLLEGE', True)
 # known_institutions['nyl'] = ('45100', 'NEW YORK LAW SCHOOL', False)
 # known_institutions['sco'] = ('24150', 'SUNY COL OF OPTOMETRY', False)
 
-""" The following is a list of all institutions,including the ones already listed above, using the
-    institution ID as the index. Needed for CUNY programs that have variants at non-CUNY schools.
-    But, also, using the institution ID, registered programs could look up the programs for
+""" The following is a list of all NYS institutions,including the ones already listed above, using
+    the institution ID as the index. Needed for CUNY programs that have variants at non-CUNY
+    schools. But, also, using the institution ID, registered programs could look up the programs for
     these schools as well.
     List last updated on May 2, 2019
 """
