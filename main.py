@@ -1963,7 +1963,7 @@ def registered_programs(institution, default=None):
       {h1}
         <form action="/registered_programs/" method="GET" id="select-institution">
           <select name="institution">
-          <option value="none" style="font-size:3m; color:red;">No College Selected</option>
+          <option value="none" style="font-size:3m; color:red;">Select a College</option>
           {options}
           </select>
         <p>
