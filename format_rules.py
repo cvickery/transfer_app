@@ -1,4 +1,4 @@
-
+#! /usr/local/bin/python3
 from collections import namedtuple
 import json
 import re
@@ -399,10 +399,10 @@ def format_rule(rule, rule_key=None):
   return row, description
 
 
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser('Testing transfer rule groups')
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser('Testing transfer rules')
   parser.add_argument('--debug', '-d', action='store_true', default=False)
-  parser.add_argument('--grade', nargs=2)
+  parser.add_argument('--grade', '-g', nargs=2)
   args = parser.parse_args()
 
   if args.debug:
