@@ -1,3 +1,4 @@
+
 body {
   font-family: sans-serif;
   border: 1em;
@@ -105,7 +106,7 @@ td a {
   text-decoration: none;
 }
 
-td a: hover {
+td a:hover {
   background-color: #ccc;
 }
 
@@ -258,7 +259,7 @@ td a: hover {
   border-bottom: 1px solid #111;
 }
 
-#dismiss-bar: hover {
+#dismiss-bar:hover {
   background-color: #bbb;
   color: #e00;
 }
@@ -280,13 +281,12 @@ td a: hover {
   overflow: scroll;
 }
 
-
 #rules-table {
   border: none;
   border-left: 1px solid black;
 }
 
-#rules-table th: nth-child(1) {
+/*#rules-table th:nth-child(1) {
   border-right: none;
 }
 
@@ -297,7 +297,7 @@ td a: hover {
   border-right: none;
 }
 
-#rules-table th: nth-child(5) {
+#rules-table th:nth-child(5) {
   border-left: none;
 }
 
@@ -307,6 +307,7 @@ td a: hover {
 #rules-table th: nth-child(5) {
   text-align: left;
 }
+*/
 
 #rules-table tr {
   margin: 0.1em;
@@ -319,17 +320,17 @@ td a: hover {
   color: #333;
 }
 
-#rules-table td: last-child {
+#rules-table td:last-child {
   border: 1px solid #999;
   background-color: white;
 }
 
-#rules-table td: nth-child(2),
-#rules-table td: nth-child(5) {
+#rules-table td:nth-child(2),
+#rules-table td:nth-child(5) {
   min-width: 20%;
 }
 
-#rules-table td: nth-child(3) {
+#rules-table td:nth-child(3) {
   text-align: center;
   font-weight: bold;
 }
@@ -344,12 +345,12 @@ td a: hover {
   color: black;
 }
 
-button: disabled {
+button:disabled {
   color: #999;
   background-color: #eee;
 }
 
-#send-email: enabled {
+#send-email:enabled {
   border: 2px solid black;
 }
 
