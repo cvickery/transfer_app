@@ -1088,9 +1088,8 @@ def map_courses():
   # Supply colleges from db now, but use ajax to get a college's disciplines
 
   result = """
-  <h1>Map Course Transfers</h1>
   <div id="setup-div">
-    <details>
+    <details class="instructions">
     <summary>Instructions</summary>
     <div class="instructions">
       <p>
@@ -1175,7 +1174,6 @@ def map_courses():
     </form>
   </div>
   <div id="transfers-map-div">
-    <h2>Transfers Map</h2>
     <details class="instructions">
       <summary>
         Each row of the table below shows the number of ways each course listed on the
