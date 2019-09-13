@@ -6,3 +6,5 @@ client ID and secret.txt
 /app.yaml
 
 /gunicorn.pid
+
+/static/css/.csslintrc

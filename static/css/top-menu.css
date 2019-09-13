@@ -1,10 +1,10 @@
 body {
-  font-family: sans-serif;
-  border: 1em;
   padding: 0 1em;
   background-color: #eff;
   color:#333;
+  font-family: sans-serif;
   max-width:40em;
+  border: 1em;
 }
 
 .error {
@@ -18,8 +18,8 @@ body {
 }
 
 h1 {
-  margin:0;
   font-size:1.4em;
+  margin:0;
 }
 
 h2 {
@@ -30,23 +30,27 @@ h2 {
 a {
   text-decoration: none;
 }
+
 a:hover {
-  color:#eff;
   background-color: #333;
+  color:#eff;
   padding:0.25em;
 }
+
 dl {
   margin: 1em;
   padding: 0.5em;
+  background-color:white;
   border: 1px solid #ccc;
   border-radius: 0.25em;
-  background-color:white;
   max-width:40em;
 }
+
 dt {
   font-size:1.1em;
   font-weight:bold;
 }
+
 dd {
   margin: 0.5em;
   text-align: justify;
