@@ -1,7 +1,48 @@
 body {
-  background-color: #eff;
+  background-color: #89c;
+  color:#333;
   padding: 1em;
   font-family:sans-serif;
+}
+
+header {
+  background-color:white;
+  color:#248;
+  position:relative;
+  border-radius: 0.25em;
+  height: 32px;
+}
+header>img {
+  position:absolute;
+  top: 4px;
+  left: 4px;
+  height: 24px;
+}
+header>span {
+  display:block;
+  width:100%;
+  font-size: 28px;
+  font-weight:bold;
+  text-align:center;
+}
+header>nav {
+  position:absolute;
+  top:4px;
+  right:4px;
+  bottom:4px;
+}
+nav>a {
+  font-variant: small-caps;
+  background-color:white;
+  color:#248;
+  border:1px solid #ccc;
+  border-radius:0.125em;
+  padding:0.125em;
+  text-decoration:none;
+}
+nav>a:hover {
+  background-color:#248;
+  color:white;
 }
 
 .instructions {
