@@ -65,13 +65,16 @@ $(function ()
     {
     case 0:
       // There were courses to look up, but none were found
-      $('#num-courses').text('No courses');
+      $('#num-courses').text('No courses selected yet.');
+      $('#num-courses').css('color', '#a00');
       return;
     case 1:
-      $('#num-courses').text('One course');
+      $('#num-courses').text('One course selected.');
+      $('#num-courses').css('color', '#472');
       break;
     default:
-      $('#num-courses').text(`${course_list.length} courses`);
+      $('#num-courses').text(`${course_list.length} courses selected.`);
+      $('#num-courses').css('color', '#472');
       break;
     }
     //  At least one course was selected: enable action buttons

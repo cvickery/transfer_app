@@ -1105,7 +1105,7 @@ def map_courses():
       <p>
         If it takes too long to load the transfer map, reduce the number of courses selected. You
         can also limit the set of colleges mapped to senior, community, or comprehensives using the
-        options in the “Which Colleges” section.
+        options in the “Which Colleges To Map” section.
       </p>
   </div>
     </details>
@@ -1143,8 +1143,8 @@ def map_courses():
             <input type="text" id="discipline" />
           </span>
         </div>
-        <p>
-          <strong id="num-courses">No courses</strong> selected.
+        <p id="num-courses">
+          No courses selected yet.
         </p>
       </fieldset>
       <div>
@@ -1221,7 +1221,6 @@ def map_courses():
     <table id="transfers-map-table">
     </table>
     <div>
-      <a href="/" class="button">main menu</a>
       <button id="show-setup">change courses or direction</button>
     </div>
   </div>

@@ -19,6 +19,8 @@ header>img {
   height: 24px;
 }
 header>span {
+  position:absolute;
+  top:2px;
   display:block;
   width:100%;
   font-size: 28px;
@@ -32,6 +34,7 @@ header>nav {
   bottom:4px;
 }
 nav>a {
+  display:inline-block;
   font-variant: small-caps;
   background-color:white;
   color:#248;
@@ -99,6 +102,15 @@ input[type="text"] {
 table {
   border-collapse: collapse;
 }
+
+#num-courses {
+  padding: 0.5em;
+  background-color: white;
+  color:#a00;
+  border-radius:0.5em;
+  text-align: center;
+}
+
 
 #grouping-div {
   margin-top: 0.5em;
