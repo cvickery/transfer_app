@@ -1,17 +1,7 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8"/>
-    <title>Registered Programs</title>
-    <link rel='stylesheet' href='/static/css/registered_programs.css' />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script src="/static/js/adjust_tables.js" type="module"></script>
-    <script src="/static/js/registered_programs.js" type="module"></script>
-  </head>
-  <body>
-    {{ result }}
-  </body>
-</html>
+{% extends "base_template.html" %}
+{% block sheets%}
+  <link rel='stylesheet' href="/static/css/registered_programs.css"/>
+{% endblock %}
+{% block scripts %}
+  <script src="/static/js/registered_programs.js" type="module"></script>
+{% endblock %}

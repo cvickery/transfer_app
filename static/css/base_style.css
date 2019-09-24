@@ -15,11 +15,16 @@ header {
   height: 2em;
 }
 
-header>img {
+header>a {
+  display:inline-block;
   position:absolute;
   top: 0.25em;
   left: 0.25em;
   height: 1.5em;
+}
+
+header>a>img {
+  height:100%;
 }
 
 header>span {
@@ -41,14 +46,14 @@ header>nav {
 
 nav>a {
   margin:0 .25em;
-  padding:0.125em;
+  padding:0.125em 1em;
   display:inline-block;
   font-size: 1em;
   font-variant: small-caps;
   background-color:white;
   color:#248;
   border:1px solid #ccc;
-  border-radius:0.125em;
+  border-radius:0.25em;
   text-decoration:none;
 }
 
@@ -59,16 +64,26 @@ nav>a:hover {
 
  nav>button {
   margin:0 0.25em;
-  padding:0.125em;
+  padding:0.125em 1em;
   font-size:1em;
   font-variant: small-caps;
   background-color:white;
   color:#248;
   border:1px solid #ccc;
-  border-radius:0.125em;
+  border-radius:0.25em;
 }
 
  nav>button:hover {
   background-color:#248;
   color:white;
+}
+
+.center {
+  text-align:center;
+}
+
+.table-height {
+  margin: 0;
+  border: 0;
+  padding: 0;
 }

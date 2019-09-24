@@ -54,6 +54,10 @@ table {
   border-collapse: collapse;
 }
 
+thead {
+  background-color:#eef;
+}
+
 #num-courses {
   padding: 0.5em;
   background-color: white;

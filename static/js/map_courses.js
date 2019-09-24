@@ -1,3 +1,48 @@
+import adjust_tables from './adjust_tables.js';
+
+//  set_height()
+//  -----------------------------------------------------------------------------------------------
+/*  Set the height of all table-height divs in preparation for adjusting the scrollable tables
+ *  contained therein.
+ *  Calls adjust_tables() after (re-)setting heights.
+ */
+const set_height = () =>
+{
+  //  Make the (only) table on this page fill the current viewport, and no more.
+  //  Is there a table?
+  const table_height_divs = document.getElementsByClassName('table-height');
+  if (table_height_divs.length > 0)
+  {
+    const table_height_div = table_height_divs[0];
+    const table_top = table_height_div.offsetTop;
+    const viewport_height = window.innerHeight;
+    const fudge = 20; //  Room for bottom scrollbar and padding to be sure bottom of table shows
+    table_height_div.style.height = (viewport_height - (table_top + fudge)) + 'px';
+    adjust_tables({type: 'set-height'});
+  }
+};
+
+//  Page Load Event Listener
+//  -----------------------------------------------------------------------------------------------
+/*  Make initial call to set_height() and set up  set_heights listeners for window resize and
+ *  details toggle events.
+ */
+window.addEventListener('load', function (event)
+{
+  // Adjust tables on initial page load.
+  set_height(event);
+  // Need to re-process tables when viewport is resized.
+  window.addEventListener('resize', set_height);
+  // Need to re-process tables when details open/close.
+  const details = document.getElementsByTagName('details');
+  if (details)
+  {
+    for (let i = 0; i < details.length; i++)
+    {
+      details[i].addEventListener('toggle', set_height);
+    }
+  }
+});
 
 $(function ()
 {
@@ -259,19 +304,20 @@ $(function ()
     }
 
     let header_row = `<thead><tr>
-                        <th rowspan="2">Sending Course</th>
+                        <th rowspan="2" id="target-course-col">Sending Course</th>
                         <th colspan="${colleges.length}">Receiving College</th></tr>`;
     if (request_type === 'show-receiving')
     {
       header_row = `<thead>
                       <tr>
                       <th colspan="${colleges.length}">Sending College</th>
-                      <th rowspan="2">Receiving Course</th></tr>`;
+                      <th rowspan="2" id="target-course-col">Receiving Course</th></tr>`;
     }
     let colleges_row = '<tr>';
     for (let c = 0; c < colleges.length; c++)
     {
-      colleges_row += `<th title="${colleges[c].name}">${colleges[c].code.replace('01', '')}</th>`;
+      let abbr = colleges[c].code.replace('01', '');
+      colleges_row += `<th title="${colleges[c].name}" id="${abbr.toLowerCase()}-col">${abbr}</th>`;
       colleges[c] = colleges[c].code;
     }
     colleges_row += '</tr></thead><tbody>';

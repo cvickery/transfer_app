@@ -3,7 +3,7 @@
 """
 
 
-def header(title, nav_items=[], need_css=True):
+def header(title, nav_items=[]):
   """ Return an html header element containing logo, title, and a list of nav items.
   """
   nav_element = '<nav>'
@@ -17,14 +17,13 @@ def header(title, nav_items=[], need_css=True):
                              f"   class=\"nav-link\">{nav_item['text']}</a>")
   nav_element += f'{"".join(nav_elements)}</nav>'
 
-  if need_css:
-    css_link = '<link rel="stylesheet" href="/static/css/app.css" />'
-  else:
-    css_link = ''
-  return(f""" {css_link}
-              <header> <img src="/static/images/cuny_logo.png" alt="CUNY Logo">
-                <span class="header-title">{title}</span> {nav_element}
-              </header>
+  return(f"""<header>
+               <a href="https://cuny.edu">
+                 <img src="/static/images/cuny_logo.png" alt="CUNY Logo">
+               </a>
+               <span class="header-title">{title}</span>
+               {nav_element}
+             </header>
           """)
 
 

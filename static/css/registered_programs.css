@@ -1,16 +1,3 @@
-html {
-  background-color:white;
-}
-
-body {
-  margin:0;
-  padding:0 0.5em;
-  background-color:white;
-  color:#666;
-  font-family: sans-serif;
-  overflow-y:auto;
-  overflow-x:auto;
-}
 h1 {
   text-align: center;
 }
@@ -50,12 +37,6 @@ select {
   margin:auto;
   font-size:1.4em;
   font-variant:small-caps;
-}
-
-div.table-height {
-  margin: 0;
-  border: 0;
-  padding: 0;
 }
 
 p {

@@ -1157,7 +1157,7 @@ def map_courses():
           (<em>sending rules</em>) or how they transfer <em>from</em> other colleges (<em>receiving
           rules</em>)?
         </p>
-        <div style="text-align:center;">
+        <div class="center">
           <button id="show-sending">Sending Rules</button>
           |
           <button id="show-receiving">Receiving Rules</button>
@@ -1189,8 +1189,8 @@ def map_courses():
             nav_items=[{'type': 'link', 'href': '/', 'text': 'Main Menu'},
                        {'type': 'button',
                         'id': 'show-setup',
-                        'text': 'Change Options'}],
-            need_css=False)}
+                        'text': 'Change Options'}
+                      ])}
     <details class="instructions">
       <summary>
         Each row of the table below shows the number of ways each course listed on the
@@ -1235,8 +1235,10 @@ def map_courses():
         locating them in CUNYfirst.)
       </p>
     </details>
-    <table id="transfers-map-table" class="scrollable">
-    </table>
+    <div class="table-height">
+      <table id="transfers-map-table" class="scrollable">
+      </table>
+    </div>
   </div>
   <div id="pop-up-div">
     <div id="pop-up-container">
@@ -1372,12 +1374,13 @@ def _map_course():
     if course_info.course_status != 'A':
       class_info = 'selected-course inactive-course'
     course_info_cell = """
-                         <th class="clickable {}" title="course_id {}: {} {}"{}>{} {} {}</th>
+                         <th class="clickable {}"
+                             title="course_id {}: {} {}"
+                             headers="target-course-col">{} {} {}</th>
                        """.format(class_info,
                                   course_info.course_id,
                                   course_info.institution,
                                   course_info.title,
-                                  class_info,
                                   course_info.institution.rstrip('0123456789'),
                                   course_info.discipline,
                                   course_info.catalog_number)
@@ -1423,6 +1426,7 @@ def _map_course():
     # Fill in the data cells for each college
     data_cells = ''
     for college in colleges:
+      coll = college.strip('0123456789 ').lower()
       class_info = ''
       num_rules = rule_counts[college]
       if num_rules > 0:
@@ -1439,7 +1443,7 @@ def _map_course():
       class_info = class_info.strip()
       if class_info != '':
         class_info = f' class="{class_info}"'
-      data_cells += '<td title="{}"{}>{}</td>'.format(rules_str, class_info, num_rules)
+      data_cells += f'<td title="{rules_str}" headers="{coll}-col"{class_info}>{num_rules}</td>'
     table_rows.append(row_template.format(data_cells))
 
   conn.close()
@@ -1971,17 +1975,23 @@ def registered_programs(institution, default=None):
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
     table = f'<div class="table-height"><table class="scrollable">{table_rows}</table></div>'
   result = f"""
+      {header(title='Registered Programs', nav_items=[{'type': 'link',
+                                                       'text': 'Main Menu',
+                                                       'href': '/'
+                                                      }])}
       {h1}
         <form action="/registered_programs/" method="GET" id="select-institution">
           <select name="institution">
           <option value="none" style="font-size:3m; color:red;">Select a College</option>
           {options}
           </select>
+<!--
         <p>
           <button id="submit-button" type="submit" form="select-institution">
           Show Selected College</button> or
           <a href="/" class="button">Return to Main Menu</a>
         </p>
+  -->
       </form>
       <details>
         <summary>Instructions and Options</summary>
@@ -2014,7 +2024,9 @@ def registered_programs(institution, default=None):
       {table}
 """
   conn.close()
-  return render_template('registered_programs.html', result=Markup(result))
+  return render_template('registered_programs.html',
+                         result=Markup(result),
+                         title='Registered Programs')
 
 
 @app.route('/academic_plan/<institution>/<plan>/',
