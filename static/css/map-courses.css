@@ -1,52 +1,3 @@
-body {
-  background-color: #cdf;
-  color:#333;
-  padding: 1em;
-  font-family:sans-serif;
-}
-
-header {
-  background-color:white;
-  color:#248;
-  position:relative;
-  border-radius: 0.25em;
-  height: 32px;
-}
-header>img {
-  position:absolute;
-  top: 4px;
-  left: 4px;
-  height: 24px;
-}
-header>span {
-  position:absolute;
-  top:2px;
-  display:block;
-  width:100%;
-  font-size: 28px;
-  font-weight:bold;
-  text-align:center;
-}
-header>nav {
-  position:absolute;
-  top:4px;
-  right:4px;
-  bottom:4px;
-}
-nav>a {
-  display:inline-block;
-  font-variant: small-caps;
-  background-color:white;
-  color:#248;
-  border:1px solid #ccc;
-  border-radius:0.125em;
-  padding:0.125em;
-  text-decoration:none;
-}
-nav>a:hover {
-  background-color:#248;
-  color:white;
-}
 
 .instructions {
   background-color: #fefefe;
@@ -127,29 +78,9 @@ table {
   margin: 0em;
 }
 
-button, .button {
-  margin: 1em;
-  padding: 0.5em;
-  font-size: 1em;
-  font-family: sans-serif;
-  font-variant: small-caps;
-  text-decoration: none;
-  background-color:#fff;
-  display: inline-block;
-  -webkit-appearance: button;
-  -moz-appearance: button;
-  appearance: button;
-}
-
-.pseudo-button {
-  display: inline-block;
-  padding: 0.25em;
-  margin:0.125em 0em;
-  font-size: 0.9em;
-  font-family: sans-serif;
-  font-variant: small-caps;
-  background-color:#fff;
-  border: 1px solid #ccc;
+#show-sending, #show-receiving {
+  font-size:1.1em;
+  font-variant:small-caps;
 }
 
 #transfers-map-table {
@@ -198,7 +129,7 @@ td, th {
 }
 
 #loading {
-  color:#333;
+  color:#933;
   background-color:#ffe;
   padding:0.5em;
   border-radius:0.25em;
@@ -206,28 +137,20 @@ td, th {
   font-size: 1.1em;
 }
 
-/* Animate the loading ellipsis.
- * https://codepen.io/davidangel/pen/NqPYdW
- */
+/* Animate the loading ellipsis. */
 #loading .one {
-    opacity: 0;
-    font-size: 1.1em;
-    animation: dot 1.5s alternate infinite;
+    animation: dot 1.5s infinite;
     animation-delay: 0.0s;
 }
 
 #loading .two {
-    opacity: 0;
-    font-size: 1.1em;
-    animation: dot 1.5s alternate infinite;
-    animation-delay: 0.2s;
+    animation: dot 1.5s infinite;
+    animation-delay: 0.1s;
 }
 
 #loading .three {
-    opacity: 0;
-    font-size: 1.1em;
-    animation: dot 1.5s alternate infinite;
-    animation-delay: 0.4s;
+    animation: dot 1.5s infinite;
+    animation-delay: 0.2s;
 }
 
 @keyframes dot {
@@ -235,6 +158,7 @@ td, th {
      50% { opacity: 0; }
     100% { opacity: 1; }
 }
+
 
 #dismiss-bar {
   width: 100%;

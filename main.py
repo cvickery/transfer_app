@@ -34,6 +34,8 @@ from system_status import app_available, app_unavailable, get_reason, \
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
 
+from app_header import header
+
 from propose_rules import _propose_rules
 
 from program_requirements import Requirements
@@ -1087,8 +1089,10 @@ def map_courses():
   """.format('\n'.join(options))
   # Supply colleges from db now, but use ajax to get a college's disciplines
 
-  result = """
+  result = f"""
   <div id="setup-div">
+    {header(title='Map Transfer Rules',
+            nav_items=[{'type': 'link', 'href': '/', 'text': 'Main Menu'}])}
     <details class="instructions">
     <summary>Instructions</summary>
     <div class="instructions">
@@ -1137,7 +1141,7 @@ def map_courses():
         </h2>
         <div>
           <label for="institution">College:</label>
-          {}
+          {institution_select}
           <span id="discipline-span">
             <label for="discipline">Discipline:</label>
             <input type="text" id="discipline" />
@@ -1147,17 +1151,24 @@ def map_courses():
           No courses selected yet.
         </p>
       </fieldset>
-      <div>
-        <button id="show-sending">show sending rules</button>
-        <strong>or</strong>
-        <button id="show-receiving">show receiving rules</button>
-        <span id="loading">Loading
-          <span class="one">.</span>
-          <span class="two">.</span>
-          <span class="three">.</span>
-        </span>
-      </div>
-      <fieldset><legend>Which Colleges To Map</legend>
+      <fieldset><legend>Which Direction</legend>
+        <p>
+          Do you want to see how the selected courses transfer <em>to</em> other colleges
+          (<em>sending rules</em>) or how they transfer <em>from</em> other colleges (<em>receiving
+          rules</em>)?
+        </p>
+        <div style="text-align:center;">
+          <button id="show-sending">Sending Rules</button>
+          |
+          <button id="show-receiving">Receiving Rules</button>
+          <span id="loading">Loading
+            <span class="one">.</span>
+            <span class="two">.</span>
+            <span class="three">.</span>
+          </span>
+        </div>
+      </fieldset>
+      <fieldset><legend>Which Colleges</legend>
           <input  type="checkbox"
                   id="associates"
                   name="which-colleges"
@@ -1174,6 +1185,12 @@ def map_courses():
     </form>
   </div>
   <div id="transfers-map-div">
+    {header(title='Transfer Rule Map',
+            nav_items=[{'type': 'link', 'href': '/', 'text': 'Main Menu'},
+                       {'type': 'button',
+                        'id': 'show-setup',
+                        'text': 'Change Options'}],
+            need_css=False)}
     <details class="instructions">
       <summary>
         Each row of the table below shows the number of ways each course listed on the
@@ -1220,9 +1237,6 @@ def map_courses():
     </details>
     <table id="transfers-map-table">
     </table>
-    <div>
-      <button id="show-setup">change courses or direction</button>
-    </div>
   </div>
   <div id="pop-up-div">
     <div id="pop-up-container">
@@ -1230,7 +1244,7 @@ def map_courses():
       <div id="pop-up-content"></div>
     </div>
   </div>
-  """.format(institution_select)
+  """
   return render_template('map-courses.html', result=Markup(result))
 
 
