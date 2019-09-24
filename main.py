@@ -1235,7 +1235,7 @@ def map_courses():
         locating them in CUNYfirst.)
       </p>
     </details>
-    <table id="transfers-map-table">
+    <table id="transfers-map-table" class="scrollable">
     </table>
   </div>
   <div id="pop-up-div">

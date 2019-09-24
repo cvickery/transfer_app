@@ -258,12 +258,13 @@ $(function ()
       }
     }
 
-    let header_row = `<tr>
+    let header_row = `<thead><tr>
                         <th rowspan="2">Sending Course</th>
                         <th colspan="${colleges.length}">Receiving College</th></tr>`;
     if (request_type === 'show-receiving')
     {
-      header_row = `<tr>
+      header_row = `<thead>
+                      <tr>
                       <th colspan="${colleges.length}">Sending College</th>
                       <th rowspan="2">Receiving Course</th></tr>`;
     }
@@ -273,7 +274,7 @@ $(function ()
       colleges_row += `<th title="${colleges[c].name}">${colleges[c].code.replace('01', '')}</th>`;
       colleges[c] = colleges[c].code;
     }
-    colleges_row += '</tr>';
+    colleges_row += '</tr></thead><tbody>';
     // Get the table body rows from /_map_course
     $('#show-sending, #show-receiving').prop('disabled', true);
     $('#loading').show();
@@ -294,7 +295,7 @@ $(function ()
       {
         $('#loading').hide();
         $('#show-sending, #show-receiving').prop('disabled', false);
-        $('#transfers-map-table').html(header_row + colleges_row + result);
+        $('#transfers-map-table').html(header_row + colleges_row + result + '</tbody>');
         $('#setup-div').hide();
         $('#transfers-map-div').show();
       }
