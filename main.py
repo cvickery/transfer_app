@@ -1245,7 +1245,7 @@ def map_courses():
     </div>
   </div>
   """
-  return render_template('map-courses.html', result=Markup(result))
+  return render_template('map_courses.html', result=Markup(result), title='Map Course Transfers')
 
 
 # /_INSTITUTIONS

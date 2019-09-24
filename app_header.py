@@ -9,7 +9,6 @@ def header(title, nav_items=[], need_css=True):
   nav_element = '<nav>'
   nav_elements = []
   for nav_item in nav_items:
-    print(nav_item['type'])
     if nav_item['type'] == 'button':
       nav_elements.insert(0, f"<button id=\"{nav_item['id']}\" "
                              f"        class=\"nav-button\">{nav_item['text']}</button>")

@@ -3,7 +3,7 @@ $(function ()
 {
   //  Initial Settings
   //  =============================================================================================
-  $('#need-js, #loading, #discipline-span, #transfers-map-div, #pop-up-div').hide();
+  $('#loading, #discipline-span, #transfers-map-div, #pop-up-div').hide();
   $('#show-sending, #show-receiving').prop('disabled', true);
   let pop_up_content = 'None';
   $('form').submit(function (event)
