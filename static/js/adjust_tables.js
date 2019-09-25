@@ -82,6 +82,30 @@ export default function adjust_tables(event)
       tbody.style.display = 'block';
       tbody.style.position = 'absolute';
 
+      //  See if all the cells in the body row have the headers attribute
+      const body_row = tbody.children[0].children;
+      let has_headers = true;
+      let col_widths = {};
+      for (let i =0; i < body_row.length; i++)
+      {
+        if (body_row[i].hasAttribute('headers'))
+        {
+          let col_id = body_row[i].getAttribute('headers');
+          col_widths[col_id] = body_row[i].clientWidth;
+        }
+        else
+        {
+          has_headers = false;
+          break;
+        }
+      }
+      if (has_headers)
+      {
+        // I think you still have to test whether the thead or the tbody is wider here.
+        // Or maybe you just see which is wider cell-by-cell above and use the larger for whichever
+        // is smaller.
+        // Or maybe you go to bed now.
+      }
       // Find the thead row with the max number of columns
       let max_thead_cols_row_index = 0;
       let max_thead_cols_num_cols = 0;
@@ -95,7 +119,6 @@ export default function adjust_tables(event)
         }
       }
       const head_row = thead.children[max_thead_cols_row_index].children;
-      const body_row = tbody.children[0].children;
 
       if (thead.offsetWidth < tbody.offsetWidth)
       {
