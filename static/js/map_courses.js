@@ -304,7 +304,7 @@ $(function ()
     }
 
     let header_row = `<thead><tr>
-                        <th rowspan="2" id="target-course-col">SC</th>
+                        <th rowspan="2" id="target-course-col">A long Sending Course Heading</th>
                         <th colspan="${colleges.length}">Receiving College</th></tr>`;
     if (request_type === 'show-receiving')
     {
