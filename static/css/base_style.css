@@ -87,3 +87,8 @@ nav>a:hover {
   border: 0;
   padding: 0;
 }
+
+.scrollable tbody {
+  overflow-y: auto;
+  overflow-x: auto;
+}

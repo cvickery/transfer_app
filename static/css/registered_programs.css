@@ -23,10 +23,6 @@ th {
   background-color: #fef;
 }
 
-.scrollable tbody {
-  overflow-y: scroll;
-  overflow-x: auto;
-}
 form {
   max-width:30em;
   margin:auto;
