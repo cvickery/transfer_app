@@ -1375,12 +1375,14 @@ def _map_course():
       class_info = 'selected-course inactive-course'
     course_info_cell = """
                          <th class="clickable {}"
-                             title="course_id {}: {} {}"
-                             headers="target-course-col">{} {} {}</th>
+                             title="course_id {}: “{}”"
+                             headers="target-course-col"
+                             id="{}-row"
+                             >{} {} {}</th>
                        """.format(class_info,
                                   course_info.course_id,
-                                  course_info.institution,
                                   course_info.title,
+                                  course_info.course_id,
                                   course_info.institution.rstrip('0123456789'),
                                   course_info.discipline,
                                   course_info.catalog_number)
@@ -1443,7 +1445,9 @@ def _map_course():
       class_info = class_info.strip()
       if class_info != '':
         class_info = f' class="{class_info}"'
-      data_cells += f'<td title="{rules_str}" headers="{coll}-col"{class_info}>{num_rules}</td>'
+      data_cells += f"""<td title="{rules_str}"
+                            headers="{coll}-col {course_info.course_id}-row"
+                            {class_info}>{num_rules}</td>"""
     table_rows.append(row_template.format(data_cells))
 
   conn.close()
