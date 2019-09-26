@@ -1,4 +1,4 @@
-import  adjust_tables from '/static/js/scrollable_tables.js';
+import  ScrollableTable from '/static/js/scrollable_tables.js';
 import  set_height from '/static/js/scrollable_tables.js';
 
 // //  set_height()
@@ -345,7 +345,8 @@ $(function ()
         $('#setup-div').hide();
         $('#transfers-map-div').show();
         // set_height(); //  Make the mapping table fit the available space in the viewport
-        adjust_tables(); //  Make it scrollable and adjust column widths.
+        // adjust_tables(); //  Make it scrollable and adjust column widths.
+        let testable = new ScrollableTable(document.getElementById('transfers-map-table'));
       }
 
       // Event handlers for this table

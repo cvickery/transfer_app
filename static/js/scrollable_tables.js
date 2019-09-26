@@ -1,3 +1,23 @@
+// class ScrollableTable
+// ------------------------------------------------------------------------------------------------
+/* The first tbody element of a ScrollableTable will be scrollable, within the limits of the
+ * desired_height, which can be changed via the adjust_height method.
+ */
+export default class ScrollableTable
+{
+  constructor(table, desired_height)
+  {
+    this.table = table;
+    this.desired_height = desired_height;
+    this.thead = table.getElementsByTagName('thead')[0];
+    this.tbody = table.getElementsByTagName('tbody')[0];
+    this.table_height = this.thead.offsetHeight + this.tbody.offsetHeight;
+    this.parent_div = this.table.parentNode; // Force this one's height to desired_height or less.
+    console.log(this);
+  }
+}
+
+
 /*  Table elements with the class "scrollable" will have the thead column widths set to match the
  *  widths of the columns of the tbody.
  *
@@ -15,7 +35,7 @@
 //  -----------------------------------------------------------------------------------------------
 /*  Make a table scrollable within a given height, which can be changed using set_height
  */
-export default function adjust_table(table)
+export function adjust_table(table)
 {
   let thead = 'Undefined';
   let tbody = 'Undefined';
