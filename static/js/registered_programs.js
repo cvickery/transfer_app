@@ -1,4 +1,4 @@
-import adjust_tables from './adjust_tables.js';
+import ScrollableTable from './scrollable_tables.js';
 
 $(function()
 {
@@ -54,18 +54,21 @@ $(function()
  */
 window.addEventListener('load', function ()
 {
-  // Adjust tables on initial page load.
-  set_height();
-  adjust_tables();
-  // Need to re-process tables when viewport is resized.
-  window.addEventListener('resize', set_height);
-  // Need to re-process tables when details open/close.
-  const details = document.getElementsByTagName('details');
-  if (details)
+  // Make the table (if there is one) scrollable.
+  const tables = document.getElementsByClassName('scrollable');
+  if (tables.length > 0)
   {
-    for (let i = 0; i < details.length; i++)
+    const the_table = new ScrollableTable(tables[0]);
+    // Need to re-process tables when viewport is resized.
+    window.addEventListener('resize', the_table.adjust_height);
+    // Need to re-process tables when details open/close.
+    const details = document.getElementsByTagName('details');
+    if (details)
     {
-      details[i].addEventListener('toggle', set_height);
+      for (let i = 0; i < details.length; i++)
+      {
+        details[i].addEventListener('toggle', the_table.adjust_height);
+      }
     }
   }
 });

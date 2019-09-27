@@ -88,6 +88,11 @@ nav>a:hover {
   padding: 0;
 }
 
+.scrollable {
+  height: 100%;
+  overflow: hidden;
+}
+
 .scrollable tbody {
   overflow-y: auto;
   overflow-x: auto;
