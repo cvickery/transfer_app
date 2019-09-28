@@ -59,15 +59,17 @@ window.addEventListener('load', function ()
   if (tables.length > 0)
   {
     const the_table = new ScrollableTable(tables[0]);
-    // Need to re-process tables when viewport is resized.
-    window.addEventListener('resize', the_table.adjust_height);
-    // Need to re-process tables when details open/close.
+    const height_callback = the_table.get_height_callback();
+
+    // Need to re-process the table's height when viewport is resized.
+    window.addEventListener('resize', height_callback);
+    // Need to re-process table when details elements open/close.
     const details = document.getElementsByTagName('details');
     if (details)
     {
       for (let i = 0; i < details.length; i++)
       {
-        details[i].addEventListener('toggle', the_table.adjust_height);
+        details[i].addEventListener('toggle', height_callback);
       }
     }
   }

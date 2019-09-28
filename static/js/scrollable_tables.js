@@ -31,7 +31,9 @@ export default class ScrollableTable
 {
   //  constructor()
   //  ---------------------------------------------------------------------------------------------
-  /*  Makes a table element scrollable.
+  /*  Makes a table body scrollable while column headers stay in position.
+   *  The height of the table can be given explicitly or can be determined from the space remaining
+   *  in the viewport.
    */
   constructor(table, desired_height)
   {
@@ -53,13 +55,81 @@ export default class ScrollableTable
     this.parent_node.style.position = 'relative';
     this.tbody.style.position = 'absolute';
     this.table.style.overflowY = 'hidden';
-    console.log('before width adjustments', this);
+    this.adjust_height();
+  }
 
-    /* Adjust cell widths so that tbody cells line up with thead cells. If the table uses the
-     * headers attribute to reference row and column positions, this is easy provided the column
-     * ids end with '-col'. An alternative heuristic is used if this fails. */
-    // ............................................................................................
 
+  //  adjust_height()
+  //  ---------------------------------------------------------------------------------------------
+  /*  Change the height of a ScrollableTable's parent div, presumably because the size of the
+   *  viewable area changed.
+   *
+   *  Calls adjust_widths after the height adjustment.
+   */
+  adjust_height()
+  {
+    if (this.desired_height)
+    {
+      // The height is a known value
+      this.parent_node.style.height = this.desired_height + 'px';
+    }
+    else
+    {
+/*
+// Set the height of the tbody. Do this by getting the height of the table minus the height of
+// the thead. The height of the table is the height of its containing element; the table
+// itself does not give an accurate measure.
+const table_height = table.parentNode.offsetHeight;
+table.style.overflowY = 'hide';
+const head_height = thead.offsetHeight;
+tbody.style.height = (table_height - head_height) + 'px';
+thead.style.display = 'block';
+tbody.style.display = 'block';
+tbody.style.position = 'absolute';
+
+ */
+
+      //  Adjust the height of the parent node to fill the space from the top of the table to the
+      //  bottom of the viewport.
+      const table_top = this.parent_node.offsetTop;
+      const viewport_height = window.innerHeight;
+      const fudge = 1; //  Room for bottom scrollbar and padding to be sure bottom of table shows
+      let div_height = viewport_height - (table_top + fudge);
+      // If the entire table fits in the available space, use the table's intrinsic height
+      div_height = Math.min(div_height, this.intrinsic_height);
+      this.parent_node.style.height = div_height + 'px';
+      this.tbody.style.height = (div_height - this.thead.offsetHeight) + 'px';
+      console.log(`set containing div height to ${div_height}px`, this);
+
+      //  Not sure why widths adjustment can’t be done just once in the constructor.
+      this.adjust_widths();
+    }
+  }
+
+
+  // get_height_callback()
+  // ----------------------------------------------------------------------------------------------
+  /* Provide a reference to this object’s adjust_height method, bound to ‘this’. I don’t understand
+   * why the object returned by the constructor doesn’t take care of this, but I think it’s because
+   * ES6 classes are just syntactic sugar for nested functions, so the closure has to be handled
+   * explicitly.
+   *
+   * Used for setting up event listeners when window is resized or details elements toggle state.
+   */
+  get_height_callback()
+  {
+    return this.adjust_height.bind(this);
+  }
+
+
+  // adjust_widths()
+  // ----------------------------------------------------------------------------------------------
+  /* Adjust cell widths so that tbody cells line up with thead cells. If the table uses the
+   * headers attribute to reference row and column positions, this is easy, provided the column
+   * ids end with '-col'. Use an alternative heuristic if that requirement does not obtain. */
+  adjust_widths()
+  {
+    console.log('adjust widths', this);
     // Test if all cells in the first row of the body have proper headers attributes, including
     // at least one that ends with '-col'.
     // “Feature Request”: handle multiple -col headers (cases where multiple body cells match a
@@ -119,7 +189,7 @@ export default class ScrollableTable
     }
     else
     {
-      // Alternative heuristic: find the row in thead with the largest number of cells, assume that
+      // Alternate heuristic: find the row in thead with the largest number of cells, assume that
       // is the number of columns. If that matches the number of cells in the first row of the body,
       // do the width adjustment. If this fails, the table will be scrollable, but the columns
       // will not line up.
@@ -138,7 +208,6 @@ export default class ScrollableTable
       let body_cells = this.tbody.children[0].children;
       if (head_cells.length === body_cells.length)
       {
-        console.log('alternative heuristic');
         // Set the width of each cell in the row of thead with max cols to match the width of the
         // corresponding cols in the first row of tbody.
         for (let col = 0; col < head_cells.length; col++)
@@ -147,7 +216,6 @@ export default class ScrollableTable
           let body_cell = body_cells[col];
           let head_cell_width = content_width(head_cell);
           let body_cell_width = content_width(body_cell);
-          console.log('before', head_cell_width, body_cell_width);
           if (head_cell_width < body_cell_width)
           {
             head_cell.style.minWidth = body_cell_width + 'px';
@@ -156,7 +224,6 @@ export default class ScrollableTable
           {
             body_cell.style.minWidth = head_cell_width + 'px';
           }
-          console.log('after', content_width(head_cell), content_width(body_cell));
         }
       }
       else
@@ -164,39 +231,5 @@ export default class ScrollableTable
         console.error(`table is not scrollable: ${head_cells.length}; !== ${body_cells.length} `);
       }
     }
-
-    // Initialize the table's height
-    if (this.desired_height)
-    {
-      // The height is a known value
-      this.parent_node.style.height = this.desired_height + 'px';
-    }
-    else
-    {
-      //  Height is based on space remaining in the viewport
-      console.log('before adjust_height ', this);
-      this.adjust_height();
-    }
   }
-
-  //  adjust_height()
-  //  -----------------------------------------------------------------------------------------------
-  /*  Change the height of a ScrollableTable's parent div, presumably because the size of the
-   *  viewable area changed.
-   */
-  adjust_height()
-  {
-    console.log('adjust_height()', this);
-    //  Get the parent element of the table and be sure is is a div of class table-height.
-    const table_height_div = this.parent_node;
-    const table_top = table_height_div.offsetTop;
-    const viewport_height = window.innerHeight;
-    const fudge = 20; //  Room for bottom scrollbar and padding to be sure bottom of table shows
-    let div_height = viewport_height - (table_top + fudge);
-    // Check whether table will actually need to scroll or not.
-    div_height = Math.min(div_height, this.intrinsic_height);
-    table_height_div.style.height = div_height + 'px';
-    console.log(`set containing div height to ${div_height}px`, this);
-  }
-
 }
