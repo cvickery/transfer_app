@@ -44,7 +44,7 @@ header>nav {
   bottom:0.25em;
 }
 
-nav>a {
+nav>a, .button {
   margin:0 .25em;
   padding:0.125em 1em;
   display:inline-block;
@@ -57,7 +57,7 @@ nav>a {
   text-decoration:none;
 }
 
-nav>a:hover {
+nav>a:hover, .button:hover {
   background-color:#248;
   color:white;
 }

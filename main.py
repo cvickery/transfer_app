@@ -2023,7 +2023,6 @@ def registered_programs(institution, default=None):
         <p>
           {csv_link}
         </p>
-        <hr>
       </details>
       {table}
 """
