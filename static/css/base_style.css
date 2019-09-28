@@ -90,10 +90,9 @@ nav>a:hover, .button:hover {
 
 .scrollable {
   height: 100%;
-  overflow: hidden;
+  max-width: 100%;
 }
 
 .scrollable tbody {
   overflow-y: auto;
-  overflow-x: auto;
 }
