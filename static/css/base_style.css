@@ -88,11 +88,7 @@ nav>a:hover, .button:hover {
   padding: 0;
 }
 
-.scrollable {
-  height: 100%;
-  max-width: 100%;
-}
-
 .scrollable tbody {
-  overflow-y: auto;
+  overflow-x: auto;
+  overflow-y: scroll;
 }

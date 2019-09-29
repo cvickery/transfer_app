@@ -52,10 +52,17 @@ export default class ScrollableTable
     // ............................................................................................
     this.thead.style.display = 'block';
     this.tbody.style.display = 'block';
-    this.parent_node.style.position = 'relative';
     this.tbody.style.position = 'absolute';
-    this.table.style.overflowY = 'hidden';
     this.adjust_height();
+    this.adjust_widths();
+    setTimeout(function ()
+    {
+      // Heuristic cleanup.
+      // Wait for table layout to complete, and then readjust the column widths again.
+      // If the table is too long to complete layout in 1 sec, the code that creates this object
+      // should do its own width readjustment after a longer delay.
+      this.adjust_widths();
+    }.bind(this), 1000);
   }
 
 
@@ -63,8 +70,6 @@ export default class ScrollableTable
   //  ---------------------------------------------------------------------------------------------
   /*  Change the height of a ScrollableTable's parent div, presumably because the size of the
    *  viewable area changed.
-   *
-   *  Calls adjust_widths after the height adjustment.
    */
   adjust_height()
   {
@@ -75,19 +80,6 @@ export default class ScrollableTable
     }
     else
     {
-/*
-// Set the height of the tbody. Do this by getting the height of the table minus the height of
-// the thead. The height of the table is the height of its containing element; the table
-// itself does not give an accurate measure.
-const table_height = table.parentNode.offsetHeight;
-table.style.overflowY = 'hide';
-const head_height = thead.offsetHeight;
-tbody.style.height = (table_height - head_height) + 'px';
-thead.style.display = 'block';
-tbody.style.display = 'block';
-tbody.style.position = 'absolute';
-
- */
 
       //  Adjust the height of the parent node to fill the space from the top of the table to the
       //  bottom of the viewport.
@@ -99,10 +91,6 @@ tbody.style.position = 'absolute';
       div_height = Math.min(div_height, this.intrinsic_height);
       this.parent_node.style.height = div_height + 'px';
       this.tbody.style.height = (div_height - this.thead.offsetHeight) + 'px';
-      console.log(`set containing div height to ${div_height}px`, this);
-
-      //  Not sure why widths adjustment can’t be done just once in the constructor.
-      this.adjust_widths();
     }
   }
 
@@ -129,7 +117,6 @@ tbody.style.position = 'absolute';
    * ids end with '-col'. Use an alternative heuristic if that requirement does not obtain. */
   adjust_widths()
   {
-    console.log('adjust widths', this);
     // Test if all cells in the first row of the body have proper headers attributes, including
     // at least one that ends with '-col'.
     // “Feature Request”: handle multiple -col headers (cases where multiple body cells match a
@@ -156,7 +143,6 @@ tbody.style.position = 'absolute';
         }
         if (col_id === null)
         {
-          // console.log(`no -col in ${headers}`);
           has_headers = false;
           break;
         }
@@ -167,7 +153,6 @@ tbody.style.position = 'absolute';
       }
       else
       {
-        // console.log('missing headers attribute(s)');
         has_headers = false;
         break;
       }
@@ -228,7 +213,7 @@ tbody.style.position = 'absolute';
       }
       else
       {
-        console.error(`table is not scrollable: ${head_cells.length}; !== ${body_cells.length} `);
+        console.error(`Unable to adjust widths: ${head_cells.length} !== ${body_cells.length}`);
       }
     }
   }
