@@ -12,12 +12,12 @@
 const content_width = (cell) =>
 {
   let cell_style = getComputedStyle(cell);
-  let pl = Number.parseInt(cell_style.getPropertyValue('padding-left'), 10);
-  let pr = Number.parseInt(cell_style.getPropertyValue('padding-right'), 10);
-  let bl = Number.parseInt(cell_style.getPropertyValue('border-left-width'), 10);
-  let br = Number.parseInt(cell_style.getPropertyValue('border-right-width'), 10);
+  let pl = Number.parseFloat(cell_style.getPropertyValue('padding-left'), 10);
+  let pr = Number.parseFloat(cell_style.getPropertyValue('padding-right'), 10);
+  let bl = Number.parseFloat(cell_style.getPropertyValue('border-left-width'), 10);
+  let br = Number.parseFloat(cell_style.getPropertyValue('border-right-width'), 10);
   let adj = pl + pr + Math.max(bl, br);
-  return Math.round(cell.getBoundingClientRect().width - adj);
+  return cell.getBoundingClientRect().width - adj;
 };
 
 

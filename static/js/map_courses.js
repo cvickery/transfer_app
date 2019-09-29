@@ -1,48 +1,4 @@
-import  ScrollableTable from '/static/js/scrollable_tables.js';
-import  set_height from '/static/js/scrollable_tables.js';
-
-// //  set_height()
-// //  -----------------------------------------------------------------------------------------------
-// /*  Set the height of all table-height divs in preparation for adjusting the scrollable tables
-//  *  contained therein.
-//  *  Calls adjust_tables() after (re-)setting heights.
-//  */
-// const set_height = () =>
-// {
-//   //  Make the (only) table on this page fill the current viewport, and no more.
-//   const table_height_divs = document.getElementsByClassName('table-height');
-//   console.assert(table_height_divs.length < 2, 'Unable to scroll more than one table per page.');
-//   if (table_height_divs.length > 0)
-//   {
-//     const table_height_div = table_height_divs[0];
-//     const table_top = table_height_div.offsetTop;
-//     const viewport_height = window.innerHeight;
-//     const fudge = 20; //  Room for bottom scrollbar and padding to be sure bottom of table shows
-//     table_height_div.style.height = (viewport_height - (table_top + fudge)) + 'px';
-//     // console.log(`New height is ${table_height_div.offsetHeight}px`);
-//   }
-// };
-
-//  Page Load Event Listener
-//  -----------------------------------------------------------------------------------------------
-/*  Set up to adjust table for scrolling when it is first displayed, and to re-set its height when
- *  when the details element toggles state.
- */
-window.addEventListener('load', function ()
-{
-  // Do not set height of the mapping table on initial page load; wait for it to become visible.
-  // Will need to adjust height when viewport is resized ...
-  window.addEventListener('resize', set_height);
-  // ... and when the details elemet opens or closes.
-  const details = document.getElementsByTagName('details');
-  if (details)
-  {
-    for (let i = 0; i < details.length; i++)
-    {
-      details[i].addEventListener('toggle', set_height);
-    }
-  }
-});
+import ScrollableTable from '/static/js/scrollable_tables.js';
 
 $(function ()
 {
@@ -79,6 +35,7 @@ $(function ()
   {
     $('#pop-up-div').hide();
   });
+
 
 
   //  Globals
@@ -304,7 +261,7 @@ $(function ()
     }
 
     let header_row = `<thead><tr>
-                        <th rowspan="2" id="target-course-col">A long Sending Course Heading</th>
+                        <th rowspan="2" id="target-course-col">Sending Course</th>
                         <th colspan="${colleges.length}">Receiving College</th></tr>`;
     if (request_type === 'show-receiving')
     {
@@ -344,9 +301,23 @@ $(function ()
         $('#transfers-map-table').html(header_row + colleges_row + result + '</tbody>');
         $('#setup-div').hide();
         $('#transfers-map-div').show();
-        // set_height(); //  Make the mapping table fit the available space in the viewport
-        // adjust_tables(); //  Make it scrollable and adjust column widths.
-        let testable = new ScrollableTable(document.getElementById('transfers-map-table'));
+        let transfers_map_table = document.getElementById('transfers-map-table');
+        let the_table = new ScrollableTable(transfers_map_table);
+        let set_height = the_table.get_height_callback();
+
+        // Will need to adjust height of the mapping table whenever the viewport is resized ...
+        window.addEventListener('resize', set_height);
+        // ... and when the details elemet opens or closes.
+        const details = document.getElementsByTagName('details');
+        if (details)
+        {
+          for (let i = 0; i < details.length; i++)
+          {
+            details[i].addEventListener('toggle', set_height);
+          }
+        }
+
+
       }
 
       // Event handlers for this table
