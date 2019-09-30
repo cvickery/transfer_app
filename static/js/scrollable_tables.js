@@ -35,15 +35,18 @@ export default class ScrollableTable
    *  The height of the table can be given explicitly or can be determined from the space remaining
    *  in the viewport.
    */
-  constructor(table, desired_height)
+  constructor(args)
   {
     // Context
     // ............................................................................................
-    this.table = table;
-    this.desired_height = desired_height;
-    this.thead = table.getElementsByTagName('thead')[0];
+    this.table = args.table;
+    this.desired_height = args.height;
+    this.width_delay = args.delay ? args.delay : 2000;
+    this.padding_bottom = args.padding ? args.padding : 10;
+
+    this.thead = this.table.getElementsByTagName('thead')[0];
     let head_height = this.thead.offsetHeight;
-    this.tbody = table.getElementsByTagName('tbody')[0];
+    this.tbody = this.table.getElementsByTagName('tbody')[0];
     let body_height = this.tbody.offsetHeight;
     this.intrinsic_height = head_height + body_height;
     this.parent_node = this.table.parentNode; // Force this one's height to desired_height or less.
@@ -62,36 +65,34 @@ export default class ScrollableTable
       // If the table is too long to complete layout in 1 sec, the code that creates this object
       // should do its own width readjustment after a longer delay.
       this.adjust_widths();
-    }.bind(this), 1000);
+    }.bind(this), this.width_delay);
   }
 
 
   //  adjust_height()
   //  ---------------------------------------------------------------------------------------------
-  /*  Change the height of a ScrollableTable's parent div, presumably because the size of the
-   *  viewable area changed.
+  /*  Change the height of a ScrollableTable's parent div: initially, or because of an event that
+   *  makes it necessary to do so.
    */
   adjust_height()
   {
+    const table_top = this.parent_node.offsetTop;
+    const viewport_height = window.innerHeight;
+    let div_height = viewport_height - (table_top + this.padding_bottom);
     if (this.desired_height)
     {
       // The height is a known value
-      this.parent_node.style.height = this.desired_height + 'px';
+      div_height = Math.min(div_height, this.desired_height);
     }
     else
     {
-
-      //  Adjust the height of the parent node to fill the space from the top of the table to the
-      //  bottom of the viewport.
-      const table_top = this.parent_node.offsetTop;
-      const viewport_height = window.innerHeight;
-      const fudge = 1; //  Room for bottom scrollbar and padding to be sure bottom of table shows
-      let div_height = viewport_height - (table_top + fudge);
-      // If the entire table fits in the available space, use the table's intrinsic height
+      // The height depends on the space available.
       div_height = Math.min(div_height, this.intrinsic_height);
-      this.parent_node.style.height = div_height + 'px';
-      this.tbody.style.height = (div_height - this.thead.offsetHeight) + 'px';
     }
+
+    //  Adjust the height of the parent node, and make the body fit.
+    this.parent_node.style.height = (div_height + this.padding_bottom) + 'px';
+    this.tbody.style.height = (div_height - this.thead.offsetHeight) + 'px';
   }
 
 
