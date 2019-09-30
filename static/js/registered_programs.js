@@ -12,8 +12,7 @@ $(function()
 
 //  Page Load Event Listener
 //  -----------------------------------------------------------------------------------------------
-/*  Make initial call to set_height() and set up  set_heights listeners for window resize and
- *  details toggle events.
+/*  Make the table of programs scrollable, and responsive to windo resize and details toggle events.
  */
 window.addEventListener('load', function ()
 {
