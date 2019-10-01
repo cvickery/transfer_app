@@ -19,27 +19,17 @@ def top_menu(msg=''):
       and courses that you are interested in.
     </p>
     <dl>
+
       <dt><a href="/map_courses">Course Transfer Maps</a></dt>
       <dd>
         Find which colleges a course or set of courses transfers to or from. Results are presented
         in tabular form with cells highlighted to identify possible problems.
       </dd>
-      <dt><a href="/review_rules">Review Transfer Rules</a></dt>
-      <dd>
-        Look at and optionally comment on the details of existing transfer rules.
-      </dd>
-      <dt><a href="/courses">College Course Catalogs</a></dt>
-      <dd>
-        Display a complete list of all the courses for any CUNY College in standard college-bulletin
-        format. But you have to say “Please,” and then be prepared for a “firehose” stream of
-        information about thousands of courses. The mass of output has been known to drown some
-        mobile browsers.
-      </dd>
-      <dt><a href="/registered_programs">Academic Programs Registered with the
-      NYS Department of Education</a></dt>
+
+      <dt><a href="/registered_programs">Academic Programs</a></dt>
       <dd>
         <p>
-          Display information about all academic programs registered with the NYS Department of
+          Tabular information about all academic programs registered with the NYS Department of
           Education for any CUNY college. Includes information about program “variants,” such as
           programs that are shared across colleges and/or programs that can award multiple degrees
           or certificates.
@@ -51,17 +41,32 @@ def top_menu(msg=''):
           output.
         </p>
         <p>
-          The table includes links to each program’s requirements, as defined in DegreeWorks.
+          The tables include links to each program’s requirements, as defined in DegreeWorks.
           Parsing the requirements from the internal form used by DegreeWorks into a readable form
           is a work in progress.
         </p>
       </dd>
+
+      <dt><a href="/review_rules">Review Transfer Rules</a></dt>
+      <dd>
+        Review details about, and optionally make suggestions for changing, existing transfer rules.
+      </dd>
+
       <dt><a href="/pending">Pending Reviews</a></dt>
       <dd>
-        This is a maintenance utility that shows transfer rule reviews that have been submitted but
-        not yet confirmed by the submitter. These reviews are purged if not confirmed within two
+        This is a maintenance utility that shows transfer rule suggestions that have been submitted
+        but not yet confirmed by the submitter. These reviews are purged if not confirmed within two
         days of submission.
       </dd>
+
+      <dt><a href="/courses">College Course Catalogs</a></dt>
+      <dd>
+        Display a complete list of all the active courses for any CUNY College in standard
+        college-bulletin format. But you have to say “Please,” and then be prepared for a “firehose”
+        stream of information about thousands of courses. The mass of output has been known to drown
+        some mobile browsers.
+      </dd>
+
     </dl>
     <h2>Problems?</h2>
     <p>
