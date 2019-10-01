@@ -78,6 +78,17 @@ nav>a:hover, .button:hover {
   color:white;
 }
 
+.error {
+  color: #922;
+  font-size: 1.2rem;
+  text-transform: lowercase;
+  font-variant: small-caps;
+}
+
+.warning {
+  color: #992;
+}
+
 .center {
   text-align:center;
 }
@@ -92,3 +103,4 @@ nav>a:hover, .button:hover {
   overflow-x: auto;
   overflow-y: scroll;
 }
+

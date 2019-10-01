@@ -12,20 +12,20 @@
 
   </head>
   <body>
+    {% if not omitjs %}
     <div id="need-js">
-      <p>Waiting for JavaScript to initialize &hellip;</p>
-      <p>
-        <strong>Note:</strong> Obsolete browsers, such as Internet Explorer, do not support current
-        versions of the JavaScript language and will not work with this application.
-      </p>
+      <p class="error">Waiting for JavaScript to initialize &hellip;</p>
     </div>
+    {% endif %}
     <div>
       {{ result }}
     </div>
   </body>
+  {% if not omitjs %}
+  <script>document.getElementById('need-js').style.display = 'none';
+</script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-  <script>$('#need-js').hide();
-</script>
   {% block scripts %}{% endblock %}
+  {% endif %}
 </html>

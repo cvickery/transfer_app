@@ -1,22 +1,6 @@
-body {
-  font-family: sans-serif;
-  border: 1em;
-  padding: 1em;
-  color:#333;
-  background-color: #eff;
-  font-size: 0.8em;
-  max-width: 40em;
-  }
 
 p+ul {
   margin-top: -1em;
-}
-
-.error {
-  color: #922;
-  font-size: 1.5em;
-  text-transform: lowercase;
-  font-variant: small-caps;
 }
 
 button, a.button {
@@ -35,6 +19,7 @@ button, a.button {
 
 fieldset {
     border-radius:0.5em;
+    max-width: 40em;
 }
 
 .institution-select {

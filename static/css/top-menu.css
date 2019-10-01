@@ -1,22 +1,3 @@
-body {
-  padding: 0 1em;
-  background-color: #eff;
-  color:#333;
-  font-family: sans-serif;
-  max-width:40em;
-  border: 1em;
-}
-
-.error {
-  color: #922;
-  font-size: 1em;
-}
-
-.warning {
-  color: #611;
-  font-style: italic;
-}
-
 h1 {
   font-size:1.4em;
   margin:0;
@@ -27,23 +8,17 @@ h2 {
   margin: 0 auto;
 }
 
-a {
-  text-decoration: none;
-}
-
-a:hover {
-  background-color: #333;
-  color:#eff;
-  padding:0.25em;
+p {
+  max-width:40em;
 }
 
 dl {
-  margin: 1em;
+  margin: 1em 0;
   padding: 0.5em;
+  max-width:40em;
   background-color:white;
   border: 1px solid #ccc;
   border-radius: 0.25em;
-  max-width:40em;
 }
 
 dt {
@@ -54,4 +29,14 @@ dt {
 dd {
   margin: 0.5em;
   text-align: justify;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  background-color: #333;
+  color:#eff;
+  padding:0.25em;
 }

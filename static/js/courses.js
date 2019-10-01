@@ -1,6 +1,6 @@
 $(function ()
 {
-  $('#need-js').hide();
+  $('#loading').hide();
 
   $('button').prop('disabled', true);
 

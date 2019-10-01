@@ -35,6 +35,7 @@ from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify
 
 from app_header import header
+from top_menu import top_menu
 
 from propose_rules import _propose_rules
 
@@ -114,38 +115,12 @@ def fix_title(str):
              .replace(' Of ', ' of '))
 
 
-#
-# Transfer App Functions
-# =================================================================================================
-# Map Courses: Look at rules for courses across campuses.
-# Review Rules: A sequence of pages for reviewing transfer rules.
-# Courses Page: Display the complete catalog of currently active courses for any college.
-
-# REVIEW RULES PAGES
-# -------------------------------------------------------------------------------------------------
-#   Not posted: display form_1, which displays email prompt, source, and destination lists. User
-#   must provide email and select exactly one institution from one of the lists and 1+ institutions
-#   from the other list.
-#   Posted form_1: display form_2, which provides list of disciplines for the single institution.
-#   The user may select 1+ of them.
-#   Posted form_2: display form_3, which provides matching transfer rules for all discipline pairs
-#   selected. For each one, display a "verified" checkbox and a "notation" text box.
-#   Posted form_3: enter all verified/notation data, along with person's email into db; send email
-#   for confirmation. When user replies to the email, mark all matching items as confirmed and
-#   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
-#   (This allows people to accidentally deny their work without losing it.)
-
-@app.route('/propose_rules', methods=['POST', 'GET'])
-def propose_rules():
-  return make_response(render_template('propose_rules.html', result=Markup(_propose_rules())))
-
-
 # INDEX PAGE: Top-level Menu
 # =================================================================================================
 # This is the entry point for the transfer application
 @app.route('/', methods=['POST', 'GET'])
 @app.route('/index/', methods=['POST', 'GET'])
-def top_menu():
+def index_page():
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
@@ -167,12 +142,34 @@ def top_menu():
   cursor.close()
   conn.close()
   # You can put messages for below the menu here:
-  result = """
+  msg = f"""
   <div id="update-info">
-    <p><sup>&dagger;</sup>{:,} transfer rules as of {}.</p>
+    <p><sup>&dagger;</sup>{num_rules:,} transfer rules as of {rules_date}.</p>
   </div>
-            """.format(num_rules, rules_date)
-  return make_response(render_template('top-menu.html', result=Markup(result)))
+            """
+  return make_response(render_template('top-menu.html',
+                                       result=Markup(top_menu(msg)),
+                                       omitjs=True))
+
+
+# REVIEW RULES PAGES
+# -------------------------------------------------------------------------------------------------
+#   Not posted: display form_1, which displays email prompt, source, and destination lists. User
+#   must provide email and select exactly one institution from one of the lists and 1+ institutions
+#   from the other list.
+#   Posted form_1: display form_2, which provides list of disciplines for the single institution.
+#   The user may select 1+ of them.
+#   Posted form_2: display form_3, which provides matching transfer rules for all discipline pairs
+#   selected. For each one, display a "verified" checkbox and a "notation" text box.
+#   Posted form_3: enter all verified/notation data, along with person's email into db; send email
+#   for confirmation. When user replies to the email, mark all matching items as confirmed and
+#   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
+#   (This allows people to accidentally deny their work without losing it.)
+
+@app.route('/propose_rules', methods=['POST', 'GET'])
+def propose_rules():
+  return make_response(render_template('propose_rules.html', result=Markup(_propose_rules())))
+
 
 
 # REVIEW_RULES PAGE
@@ -1691,8 +1688,16 @@ def courses():
       quantifier = 'All'
     else:
       quantifier = ''
+    header_str = header(title=f'{institution_name}: {quantifier} Active Courses',
+                        nav_items=[{'type': 'link',
+                                    'href': '/',
+                                    'text': 'Main Menu'},
+                                   {'type': 'link',
+                                    'href': '/courses',
+                                    'text': 'Change College'}])
     result = f"""
-      <h1>{quantifier} {institution_name} {discipline_name} Courses {department_str}</h1>
+      {header_str}
+      <h1>{discipline_name} {department_str}</h1>
       <details><summary style="border:1px solid #ccc;">Legend and Details</summary>
         <div class="instructions">
           <p>{num_active_courses:,} active courses as of {date_updated}</p>
@@ -1724,7 +1729,7 @@ def courses():
           </div>
         </div>
       </details>
-      <p id="need-js" class="error">Loading catalog information ...</p>
+      <p id="loading" class="error">Loading catalog information ...</p>
       """
     result = result + lookup_courses(institution_code,
                                      department=department_code,
@@ -1737,8 +1742,9 @@ def courses():
     else:
       msg = ''
     result = f"""
+    {header(title='CUNY Transfer App',
+            nav_items=[{'type':'link', 'text': 'Main Menu', 'href': '/'}])}
     <h1>List Active Courses</h1>{msg}
-    <p id="need-js" class="error">This app requires JavaScript.</p>
     <p>Pick a college and say “Please”.</p>
     <form method="post" action="#">
     <fieldset><legend>Select a College</legend>"""
@@ -1762,7 +1768,9 @@ def courses():
       </div>
     </fieldset></form>
     """
-  return render_template('courses.html', result=Markup(result))
+  return render_template('courses.html',
+                         result=Markup(result),
+                         title="Course Lists")
 
 
 # REGISTERED PROGRAMS PAGE
