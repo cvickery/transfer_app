@@ -43,7 +43,6 @@ export default class ScrollableTable
     this.desired_height = args.height;
     this.initial_delay = args.delay ? args.delay : 2000;
     this.padding_bottom = args.padding ? args.padding : 10;
-    this.use_headeing_widths = args.use_headeing_widths;
 
     this.thead = this.table.getElementsByTagName('thead')[0];
     let head_height = this.thead.offsetHeight;
@@ -176,8 +175,7 @@ export default class ScrollableTable
       // Make the narrower of the header cell or body cell match the width of the wider of the two.
       for (let col = 0; col < head_cells.length; col++)
       {
-        if (this.user_header_widths ||
-            head_cells[col].cell.offsetWidth > body_cells[col].cell.offsetWidth)
+        if (head_cells[col].cell.offsetWidth > body_cells[col].cell.offsetWidth)
         {
           body_cells[col].cell.style.minWidth = head_cells[col].width + 'px';
         }
@@ -216,8 +214,7 @@ export default class ScrollableTable
           let body_cell = body_cells[col];
           let head_cell_width = content_width(head_cell);
           let body_cell_width = content_width(body_cell);
-          if (this.user_header_widths ||
-              head_cell_width > body_cell_width)
+          if (head_cell_width > body_cell_width)
           {
             body_cell.style.minWidth = head_cell_width + 'px';
           }
