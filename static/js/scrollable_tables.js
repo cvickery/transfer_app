@@ -41,8 +41,9 @@ export default class ScrollableTable
     // ............................................................................................
     this.table = args.table;
     this.desired_height = args.height;
-    this.width_delay = args.delay ? args.delay : 2000;
+    this.initial_delay = args.delay ? args.delay : 2000;
     this.padding_bottom = args.padding ? args.padding : 10;
+    this.use_headeing_widths = args.use_headeing_widths;
 
     this.thead = this.table.getElementsByTagName('thead')[0];
     let head_height = this.thead.offsetHeight;
@@ -56,16 +57,43 @@ export default class ScrollableTable
     this.thead.style.display = 'block';
     this.tbody.style.display = 'block';
     this.tbody.style.position = 'absolute';
+
+    // initial adjustments
     this.adjust_height();
     this.adjust_widths();
     setTimeout(function ()
     {
-      // Heuristic cleanup.
-      // Wait for table layout to complete, and then readjust the column widths again.
-      // If the table is too long to complete layout in 1 sec, the code that creates this object
-      // should do its own width readjustment after a longer delay.
-      this.adjust_widths();
-    }.bind(this), this.width_delay);
+      // Cleanup Heuristic.
+      // Wait for table layout to complete, and then readjust the table again.
+      // If the table is too long for layout to complete layout within the default delay interval,
+      // the code that creates this object should specify a longer initial_delay.
+      this.adjust_table();
+    }.bind(this), this.initial_delay);
+  }
+
+
+  // adjust_table()
+  // ----------------------------------------------------------------------------------------------
+  /* Adjust the table’s height and width.
+   */
+  adjust_table()
+  {
+    this.adjust_height();
+    this.adjust_widths();
+  }
+
+  // get_adjustment_callback()
+  // ----------------------------------------------------------------------------------------------
+  /* Provide a reference to this object’s adjust_height method, bound to ‘this’. I don’t understand
+   * why the object returned by the constructor doesn’t take care of this, but I think it’s because
+   * ES6 classes are just syntactic sugar for nested functions, so the closure has to be handled
+   * explicitly.
+   *
+   * Used for setting up event listeners when window is resized or details elements toggle state.
+   */
+  get_adjustment_callback()
+  {
+    return this.adjust_table.bind(this);
   }
 
 
@@ -96,26 +124,11 @@ export default class ScrollableTable
   }
 
 
-  // get_height_callback()
-  // ----------------------------------------------------------------------------------------------
-  /* Provide a reference to this object’s adjust_height method, bound to ‘this’. I don’t understand
-   * why the object returned by the constructor doesn’t take care of this, but I think it’s because
-   * ES6 classes are just syntactic sugar for nested functions, so the closure has to be handled
-   * explicitly.
-   *
-   * Used for setting up event listeners when window is resized or details elements toggle state.
-   */
-  get_height_callback()
-  {
-    return this.adjust_height.bind(this);
-  }
-
-
   // adjust_widths()
   // ----------------------------------------------------------------------------------------------
   /* Adjust cell widths so that tbody cells line up with thead cells. If the table uses the
    * headers attribute to reference row and column positions, this is easy, provided the column
-   * ids end with '-col'. Use an alternative heuristic if that requirement does not obtain. */
+   * ids end with '-col'. Uses an alternative heuristic if that requirement does not obtain. */
   adjust_widths()
   {
     // Test if all cells in the first row of the body have proper headers attributes, including
@@ -163,13 +176,14 @@ export default class ScrollableTable
       // Make the narrower of the header cell or body cell match the width of the wider of the two.
       for (let col = 0; col < head_cells.length; col++)
       {
-        if (head_cells[col].cell.offsetWidth < body_cells[col].cell.offsetWidth)
+        if (this.user_header_widths ||
+            head_cells[col].cell.offsetWidth > body_cells[col].cell.offsetWidth)
         {
-          head_cells[col].cell.style.minWidth = body_cells[col].width + 'px';
+          body_cells[col].cell.style.minWidth = head_cells[col].width + 'px';
         }
         else
         {
-          body_cells[col].cell.style.minWidth = head_cells[col].width + 'px';
+          head_cells[col].cell.style.minWidth = body_cells[col].width + 'px';
         }
       }
     }
@@ -202,13 +216,14 @@ export default class ScrollableTable
           let body_cell = body_cells[col];
           let head_cell_width = content_width(head_cell);
           let body_cell_width = content_width(body_cell);
-          if (head_cell_width < body_cell_width)
+          if (this.user_header_widths ||
+              head_cell_width > body_cell_width)
           {
-            head_cell.style.minWidth = body_cell_width + 'px';
+            body_cell.style.minWidth = head_cell_width + 'px';
           }
           else
           {
-            body_cell.style.minWidth = head_cell_width + 'px';
+            head_cell.style.minWidth = body_cell_width + 'px';
           }
         }
       }

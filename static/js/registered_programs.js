@@ -21,17 +21,17 @@ window.addEventListener('load', function ()
   if (tables.length > 0)
   {
     const the_table = new ScrollableTable({table: tables[0], padding: 12});
-    const get_height = the_table.get_height_callback();
+    const adjust_table = the_table.get_adjustment_callback();
 
     // Need to re-process the table's height when viewport is resized.
-    window.addEventListener('resize', get_height);
+    window.addEventListener('resize', adjust_table);
     // Need to re-process table when details elements open/close.
     const details = document.getElementsByTagName('details');
     if (details)
     {
       for (let i = 0; i < details.length; i++)
       {
-        details[i].addEventListener('toggle', get_height);
+        details[i].addEventListener('toggle', adjust_table);
       }
     }
   }

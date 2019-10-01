@@ -302,18 +302,18 @@ $(function ()
         $('#setup-div').hide();
         $('#transfers-map-div').show();
         let transfers_map_table = document.getElementById('transfers-map-table');
-        let the_table = new ScrollableTable({table: transfers_map_table});
-        let set_height = the_table.get_height_callback();
+        let the_table = new ScrollableTable({table: transfers_map_table, use_heading_widths: true});
+        let adjust_table = the_table.get_adjustment_callback();
 
         // Will need to adjust height of the mapping table whenever the viewport is resized ...
-        window.addEventListener('resize', set_height);
+        window.addEventListener('resize', adjust_table);
         // ... and when the details elemet opens or closes.
         const details = document.getElementsByTagName('details');
         if (details)
         {
           for (let i = 0; i < details.length; i++)
           {
-            details[i].addEventListener('toggle', set_height);
+            details[i].addEventListener('toggle', adjust_table);
           }
         }
 
