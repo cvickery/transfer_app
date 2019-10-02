@@ -10,6 +10,11 @@
 
 details {
   max-width: 40em;
+  line-height:1.1em;
+}
+
+details span {
+  padding: 0.125em;
 }
 
 .hide-show {
@@ -124,14 +129,6 @@ td, th {
 .inactive-course {
   background-color: #ccc;
   color: black;
-}
-
-details {
-  line-height:1.1em;
-}
-
-details span {
-  padding: 0.125em;
 }
 
 .scrollable tbody {
