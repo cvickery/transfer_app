@@ -1,5 +1,5 @@
 h1 {
-  font-size:1.4em;
+  font-size:1.2rem;
   margin:0;
 }
 
@@ -8,12 +8,21 @@ h2 {
   margin: 0 auto;
 }
 
-p {
-  max-width:40em;
+#introduction {
+  margin: 1em auto;
+  padding: 0.5em;
+  max-width: 60em;
+  background-color: white;
+  border-radius: 0.5em;
 }
 
-dl {
-  margin: 1em 0;
+#introduction summary {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+#menu {
+  margin: 1em auto;
   padding: 0.5em;
   max-width:40em;
   background-color:white;
@@ -21,12 +30,12 @@ dl {
   border-radius: 0.25em;
 }
 
-dt {
+#menu-list dt {
   font-size:1.1em;
   font-weight:bold;
 }
 
-dd {
+#menu-list dd {
   margin: 0.5em;
   text-align: justify;
 }

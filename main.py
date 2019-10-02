@@ -143,11 +143,12 @@ def index_page():
   conn.close()
   # You can put messages for below the menu here:
   msg = f"""
-  <div id="update-info">
+  <footer id="update-info">
     <p><sup>&dagger;</sup>{num_rules:,} transfer rules as of {rules_date}.</p>
-  </div>
+  </footer>
             """
   return make_response(render_template('top-menu.html',
+                                       title='Transfer Explorer',
                                        result=Markup(top_menu(msg)),
                                        omitjs=True))
 
@@ -169,7 +170,6 @@ def index_page():
 @app.route('/propose_rules', methods=['POST', 'GET'])
 def propose_rules():
   return make_response(render_template('propose_rules.html', result=Markup(_propose_rules())))
-
 
 
 # REVIEW_RULES PAGE
