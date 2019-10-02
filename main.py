@@ -1190,11 +1190,14 @@ def map_courses():
                       ])}
     <details class="instructions">
       <summary>
-        Each row of the table below shows the number of ways each course listed on the
-        <span class="left-right">left</span> transfers <span class="to-from">to</span> other CUNY
-        colleges.
+        The number of rules for transferring courses on the <span class="left-right">left</span>
+        transfer <span class="to-from">to</span> other colleges.
       </summary>
       <hr>
+      <p>
+        If the table below is empty, it means that all the courses selected are inactive and there
+        are no rules for transferring them from any college. This is correct for inactive courses.
+      </p>
       <p>
         If a cell contains zero, there are no rules for transferring the course
         <span class="to-from">to</span> that college. Values greater than one occur when there are
@@ -1202,14 +1205,11 @@ def map_courses():
         if the student earned a minimum grade.
       </p>
       <p>
-        If a course is <span class="inactive-course">highlighted like this</span>, it is inactive,
-        and non-zero rule counts are <span class="bogus-rule">highlighted like this</span>. For
-        sending courses, it is possible the rule would be used for students who completed the course
-        before it became inactive. But for receiving courses, the rule is definitely an error.
-      </p>
-      <p>
-        If the table is empty, it means that all the courses selected are inactive and there are no
-        rules for transferring them from any college. This is correct for inactive courses.
+        If a course in the <span class="left-right">left</span>most column is <span
+        class="inactive-course">highlighted like this</span>, it is inactive, and non-zero rule
+        counts are <span class="bogus-rule">highlighted like this</span>. For sending courses, it is
+        possible the rule would be used for students who completed the course before it became
+        inactive. But for receiving courses, the rule is definitely an error.
       </p>
       <p>
         If a course is active but has zero values for some colleges, they are <span

@@ -112,25 +112,30 @@ td, th {
 }
 
 .self-rule {
-  background-color: #afa;
-  color:#830000;
+  background-color: #333;
+  color:#999;
 }
 
 .blanket-credit {
   background-color:#ff0;
   color:#00c;
 }
+
 .inactive-course {
   background-color: #ccc;
   color: black;
 }
 
-.error {
-  color: #c30;
+details {
+  line-height:1.1em;
 }
 
-.warning {
-  color: #b30;
+details span {
+  padding: 0.125em;
+}
+
+.scrollable tbody {
+  background-color: #cfc;
 }
 
 #loading {

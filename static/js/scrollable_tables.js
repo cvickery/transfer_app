@@ -119,7 +119,7 @@ export default class ScrollableTable
 
     //  Adjust the height of the parent node, and make the body fit.
     this.parent_node.style.height = (div_height + this.padding_bottom) + 'px';
-    this.tbody.style.height = (div_height - this.thead.offsetHeight) + 'px';
+    this.tbody.style.height = (div_height - this.thead.offsetHeight + this.padding_bottom) + 'px';
   }
 
 
