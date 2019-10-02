@@ -14,54 +14,60 @@ def top_menu(msg=''):
     <summary>Introduction</summary>
     <hr>
     <p>
-      In order to obtain a degree, students must complete a certain number of course credits and
-      must satisfy the requirements specified for an academic program at the college that awards the
-      degree. For example, to earn a bachelor’s degree at a CUNY college, students must complete 120
-      credits of coursework, must satisfy a set of University-wide General Education course
-      requirements known as “Pathways,” and must complete a set of course requirements for a
-      college-specific “major,” such as psychology, mathematics, or English.
+      In order to obtain a college degree, a student must complete a certain number of course
+      credits and must satisfy the requirements specified for an academic program at the college
+      that awards the degree. For example, to earn a bachelor’s degree at a CUNY college, students
+      must complete 120 credits of coursework, must satisfy a set of University-wide General
+      Education course requirements known as “Pathways,” and must complete a set of course
+      requirements for a college-specific “major,” such as psychology, mathematics, or English.
     </p>
     <p>
-      When students transfer from one college to another, the coursework they have already completed
-      should apply seamlessly to the degree requirements at their destination college. Making the
-      transfer process work smoothly across a university with 20 colleges and a quarter million
-      students is a major challenge; one that CUNY addresses in many ways. At a high level, these
-      may be grouped as <em>university policies</em>, <em>course mappings</em>, and <em>articulation
-      agreements</em>.
+      When a student transfers from one college to another, the coursework they have already
+      completed <em>should</em> apply seamlessly to the degree requirements at their destination
+      college. Making the transfer process work smoothly across a university with 20 colleges and a
+      quarter million students is a major challenge; one that CUNY addresses in many ways. At a high
+      level, these may be grouped as <em>university policies</em>, <em>course mappings</em>, and
+      <em>articulation agreements</em>.
     </p>
     <dl id="mechanisms-list">
 
       <dt>University Policies</dt>
       <dd>
-        Examples of University policies include uniform credit requirements for degrees (120 for
+        Examples of CUNY policies include uniform credit requirements for degrees (120 for
         bachelor’s; 30 for associate’s); guaranteed transferability of all credits earned at any
         CUNY college; guaranteed transfer across campuses of all Pathways requirements satisfied
-        at any campuses; and transferability of SUNY General Education requirements to CUNY.
+        at any campus; and transferability of SUNY General Education requirements to CUNY.
       </dd>
 
       <dt>Course Mappings</dt>
       <dd>
-        “CUNYfirst” is the name of the Student Information System (SIS) used by all CUNY colleges.
-        CUNYfirst has over a
-        million<sup>&dagger;</sup> <em>transfer rules</em> that tell how courses at any CUNY college
-        map onto courses at any other college.
+        CUNYfirst (the name of the Student Information System (SIS) used by all CUNY colleges) has
+        over a million<sup>&dagger;</sup> <em>transfer rules</em> that tell how courses at any CUNY
+        college map onto courses at any other college.
       </dd>
 
       <dt>Articulation Agreements</dt>
       <dd>
-        An articulation agreement is a document that tells how coursework at one college will map
-        onto the degree and program requirements at another college. Articulation agreements can be
-        as simple as a list of transfer rules, but they typically provide more guidance for students
-        so they can make the best choices among the possible courses they take to satisfy the
-        requirements at their starting college.
+        An articulation agreement is a document that helps students make the best choices among the
+        possible courses they might take to satisfy program requirements at one college before
+        transferring to another college. Articulation agreements have to be consistent with the
+        course transfer rules that will apply when the student transfers, but often contain
+        additional guidance to help students plan for an efficient transfer experience.
       </dd>
 
     </dl>
     <p>
-    `This website is used to explore the transfer rules in CUNYfirst in manageable chunks. Faculty
+     This website is used to explore the transfer rules in CUNYfirst in manageable chunks. Faculty
      and administrators can use it to see what rules are missing or need to be changed. Students can
      use it to explore what will happen to their course credits when they transfer and/or need to
      take courses at another campus to satisfy a requirement at their home campus.
+    </p>
+    <h2>Blanket Credits</h2>
+    <p>
+      A particularly vexing issue for transfer students is coursework for which a student receives
+      credit towards the total number of credits needed for a degree, but for which there is no
+      equivalence to courses that satisfy program requirements. Such “blanket credit” courses can
+      have several negative impacts, and are highlighted on this site as a warning.
     </p>
   </details>
 </div>
@@ -122,10 +128,10 @@ def top_menu(msg=''):
   </dl>
 </div>
   <h2>Problems?</h2>
-  <p>
+  <em>
     Please report any issues with this site to <a
     href="mailto:cvickery@qc.cuny.edu?subject='Transfer App issue'">Christopher Vickery</a>.
-  </p>
+  </em>
   <!-- Messages -->
   <hr>
   {msg}
