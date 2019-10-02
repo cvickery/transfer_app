@@ -50,9 +50,9 @@ def top_menu(msg=''):
       <dd>
         An articulation agreement is a document that helps students make the best choices among the
         possible courses they might take to satisfy program requirements at one college before
-        transferring to another college. Articulation agreements have to be consistent with the
-        course transfer rules that will apply when the student transfers, but often contain
-        additional guidance to help students plan for an efficient transfer experience.
+        transferring to another college. Articulation agreements typically list the course transfer
+        rules that will apply when the student transfers, and often contain additional guidance to
+        help students plan for an efficient transfer experience.
       </dd>
 
     </dl>
@@ -62,17 +62,18 @@ def top_menu(msg=''):
      use it to explore what will happen to their course credits when they transfer and/or need to
      take courses at another campus to satisfy a requirement at their home campus.
     </p>
-    <h2>Blanket Credits</h2>
+    <h2>A Note on “Blanket Credits”</h2>
     <p>
-      A particularly vexing issue for transfer students is coursework for which a student receives
-      credit towards the total number of credits needed for a degree, but for which there is no
-      equivalence to courses that satisfy program requirements. Such “blanket credit” courses can
-      have several negative impacts, and are highlighted on this site as a warning.
+      A particularly vexing issue for transfer students is coursework that counts towards the total
+      number of credits needed for a degree, but for which there is no equivalence to courses that
+      satisfy program requirements. Such “blanket credit” courses can have several negative
+      implications, including financial aid eligibility, and are highlighted on this site as a
+      warning.
     </p>
   </details>
 </div>
 <div id="menu">
-  <h1>Menu</h1>
+  <h1>Menu</h1><hr>
   <dl id="menu-list">
 
     <dt><a href="/map_courses">Course Transfer Maps</a></dt>
