@@ -89,7 +89,7 @@ def _status(command):
     if current_status:
       return top_menu()
     else:
-      return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+      return render_template('app_unavailable.html', result=Markup(get_reason()))
   else:
     return ''
 
@@ -158,10 +158,10 @@ def index_page():
     <p><sup>&dagger;</sup>{num_rules:,} transfer rules as of {rules_date}.</p>
   </footer>
             """
-  return make_response(render_template('top-menu.html',
-                                       title='Transfer Explorer',
-                                       result=Markup(top_menu(msg)),
-                                       omitjs=True))
+  return render_template('top-menu.html',
+                         title='Transfer Explorer',
+                         result=Markup(top_menu(msg)),
+                         omitjs=True)
 
 
 # REVIEW RULES PAGES
@@ -180,7 +180,7 @@ def index_page():
 
 @app.route('/propose_rules', methods=['POST', 'GET'])
 def propose_rules():
-  return make_response(render_template('propose_rules.html', result=Markup(_propose_rules())))
+  return render_template('propose_rules.html', result=Markup(_propose_rules()))
 
 
 # REVIEW_RULES PAGE
@@ -188,7 +188,7 @@ def propose_rules():
 @app.route('/review_rules/', methods=['POST', 'GET'])
 def review_rules():
   if app_unavailable():
-    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+    return render_template('app_unavailable.html', result=Markup(get_reason()))
 
   """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
       if any, the user submitted.
@@ -227,7 +227,7 @@ def pending():
       TODO: Implement login option so defined users can manage this table.
   """
   if app_unavailable():
-    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+    return render_template('app_unavailable.html', result=Markup(get_reason()))
 
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
@@ -280,7 +280,7 @@ def pending():
 @app.route('/confirmation/<token>', methods=['GET'])
 def confirmation(token):
   if app_unavailable():
-    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+    return render_template('app_unavailable.html', result=Markup(get_reason()))
 
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
@@ -357,7 +357,7 @@ def confirmation(token):
 @app.route('/history/<rule>', methods=['GET'])
 def history(rule):
   if app_unavailable():
-    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+    return render_template('app_unavailable.html', result=Markup(get_reason()))
 
   """ Look up all events for the rule, and report back to the visitor.
   """
@@ -375,7 +375,7 @@ def map_courses():
       Display a CSV-downloadable table.
   """
   if app_unavailable():
-    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+    return render_template('app_unavailable.html', result=Markup(get_reason()))
 
   conn = pgconnection('dbname=cuny_courses')
   cursor = conn.cursor()
@@ -940,6 +940,7 @@ def courses():
   if request.method == 'POST':
     institution_code = request.form['inst']
   else:
+    print(request.args)
     institution_code = request.args.get('college', None)
     discipline_code = request.args.get('discipline', None)
     department_code = request.args.get('department', None)
@@ -966,7 +967,7 @@ def courses():
                               and department = '{department_code}'
                         """)
         if cursor.rowcount == 1:
-          department_str = f'Offered By the {cursor.fetchone().description} Department'
+          department_str = f'Offered By the {cursor.fetchone().department_name} Department'
 
   if institution_code is not None:
     cursor.execute("""

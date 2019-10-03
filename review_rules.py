@@ -8,7 +8,9 @@ from datetime import datetime
 import psycopg2
 from psycopg2.extras import NamedTupleCursor
 
-from format_rules import institution_names
+from app_header import header
+from format_rules import institution_names, Source_Course, Destination_Course, Transfer_Rule, \
+    format_rules
 
 DEBUG = True
 
@@ -29,20 +31,16 @@ def do_form_0(request, session):
   num_rules = cursor.fetchone()[0]
   cursor.execute("select * from updates")
   updates = cursor.fetchall()
-  catalog_date = 'unknown'
   rules_date = 'unknown'
   for update in updates:
-    if update.table_name == 'courses':
-      catalog_date = datetime.fromisoformat(update.update_date)\
-          .strftime('%B %e, %Y').replace('  ', ' ')
     if update.table_name == 'transfer_rules':
       rules_date = datetime.fromisoformat(update.update_date)\
-          .strftime('%B %e, %Y').replace('  ', ' ')
+          .strftime('%B %e, %Y')
   cursor.close()
   conn.close()
 
   source_prompt = """
-    <fieldset id="sending-field"><legend>Sending College(s)</legend>
+    <fieldset id="sending-field"><h2>Sending College(s)</h2>
     <div id="source-college-list">
     """
   n = 0
@@ -64,7 +62,7 @@ def do_form_0(request, session):
   """
 
   destination_prompt = """
-    <fieldset id="receiving-field"><legend>Receiving College(s)</legend>
+    <fieldset id="receiving-field"><h2>Receiving College(s)</h2>
     <div id="destination-college-list">
     """
   n = 0
@@ -93,14 +91,20 @@ def do_form_0(request, session):
     remember_me = 'checked="checked"'
 
   # Return Form 1
-  result = """
-    <h1>Step 1: Select Colleges</h1>
+  result = f"""
+    {header(title='Review Rules: Select Colleges',
+            nav_items=[{'type': 'link',
+            'href': '/',
+            'text': 'Main Menu'}])}
     <details class="instructions">
       <summary>
-        This is the first step for reviewing the {:,}<sup>&dagger;</sup> existing course
-        transfer rules at CUNY.
+        Instructions
       </summary>
       <hr>
+      <p>
+        This is the first step for reviewing, and optionally commenting on, the {num_rules:,}
+        existing course transfer rules at CUNY.
+      </p>
       <p>
         To see just the rules you are interested in, start here by selecting exactly one sending
         college and at least one receiving college, or exactly one receiving college and one or more
@@ -111,7 +115,7 @@ def do_form_0(request, session):
         steps.
       </p>
       <p>
-        Background information and more detailed instructions are available in the
+        Background information and (<em>much!</em>) more detailed instructions are available in the
         <a  target="_blank"
             href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE">
             Reviewing CUNY Transfer Rules</a> document.
@@ -119,47 +123,39 @@ def do_form_0(request, session):
     </details>
     <fieldset>
       <form method="post" action="#" id="form-1">
-          {}
-          {}
+          {source_prompt}
+          {destination_prompt}
         <fieldset>
-          <legend>Your email address</legend>
+          <h2>Your email address</h2>
           <p>
-            To record your reviews of transfer rules, you need to supply a valid CUNY email address
-            for verification purposes.<br/>If you just want to view the rules, you can use a dummy
-            address: <em>nobody@cuny.edu</em>
+            To record your comments and suggestions concerning existing transfer rules, you need to
+            supply a valid CUNY email address here for verification purposes.<br/>If you just want
+            to view the rules, you can use a dummy address, such as <em>nobody@cuny.edu</em>.
           </p>
           <label for="email-text">Enter a valid CUNY email address:</label>
           <div>
-            <input type="text" name="email" id="email-text" value="{}"/>
+            <input type="text" name="email" id="email-text" value="{email}"/>
             <div>
-              <input type="checkbox" name="remember-me" id="remember-me" {}/>
+              <input type="checkbox" name="remember-me" id="remember-me" {remember_me}/>
               <label for="remember-me"><em>Remember me on this computer.</em></label>
             </div>
           </div>
           <div id="error-msg" class="error"> </div>
           <input type="hidden" name="next-function" value="do_form_1" />
           <div>
-            <button type="submit" id="submit-form-1">Next</button>
+          <button type="submit" id="submit-form-1">Next (<em>select disciplines)</em></button>
           </div>
         </fieldset>
       </form>
     </fieldset>
-    <p><a href="/" class="button">Main Menu</a></p>
+    <hr>
     <div id="update-info">
-      <p><sup>&dagger;</sup>Catalog information last updated {}</p>
-      <p>Transfer rules information last updated {}</p>
+      <p>CUNYfirst information last updated {rules_date}</p>
     </div>
-    """.format(num_rules,
-               source_prompt,
-               destination_prompt,
-               email,
-               remember_me,
-               catalog_date,
-               rules_date)
-
-  response = render_template('review_rules.html', result=Markup(result))
-  # response.set_cookie('mysession',
-  #                     session.session_key)
+    """
+  response = render_template('review_rules.html',
+                             title='Select Colleges',
+                             result=Markup(result))
 
   return response
 
