@@ -8,8 +8,7 @@ import socket
 
 import json
 import uuid
-import datetime
-import time
+from datetime import datetime, timedelta
 
 from pgconnection import pgconnection
 
@@ -22,7 +21,7 @@ from mysession import MySession
 from sendemail import send_token, send_message
 from reviews import process_pending
 from rule_history import rule_history
-from format_rules import format_rule, format_rules, format_rule_by_key, institution_names, \
+from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
 from course_lookup import course_attribute_rows, course_search
 
@@ -31,18 +30,24 @@ from known_institutions import known_institutions
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
 
-from flask import Flask, url_for, render_template, make_response,\
-    redirect, send_file, Markup, request, jsonify
-
 from app_header import header
 from top_menu import top_menu
 
+from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from propose_rules import _propose_rules
 
 from program_requirements import Requirements
 
+from flask import Flask, url_for, render_template, make_response,\
+    redirect, send_file, Markup, request, jsonify, session
+from flask_session import Session
+
+SESSION_TYPE = 'redis'
+PERMANENT_SESSION_LIFETIME = timedelta(days=90)
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+app.config.from_object(__name__)
+Session(app)
 
 # During local development, enable more detailed log messages from the app.
 if os.getenv('DEVELOPMENT') is not None:
@@ -94,7 +99,7 @@ def _status(command):
 def date2str(date_str):
   """Takes a string in YYYY-MM-DD form and returns a text string with the date in full English form.
   """
-  return datetime.datetime.fromisoformat(date_str).strftime('%B %e, %Y').replace('  ', ' ')
+  return datetime.fromisoformat(date_str).strftime('%B %e, %Y').replace('  ', ' ')
 
 
 # fix_title()
@@ -142,8 +147,14 @@ def index_page():
   cursor.close()
   conn.close()
   # You can put messages for below the menu here:
+  test = ''
+  if 'hello' in session:
+    test = f'<p>{session["hello"]}'
+  else:
+    session['hello'] = 'Such a nice situation!'
   msg = f"""
   <footer id="update-info">
+    {test}
     <p><sup>&dagger;</sup>{num_rules:,} transfer rules as of {rules_date}.</p>
   </footer>
             """
@@ -184,7 +195,7 @@ def review_rules():
   """
   if DEBUG:
     print('*** {} / ***'.format(request.method))
-  mysession = MySession(request.cookies.get('mysession'))
+  # mysession = MySession(request.cookies.get('mysession'))
 
   # Dispatcher for forms
   dispatcher = {
@@ -195,724 +206,17 @@ def review_rules():
 
   if request.method == 'POST':
     # User has submitted a form.
-    return dispatcher.get(request.form['next-function'], lambda: error)(request, mysession)
+    return dispatcher.get(request.form['next-function'], lambda: error)(request, session)
 
   # Form not submitted yet, so call do_form_0 to generate form_1
   else:
     # clear institutions, subjects, and rules from the session before restarting
-    mysession.remove('source_institutions')
-    mysession.remove('destination_institutions')
-    mysession.remove('source_disciplines')
-    mysession.remove('destination_disciplines')
-    keys = mysession.keys()
-    return do_form_0(request, mysession)
-
-
-# do_form_0()
-# -------------------------------------------------------------------------------------------------
-def do_form_0(request, session):
-  """
-      No form submitted yet; generate the Step 1 page.
-      Display form_1 to get aource and destination institutions; user's email.
-  """
-  if DEBUG:
-    print('*** do_form_0({})'.format(session))
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
-
-  cursor.execute("select count(*) from transfer_rules")
-  num_rules = cursor.fetchone()[0]
-  cursor.execute("select * from updates")
-  updates = cursor.fetchall()
-  catalog_date = 'unknown'
-  rules_date = 'unknown'
-  for update in updates:
-    if update.table_name == 'courses':
-      catalog_date = date2str(update.update_date)
-    if update.table_name == 'transfer_rules':
-      rules_date = date2str(update.update_date)
-  cursor.close()
-  conn.close()
-
-  source_prompt = """
-    <fieldset id="sending-field"><legend>Sending College(s)</legend>
-    <div id="source-college-list">
-    """
-  n = 0
-  for code in institution_names:
-    n += 1
-    source_prompt += """
-        <div class='institution-select'>
-          <input type="checkbox" name="source" class="source" id="source-{}" value="{}">
-          <label for="source-{}">{}</label>
-        </div>
-    """.format(n, code, n, institution_names[code])
-  source_prompt += """
-  </div>
-  <div>
-    <button type="button" id="all-sources">Select All Sending Colleges</button>
-    <button type="button"  id="no-sources">Clear All Sending Colleges</button>
-    </div>
-  </fieldset>
-  """
-
-  destination_prompt = """
-    <fieldset id="receiving-field"><legend>Receiving College(s)</legend>
-    <div id="destination-college-list">
-    """
-  n = 0
-  for code in institution_names:
-    n += 1
-    destination_prompt += """
-        <div class='institution-select'>
-          <input type="checkbox" name="destination" class="destination" id="dest-{}" value="{}">
-          <label for="dest-{}">{}</label>
-        </div>
-    """.format(n, code, n, institution_names[code])
-  destination_prompt += """
-    </div>
-    <div>
-    <button type="button" id="all-destinations">Select All Receiving Colleges</button>
-    <button type="button"  id="no-destinations">Clear All Receiving Colleges</button>
-    </div>
-  </fieldset>
-  """
-
-  email = ''
-  if request.cookies.get('email') is not None:
-    email = request.cookies.get('email')
-  remember_me = ''
-  if request.cookies.get('remember-me') is not None:
-    remember_me = 'checked="checked"'
-
-  # Return Form 1
-  result = """
-    <h1>Step 1: Select Colleges</h1>
-    <details class="instructions">
-      <summary>
-        This is the first step for reviewing the {:,}<sup>&dagger;</sup> existing course
-        transfer rules at CUNY.
-      </summary>
-      <hr>
-      <p>
-        To see just the rules you are interested in, start here by selecting exactly one sending
-        college and at least one receiving college, or exactly one receiving college and one or more
-        sending colleges.
-        <br/>
-        In the next step you will select just the discipline(s) you are interested in, and in the
-        last step you will be able to review the rules that match your selections from the first two
-        steps.
-      </p>
-      <p>
-        Background information and more detailed instructions are available in the
-        <a  target="_blank"
-            href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE">
-            Reviewing CUNY Transfer Rules</a> document.
-      </p>
-    </details>
-    <fieldset>
-      <form method="post" action="#" id="form-1">
-          {}
-          {}
-        <fieldset>
-          <legend>Your email address</legend>
-          <p>
-            To record your reviews of transfer rules, you need to supply a valid CUNY email address
-            for verification purposes.<br/>If you just want to view the rules, you can use a dummy
-            address: <em>nobody@cuny.edu</em>
-          </p>
-          <label for="email-text">Enter a valid CUNY email address:</label>
-          <div>
-            <input type="text" name="email" id="email-text" value="{}"/>
-            <div>
-              <input type="checkbox" name="remember-me" id="remember-me" {}/>
-              <label for="remember-me"><em>Remember me on this computer.</em></label>
-            </div>
-          </div>
-          <div id="error-msg" class="error"> </div>
-          <input type="hidden" name="next-function" value="do_form_1" />
-          <div>
-            <button type="submit" id="submit-form-1">Next</button>
-          </div>
-        </fieldset>
-      </form>
-    </fieldset>
-    <p><a href="/" class="button">Main Menu</a></p>
-    <div id="update-info">
-      <p><sup>&dagger;</sup>Catalog information last updated {}</p>
-      <p>Transfer rules information last updated {}</p>
-    </div>
-    """.format(num_rules,
-               source_prompt,
-               destination_prompt,
-               email,
-               remember_me,
-               catalog_date,
-               rules_date)
-
-  response = make_response(render_template('review_rules.html', result=Markup(result)))
-  response.set_cookie('mysession',
-                      session.session_key)
-
-  return response
-
-
-# do_form_1()
-# -------------------------------------------------------------------------------------------------
-def do_form_1(request, session):
-  """
-      Collect source institutions, destination institutions and user's email from Form 1, and add
-      them to the session.
-      Generate Form 2 to select discipline(s)
-  """
-  if DEBUG:
-     print('*** do_form_1({})'.format(session))
-
-  # Add institutions selected to user's session
-  session['source_institutions'] = request.form.getlist('source')
-  session['destination_institutions'] = request.form.getlist('destination')
-
-  # Database lookups
-  # ----------------
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
-
-  # The CUNY Subjects table, for getting subject descriptions from their abbreviations
-  cursor.execute("select * from cuny_subjects order by subject")
-  subject_names = {row.subject: row.subject_name for row in cursor}
-
-  # Generate table headings for source and destination institutions
-  sending_is_singleton = False
-  sending_heading = 'Sending Colleges’'
-  receiving_is_singleton = False
-  receiving_heading = 'Receiving Colleges’'
-  criterion = ''
-  if len(session['source_institutions']) == 1:
-    sending_is_singleton = True
-    criterion = 'the sending college is ' + institution_names[session['source_institutions'][0]]
-    sending_heading = '{}’s'.format(institution_names[session['source_institutions'][0]])
-  if len(session['destination_institutions']) == 1:
-    receiving_is_singleton = True
-    receiving_heading = '{}’s'.format(institution_names[session['destination_institutions'][0]])
-    if sending_is_singleton:
-      criterion += ' and '
-    criterion += 'the receiving college is ' + \
-        institution_names[session['destination_institutions'][0]]
-
-  # Look up all {source_institution, source_discipline, cuny_subject}
-  #         and {destination_institution, destination_discipline, cuny_subject}
-  # tuples for the selected source and destination institutions.
-
-  source_institution_params = ', '.join('%s' for i in session['source_institutions'])
-  q = """
-  select *
-     from cuny_disciplines
-    where institution in ({})
-    """.format(source_institution_params)
-  cursor.execute(q, session['source_institutions'])
-  source_disciplines = cursor.fetchall()
-
-  destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
-  q = """
-  select *
-     from cuny_disciplines
-    where institution in ({})
-    """.format(destination_institution_params)
-  cursor.execute(q, session['destination_institutions'])
-  destination_disciplines = cursor.fetchall()
-
-  # The CUNY subjects actually used by the source and destination disciplines.
-  cuny_subjects = set([d.cuny_subject for d in source_disciplines])
-  cuny_subjects |= set([d.cuny_subject for d in destination_disciplines])
-  cuny_subjects.discard('')  # empty strings don't match anything in the subjects table.
-  cuny_subjects = sorted(cuny_subjects)
-
-  cursor.close()
-  conn.close()
-
-  # Build selection list. For each cuny_subject found in either sending or receiving disciplines,
-  # list all disciplines for that subject, with checkboxes for selecting either the sending or
-  # receiving side.
-  # The user sees College: discipline(s) in the table (source_disciplines_str), and that info is
-  # encoded as a colon-separated list of college-discipline pairs (source_disciplines_val) as the
-  # value of the corresponding cbox. *** TODO *** and then parse the value in do_form_2() ***
-  # ===============================================================================================
-  selection_rows = ''
-  num_rows = 0
-  for cuny_subject in cuny_subjects:
-
-    # Sending College(s)’ Disciplines
-    #   Both the college and discipline names will be displayed for each cuny_subject, unless there
-    #   is only one college involved ("singleton"), in which case only the discipline name is shown.
-    source_disciplines_str = ''
-    source_disciplines_val = ''
-    source_disciplines_set = set()
-    for discipline in source_disciplines:
-      if discipline.cuny_subject == cuny_subject:
-        if sending_is_singleton:
-          source_disciplines_set.add(discipline.discipline)
-        else:
-          source_disciplines_set.add((discipline.institution, discipline.discipline))
-    source_disciplines_set = sorted(source_disciplines_set)
-
-    if sending_is_singleton:
-      if len(source_disciplines_set) > 1:
-        source_disciplines_str = '<div>' + '</div><div>'.join(source_disciplines_set) + '</div>'
-      else:
-        source_disciplines_str = ''.join(source_disciplines_set)
-    else:
-      colleges = {}
-      for discipline in source_disciplines_set:
-        if discipline[0] not in colleges.keys():
-          colleges[discipline[0]] = []
-        colleges[discipline[0]].append(discipline[1])
-      for college in colleges:
-        source_disciplines_str += '<div>{}: <em>{}</em></div>'.format(institution_names[college],
-                                                                      ', '.join(colleges[college]))
-
-    # Receiving College Disciplines
-    destination_disciplines_str = ''
-    destination_disciplines_set = set()
-    for discipline in destination_disciplines:
-      if discipline.cuny_subject == cuny_subject:
-        if receiving_is_singleton:
-          destination_disciplines_set.add(discipline.discipline)
-        else:
-          destination_disciplines_set.add((discipline.institution, discipline.discipline))
-    destination_disciplines_set = sorted(destination_disciplines_set)
-
-    if receiving_is_singleton:
-      destination_disciplines_str = ''
-      if len(destination_disciplines_set) > 1:
-        destination_disciplines_str = '<div>' + \
-                                      '</div><div>'.join(destination_disciplines_set) + '</div>'
-      else:
-        destination_disciplines_str = ''.join(destination_disciplines_set)
-    else:
-      colleges = {}
-      for discipline in destination_disciplines_set:
-        if discipline[0] not in colleges.keys():
-          colleges[discipline[0]] = []
-        colleges[discipline[0]].append(discipline[1])
-      for college in colleges:
-        destination_disciplines_str += '<div>{}: <em>{}</em></div>'.\
-            format(institution_names[college], ', '.join(colleges[college]))
-
-    # We are showing disciplines, but reporting cuny_subjects.
-    source_label = ''
-    source_box = ''
-    if source_disciplines_str != '':
-      source_label = f"""
-      <label for="source-subject-{cuny_subject}">{source_disciplines_str}</label>"""
-      source_box = """
-        <input type="checkbox" id="source-subject-{}" name="source_subject" value="{}"/>
-        """.format(cuny_subject, cuny_subject)
-    destination_box = ''
-    destination_label = ''
-    if destination_disciplines_str != '':
-      destination_box = """
-        <input  type="checkbox"
-                checked="checked"
-                id="destination-subject-{}"
-                name="destination_subject"
-                value="{}"/>
-        """.format(cuny_subject, cuny_subject)
-      destination_label = f"""
-      <label for="destination-subject-{cuny_subject}">{destination_disciplines_str}</label>"""
-    selection_rows += """
-    <tr>
-      <td class="source-subject">{}</td>
-      <td class="source-subject f2-cbox">{}</td>
-      <td><strong title="{}">{}</strong></td>
-      <td class="destination-subject f2-cbox">{}</td>
-      <td class="destination-subject">{}</td>
-    </tr>
-    """.format(source_label,
-               source_box,
-
-               cuny_subject, subject_names[cuny_subject],
-
-               destination_box,
-               destination_label)
-    num_rows += 1
-
-  shortcuts = """
-              <h2 class="error">
-                There are no disciplines that match the combination of colleges you selected.
-              </h2>
-              """
-  if num_rows > 1:
-    shortcuts = """
-    <table id="f2-shortcuts">
-    <tr>
-      <td f2-cbox" colspan="2">
-        <div>
-          <label for="all-source-subjects"><em>Select All Sending Disciplines: </em></label>
-          <input  type="checkbox"
-                  id="all-source-subjects"
-                  name="all-source-subjects" />
-        </div>
-        <div>
-          <label for="no-source-subjects"><em>Clear All Sending Disciplines: </em></label>
-          <input type="checkbox" id="no-source-subjects" checked="checked"/>
-        </div>
-      </td>
-      <td f2-cbox" colspan="2">
-        <div>
-          <label for="all-destination-subjects"><em>Select All Receiving Disciplines: </em>
-          </label>
-          <input  type="checkbox"
-                  id="all-destination-subjects"
-                  name="all-destination-subjects"
-                  checked="checked"/>
-        </div>
-        <div>
-          <label for="no-destination-subjects"><em>Clear All Receiving Disciplines: </em></label>
-          <input type="checkbox" id="no-destination-subjects" />
-        </div>
-      </td>
-    </tr>
-    </table>
-    """
-
-  # set or clear email-related cookies based on form data
-  email = request.form.get('email')
-  session['email'] = email  # always valid for this session
-  # The email cookie expires now or later, depending on state of "remember me"
-  expire_time = datetime.datetime.now()
-  remember_me = request.form.get('remember-me')
-  if remember_me == 'on':
-    expire_time = expire_time + datetime.timedelta(days=90)
-
-  # Return Form 2
-  result = """
-  <h1>Step 2: Select Sending &amp; Receiving Disciplines</h1>
-  <details>
-  <summary>Instructions</summary>
-  <div class="instructions">
-    <p>There are {:,} disciplines where {}.</p>
-    Disciplines are grouped by CUNY subject area.<br/>
-    Select at least one sending discipline and at least one receiving discipline.<br/>
-    By default, all receiving disciplines are selected to account for all possible equivalencies,
-    including electives and blanket credit.<br/>
-    The next step will show all transfer rules for courses in the corresponding pairs of
-    disciplines.
-  </div>
-  </details>
-  <form method="post" action="#" id="form-2">
-    <a href="/" class="restart button">Main Menu</a>
-    <a href="/review_rules" class="restart">Restart</a>
-    <button type="submit">Next</button>
-    <input type="hidden" name="next-function" value="do_form_2" />
-    {}
-    <div id="subject-table-div" class="selection-table-div">
-      <table id="subject-table">
-        <thead>
-          <tr>
-            <th class="source-subject">{} Discipline(s)</th>
-            <th class="source-subject">Select Sending</th>
-            <th>CUNY Subject</th>
-            <th class="destination-subject">Select Receiving</th>
-            <th class="destination-subject">{} Discipline(s)</th>
-          </tr>
-        </thead>
-        <tbody>
-        {}
-        </tbody>
-      </table>
-    </div>
-  </form>
-  """.format(len(source_disciplines) + len(destination_disciplines), criterion,
-             shortcuts, sending_heading, receiving_heading, selection_rows)
-  response = make_response(render_template('review_rules.html', result=Markup(result)))
-  response.set_cookie('email', email, expires=expire_time)
-  response.set_cookie('remember-me', 'on', expires=expire_time)
-  return response
-
-
-# do_form_2()
-# -------------------------------------------------------------------------------------------------
-def do_form_2(request, session):
-  """
-      Process CUNY Subject list from form 2.
-      Generate form_3: the selected transfer rules for review
-  """
-  if DEBUG:
-    print(f'*** do_form_2()')
-    elapsed = time.perf_counter()
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
-
-  # Look up transfer rules where the sending course belongs to a sending institution and is one of
-  # the source disciplines and the receiving course belongs to a receiving institution and is one of
-  # the receiving disciplines.
-  try:
-    source_institution_params = ', '.join('%s' for i in session['source_institutions'])
-    destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
-  except KeyError:
-    # the session is expired or invalid. Go back to Step 1.
-    return render_template('review_rules.html', result=Markup("""
-                                                           <h1>Session Expired</h1>
-                                                           <p>
-                                                             <a href="/" class="button">
-                                                                Main Menu</a>
-                                                             <a href="/review_rules"
-                                                                  class="restart button">Restart
-                                                              </a>
-                                                           </p>
-
-                                                           """))
-
-  # Be sure there is the possibility there will be some rules
-  source_subject_list = request.form.getlist('source_subject')
-  destination_subject_list = request.form.getlist('destination_subject')
-
-  if len(source_subject_list) < 1:
-    return render_template('review_rules.html', result=Markup(
-                           '<h1 class="error">No sending disciplines selected.</h1>'))
-  if len(destination_subject_list) < 1:
-    return render_template('review_rules.html', result=Markup(
-                           '<h1 class="error">No receiving disciplines selected.</h1>'))
-
-  # Prepare the query to get the set of rules that match the institutions and cuny_subjects
-  # selected.
-  if request.form.get('all-source-subjects'):
-    source_subjects_clause = ''
-  else:
-    source_subjects_str = '|'.join(f':{s}:' for s in source_subject_list)
-    source_subjects_clause = f"  and '{source_subjects_str}' ~ source_subjects"
-    source_subjects = ', '.join(f"'{s}'" for s in source_subject_list)
-    source_subjects_clause = f"""
-      and id in (select rule_id from subject_rule_map where subject in ({source_subjects}))"""
-
-  # Get all the rules where,
-  #  - The source and destination institutions have been selected
-  #  and
-  #  - The source_subjects have been selected
-  q = f"""
-  select *
-    from transfer_rules
-   where source_institution in ({source_institution_params})
-     and destination_institution in ({destination_institution_params})
-     {source_subjects_clause}
-  order by source_institution, destination_institution, subject_area, group_number"""
-  cursor.execute(q, (session['source_institutions'] + session['destination_institutions']))
-  if cursor.rowcount < 1:
-    return render_template('review_rules.html', result=Markup(
-                           '<h1 class="error">There are no matching rules.</h1>'))
-
-  all_rules = cursor.fetchall()
-  selected_rules = []
-  # Get the source and destination course lists from the above set of rules where the destination
-  # subject was selected. It's possible to have selected rules that don’t transfer to any of the
-  # selected destination subjects, so those rules are dropped while building the selected-rules
-  # list.
-  if request.form.get('all-destination-subjects'):
-    destination_subjects_clause = ''
-  else:
-    # Create a clause that makes sure the destination course has one of the destination subjects
-    destination_subject_list = request.form.getlist('destination_subject')
-    destination_subject_params = ', '.join(f"'{s}'" for s in destination_subject_list)
-    destination_subjects_clause = f" and dc.cuny_subject in ({destination_subject_params})"
-
-  for rule in all_rules:
-    # It’s possible some of the selected rules don’t have destination courses in any of the selected
-    # disciplines, so that has to be checked first.
-    cursor.execute(f"""
-      select  dc.course_id,
-              dc.offer_count,
-              dc.discipline,
-              dc.catalog_number,
-              dc.cat_num,
-              dc.cuny_subject,
-              dc.transfer_credits,
-              dn.discipline_name
-      from destination_courses dc, cuny_disciplines dn
-      where dc.rule_id = %s
-        and dn.institution = %s
-        and dn.discipline = dc.discipline
-        {destination_subjects_clause}
-       order by discipline, cat_num
-    """, (rule.id, rule.destination_institution))
-    if cursor.rowcount > 0:
-      destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
-      cursor.execute("""
-        select  sc.course_id,
-                sc.offer_count,
-                sc.discipline,
-                sc.catalog_number,
-                sc.cat_num,
-                sc.cuny_subject,
-                sc.min_credits,
-                sc.max_credits,
-                sc.min_gpa,
-                sc.max_gpa,
-                dn.discipline_name
-        from source_courses sc, cuny_disciplines dn
-        where sc.rule_id = %s
-          and dn.institution = %s
-          and dn.discipline = sc.discipline
-        order by discipline, cat_num
-        """, (rule.id, rule.source_institution))
-      if cursor.rowcount > 0:
-        source_courses = [Source_Course._make(c)for c in cursor.fetchall()]
-
-      # Create the Transfer_Rule tuple suitable for passing to format_rules, and add it to the
-      # list of rules to pass.
-      selected_rules.append(Transfer_Rule._make(
-          [rule.id,
-           rule.source_institution,
-           rule.destination_institution,
-           rule.subject_area,
-           rule.group_number,
-           rule.source_disciplines,
-           rule.source_subjects,
-           rule.review_status,
-           source_courses,
-           destination_courses]))
-  cursor.close()
-  conn.close()
-
-  if len(selected_rules) == 0:
-    num_rules = 'No matching transfer rules found.'
-  if len(selected_rules) == 1:
-    num_rules = 'There is one matching transfer rule.'
-  if len(selected_rules) > 1:
-    num_rules = 'There are {:,} matching transfer rules.'.format(len(selected_rules))
-
-  rules_table = format_rules(selected_rules)
-
-  result = f"""
-  <h1>Step 3: Review Transfer Rules</h1>
-    <details class="instructions">
-      <summary>{num_rules}</summary>
-      <hr>
-      Rules that are <span class="credit-mismatch">highlighted like this</span> have a different
-      number of credits taken from the number of credits transferred.
-      Hover over the “=>” to see the numbers of credits.<br/>
-      Credits in parentheses give the number of credits transferred where that does not match the
-      nominal number of credits for a course.<br/>
-      Rules that are <span class="evaluated">highlighted like this</span> are ones that you have
-      reviewed but not yet submitted.<br/>
-      Click on a rule to review it.<br/>
-    </details>
-    <p>
-      <a href="/" class="button">Main Menu</a>
-      <a href="/review_rules" class="restart button">Restart</a>
-    </p>
-    <fieldset id="verification-fieldset"><legend>Review Reviews</legend>
-        <p id="num-pending">You have not reviewed any transfer rules yet.</p>
-        <button type="text" id="send-email" disabled="disabled">
-        Review Your Reviews
-      </button>
-      <form method="post" action="#" id="review-form">
-        Waiting for rules to finish loading ...
-      </form>
-    </fieldset>
-    <div id="rules-table-div" class="selection-table-div">
-    {rules_table}
-    </div>
-  """
-  return render_template('review_rules.html', result=Markup(result))
-
-
-# do_form_3()
-# -------------------------------------------------------------------------------------------------
-def do_form_3(request, session):
-  if DEBUG:
-      print('*** do_form_3({})'.format(session))
-  reviews = json.loads(request.form['reviews'])
-  kept_reviews = [e for e in reviews if e['include']]
-  email = session['email']
-  if len(kept_reviews) == 0:
-    result = '<h1>There are no reviews to confirm.</h1>'
-  else:
-    message_tail = 'review'
-    if len(kept_reviews) > 1:
-      num_reviews = len(kept_reviews)
-      if num_reviews < 13:
-        num_reviews = ['', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-                       'eleven', 'twelve'][num_reviews - 1]
-      message_tail = '{} reviews'.format(num_reviews)
-
-    # Insert these reviews into the pending_reviews table of the db.
-    conn = pgconnection('dbname=cuny_courses')
-    cursor = conn.cursor()
-    token = str(uuid.uuid4())
-    reviews = json.dumps(kept_reviews)
-    q = "insert into pending_reviews (token, email, reviews) values(%s, %s, %s)"
-    cursor.execute(q, (token, email, reviews))
-    conn.commit()
-    conn.close()
-
-    # Description message templates
-    review_dict = dict()
-    review_dict['ok'] = '{}: OK'
-    review_dict['not-ok'] = '{}: {}'
-    review_dict['other'] = 'Other: {}'
-
-    # Generate description messages
-    style_str = ' style="border:1px solid #666;vertical-align:top; padding:0.5em;"'
-    suffix = 's'
-    if len(kept_reviews) == 1:
-      suffix = ''
-    review_rows = """
-                      <table style="border-collapse:collapse;">
-                        <tr>
-                          <th colspan="5"{}>Rule</th>
-                          <th{}>Your Review{}</th>
-                        </tr>
-                        """.format(style_str, style_str, suffix)
-    for review in kept_reviews:
-      event_type = review['event_type']
-      if event_type == 'src-ok':
-          description = review_dict['ok'].format(re.sub(r'\d+', '',
-                                                        review['source_institution']))
-      elif event_type == 'dest-ok':
-        description = review_dict['ok'].format(re.sub(r'\d+', '',
-                                                      review['destination_institution']))
-      elif event_type == 'src-not-ok':
-        description = review_dict['not-ok'].format(re.sub(r'\d+', '',
-                                                          review['source_institution']),
-                                                   review['comment_text'])
-      elif event_type == 'dest-not-ok':
-        description = review_dict['not-ok'].format(re.sub(r'\d+', '',
-                                                          review['destination_institution']),
-                                                   review['comment_text'])
-      else:
-        description = review_dict['other'].format(review['comment_text'])
-
-      rule_str = re.sub(r'</tr>',
-                        """<td>{}</td></tr>
-                        """.format(description), review['rule_str'])
-      review_rows += re.sub('<td([^>]*)>', '<td\\1{}>'.format(style_str), rule_str)
-    review_rows += '</table>'
-    # Send the email
-    hostname = os.environ.get('HOSTNAME')
-    if hostname and hostname.endswith('.local'):
-      hostname = 'http://localhost:5000'
-    else:
-      hostname = 'https://transfer-app.qc.cuny.edu'
-    url = hostname + '/confirmation/' + token
-
-    response = send_token(email, url, review_rows)
-    if response.status_code != 202:
-      result = 'Error sending email: {}'.format(response.body)
-    else:
-      result = """
-      <h1>Step 4: Respond to Email</h1>
-      <p>
-        Check your email at {}.<br/>Click on the 'activate these reviews' button in that email to
-        confirm that you actually wish to have your {} recorded.
-      </p>
-      <p>
-        Thank you for your work!
-      </p>
-      <a href="/" class="button">Main Menu</a>
-      <a href="/review_rules" class="restart">Restart</a>
-
-      """.format(email, message_tail)
-  return render_template('review_rules.html', result=Markup(result))
+    session.pop('source_institutions', None)
+    session.pop('destination_institutions', None)
+    session.pop('source_disciplines', None)
+    session.pop('destination_disciplines', None)
+    # keys = mysession.keys()
+    return do_form_0(request, session)
 
 
 # PENDING PAGE
@@ -1586,10 +890,10 @@ def _sessions():
   q = 'select session_key, expiration_time from sessions order by expiration_time'
   cursor.execute(q)
   result = '<table>'
-  now = datetime.datetime.now()
+  now = datetime.now()
   num_expired = 0
   for row in cursor.fetchall():
-    ts = datetime.datetime.fromtimestamp(row['expiration_time'])
+    ts = datetime.fromtimestamp(row['expiration_time'])
     ts_str = ts.strftime('%Y-%m-%d %H:%M:%S')
     status = 'active'
     if ts < now:
