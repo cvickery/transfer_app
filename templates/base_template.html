@@ -17,9 +17,7 @@
       <p class="error">Waiting for JavaScript to initialize &hellip;</p>
     </div>
     {% endif %}
-    <div>
-      {{ result }}
-    </div>
+    {{ result }}
   </body>
   {% if not omitjs %}
   <script>document.getElementById('need-js').style.display = 'none';
