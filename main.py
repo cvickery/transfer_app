@@ -7,17 +7,16 @@ import re
 import socket
 
 import json
-import uuid
 from datetime import datetime, timedelta
-
-from pgconnection import pgconnection
 
 from collections import namedtuple
 from collections import defaultdict
 from collections import Counter
 
+import psycopg2
+from psycopg2.extras import NamedTupleCursor
+
 from course_lookup import lookup_courses, lookup_course
-from mysession import MySession
 from sendemail import send_token, send_message
 from reviews import process_pending
 from rule_history import rule_history
@@ -131,8 +130,8 @@ def index_page():
 
   """ Display menu of available features.
   """
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   cursor.execute("select count(*) from transfer_rules")
   num_rules = cursor.fetchone()[0]
   cursor.execute("select * from updates")
@@ -147,14 +146,8 @@ def index_page():
   cursor.close()
   conn.close()
   # You can put messages for below the menu here:
-  test = ''
-  if 'hello' in session:
-    test = f'<p>{session["hello"]}'
-  else:
-    session['hello'] = 'Such a nice situation!'
   msg = f"""
   <footer id="update-info">
-    {test}
     <p><sup>&dagger;</sup>{num_rules:,} transfer rules as of {rules_date}.</p>
   </footer>
             """
@@ -190,12 +183,8 @@ def review_rules():
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  """ (Re-)establish user's mysession and dispatch to appropriate function depending on which form,
-      if any, the user submitted.
-  """
   if DEBUG:
     print('*** {} / ***'.format(request.method))
-  # mysession = MySession(request.cookies.get('mysession'))
 
   # Dispatcher for forms
   dispatcher = {
@@ -215,7 +204,6 @@ def review_rules():
     session.pop('destination_institutions', None)
     session.pop('source_disciplines', None)
     session.pop('destination_disciplines', None)
-    # keys = mysession.keys()
     return do_form_0(request, session)
 
 
@@ -229,8 +217,8 @@ def pending():
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   cursor.execute("""
     select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
       from pending_reviews""")
@@ -282,8 +270,8 @@ def confirmation(token):
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   # Get list of colleges involved in the reviews
   #
   q = 'select * from person_roles where role'
@@ -377,8 +365,8 @@ def map_courses():
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   cursor.execute('select code, prompt from institutions order by prompt')
   options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
   conn.close()
@@ -396,31 +384,31 @@ def map_courses():
             nav_items=[{'type': 'link', 'href': '/', 'text': 'Main Menu'}])}
     <details class="instructions">
     <summary>Instructions</summary>
-    <div class="instructions">
-      <p>
-        Select courses of interest in the “Which Courses” section. The number of courses selected
-        will be shown.
-      </p>
-      <p>
-        Then use the <span class="pseudo-button">show sending rules</span> button if you want to map
-        how these courses transfer <em>to</em> courses at other institutions, or use the <span
-        class="pseudo-button">show receiving rules</span> button if you want to map how these
-        courses transfer <em>from</em> other institutions.
-      </p>
-      <p>
-        If it takes too long to load the transfer map, reduce the number of courses selected. You
-        can also limit the set of colleges mapped to senior, community, or comprehensives using the
-        options in the “Which Colleges To Map” section.
-      </p>
-  </div>
+    <hr>
+    <p>
+      Select courses of interest in the “Which Courses” section. The number of courses selected
+      will be shown.
+    </p>
+    <p>
+      Then use the <span class="pseudo-button">Show Sending</span> button if you want to map
+      how these courses transfer <em>to</em> courses at other institutions, or use the <span
+      class="pseudo-button">Show Receiving</span> button if you want to map how these
+      courses transfer <em>from</em> other institutions.
+    </p>
+    <p>
+      If it takes too long to load the transfer map, reduce the number of courses selected. You
+      can also limit the set of colleges mapped to senior, community, or comprehensives using the
+      options in the “Which Colleges To Map” section.
+    </p>
     </details>
     <form action="#" method="POST">
-      <fieldset><legend>Which Courses</legend>
+      <fieldset><h2>Which Courses</h2>
+        <hr>
         <h2>
-          Select one or more of the following groups of courses.
+          Select one or more of the following groups of course levels.
         </h2>
         <div id="grouping-div">
-          <label for="course-groups">Groups:</label>
+          <label for="course-groups">Levels:</label>
           <select multiple id="course-groups" size="9">
             <option value="all">All course levels</option>
             <option value="below">Below 100-level courses</option>
@@ -433,8 +421,8 @@ def map_courses():
             <option value="above">Above 600-level courses</option>
           </select>
           <p>
-            <em>Note:</em> Catalog numbers greater than 999 will be divided by ten until they are
-            in the range 0 to 999 for grouping purposes.
+            <em>Note: Catalog numbers greater than 999 will be divided by ten until they are
+            in the range 0 to 999 for grouping into levels.</em>
           </p>
         </div>
         <h2>
@@ -452,7 +440,8 @@ def map_courses():
           No courses selected yet.
         </p>
       </fieldset>
-      <fieldset><legend>Which Direction</legend>
+      <fieldset><h2>Which Direction</h2>
+        <hr>
         <p>
           Do you want to see how the selected courses transfer <em>to</em> other colleges
           (<em>sending rules</em>) or how they transfer <em>from</em> other colleges (<em>receiving
@@ -469,19 +458,20 @@ def map_courses():
           </span>
         </div>
       </fieldset>
-      <fieldset><legend>Which Colleges</legend>
-          <input  type="checkbox"
-                  id="associates"
-                  name="which-colleges"
-                  value="associates"
-                  checked>
-          <label for="associates" class="radio-label">Include Associates Degree Colleges</label>
-          <input  type="checkbox"
-                  id="bachelors"
-                  name="which-colleges"
-                  value="bachelors"
-                  checked>
-          <label for="bachelors" class="radio-label">Include Bachelor’s Degree Colleges</label>
+      <fieldset><h2>Which Colleges</h2>
+        <hr>
+        <input  type="checkbox"
+                id="associates"
+                name="which-colleges"
+                value="associates"
+                checked>
+        <label for="associates" class="radio-label">Include Associates Degree Colleges</label>
+        <input  type="checkbox"
+                id="bachelors"
+                name="which-colleges"
+                value="bachelors"
+                checked>
+        <label for="bachelors" class="radio-label">Include Bachelor’s Degree Colleges</label>
       </fieldset>
     </form>
   </div>
@@ -557,8 +547,8 @@ def map_courses():
 @app.route('/_institutions')
 def _institutions():
   Institution = namedtuple('Institution', 'code, prompt, name, associates, bachelors')
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   cursor.execute("""select code, prompt, name, associates, bachelors
                       from institutions order by code
                  """)
@@ -576,8 +566,8 @@ def _institutions():
 @app.route('/_disciplines')
 def _disciplines():
   institution = request.args.get('institution', 0)
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   cursor.execute("""select discipline
                       from cuny_disciplines
                       where cuny_subject != 'MESG'
@@ -604,8 +594,8 @@ def _find_course_ids():
   institution = request.args.get('institution')
   discipline = request.args.get('discipline')
   ranges_str = request.args.get('ranges_str')
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   cursor.execute("""select course_id, numeric_part(catalog_number) as cat_num
                     from courses
                     where institution = %s and discipline = %s
@@ -654,8 +644,8 @@ def _map_course():
   request_type = request.args.get('request_type', default='show-sending')
 
   table_rows = []
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   for course_id in course_ids:
     cursor.execute("""select  course_id,
                               institution,
@@ -779,8 +769,8 @@ def lookup_rules():
                    Unable to use "{}" as a catalog number.</p>""".format(original_catalog_number))
   type = request.args.get('type')
   # Get the course_ids
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   query = """
   select distinct course_id
     from courses
@@ -880,13 +870,13 @@ def _course_search():
 
 # /_SESSIONS
 # =================================================================================================
-# This route is intended as a utility for pruning dead "mysession" entries from the db. A periodic
+# This route is intended as a utility for pruning dead "session" entries from the db. A periodic
 # script can access this url to prevent db bloat when millions of people start using the app. Until
 # then, it's just here in case it's needed.
 @app.route('/_sessions')
 def _sessions():
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   q = 'select session_key, expiration_time from sessions order by expiration_time'
   cursor.execute(q)
   result = '<table>'
@@ -925,8 +915,8 @@ def courses():
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   institution_code = None
   discipline_code = None
   department_code = None
@@ -979,7 +969,7 @@ def courses():
       # Found a college: find out if it offers some courses
       row = cursor.fetchone()
       institution_name = row.name
-      date_updated = row.date_updated.strftime('%B %d, %Y')
+      date_updated = row.date_updated.strftime('%B %e, %Y')
       cursor.execute(f"""
           select count(*) from courses
            where institution ~* %s {discipline_clause} {department_clause}
@@ -1003,34 +993,33 @@ def courses():
     result = f"""
       {header_str}
       <h1>{discipline_name} {department_str}</h1>
-      <details><summary style="border:1px solid #ccc;">Legend and Details</summary>
-        <div class="instructions">
-          <p>{num_active_courses:,} active courses as of {date_updated}</p>
-          <p>
-            <em>
-              The following course properties are shown in parentheses following the catalog
-              description:
-            </em>
-          </p>
-          <ul>
-            <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
-            <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
-            <li title="Each course has exactly one Requirement Designation (RD).">
-              Requirement Designation;</li>
-            <li id="show-attributes"
-                title="A course can have any number of attributes. Click here to see descriptions.">
-              Course Attributes (a comma-separated list of name:value attribute pairs).
-            </li>
-          </ul>
-          <em>Hover over above list for more information.</em>
-          <div id="pop-up-div">
-            <div id="pop-up-inner">
-              <div id="dismiss-bar">x</div>
-              <table>
-                <tr><th>Name</th><th>Value</th><th>Description</th></tr>
-                {course_attribute_rows}
-              </table>
-            </div>
+      <details class="instructions">
+        <summary>Legend and Details</summary>
+        <hr>
+        <p>{num_active_courses:,} active courses as of {date_updated}</p>
+        <p>
+          The following course properties are shown in parentheses at the bottom of each course’s
+          catalog description. <em>Hover over items in this list for more information. </em> </p>
+        <ul>
+          <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
+          <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
+          <li title="Each course has exactly one Requirement Designation (RD). Among other values,
+          Pathways requirements appear here.">
+            Requirement Designation;</li>
+          <li id="show-attributes"
+              title="A course can have any number of attributes. Click here to see the names,
+              values, and descriptions for all attributes used at CUNY.">
+              Course Attributes (<em>None</em>, or a comma-separated list of name:value attribute
+              pairs).
+          </li>
+        </ul>
+        <div id="pop-up-div">
+          <div id="pop-up-inner">
+            <div id="dismiss-bar">x</div>
+            <table>
+              <tr><th>Name</th><th>Value</th><th>Description</th></tr>
+              {course_attribute_rows}
+            </table>
           </div>
         </div>
       </details>
@@ -1050,7 +1039,7 @@ def courses():
     {header(title='CUNY Transfer App',
             nav_items=[{'type':'link', 'text': 'Main Menu', 'href': '/'}])}
     <h1>List Active Courses</h1>{msg}
-    <p>Pick a college and say “Please”.</p>
+    <p class="instructions">Pick a college and say “Please”.</p>
     <form method="post" action="#">
     <fieldset><legend>Select a College</legend>"""
     cursor.execute("select * from institutions order by code")
@@ -1072,6 +1061,32 @@ def courses():
         <button type="submit">Please</button>
       </div>
     </fieldset></form>
+    <fieldset id="course-filters">
+    <h2>Firehose Control</h2>
+    <p>
+      You can filter the courses at <span id="college-name">None</span> by department, discipline,
+      CUNY subject, requirement designation, and/or course attribute.
+    </p>
+      <label for="department-select">Department:</label>
+      <select id="department-select"name="department">
+      </select>
+      <br>
+      <label for="discipline-select">Discipline:</label>
+      <select id="discipline-select"name="discipline">
+      </select>
+      <br>
+      <label for="subject-select">CUNY Subject:</label>
+      <select id="subject-select"name="subject">
+      </select>
+      <br>
+      <label for="designation-select">Designation:</label>
+      <select id="designation-select"name="designation">
+      </select>
+      <br>
+      <label for="attribute-select">Course Attribute:</label>
+      <select id="attribute-select"name="attribute">
+      </select>
+    </fieldset>
     """
   return render_template('courses.html',
                          result=Markup(result),
@@ -1105,11 +1120,11 @@ def registered_programs(institution, default=None):
     institution = 'none'
 
   # See when the db was last updated
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
-  plan_cursor = conn.cursor()
-  dgw_conn = pgconnection('dbname=cuny_programs')
-  dgw_cursor = dgw_conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  plan_cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  dgw_conn = psycopg2.connect('dbname=cuny_programs')
+  dgw_cursor = dgw_conn.cursor(cursor_factory=NamedTupleCursor)
   try:
     cursor.execute("select update_date from updates where table_name='registered_programs'")
     update_date = date2str(cursor.fetchone().update_date)
@@ -1173,7 +1188,7 @@ def registered_programs(institution, default=None):
         csv_link = f"""<a download class="button" href="/download_csv/{filename}">
                        Download {filename}</a>{all_clause}<br/>"""
         break
-    h1 = f'<h1>Registered Academic Programs for {institution_name}</h1>'
+    h1 = f'<h1>{institution_name}</h1>'
 
     # Generate the HTML table: headings
     headings = ['Program Code',
@@ -1302,16 +1317,10 @@ def registered_programs(institution, default=None):
           <option value="none" style="font-size:3m; color:red;">Select a College</option>
           {options}
           </select>
-<!--
-        <p>
-          <button id="submit-button" type="submit" form="select-institution">
-          Show Selected College</button> or
-          <a href="/" class="button">Return to Main Menu</a>
-        </p>
-  -->
       </form>
       <details>
         <summary>Instructions and Options</summary>
+        <hr>
         <p>
           <span class="variant">Highlighted rows</span> are for programs with more than one variant,
           such as multiple institutions and/or multiple awards.
@@ -1349,8 +1358,8 @@ def registered_programs(institution, default=None):
            methods=['GET'],
            defaults=({'catalog_year': 'current'}))
 def academic_plan(institution, plan, catalog_year):
-  conn = pgconnection('dbname=cuny_courses')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_courses')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   cursor.execute("""
                  select distinct r.target_institution as inst, i.name
                  from registered_programs r, institutions i
@@ -1359,8 +1368,8 @@ def academic_plan(institution, plan, catalog_year):
                  """)
   cuny_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
 
-  conn = pgconnection('dbname=cuny_programs')
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_programs')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
 
   cursor.execute('select last_update from updates where institution = %s', (institution, ))
   last_update = cursor.fetchone().last_update.strftime('%B %d, %Y')

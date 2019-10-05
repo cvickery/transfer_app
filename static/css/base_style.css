@@ -1,26 +1,66 @@
 
 body {
-  padding: 1em;
+  padding: 0.5rem;
   background-color: #cdf;
   color:#333;
   font-family:sans-serif;
   font-size: 16px;
 }
 
+details {
+  border: 1px solid #cbb;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  background-color: white;
+  color: #333;
+}
+
+summary {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+button, a.button {
+    margin: 1rem;
+    border: 1px solid #999;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    background-color: white;
+    color: black;
+    font-size: 0.8rem;
+    font-variant: small-caps;
+    text-decoration: none;
+    -moz-appearance: button;
+    -webkit-appearance: button;
+    appearance: button;
+}
+
+.pseudo-button {
+  font-variant: small-caps;
+}
+
+button:disabled, a.button:disabled {
+  color: #ccc;
+}
+button:enabled:hover, a.button:enabled:hover {
+  background-color: #ccc;
+}
+
 header {
+  position:relative;
+  height: 2rem;
+  border: 1px solid #cbb;
   background-color:white;
   color:#248;
-  position:relative;
-  border-radius: 0.25em;
-  height: 2em;
+  border-radius: 0.25rem;
 }
 
 header>a {
   display:inline-block;
   position:absolute;
-  top: 0.25em;
-  left: 0.25em;
-  height: 1.5em;
+  top: 0.25rem;
+  left: 0.25rem;
+  height: 1.5rem;
 }
 
 header>a>img {
@@ -29,31 +69,31 @@ header>a>img {
 
 header>span {
   position:absolute;
-  top:0.125em;
+  top:0.4rem;
   display:block;
   width:100%;
-  font-size: 1.75em;
+  font-size: 1.5rem;
   font-weight:bold;
   text-align:center;
 }
 
 header>nav {
   position:absolute;
-  top:0.25em;
-  right:0.25em;
-  bottom:0.25em;
+  top:0.25rem;
+  right:0.25rem;
+  bottom:0.25rem;
 }
 
-nav>a, .button {
-  margin:0 .25em;
-  padding:0.125em 1em;
-  display:inline-block;
-  font-size: 1em;
+nav>a {
+  display: inline-block;
+  margin: 0 0.25rem;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  padding: 0.125em 1rem;
+  background-color: white;
+  color: #248;
+  font-size: 1rem;
   font-variant: small-caps;
-  background-color:white;
-  color:#248;
-  border:1px solid #ccc;
-  border-radius:0.25em;
   text-decoration:none;
 }
 
@@ -63,14 +103,14 @@ nav>a:hover, .button:hover {
 }
 
  nav>button {
-  margin:0 0.25em;
-  padding:0.125em 1em;
-  font-size:1em;
+  margin:0 0.25rem;
+  padding:0.125rem 1rem;
+  font-size:1rem;
   font-variant: small-caps;
   background-color:white;
   color:#248;
   border:1px solid #ccc;
-  border-radius:0.25em;
+  border-radius:0.25rem;
 }
 
  nav>button:hover {
@@ -78,6 +118,9 @@ nav>a:hover, .button:hover {
   color:white;
 }
 
+fieldset hr {
+  color: #cbb;
+}
 .error {
   color: #922;
   font-size: 1.2rem;
@@ -89,8 +132,20 @@ nav>a:hover, .button:hover {
   color: #992;
 }
 
+.underline {
+  text-decoration: underline;
+}
+
 .center {
   text-align:center;
+}
+
+.instructions {
+  border: 1px solid #cbb;
+  border-radius: 0.25rem;
+  padding: 0.5em;
+  background-color: white;
+  color: #333;
 }
 
 .table-height {
