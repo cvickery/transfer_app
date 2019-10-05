@@ -1,14 +1,7 @@
 
-.instructions {
-  background-color: #fefefe;
-  padding:0.25em 1em;
-  margin: 1em 0;
-  max-width:40em;
-  border-radius:0.25em;
-  border: 1px solid #0cc;
-}
 
 details {
+  margin: 1em 0;
   max-width: 40em;
   line-height:1.1em;
 }
@@ -76,20 +69,8 @@ thead {
   margin-top: 0.5em;
 }
 
-#course-ids {
-  margin: 0.5em;
-  width:60em;
-}
-
-#course-ids + button {
-  font-size: 0.8em;
-  padding: 0.25em;
-  margin: 0em;
-}
-
 #show-sending, #show-receiving {
-  font-size:1.1em;
-  font-variant:small-caps;
+  font-size: 1.0rem;
 }
 
 #transfers-map-table {

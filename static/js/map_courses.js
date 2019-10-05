@@ -190,16 +190,6 @@ $(function ()
     });
   };
 
-  /* Clear string of course IDs, update num courses msg, and disable action buttons.
-   */
-  $('#clear-ids').mouseup(function ()
-  {
-    $('#course-ids').val('');
-    $('#show-sending, #show-receiving').prop('disabled', true);
-    $('#num-courses').text('No courses');
-    course_list = [];
-  });
-
   /* Type of colleges changed. Be sure at least one checkbox is checked.
    */
   $('#bachelors').change(function ()
