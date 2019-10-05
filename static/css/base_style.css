@@ -161,6 +161,6 @@ fieldset hr {
 
 .scrollable tbody {
   overflow-x: auto;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
