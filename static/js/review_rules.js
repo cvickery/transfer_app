@@ -1,9 +1,27 @@
+import ScrollableTable from './scrollable_tables.js';
+
 /* This script handles all 3+ steps of the transfer review application.
  * as such, it should probably be broken up into separate scripts to avoid cross-step code
  * pollution. One reason it works is that there are no consequences for hooking code to elements
  * that don't actually exist in a particular step's DOM.
  * For now it continues its monolithic megopoly.
  */
+
+window.addEventListener('load', function()
+{
+  const subject_table = document.getElementById('subject-table');
+  if (subject_table)
+  {
+    const scrollable_table = new ScrollableTable({table: subject_table});
+    const adjust_table = scrollable_table.get_adjustment_callback();
+    window.addEventListener('resize', adjust_table);
+    const details = document.getElementsByTagName('details');
+    for (let i = 0; i < details.length; i++)
+    {
+      details[i].addEventListener('toggle', adjust_table);
+    }
+  }
+});
 
 $(function ()
 {
@@ -31,8 +49,7 @@ $(function ()
    * vice-versa. Must supply a valid CUNY email address.
    */
   $('#submit-form-1')
-    .prop('disabled', true)
-    .css('color', '#cccccc');
+    .prop('disabled', true);
 
   $('#all-sources, #all-destinations').prop('disabled', false);
   $('#no-sources, #no-destinations').prop('disabled', false);
@@ -55,10 +72,11 @@ $(function ()
     }
     else
     {
-      error_msg +=
-        '<p>You must select either a single sending college and one or more ' +
-        'receiving colleges or a single receiving college and one or more ' +
-        'sending colleges.</p>';
+      error_msg = `<p>
+      Select <span class="underline">either</span> a single sending college and one or more
+      receiving colleges <span class="underline">or</span> a single receiving college and one or
+      more sending colleges.
+      </p>`;
     }
 
     //  Check CUNY email address
@@ -157,12 +175,12 @@ $(function ()
   /* Given a list of sending and receiving offered disciplines, grouped by CUNY subject names, the
    * user must select at least one discipline group from the sending column and at least one from
    * the receiving column. Shortcut checkboxes let the user clear or select all items in a
-   * column. The wrinkle is that the user thinks "disciplines" but the app thinks "cuny_subjects."
+   * column. The wrinkle is that the user thinks “disciplines” but the app thinks “cuny_subjects.”
    */
 
   // Form 2: Manage checkboxes
   // ----------------------------------------------------------------------------------------------
-
+  // TODO: Enable/Disable form-2-submit button.
   $('.f2-cbox')
     .has('input')
     .css('background-color', 'white')
@@ -285,6 +303,7 @@ $(function ()
 
   $('#form-2').submit(function ()
   {
+    // TODO Add Searching ... feedback. Cursor alone is not obvious enough.
     $('#form-2').css('cursor', 'wait');
   });
 

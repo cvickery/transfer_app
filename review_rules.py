@@ -1,29 +1,37 @@
 #! /usr/local/bin/python3
 """ Manage the sequence of forms used for reviewing transfer rules.
 """
-from flask import render_template, Markup
+import os
+import json
+import uuid
+import re
 
 from datetime import datetime
+
+from flask import render_template, Markup
 
 import psycopg2
 from psycopg2.extras import NamedTupleCursor
 
 from app_header import header
+from sendemail import send_token, send_message
 from format_rules import institution_names, Source_Course, Destination_Course, Transfer_Rule, \
     format_rules
 
-DEBUG = True
+if os.getenv('DEVELOPMENT'):
+  DEBUG = True
+else:
+  DEBUG = False
 
 
 # do_form_0()
 # -------------------------------------------------------------------------------------------------
 def do_form_0(request, session):
   """
-      No form submitted yet; generate the Step 1 page.
-      Display form_1 to get aource and destination institutions; user's email.
+      No form submitted yet; generate the Form 1 page.
   """
   if DEBUG:
-    print('*** do_form_0({})'.format(session))
+    print(f'*** do_form_0({session})')
   conn = psycopg2.connect('dbname=cuny_courses')
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
 
@@ -96,7 +104,7 @@ def do_form_0(request, session):
             nav_items=[{'type': 'link',
             'href': '/',
             'text': 'Main Menu'}])}
-    <details class="instructions">
+    <DETAILS>
       <summary>
         Instructions
       </summary>
@@ -115,7 +123,7 @@ def do_form_0(request, session):
         steps.
       </p>
       <p>
-        Background information and (<em>much!</em>) more detailed instructions are available in the
+        Background information and <em>(much!)</em> more detailed instructions are available in the
         <a  target="_blank"
             href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE">
             Reviewing CUNY Transfer Rules</a> document.
@@ -164,16 +172,26 @@ def do_form_0(request, session):
 # -------------------------------------------------------------------------------------------------
 def do_form_1(request, session):
   """
-      Collect source institutions, destination institutions and user's email from Form 1, and add
+      1. Collect source institutions, destination institutions and user's email from Form 1, and add
       them to the session.
-      Generate Form 2 to select discipline(s)
+      2. Generate Form 2 to select discipline(s)
   """
   if DEBUG:
-     print('*** do_form_1({})'.format(session))
+     print(f'*** do_form_1({session})')
 
   # Add institutions selected to user's session
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
+
+  # set or clear email-related cookies based on form data
+  email = request.form.get('email')
+  session['email'] = email  # always valid for this session
+  # The email cookie expires now or later, depending on state of "remember me"
+  remember_me = request.form.get('remember-me')
+  if remember_me == 'on':
+    session.permanent = True
+  else:
+    session.permanent = False
 
   # Database lookups
   # ----------------
@@ -223,15 +241,14 @@ def do_form_1(request, session):
     """.format(destination_institution_params)
   cursor.execute(q, session['destination_institutions'])
   destination_disciplines = cursor.fetchall()
+  cursor.close()
+  conn.close()
 
   # The CUNY subjects actually used by the source and destination disciplines.
   cuny_subjects = set([d.cuny_subject for d in source_disciplines])
   cuny_subjects |= set([d.cuny_subject for d in destination_disciplines])
   cuny_subjects.discard('')  # empty strings don't match anything in the subjects table.
   cuny_subjects = sorted(cuny_subjects)
-
-  cursor.close()
-  conn.close()
 
   # Build selection list. For each cuny_subject found in either sending or receiving disciplines,
   # list all disciplines for that subject, with checkboxes for selecting either the sending or
@@ -378,58 +395,51 @@ def do_form_1(request, session):
     </table>
     """
 
-  # set or clear email-related cookies based on form data
-  email = request.form.get('email')
-  print(email)
-  session['email'] = email  # always valid for this session
-  # The email cookie expires now or later, depending on state of "remember me"
-  # expire_time = datetime.now()
-  remember_me = request.form.get('remember-me')
-  if remember_me == 'on':
-    session.permanent = True
-  else:
-    session.permanent = False
-
   # Return Form 2
-  result = """
-  <h1>Step 2: Select Sending &amp; Receiving Disciplines</h1>
+  result = f"""
+  {header(title='Review Rules: Select Disciplines',
+          nav_items=[{'type': 'link',
+          'href': '/',
+          'text': 'Main Menu'},
+          {'type': 'link',
+           'href': '/review_rules',
+           'text': 'Change Colleges'}])}
   <details>
   <summary>Instructions</summary>
-  <div class="instructions">
-    <p>There are {:,} disciplines where {}.</p>
-    Disciplines are grouped by CUNY subject area.<br/>
-    Select at least one sending discipline and at least one receiving discipline.<br/>
-    By default, all receiving disciplines are selected to account for all possible equivalencies,
-    including electives and blanket credit.<br/>
-    The next step will show all transfer rules for courses in the corresponding pairs of
-    disciplines.
-  </div>
+  <hr>
+  <p>
+    There are {len(source_disciplines) + len(destination_disciplines):,} disciplines where
+    {criterion}.
+  </p>
+  Disciplines are grouped by CUNY subject area.<br/>
+  Select at least one sending discipline and at least one receiving discipline.<br/>
+  By default, all receiving disciplines are selected to account for all possible equivalencies,
+  including electives and blanket credit.<br/>
+  The next step will show all transfer rules for courses in the corresponding pairs of
+  disciplines.
   </details>
   <form method="post" action="#" id="form-2">
-    <a href="/" class="restart button">Main Menu</a>
-    <a href="/review_rules" class="restart">Restart</a>
-    <button type="submit">Next</button>
+  <button id="submit-form-2" type="submit">Next <em>(View Rules)</em></button>
     <input type="hidden" name="next-function" value="do_form_2" />
-    {}
-    <div id="subject-table-div" class="selection-table-div">
-      <table id="subject-table">
-        <thead>
-          <tr>
-            <th class="source-subject">{} Discipline(s)</th>
-            <th class="source-subject">Select Sending</th>
-            <th>CUNY Subject</th>
-            <th class="destination-subject">Select Receiving</th>
-            <th class="destination-subject">{} Discipline(s)</th>
-          </tr>
-        </thead>
-        <tbody>
-        {}
-        </tbody>
-      </table>
+    {shortcuts}
+    <div id="subject-table-div" class="selection-table-div table-height">
+        <table id="subject-table" class="scrollable">
+          <thead>
+            <tr>
+              <th class="source-subject">{sending_heading} Discipline(s)</th>
+              <th class="source-subject">Select Sending</th>
+              <th>CUNY Subject</th>
+              <th class="destination-subject">Select Receiving</th>
+              <th class="destination-subject">{receiving_heading} Discipline(s)</th>
+            </tr>
+          </thead>
+          <tbody>
+          {selection_rows}
+          </tbody>
+        </table>
     </div>
   </form>
-  """.format(len(source_disciplines) + len(destination_disciplines), criterion,
-             shortcuts, sending_heading, receiving_heading, selection_rows)
+  """
   # response.set_cookie('email', email, expires=expire_time)
   # response.set_cookie('remember-me', 'on', expires=expire_time)
   session['email'] = email
@@ -446,7 +456,7 @@ def do_form_2(request, session):
       Generate form_3: the selected transfer rules for review
   """
   if DEBUG:
-    print(f'*** do_form_2()')
+    print(f'*** do_form_2(session)')
   conn = psycopg2.connect('dbname=cuny_courses')
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
 
@@ -627,7 +637,7 @@ def do_form_2(request, session):
 # -------------------------------------------------------------------------------------------------
 def do_form_3(request, session):
   if DEBUG:
-      print('*** do_form_3({})'.format(session))
+      print('*** do_form_3({session})')
   reviews = json.loads(request.form['reviews'])
   kept_reviews = [e for e in reviews if e['include']]
   email = session['email']
@@ -704,19 +714,26 @@ def do_form_3(request, session):
 
     response = send_token(email, url, review_rows)
     if response.status_code != 202:
-      result = 'Error sending email: {}'.format(response.body)
+      result = f'Error sending email: {response.body}'
     else:
-      result = """
-      <h1>Step 4: Respond to Email</h1>
+      result = f"""
+      {header(title='Review Rules: Respond to Email',
+              nav_items = [
+              {'type': 'link',
+               'href': '/',
+               'text': 'Main Menu'},
+              {'type': 'link',
+               'href': '/review_rules',
+               'text':'Review More Rules'}])}
+      <h1 class="instructions">
+        Check your email at {email}
+      </h1>
       <p>
-        Check your email at {}.<br/>Click on the 'activate these reviews' button in that email to
-        confirm that you actually wish to have your {} recorded.
+        Click on the 'activate these reviews' button in that email
+        to confirm that you actually wish to have your {message_tail} recorded.
       </p>
       <p>
         Thank you for your work!
       </p>
-      <a href="/" class="button">Main Menu</a>
-      <a href="/review_rules" class="restart">Restart</a>
-
-      """.format(email, message_tail)
+      """
   return render_template('review_rules.html', result=Markup(result))
