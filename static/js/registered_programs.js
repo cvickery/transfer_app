@@ -20,7 +20,7 @@ window.addEventListener('load', function ()
   const tables = document.getElementsByClassName('scrollable');
   if (tables.length > 0)
   {
-    const the_table = new ScrollableTable({table: tables[0], padding: 12});
+    const the_table = new ScrollableTable({table: tables[0], use_heading: true});
     const adjust_table = the_table.get_adjustment_callback();
 
     // Need to re-process the table's height when viewport is resized.

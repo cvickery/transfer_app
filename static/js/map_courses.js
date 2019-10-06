@@ -292,7 +292,8 @@ $(function ()
         $('#setup-div').hide();
         $('#transfers-map-div').show();
         let transfers_map_table = document.getElementById('transfers-map-table');
-        let the_table = new ScrollableTable({table: transfers_map_table});
+        let the_table = new ScrollableTable(
+          {table: transfers_map_table, use_heading: true });
         let adjust_table = the_table.get_adjustment_callback();
 
         // Will need to adjust height of the mapping table whenever the viewport is resized ...

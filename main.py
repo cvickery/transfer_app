@@ -485,7 +485,7 @@ def map_courses():
     <details class="instructions">
       <summary>
         The number of rules for transferring courses on the <span class="left-right">left</span>
-        transfer <span class="to-from">to</span> other colleges.
+        <span class="to-from">to</span> other colleges.
       </summary>
       <hr>
       <p>

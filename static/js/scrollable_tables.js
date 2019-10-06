@@ -3,6 +3,9 @@
  *  column widths remaining matched.
  */
 
+const DEBUG_HEIGHT = false;
+const DEBUG_WIDTHS = true;
+
 //  content_width()
 //  ---------------------------------------------------------------------------------------------
 /*  Returns the content width of a table cell. Assuming border-collapse model, this means the
@@ -42,14 +45,14 @@ export default class ScrollableTable
     this.table = args.table;
     this.desired_height = args.height;
     this.initial_delay = args.delay ? args.delay : 2000;
-    this.padding_bottom = args.padding ? args.padding : 10;
-
+    this.padding_bottom = args.padding ? args.padding : 12;
+    this.use_heading_widths = args.use_heading;
     this.thead = this.table.getElementsByTagName('thead')[0];
     let head_height = this.thead.offsetHeight;
     this.tbody = this.table.getElementsByTagName('tbody')[0];
     let body_height = this.tbody.offsetHeight;
     this.intrinsic_height = head_height + body_height;
-    this.parent_node = this.table.parentNode; // Force this one's height to desired_height or less.
+    this.parent_node = this.table.parentNode; //  Used to control height of table.
 
     // Attributes that make a table body scrollable
     // ............................................................................................
@@ -58,15 +61,15 @@ export default class ScrollableTable
     this.tbody.style.position = 'absolute';
 
     // initial adjustments
+    this.adjust_widths(false);
     this.adjust_height();
-    this.adjust_widths();
     setTimeout(function ()
     {
       // Cleanup Heuristic.
       // Wait for table layout to complete, and then readjust the table again.
       // If the table is too long for layout to complete layout within the default delay interval,
       // the code that creates this object should specify a longer initial_delay.
-      this.adjust_table();
+      this.adjust_table(this.use_heading_widths);
     }.bind(this), this.initial_delay);
   }
 
@@ -75,10 +78,10 @@ export default class ScrollableTable
   // ----------------------------------------------------------------------------------------------
   /* Adjust the table’s height and width.
    */
-  adjust_table()
+  adjust_table(use_heading_widths)
   {
+    this.adjust_widths(use_heading_widths);
     this.adjust_height();
-    this.adjust_widths();
   }
 
   // get_adjustment_callback()
@@ -103,23 +106,53 @@ export default class ScrollableTable
    */
   adjust_height()
   {
-    const table_top = this.parent_node.offsetTop;
+    if (DEBUG_HEIGHT)
+    {
+      console.log(`viewport height: ${window.innerHeight}
+table top: ${this.parent_node.offsetTop}
+intrinsic height: ${this.intrinsic_height}
+desired height: ${this.desired_height}
+padding bottom: ${this.padding_bottom}`);
+    }
+
     const viewport_height = window.innerHeight;
-    let div_height = viewport_height - (table_top + this.padding_bottom);
+    const table_top = this.parent_node.offsetTop;
+
+    let div_height = viewport_height - table_top;
+    let head_height = this.thead.offsetHeight;
+    let body_height = Math.min(div_height - head_height, this.intrinsic_height - head_height);
     if (this.desired_height)
     {
       // The height is a known value
-      div_height = Math.min(div_height, this.desired_height);
+      body_height = Math.min(div_height, this.desired_height - head_height);
+    }
+    if (DEBUG_HEIGHT)
+    {
+      console.log(`div height: ${div_height},
+head height: ${head_height}
+body height: ${body_height}`);
+    }
+
+    //  Adjust the height of the parent node, and make sure the bottom of the table will show.
+    // this.parent_node.style.height = div_height + 'px';
+    if ((head_height + body_height) <= div_height)
+    {
+      //  table will not scroll; no need for vertical scrollbar
+      this.tbody.style.height = (body_height + this.padding_bottom) + 'px';
     }
     else
     {
-      // The height depends on the space available.
-      div_height = Math.min(div_height, this.intrinsic_height);
+      //  be sure there is room to show the bottom of the bottom row
+      this.tbody.style.height = (body_height + this.padding_bottom) + 'px';
     }
-
-    //  Adjust the height of the parent node, and make the body fit.
-    this.parent_node.style.height = (div_height + this.padding_bottom) + 'px';
-    this.tbody.style.height = (div_height - this.thead.offsetHeight + this.padding_bottom) + 'px';
+    this.parent_node.style.height = 'max-content';
+    if (DEBUG_HEIGHT)
+    {
+      console.log(`div height: ${div_height},
+head height: ${this.thead.offsetHeight}
+body height: ${this.tbody.offsetHeight}
+-------------------------`);
+    }
   }
 
 
@@ -128,8 +161,12 @@ export default class ScrollableTable
   /* Adjust cell widths so that tbody cells line up with thead cells. If the table uses the
    * headers attribute to reference row and column positions, this is easy, provided the column
    * ids end with '-col'. Uses an alternative heuristic if that requirement does not obtain. */
-  adjust_widths()
+  adjust_widths(use_heading_widths)
   {
+    if (DEBUG_WIDTHS)
+    {
+      console.log(`use heading widths: ${use_heading_widths}`);
+    }
     // Test if all cells in the first row of the body have proper headers attributes, including
     // at least one that ends with '-col'.
     // “Feature Request”: handle multiple -col headers (cases where multiple body cells match a
@@ -175,7 +212,8 @@ export default class ScrollableTable
       // Make the narrower of the header cell or body cell match the width of the wider of the two.
       for (let col = 0; col < head_cells.length; col++)
       {
-        if (head_cells[col].cell.offsetWidth > body_cells[col].cell.offsetWidth)
+        if (use_heading_widths ||
+            (head_cells[col].cell.offsetWidth > body_cells[col].cell.offsetWidth))
         {
           body_cells[col].cell.style.minWidth = head_cells[col].width + 'px';
         }
@@ -214,7 +252,8 @@ export default class ScrollableTable
           let body_cell = body_cells[col];
           let head_cell_width = content_width(head_cell);
           let body_cell_width = content_width(body_cell);
-          if (head_cell_width > body_cell_width)
+          if (use_heading_widths ||
+              (head_cell_width > body_cell_width))
           {
             body_cell.style.minWidth = head_cell_width + 'px';
           }
