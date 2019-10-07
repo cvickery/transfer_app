@@ -4,7 +4,7 @@
  */
 
 const DEBUG_HEIGHT = false;
-const DEBUG_WIDTHS = true;
+const DEBUG_WIDTHS = false;
 
 //  content_width()
 //  ---------------------------------------------------------------------------------------------
