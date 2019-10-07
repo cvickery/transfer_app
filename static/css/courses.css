@@ -1,3 +1,6 @@
+#course-filters {
+  display: none;
+}
 
 p+ul {
   margin-top: -0.5rem;
