@@ -25,7 +25,7 @@ else:
 
 
 # do_form_0()
-# -------------------------------------------------------------------------------------------------
+# =================================================================================================
 def do_form_0(request, session):
   """
       No form submitted yet; generate the Form 1 page.
@@ -169,7 +169,7 @@ def do_form_0(request, session):
 
 
 # do_form_1()
-# -------------------------------------------------------------------------------------------------
+# =================================================================================================
 def do_form_1(request, session):
   """
       1. Collect source institutions, destination institutions and user's email from Form 1, and add
@@ -179,19 +179,14 @@ def do_form_1(request, session):
   if DEBUG:
      print(f'*** do_form_1({session})')
 
-  # Add institutions selected to user's session
+  #  do_form_1: put form 1 info (source/destination colleges; users email) into the session
+  #  dictionary.
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
-
-  # set or clear email-related cookies based on form data
-  email = request.form.get('email')
-  session['email'] = email  # always valid for this session
-  # The email cookie expires now or later, depending on state of "remember me"
-  remember_me = request.form.get('remember-me')
-  if remember_me == 'on':
-    session.permanent = True
-  else:
-    session.permanent = False
+  session['email'] = request.form.get('email')
+  session['remember-me'] = request.form.get('remember-me') == 'on'
+  # The session: does the user want her to persist?
+  session.permanent = session['remember-me']
 
   # Database lookups
   # ----------------
@@ -244,6 +239,8 @@ def do_form_1(request, session):
   cursor.close()
   conn.close()
 
+  # do_form_1: generate form 2
+  # -----------------------------------------------------------------------------------------------
   # The CUNY subjects actually used by the source and destination disciplines.
   cuny_subjects = set([d.cuny_subject for d in source_disciplines])
   cuny_subjects |= set([d.cuny_subject for d in destination_disciplines])
@@ -256,7 +253,6 @@ def do_form_1(request, session):
   # The user sees College: discipline(s) in the table (source_disciplines_str), and that info is
   # encoded as a colon-separated list of college-discipline pairs (source_disciplines_val) as the
   # value of the corresponding cbox. *** TODO *** and then parse the value in do_form_2() ***
-  # ===============================================================================================
   selection_rows = ''
   num_rows = 0
   for cuny_subject in cuny_subjects:
@@ -443,8 +439,6 @@ def do_form_1(request, session):
     Searching <span class='dot-1'>.</span> <span class='dot-2'>.</span> <span class='dot-3'>.</span>
   </div>
   """
-  session['email'] = email
-  session['remember-me'] = 'on'
   response = render_template('review_rules.html', result=Markup(result))
   return response
 
