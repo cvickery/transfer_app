@@ -7,6 +7,7 @@ import ScrollableTable from './scrollable_tables.js';
  * For now it continues its monolithic megopoly.
  */
 
+// Set up scrolling for the subject table in form 2.
 window.addEventListener('load', function()
 {
   const subject_table = document.getElementById('subject-table');
@@ -23,11 +24,23 @@ window.addEventListener('load', function()
   }
 });
 
+// Clean up form 2 UI when the form is submitted so the back button will work.
+window.addEventListener('unload', function ()
+{
+  const form_2_submitted = document.getElementById('form-2-submitted');
+  if (form_2_submitted)
+  {
+    form_2_submitted.style.display = 'none';
+    document.getElementsByName('body')[0].style.cursor = 'pointer';
+  }
+});
+
 $(function ()
 {
-
   $('#need-js').hide();
   $('#review-form').hide();
+  $('#submit-form-2').attr('disabled', $('#no-source-subjects') || $('#no-destination_subjects'));
+  $('#form-2-submitted').hide();
 
   // Global action: escape key hides dialogs, currently only the review-panel in form 2.
   $('*').keyup(function (event)
@@ -178,19 +191,12 @@ $(function ()
    * column. The wrinkle is that the user thinks “disciplines” but the app thinks “cuny_subjects.”
    */
 
-  // Form 2: Manage checkboxes
-  // ----------------------------------------------------------------------------------------------
-  // TODO: Enable/Disable form-2-submit button.
-  $('.f2-cbox')
-    .has('input')
-    .css('background-color', 'white')
-    .click(function (event)
-    {
-      $(event.target).children().each(function ()
-      {
-        $(this).prop('checked', !$(this).prop('checked')).trigger('change');
-      });
-    });
+  //  Form 2: Manage checkboxes
+  //  ---------------------------------------------------------------------------------------------
+  /*  The select all/ clear all shortcuts are used both to set and clear sets of checkboxes and to
+   *  indicate the states of those groups. Furthermore, the state of the submit-form-2 button
+   *  is true unless either all source or all destination boxes are clear.
+   */
 
   //  When shortcut checkboxes change state
   $('#all-source-subjects').change(function ()
@@ -199,6 +205,7 @@ $(function ()
     {
       $('.source-subject input:checkbox').prop('checked', true);
       $('#no-source-subjects').prop('checked', false);
+      $('#submit-form-2').attr('disabled', $('#no-destination-subjects').prop('checked'));
     }
   });
 
@@ -208,6 +215,7 @@ $(function ()
     {
       $('.source-subject input:checkbox').prop('checked', false);
       $('#all-source-subjects').prop('checked', false);
+      $('#submit-form-2').attr('disabled', true);
     }
   });
 
@@ -217,6 +225,7 @@ $(function ()
     {
       $('.destination-subject input:checkbox').prop('checked', true);
       $('#no-destination-subjects').prop('checked', false);
+      $('#submit-form-2').attr('disabled', $('#no-source-subjects').prop('checked'));
     }
   });
 
@@ -226,15 +235,17 @@ $(function ()
     {
       $('.destination-subject input:checkbox').prop('checked', false);
       $('#all-destination-subjects').prop('checked', false);
+      $('#submit-form-2').attr('disabled', true);
     }
   });
 
-  // When any source subject changes state, update the "all" and "no" shortcut states.
+  // When any source subject cbox changes state
   $('.source-subject input:checkbox').change(function ()
   {
     if (this.checked)
     {
       // Source Checked
+      $('#submit-form-2').attr('disabled', $('#no-destination-subjects').prop('checked'));
       $('#no-source-subjects').prop('checked', false);
       let all_checked = true;
       $('.source-subject input:checkbox').each(function ()
@@ -249,7 +260,7 @@ $(function ()
     }
     else
     {
-      // Unchecked
+      // Source unchecked
       $('#all-source-subjects').prop('checked', false);
       // If there are none selected now, check the "none" shortcut box
       let all_unchecked = true;
@@ -261,7 +272,9 @@ $(function ()
           return false;
         }
       });
-      $('#no-source-subject').prop('checked', all_unchecked);
+      $('#no-source-subjects').prop('checked', all_unchecked);
+      $('#submit-form-2').attr('disabled', all_unchecked ||
+                               $('#no_destination_subjects').prop('checked'));
     }
   });
 
@@ -270,7 +283,8 @@ $(function ()
   {
     if (this.checked)
     {
-      // Source Checked
+      // Destination checked
+      $('#submit-form-2').attr('disabled', $('#no-source-subjects').prop('checked'));
       $('#no-destination-subjects').prop('checked', false);
       let all_checked = true;
       $('.destination-subject input:checkbox').each(function ()
@@ -285,9 +299,8 @@ $(function ()
     }
     else
     {
-      // Unchecked
+      // Destination unchecked
       $('#all-destination-subjects').prop('checked', false);
-      // If there are none selected now, check the "none" shortcut box
       let all_unchecked = true;
       $('.destination-subject input:checkbox').each(function ()
       {
@@ -298,13 +311,15 @@ $(function ()
         }
       });
       $('#no-destination-subjects').prop('checked', all_unchecked);
+      $('#submit-form-2').attr('disabled', all_unchecked ||
+                               $('#no-source_subjects').prop('checked'));
     }
   });
 
   $('#form-2').submit(function ()
   {
-    // TODO Add Searching ... feedback. Cursor alone is not obvious enough.
     $('#form-2').css('cursor', 'wait');
+    $('#form-2-submitted').show();
   });
 
   //  Form 3 Validation and Processing

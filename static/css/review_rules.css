@@ -101,10 +101,18 @@ td a:hover {
   text-align: center;
 }
 
-.subtitle {
-  margin: -0.5em 0 1em 0;
-  font-size: 0.9em;
-  font-style: italic;
+#form-2-submitted {
+  position: fixed;
+  top: 50vh;
+  left: 50vw;
+  border: 1px solid #dbb;
+  border-radius: 0.25em;
+  padding: 1rem 2.5rem;
+  font-size: 1.2rem;
+  font-variant: small-caps;
+  color: #600;
+  background-color: white;
+  display: none;
 }
 
 #review-form {

@@ -439,9 +439,10 @@ def do_form_1(request, session):
         </table>
     </div>
   </form>
+  <div id='form-2-submitted'>
+    Searching <span class='dot-1'>.</span> <span class='dot-2'>.</span> <span class='dot-3'>.</span>
+  </div>
   """
-  # response.set_cookie('email', email, expires=expire_time)
-  # response.set_cookie('remember-me', 'on', expires=expire_time)
   session['email'] = email
   session['remember-me'] = 'on'
   response = render_template('review_rules.html', result=Markup(result))
