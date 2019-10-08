@@ -128,29 +128,6 @@ td, th {
   font-size: 1.1em;
 }
 
-/* Animate the loading ellipsis. */
-#loading .one {
-    animation: dot 1.5s infinite;
-    animation-delay: 0.0s;
-}
-
-#loading .two {
-    animation: dot 1.5s infinite;
-    animation-delay: 0.1s;
-}
-
-#loading .three {
-    animation: dot 1.5s infinite;
-    animation-delay: 0.2s;
-}
-
-@keyframes dot {
-      0% { opacity: 0; }
-     50% { opacity: 0; }
-    100% { opacity: 1; }
-}
-
-
 #dismiss-bar {
   width: 100%;
   text-align:right;

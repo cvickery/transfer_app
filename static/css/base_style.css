@@ -164,3 +164,25 @@ fieldset hr {
   overflow-y: auto;
 }
 
+/* Animate the loading/please-wait ellipsis. */
+.dot-1 {
+    animation: dot 1.5s infinite;
+    animation-delay: 0.0s;
+}
+
+.dot-2 {
+    animation: dot 1.5s infinite;
+    animation-delay: 0.1s;
+}
+
+.dot-3 {
+    animation: dot 1.5s infinite;
+    animation-delay: 0.2s;
+}
+
+@keyframes dot {
+      0% { opacity: 0; }
+     50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+

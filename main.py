@@ -451,10 +451,10 @@ def map_courses():
           <button id="show-sending">Sending Rules</button>
           |
           <button id="show-receiving">Receiving Rules</button>
-          <span id="loading">Loading
-            <span class="one">.</span>
-            <span class="two">.</span>
-            <span class="three">.</span>
+          <span id="loading">Searching
+            <span class="dot-1">.</span>
+            <span class="dot-2">.</span>
+            <span class="dot-3">.</span>
           </span>
         </div>
       </fieldset>
@@ -1023,7 +1023,9 @@ def courses():
           </div>
         </div>
       </details>
-      <p id="loading" class="error">Loading catalog information ...</p>
+      <p id="loading" class="error">Loading catalog information <span class="dot-1>.</span>
+        <span class="dot-2">.</span class="dot-3"> <span>.</span>
+      </p>
       """
     result = result + lookup_courses(institution_code,
                                      department=department_code,
