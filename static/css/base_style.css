@@ -43,6 +43,7 @@ button, a.button {
 button:disabled, a.button:disabled {
   color: #ccc;
 }
+
 button:enabled:hover, a.button:enabled:hover {
   background-color: #ccc;
 }
@@ -94,20 +95,15 @@ nav>a {
   margin: 0 0.25rem;
   border: 1px solid #ccc;
   border-radius: 0.25rem;
-  padding: 0.125em 1rem;
-  background-color: white;
-  color: #248;
+  padding: 0.4rem 1rem 0.1rem;
   font-size: 1rem;
   font-variant: small-caps;
   text-decoration:none;
+  background-color: white;
+  color: #248;
 }
 
-nav>a:hover, .button:hover {
-  background-color:#248;
-  color:white;
-}
-
- nav>button {
+nav>button {
   margin:0 0.25rem;
   padding:0.125rem 1rem;
   font-size:1rem;
@@ -118,7 +114,7 @@ nav>a:hover, .button:hover {
   border-radius:0.25rem;
 }
 
- nav>button:hover {
+header>nav>a:hover, nav>button:enabled:hover {
   background-color:#248;
   color:white;
 }
@@ -126,6 +122,7 @@ nav>a:hover, .button:hover {
 fieldset hr {
   color: #cbb;
 }
+
 .error {
   color: #922;
   font-size: 1.2rem;
