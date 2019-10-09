@@ -212,40 +212,28 @@ td a:hover {
 
 .ok-cancel {
   display: inline-block;
-  width: 15em;
+  width: 15rem;
 }
 
 .selection-table-div {
-  margin: 0.5em auto;
+  margin: 0.5rem auto;
   padding: 0;
-  width: 80%;
 }
 
 #rules-table {
-  border: none;
-  border-left: 1px solid black;
+  border-collapse: collapse;
+  margin-left: 1rem;
 }
 
 
-#rules-table tr {
-  margin: 0.1em;
-  outline: 1px solid #999;
-}
-
-#rules-table td {
-  border: none;
+#rules-table td,
+#rules-table th {
+  border: 1px solid #611;
   padding: 0.5em;
   color: #333;
 }
 
 #rules-table td:last-child {
-  border: 1px solid #999;
-  background-color: white;
-}
-
-#rules-table td:nth-child(2),
-#rules-table td:nth-child(5) {
-  min-width: 20%;
 }
 
 #rules-table td:nth-child(3) {
@@ -277,14 +265,14 @@ td a:hover {
 }
 
 #num-pending{
-  margin: 0 auto 0.25em;
+  margin: 0 auto 0.25rem;
   display: block;
 }
 
 .omit-button {
   padding: 0.1em;
   margin: 0;
-  font-variant: all-petit-caps;
+  font-variant: small-caps;
 }
 
 .eval-rule {

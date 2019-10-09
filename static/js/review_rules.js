@@ -7,9 +7,9 @@ import ScrollableTable from './scrollable_tables.js';
  * For now it continues its monolithic megopoly.
  */
 
-// Set up scrolling for the subject table in form 2.
 window.addEventListener('load', function()
 {
+  // Set up scrolling for the subject table in form 2.
   const subject_table = document.getElementById('subject-table');
   if (subject_table)
   {
@@ -22,6 +22,21 @@ window.addEventListener('load', function()
       details[i].addEventListener('toggle', adjust_table);
     }
   }
+
+  // Set up scrolling for the rules table in form 3.
+  const rules_table = document.getElementById('rules-table');
+  if (rules_table)
+  {
+    const scrollable_table = new ScrollableTable({table: rules_table});
+    const adjust_table = scrollable_table.get_adjustment_callback();
+    window.addEventListener('resize', adjust_table);
+    const details = document.getElementsByTagName('details');
+    for (let i = 0; i < details.length; i++)
+    {
+      details[i].addEventListener('toggle', adjust_table);
+    }
+  }
+
 });
 
 // Clean up form 2 UI when the form is submitted so the back button will work.

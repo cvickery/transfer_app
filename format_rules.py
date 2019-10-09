@@ -136,7 +136,7 @@ def _grade(min_gpa, max_gpa):
 
 # format_rules()
 # -------------------------------------------------------------------------------------------------
-def format_rules(rules):
+def format_rules(rules, scrollable=False):
   """ Generate HTML table with information about each transfer rule.
   """
 
@@ -147,8 +147,12 @@ def format_rules(rules):
   rules.sort(key=lambda r: (r.source_courses[0].discipline, r.source_courses[0].cat_num))
 
   # Generate the table
-  table = """
-    <table id="rules-table">
+  if scrollable:
+    class_attribute = ' class="scrollable"'
+  else:
+    class_attribute = ''
+  table = f"""
+    <table id="rules-table"{class_attribute}>
       <thead>
         <tr>
           <th>Sending</th>
