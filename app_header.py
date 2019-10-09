@@ -10,7 +10,18 @@ def header(title, nav_items=[]):
   nav_elements = []
   for nav_item in nav_items:
     if nav_item['type'] == 'button':
-      nav_elements.insert(0, f"<button id=\"{nav_item['id']}\" "
+      # Nav buttons can have either a class or a id for js event handling.
+      try:
+        class_attribute = f"class=\"{nav_item['class']}\" "
+      except KeyError:
+        class_attribute = ''
+      try:
+        id_attribute = f"id=\"{nav_item['id']}\" "
+      except KeyError:
+        id_attribute = ''
+      button_attributes = (id_attribute + class_attribute).strip()
+      assert button_attributes != '', 'Missing id or class for nav button'
+      nav_elements.insert(0, f"<button {button_attributes} "
                              f"        class=\"nav-button\">{nav_item['text']}</button>")
     else:
       nav_elements.insert(0, f"<a href=\"{nav_item['href']}\""

@@ -37,6 +37,16 @@ window.addEventListener('load', function()
     }
   }
 
+  // Set up any element with the back-button class.
+  const back_buttons = document.getElementsByClassName('back-button');
+  for (let b = 0; b < back_buttons.length; b++)
+  {
+    back_buttons[b].addEventListener('click', () =>
+    {
+      window.history.back();
+    });
+  }
+
 });
 
 // Clean up form 2 UI when the form is submitted so the back button will work.
@@ -48,7 +58,10 @@ window.addEventListener('unload', function ()
     form_2_submitted.style.display = 'none';
     document.getElementsByName('body')[0].style.cursor = 'pointer';
   }
+
 });
+
+
 
 $(function ()
 {

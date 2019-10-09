@@ -603,7 +603,7 @@ def do_form_2(request, session):
            'href': '/review_rules',
            'text': 'Change Colleges'},
            {'type': 'button',
-            'id': 'change-subjects',
+            'class': 'back-button',
             'text': 'Change Subjects'
 
            }])}
