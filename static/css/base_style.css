@@ -158,7 +158,7 @@ fieldset hr {
 
 .scrollable tbody {
   overflow-x: auto;
-  overflow-y: auto;
+  overflow-y: scroll;
 }
 
 /* Animate the loading/please-wait ellipsis. */

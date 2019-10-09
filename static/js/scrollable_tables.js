@@ -117,38 +117,32 @@ padding bottom: ${this.padding_bottom}`);
 
     const viewport_height = window.innerHeight;
     const table_top = this.parent_node.offsetTop;
+    const available_height = viewport_height - table_top;
 
-    let div_height = viewport_height - table_top;
     let head_height = this.thead.offsetHeight;
-    let body_height = Math.min(div_height - head_height, this.intrinsic_height - head_height);
+    let body_height = Math.min(available_height - head_height, this.intrinsic_height - head_height);
     if (this.desired_height)
     {
       // The height is a known value
-      body_height = Math.min(div_height, this.desired_height - head_height);
+      body_height = Math.min(available_height, this.desired_height - head_height);
     }
+
     if (DEBUG_HEIGHT)
     {
-      console.log(`div height: ${div_height},
+      console.log(`available height: ${available_height},
 head height: ${head_height}
 body height: ${body_height}`);
     }
-
-    //  Adjust the height of the parent node, and make sure the bottom of the table will show.
-    // this.parent_node.style.height = div_height + 'px';
-    if ((head_height + body_height) <= div_height)
-    {
-      //  table will not scroll; no need for vertical scrollbar
-      this.tbody.style.height = (body_height + this.padding_bottom) + 'px';
-    }
-    else
-    {
-      //  be sure there is room to show the bottom of the bottom row
-      this.tbody.style.height = (body_height + this.padding_bottom) + 'px';
-    }
+    this.tbody.style.height = (body_height + this.padding_bottom) + 'px';
     this.parent_node.style.height = 'max-content';
+    if ((this.thead.offsetHeight + this.tbody.offsetHeight) < available_height)
+    {
+      // Eliminate empty scrollbar area
+      this.tbody.style.overflowY = 'hidden';
+    }
     if (DEBUG_HEIGHT)
     {
-      console.log(`div height: ${div_height},
+      console.log(`available height: ${available_height},
 head height: ${this.thead.offsetHeight}
 body height: ${this.tbody.offsetHeight}
 -------------------------`);
