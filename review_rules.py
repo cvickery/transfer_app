@@ -444,7 +444,7 @@ def do_form_1(request, session):
 
 
 # do_form_2()
-# -------------------------------------------------------------------------------------------------
+# =================================================================================================
 def do_form_2(request, session):
   """
       Process CUNY Subject list from form 2.
@@ -592,26 +592,41 @@ def do_form_2(request, session):
   if len(selected_rules) > 1:
     num_rules = 'There are {:,} matching transfer rules.'.format(len(selected_rules))
 
-  rules_table = format_rules(selected_rules)
+  rules_table = format_rules(selected_rules, scrollable=True)
 
   result = f"""
-  <h1>Step 3: Review Transfer Rules</h1>
-    <details class="instructions">
+  {header(title='Review Rules: Review Selected Rules',
+          nav_items=[{'type': 'link',
+          'href': '/',
+          'text': 'Main Menu'},
+          {'type': 'link',
+           'href': '/review_rules',
+           'text': 'Change Colleges'},
+           {'type': 'button',
+            'id': 'change-subjects',
+            'text': 'Change Subjects'
+
+           }])}
+    <details>
       <summary>{num_rules}</summary>
       <hr>
-      Rules that are <span class="credit-mismatch">highlighted like this</span> have a different
-      number of credits taken from the number of credits transferred.
-      Hover over the “=>” to see the numbers of credits.<br/>
-      Credits in parentheses give the number of credits transferred where that does not match the
-      nominal number of credits for a course.<br/>
-      Rules that are <span class="evaluated">highlighted like this</span> are ones that you have
-      reviewed but not yet submitted.<br/>
-      Click on a rule to review it.<br/>
+      <p>
+        Rules that are <span class="credit-mismatch">highlighted like this</span> have a different
+        number of credits taken from the number of credits transferred.
+        Hover over the “=>” to see the numbers of credits.
+      </p>
+      <p>
+        Credits in parentheses give the number of credits transferred where that does not match the
+        nominal number of credits for a course.
+      </p>
+      <p>
+        Rules that are <span class="evaluated">highlighted like this</span> are ones that you have
+        reviewed but not yet submitted.
+      </p>
+      <p>
+        Click on a rule to review it.
+      </p>
     </details>
-    <p>
-      <a href="/" class="button">Main Menu</a>
-      <a href="/review_rules" class="restart button">Restart</a>
-    </p>
     <fieldset id="verification-fieldset"><legend>Review Reviews</legend>
         <p id="num-pending">You have not reviewed any transfer rules yet.</p>
         <button type="text" id="send-email" disabled="disabled">
@@ -621,7 +636,7 @@ def do_form_2(request, session):
         Waiting for rules to finish loading ...
       </form>
     </fieldset>
-    <div id="rules-table-div" class="selection-table-div">
+    <div id="rules-table-div" class="selection-table-div table-height">
     {rules_table}
     </div>
   """
