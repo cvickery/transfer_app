@@ -56,7 +56,6 @@ window.addEventListener('unload', function ()
   if (form_2_submitted)
   {
     form_2_submitted.style.display = 'none';
-    document.getElementsByName('body')[0].style.cursor = 'pointer';
   }
 
 });

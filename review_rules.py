@@ -206,10 +206,12 @@ def do_form_1(request, session):
   if len(session['source_institutions']) == 1:
     sending_is_singleton = True
     criterion = 'the sending college is ' + institution_names[session['source_institutions'][0]]
-    sending_heading = '{}’s'.format(institution_names[session['source_institutions'][0]])
+    sending_heading = f"{institution_names[session['source_institutions'][0]]}’s".replace('s’s',
+                                                                                          's’')
   if len(session['destination_institutions']) == 1:
     receiving_is_singleton = True
-    receiving_heading = '{}’s'.format(institution_names[session['destination_institutions'][0]])
+    receiving_heading = f"{institution_names[session['destination_institutions'][0]]}’s".replace(
+        's’s', 's’')
     if sending_is_singleton:
       criterion += ' and '
     criterion += 'the receiving college is ' + \
@@ -221,7 +223,9 @@ def do_form_1(request, session):
 
   source_institution_params = ', '.join('%s' for i in session['source_institutions'])
   q = """
-  select *
+  select institution,
+         '<span title="'||discipline_name||'">'||discipline||'</span>' as discipline,
+         cuny_subject
      from cuny_disciplines
     where institution in ({})
     """.format(source_institution_params)
@@ -229,11 +233,13 @@ def do_form_1(request, session):
   source_disciplines = cursor.fetchall()
 
   destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
-  q = """
-  select *
+  q = f"""
+  select institution,
+         '<span title="'||discipline_name||'">'||discipline||'</span>' as discipline,
+         cuny_subject
      from cuny_disciplines
-    where institution in ({})
-    """.format(destination_institution_params)
+    where institution in ({destination_institution_params})
+    """
   cursor.execute(q, session['destination_institutions'])
   destination_disciplines = cursor.fetchall()
   cursor.close()
@@ -315,41 +321,45 @@ def do_form_1(request, session):
             format(institution_names[college], ', '.join(colleges[college]))
 
     # We are showing disciplines, but reporting cuny_subjects.
+
     source_label = ''
-    source_box = ''
+    source_cbox = ''
+    source_is_active = ''
     if source_disciplines_str != '':
-      source_label = f"""
-      <label for="source-subject-{cuny_subject}">{source_disciplines_str}</label>"""
-      source_box = """
-        <input type="checkbox" id="source-subject-{}" name="source_subject" value="{}"/>
-        """.format(cuny_subject, cuny_subject)
-    destination_box = ''
+      source_is_active = ' active-cell'
+      source_label = f'<label for="source-subject-{cuny_subject}">{source_disciplines_str}</label>'
+      source_cbox = f"""
+        <label for="source-subject-{cuny_subject}">
+          <input type="checkbox"
+                 id="source-subject-{cuny_subject}"
+                 name="source_subject"
+                 value="{cuny_subject}"/> </label>"""
+
     destination_label = ''
+    destination_cbox = ''
+    dest_is_active = ''
     if destination_disciplines_str != '':
-      destination_box = """
-        <input  type="checkbox"
-                checked="checked"
-                id="destination-subject-{}"
-                name="destination_subject"
-                value="{}"/>
-        """.format(cuny_subject, cuny_subject)
+      dest_is_active = ' active-cell'
       destination_label = f"""
       <label for="destination-subject-{cuny_subject}">{destination_disciplines_str}</label>"""
-    selection_rows += """
+      destination_cbox = f"""
+        <label for="destination-subject-{cuny_subject}">
+          <input  type="checkbox"
+                  checked="checked"
+                  id="destination-subject-{cuny_subject}"
+                  name="destination_subject"
+                  value="{cuny_subject}"/></label>
+        """
+
+    selection_rows += f"""
     <tr>
-      <td class="source-subject">{}</td>
-      <td class="source-subject f2-cbox">{}</td>
-      <td><strong title="{}">{}</strong></td>
-      <td class="destination-subject f2-cbox">{}</td>
-      <td class="destination-subject">{}</td>
+      <td class="source-subject{source_is_active}">{source_label}</td>
+      <td class="source-subject f2-cbox{source_is_active}">{source_cbox}</td>
+      <td><span title="{cuny_subject}">{subject_names[cuny_subject]}</span></td>
+      <td class="destination-subject f2-cbox{dest_is_active}">{destination_cbox}</td>
+      <td class="destination-subject{dest_is_active}">{destination_label}</td>
     </tr>
-    """.format(source_label,
-               source_box,
-
-               cuny_subject, subject_names[cuny_subject],
-
-               destination_box,
-               destination_label)
+    """
     num_rows += 1
 
   shortcuts = """
@@ -418,7 +428,8 @@ def do_form_1(request, session):
   <button id="submit-form-2" type="submit">Next <em>(View Rules)</em></button>
     <input type="hidden" name="next-function" value="do_form_2" />
     {shortcuts}
-    <div id="subject-table-div" class="selection-table-div table-height">
+    <div id="subject-table-div" class="selection-table-div">
+      <div>
         <table id="subject-table" class="scrollable">
           <thead>
             <tr>
@@ -433,6 +444,7 @@ def do_form_1(request, session):
           {selection_rows}
           </tbody>
         </table>
+      </div>
     </div>
   </form>
   <div id='form-2-submitted'>

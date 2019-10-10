@@ -25,7 +25,7 @@ fieldset fieldset {
 
 table, td, th {
     border-collapse: collapse;
-    border: 1px solid #cbb;
+    border: 1px solid #ccc;
     padding: 0.5em;
 }
 
@@ -76,25 +76,46 @@ td a:hover {
   color: #333;
 }
 
-#subject-table label {
-  display:block;
-}
-
 .clickable:hover {
   cursor: pointer;
 }
 
-.source-subject {
-  background-color: #eff;
-  text-align: right;
+#subject-table tbody {
+  border: 1px solid black;
 }
 
-.f2-cbox: parent {
-  background-color: white;
+#subject-table td:first-child {
+  border-left: 1px solid black;
+}
+
+#subject-table td:last-child {
+  border-right: 1px solid black;
+}
+
+#subject-table td:nth-child(3) {
+  background-color: #eee;
+  color: #600;
+  font-style: italic;
+}
+
+#subject-table label {
+  display:block;
+}
+
+.source-subject {
+  text-align: right;
+  background-color: transparent;
 }
 
 .destination-subject {
-  background-color: #eeffff;
+  text-align: left;
+  background-color: transparent;
+}
+
+.active-cell, .active-cell * {
+  background-color: white;
+  color:#333;
+  cursor: pointer;
 }
 
 .f2-cbox {
