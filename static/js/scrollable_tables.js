@@ -134,7 +134,7 @@ head height: ${head_height}
 body height: ${body_height}`);
     }
     this.tbody.style.height = (body_height + this.padding_bottom) + 'px';
-    this.parent_node.style.height = 'max-content';
+    this.parent_node.style.height = (head_height + body_height + this.padding_bottom) + 'px';
     if ((this.thead.offsetHeight + this.tbody.offsetHeight) < available_height)
     {
       // Eliminate empty scrollbar area
