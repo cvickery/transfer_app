@@ -63,9 +63,10 @@ def process_pending(row):
     old_status_str = status_string(old_status)
     new_status_str = status_string(new_status)
     # Convert to event-history link for the rule
-    new_status_str = """
-    <a href="/history/{}" target="_blank">{}</a>""".format(review['rule_key'],
-                                                           new_status_str)
+    new_status_str = f"""
+    <a href="/history/{review['rule_key']}"
+       target="_blank"
+       rel="noopener noreferrer">{new_status_str}</a>"""
     summaries += """
     <tr>
       <td><table>{}</table></td>

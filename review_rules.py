@@ -125,6 +125,7 @@ def do_form_0(request, session):
       <p>
         Background information and <em>(much!)</em> more detailed instructions are available in the
         <a  target="_blank"
+            rel="noopener noreferrer"
             href="https://docs.google.com/document/d/141O2k3nFCqKOgb35-VvHE_A8OV9yg0_8F7pDIw5o-jE">
             Reviewing CUNY Transfer Rules</a> document.
       </p>
