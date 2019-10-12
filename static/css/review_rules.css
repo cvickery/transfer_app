@@ -63,21 +63,14 @@ td a:hover {
   font-style: italic;
   font-size: 0.9em;
 }
-#f2-shortcuts {
-  margin: 0 auto;
-}
 
-#f2-shortcuts td {
-  text-align: right;
+#subject-table {
+  margin: 1rem auto;
 }
 
 #subject-table th, #rules-table th {
   background-color: #ccc;
   color: #333;
-}
-
-.clickable:hover {
-  cursor: pointer;
 }
 
 #subject-table tbody {
@@ -102,6 +95,14 @@ td a:hover {
   display:block;
 }
 
+#f2-shortcuts {
+  margin: 0 auto;
+}
+
+#f2-shortcuts td {
+  text-align: right;
+}
+
 .source-subject {
   text-align: right;
   background-color: transparent;
@@ -122,7 +123,8 @@ td a:hover {
   text-align: center;
 }
 
-#form-2-submitted {
+#form-2-sub
+tted {
   position: fixed;
   top: 50vh;
   left: 50vw;
@@ -145,6 +147,7 @@ td a:hover {
   width: 80vw;
   background-color: #ddd;
   color: #444;
+  z-index: 1;
 }
 
 #review-form .controls {

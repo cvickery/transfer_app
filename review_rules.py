@@ -412,18 +412,26 @@ def do_form_1(request, session):
            'href': '/review_rules',
            'text': 'Change Colleges'}])}
   <details>
-  <summary>Instructions</summary>
-  <hr>
-  <p>
+  <summary>
     There are {len(source_disciplines) + len(destination_disciplines):,} disciplines where
     {criterion}.
+  </summary>
+  <hr>
+  <p>
+    Disciplines are grouped by CUNY subject area. Hover over abbreviations in the first and last
+    columns for full names.
   </p>
-  Disciplines are grouped by CUNY subject area.<br/>
-  Select at least one sending discipline and at least one receiving discipline.<br/>
-  By default, all receiving disciplines are selected to account for all possible equivalencies,
-  including electives and blanket credit.<br/>
-  The next step will show all transfer rules for courses in the corresponding pairs of
-  disciplines.
+  <p>
+    Select at least one sending discipline and at least one receiving discipline.
+  </p>
+  <p>
+    By default, all receiving disciplines are selected to account for all possible equivalencies,
+    including electives and blanket credit.
+  </p>
+  <p>
+    The next step will show all transfer rules for courses in the corresponding pairs of
+    disciplines.
+  </p>
   </details>
   <form method="post" action="#" id="form-2">
   <button id="submit-form-2" type="submit">Next <em>(View Rules)</em></button>
@@ -692,18 +700,19 @@ def do_form_3(request, session):
     review_dict['other'] = 'Other: {}'
 
     # Generate description messages
-    style_str = ' style="border:1px solid #666;vertical-align:top; padding:0.5em;"'
+    style_str = ' style="border:1px solid #666;vertical-align:middle; padding:0.5em;"'
     suffix = 's'
     if len(kept_reviews) == 1:
       suffix = ''
-    review_rows = """
-                      <table style="border-collapse:collapse;">
-                        <tr>
-                          <th colspan="5"{}>Rule</th>
-                          <th{}>Your Review{}</th>
-                        </tr>
-                        """.format(style_str, style_str, suffix)
+    review_rows = f"""
+                    <table style="border-collapse:collapse;">
+                      <tr>
+                        <th colspan="5"{style_str}>Rule</th>
+                        <th{style_str}>Your Review{suffix}</th>
+                      </tr>
+                      """
     for review in kept_reviews:
+      print(review['rule_str'])
       event_type = review['event_type']
       if event_type == 'src-ok':
           description = review_dict['ok'].format(re.sub(r'\d+', '',
@@ -722,11 +731,11 @@ def do_form_3(request, session):
       else:
         description = review_dict['other'].format(review['comment_text'])
 
-      rule_str = re.sub(r'</tr>',
-                        """<td>{}</td></tr>
-                        """.format(description), review['rule_str'])
-      review_rows += re.sub('<td([^>]*)>', '<td\\1{}>'.format(style_str), rule_str)
+      rule_str = re.sub('</tr>',
+                        f'<td>{description}</td></tr>', review['rule_str'])
+      review_rows += re.sub('<td([^>]*)>', f'<td\\1{style_str}>', rule_str)
     review_rows += '</table>'
+
     # Send the email
     hostname = os.environ.get('HOSTNAME')
     if hostname and hostname.endswith('.local'):
@@ -748,15 +757,16 @@ def do_form_3(request, session):
               {'type': 'link',
                'href': '/review_rules',
                'text':'Review More Rules'}])}
-      <h1 class="instructions">
-        Check your email at {email}
-      </h1>
-      <p>
-        Click on the 'activate these reviews' button in that email
-        to confirm that you actually wish to have your {message_tail} recorded.
-      </p>
-      <p>
+      <details>
+        <summary>Check your email at {email}</summary>
+        <hr>
+        <p>
+          Click on the 'activate these reviews' button in that email
+          to confirm that you actually wish to have your {message_tail} recorded.
+        </p>
+      </details>
+      <h2>
         Thank you for your work!
-      </p>
+      </h2>
       """
   return render_template('review_rules.html', result=Markup(result))

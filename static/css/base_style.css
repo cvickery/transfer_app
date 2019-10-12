@@ -17,8 +17,12 @@ details {
 
 summary {
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1rem;
   cursor: pointer;
+}
+
+table {
+  border-collapse: collapse;
 }
 
 button, a.button {
@@ -136,6 +140,10 @@ fieldset hr {
 
 .underline {
   text-decoration: underline;
+}
+
+.clickable:hover {
+  cursor: pointer;
 }
 
 .center {

@@ -505,15 +505,15 @@ $(function ()
       }
     });
 
-    /* The following lines would position the review form over the rules table.
+    /* The following lines position the review form over the rules table.
      * Omitting them pushes the rules table down while the review form is active, which seems
      * fine to me.
      */
-    // var review_form = document.getElementById('review-form');
-    // var eval_form_rect = review_form.getBoundingClientRect();
-    // review_form.style.position = 'fixed';
-    // review_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
-    // review_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
+    var review_form = document.getElementById('review-form');
+    var eval_form_rect = review_form.getBoundingClientRect();
+    review_form.style.position = 'fixed';
+    review_form.style.top = ((window.innerHeight / 2) - (eval_form_rect.height / 2)) + 'px';
+    review_form.style.left = ((window.innerWidth / 2) - (eval_form_rect.width / 2)) + 'px';
 
     // Click to dismiss the review form.
     $('.dismiss').click(function ()
@@ -603,75 +603,101 @@ $(function ()
     {
       const email_address = $('#email-address').text();
       let review_form_html = `
-          <div id="review-form">
-            <h2>Review Your Submissions</h2>
-            <p>Un-check the Include button if you don’t want to submit an item.</p>
-            <div id="reviews-table-div">
-            <table id='reviews-table'>
-              <tr>
-                <th>Include?</th>
-                <th>Rule</th>
-                <th colspan="2">Your Review</th>
-              </tr>
-          `;
-      // const review_form_rows = [];
+        <h2>Review Your Submissions</h2>
+        <p>Un-check the Include button if you don’t want to submit an item.</p>
+        <div id="reviews-table-div">
+        <table id='reviews-table'>
+          <tr>
+            <th>Include?</th>
+            <th colspan="5">Rule</th>
+            <th colspan="2">Your Review</th>
+          </tr>`;
+
+      // Generate the table body rows
+      const dom_parser = new DOMParser();
+      const TEXT_NODE = 3; // Node type
       for (let review in pending_reviews)
       {
-        let rule_str = pending_reviews[review].rule_str;
+        console.log(`Review #${review}: `, pending_reviews[review]);
+        // The rule string is the html code for a table row, with various attributes to be preserved
+        // when displaying the rule on the web and in the email the user has to respond to. But
+        // there is no stylesheet for the email, so we add a style attribute for each cell in the
+        // row after replacing any extraneous ones the browser might have added.
 
-        // Build a rule string that omits the previous status (i.e., the last td).
-        rule_str = rule_str.replace(/\n\s*/g, '').replace(/<td(?!.*<td).*<\/td><\/tr>/, '</tr>');
-        pending_reviews[review].rule_str = rule_str;
+        // Observation: text/html mime type gives only text nodes, not HTMLCollection. But since the
+        // string is valid XHTML, we can use application/xhtml+xml, which works.
+        let rule = dom_parser.parseFromString(pending_reviews[review].rule_str,
+          'application/xhtml+xml');
+
+        console.log('number of children before removal', rule.activeElement.children.length);
+        // Remove the last td (the previous review status)
+        let last_td = rule.activeElement.children[rule.activeElement.children.length - 1];
+        rule.activeElement.removeChild(last_td);
+        console.log('number of children after removal', rule.activeElement.children.length);
+        console.log('pruned rule:', rule);
+        // Get information for the new review status
         let institution = 'Unknown';
         let go_nogo = 'Unknown';
         switch (pending_reviews[review].event_type)
         {
         case 'src-ok':
-          institution = pending_reviews[review].source_institution;
+          institution = pending_reviews[review].source_institution.replace(/\d+/, '');
           go_nogo = 'OK';
           break;
         case 'dest-ok':
-          institution = pending_reviews[review].destination_institution;
+          institution = pending_reviews[review].destination_institution.replace(/\d+/, '');
           go_nogo = 'OK';
           break;
         case 'src-not-ok':
-          institution = pending_reviews[review].source_institution + ': ';
+          institution = pending_reviews[review].source_institution.replace(/\d+/, '') + ': ';
           go_nogo = pending_reviews[review].comment_text;
           break;
         case 'dest-not-ok':
-          institution = pending_reviews[review].destination_institution + ': ';
+          institution = pending_reviews[review].destination_institution.replace(/\d+/, '') + ': ';
           go_nogo = pending_reviews[review].comment_text;
           break;
         default:
-          institution = 'Other: ';
+          institution = 'Other';
           go_nogo = pending_reviews[review].comment_text;
           break;
         }
+        let action_td = rule.createElement('td');
+        action_td.appendChild(rule.createTextNode(`${institution}: ${go_nogo}`));
+        rule.activeElement.appendChild(action_td);
+        console.log('rule with action_td: ', rule);
+        for (let i = 0; i < rule.activeElement.children.length; i++)
+        {
+          rule.activeElement.children[i].setAttribute('style',
+            'border: 1px solid #ccc; padding: 0.5em;');
+        }
+        console.log('after styling', rule.activeElement.innerHTML);
+        console.log('number of nodes before cleanup', rule.activeElement.childNodes.length);
+        for (let i = 0; i < rule.activeElement.childNodes.length; i++)
+        {
+          console.log(`child ${i}`);
+          let node = rule.activeElement.childNodes[i];
+          if (node.nodeType == TEXT_NODE)
+          {
+            console.log('remove it');
+            rule.activeElement.removeChild(node);
+          }
+        }
+        console.log('number of nodes after cleanup', rule.activeElement.childNodes.length);
+        console.log('after cleanup', rule.activeElement.innerHTML);
+        pending_reviews[review].rule_str = rule.activeElement.innerHTML;
+
         review_form_html += `<tr id="review-${review}">
-                          <td>
-                            <input type="checkbox"
-                                   class="include-button"
-                                   checked="checked"/>
-                          </td>
-                          <td>
-                            <table>
-                              <tr>
-                                ${rule_str}
-                              </tr>
-                            </table>
-                          </td>
-                          <td>
-                            ${institution.replace(/\d+/, '')}
-                          </td>
-                          <td>
-                            ${go_nogo}
-                          </td>
-                        </tr>`;
+                               <td>
+                                 <input type="checkbox"
+                                        class="include-button"
+                                        checked="checked"/>
+                               </td>
+                               ${pending_reviews[review].rule_str}
+                             </tr>`;
       }
 
       review_form_html += `
             </table>
-          </div>
           <div class='controls'>
             <input type="hidden" value="${email_address}" />
             <input type="hidden" name="next-function" value="do_form_3" />
@@ -681,7 +707,7 @@ $(function ()
           </div>
         </div>`;
 
-      // Re-use the review-form div for the reviews-review form
+      // Re-use the review-form div for the review-reviews form
       $('#review-form')
         .html(dismiss_bar + review_form_html)
         .show()
@@ -727,6 +753,7 @@ $(function ()
       {
         $('input[name="reviews"]').val(JSON.stringify(pending_reviews));
       });
+
       const review_form_elem = document.getElementById('review-form');
       const eval_form_rect = review_form_elem.getBoundingClientRect();
       review_form_elem.style.position = 'fixed';
