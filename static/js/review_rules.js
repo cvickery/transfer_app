@@ -605,17 +605,16 @@ $(function ()
       let review_form_html = `
         <h2>Review Your Submissions</h2>
         <p>Un-check the Include button if you don’t want to submit an item.</p>
-        <div id="reviews-table-div">
-        <table id='reviews-table'>
+        <div id="reviews-table-div">`;
+      let reviews_table = ` <table id='reviews-table'>
           <tr>
             <th>Include?</th>
             <th colspan="5">Rule</th>
+            <th>Current Review Status</th>
             <th colspan="2">Your Review</th>
           </tr>`;
 
       // Generate the table body rows
-      const dom_parser = new DOMParser();
-      const TEXT_NODE = 3; // Node type
       for (let review in pending_reviews)
       {
         console.log(`Review #${review}: `, pending_reviews[review]);
@@ -624,17 +623,6 @@ $(function ()
         // there is no stylesheet for the email, so we add a style attribute for each cell in the
         // row after replacing any extraneous ones the browser might have added.
 
-        // Observation: text/html mime type gives only text nodes, not HTMLCollection. But since the
-        // string is valid XHTML, we can use application/xhtml+xml, which works.
-        let rule = dom_parser.parseFromString(pending_reviews[review].rule_str,
-          'application/xhtml+xml');
-
-        console.log('number of children before removal', rule.activeElement.children.length);
-        // Remove the last td (the previous review status)
-        let last_td = rule.activeElement.children[rule.activeElement.children.length - 1];
-        rule.activeElement.removeChild(last_td);
-        console.log('number of children after removal', rule.activeElement.children.length);
-        console.log('pruned rule:', rule);
         // Get information for the new review status
         let institution = 'Unknown';
         let go_nogo = 'Unknown';
@@ -661,43 +649,33 @@ $(function ()
           go_nogo = pending_reviews[review].comment_text;
           break;
         }
-        let action_td = rule.createElement('td');
-        action_td.appendChild(rule.createTextNode(`${institution}: ${go_nogo}`));
-        rule.activeElement.appendChild(action_td);
-        console.log('rule with action_td: ', rule);
-        for (let i = 0; i < rule.activeElement.children.length; i++)
-        {
-          rule.activeElement.children[i].setAttribute('style',
-            'border: 1px solid #ccc; padding: 0.5em;');
-        }
-        console.log('after styling', rule.activeElement.innerHTML);
-        console.log('number of nodes before cleanup', rule.activeElement.childNodes.length);
-        for (let i = 0; i < rule.activeElement.childNodes.length; i++)
-        {
-          console.log(`child ${i}`);
-          let node = rule.activeElement.childNodes[i];
-          if (node.nodeType == TEXT_NODE)
-          {
-            console.log('remove it');
-            rule.activeElement.removeChild(node);
-          }
-        }
-        console.log('number of nodes after cleanup', rule.activeElement.childNodes.length);
-        console.log('after cleanup', rule.activeElement.innerHTML);
-        pending_reviews[review].rule_str = rule.activeElement.innerHTML;
-
-        review_form_html += `<tr id="review-${review}">
-                               <td>
-                                 <input type="checkbox"
-                                        class="include-button"
-                                        checked="checked"/>
-                               </td>
-                               ${pending_reviews[review].rule_str}
-                             </tr>`;
+        let rule_tds = pending_reviews[review].rule_str.replace(/<tr.*?>/, '');
+        rule_tds = rule_tds.replace('</tr>', `<td>${institution}</td><td>${go_nogo}</td>`);
+        console.log(rule_tds);
+        reviews_table += `<tr id="review-${review}">
+                           <td>
+                             <input type="checkbox"
+                                    class="include-button"
+                                    checked="checked"/>
+                           </td>
+                           ${rule_tds}
+                         </tr>`;
       }
+      reviews_table += '</table>';
 
+      //  Replace or add style info for all td elements to be sure email cells have proper borders.
+      const parser = new DOMParser();
+      const temp_html = `<html><head></head><body>${reviews_table}</body></html>`;
+      let dom = parser.parseFromString(temp_html, 'text/html');
+      let tds = dom.getElementsByTagName('td');
+      for (let td of tds)
+      {
+        td.setAttribute('style', 'border: 1px solid #ccc; padding: 0.5em;');
+      }
+      reviews_table = dom.getElementsByTagName('body')[0].innerHTML;
+      console.log(reviews_table);
       review_form_html += `
-            </table>
+          ${reviews_table}
           <div class='controls'>
             <input type="hidden" value="${email_address}" />
             <input type="hidden" name="next-function" value="do_form_3" />

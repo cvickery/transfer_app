@@ -708,32 +708,34 @@ def do_form_3(request, session):
                     <table style="border-collapse:collapse;">
                       <tr>
                         <th colspan="5"{style_str}>Rule</th>
-                        <th{style_str}>Your Review{suffix}</th>
+                        <th>Current Status</th>
+                        <th colspan="2"{style_str}>Your Review{suffix}</th>
                       </tr>
                       """
     for review in kept_reviews:
       print(review['rule_str'])
-      event_type = review['event_type']
-      if event_type == 'src-ok':
-          description = review_dict['ok'].format(re.sub(r'\d+', '',
-                                                        review['source_institution']))
-      elif event_type == 'dest-ok':
-        description = review_dict['ok'].format(re.sub(r'\d+', '',
-                                                      review['destination_institution']))
-      elif event_type == 'src-not-ok':
-        description = review_dict['not-ok'].format(re.sub(r'\d+', '',
-                                                          review['source_institution']),
-                                                   review['comment_text'])
-      elif event_type == 'dest-not-ok':
-        description = review_dict['not-ok'].format(re.sub(r'\d+', '',
-                                                          review['destination_institution']),
-                                                   review['comment_text'])
-      else:
-        description = review_dict['other'].format(review['comment_text'])
+      review_rows += review['rule_str']
+      # event_type = review['event_type']
+      # if event_type == 'src-ok':
+      #     description = review_dict['ok'].format(re.sub(r'\d+', '',
+      #                                                   review['source_institution']))
+      # elif event_type == 'dest-ok':
+      #   description = review_dict['ok'].format(re.sub(r'\d+', '',
+      #                                                 review['destination_institution']))
+      # elif event_type == 'src-not-ok':
+      #   description = review_dict['not-ok'].format(re.sub(r'\d+', '',
+      #                                                     review['source_institution']),
+      #                                              review['comment_text'])
+      # elif event_type == 'dest-not-ok':
+      #   description = review_dict['not-ok'].format(re.sub(r'\d+', '',
+      #                                                     review['destination_institution']),
+      #                                              review['comment_text'])
+      # else:
+      #   description = review_dict['other'].format(review['comment_text'])
 
-      rule_str = re.sub('</tr>',
-                        f'<td>{description}</td></tr>', review['rule_str'])
-      review_rows += re.sub('<td([^>]*)>', f'<td\\1{style_str}>', rule_str)
+      # rule_str = re.sub('</tr>',
+      #                   f'<td>{description}</td></tr>', review['rule_str'])
+      # review_rows += re.sub('<td([^>]*)>', f'<td\\1{style_str}>', rule_str)
     review_rows += '</table>'
 
     # Send the email
