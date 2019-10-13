@@ -601,7 +601,6 @@ $(function ()
      */
     $('#send-email').click(function ()
     {
-      const email_address = $('#email-address').text();
       let review_form_html = `
         <h2>Review Your Submissions</h2>
         <p>Un-check the Include button if you don’t want to submit an item.</p>
@@ -677,9 +676,7 @@ $(function ()
       review_form_html += `
           ${reviews_table}
           <div class='controls'>
-            <input type="hidden" value="${email_address}" />
             <input type="hidden" name="next-function" value="do_form_3" />
-            <input type="hidden" id="hidden-reviews" name="reviews" value="Not Set" />
             <button class="ok-cancel" type="submit" id="review-submit">Submit</button>
             <button class="ok-cancel dismiss" type="button">Cancel</button>
           </div>
