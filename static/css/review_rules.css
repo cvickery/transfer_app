@@ -3,7 +3,7 @@ h2 {
   margin: 0.5rem;
 }
 
-details {
+details, .instructions {
   max-width: 40rem;
   margin: 1rem 0;
 }

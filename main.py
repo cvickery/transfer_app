@@ -212,25 +212,38 @@ def review_rules():
 @app.route('/pending')
 def pending():
   """ Display pending reviews.
-      TODO: Implement login option so defined users can manage this table.
+      These are reviews that were submitted, but the user hasn’t responded to the confirmation
+      email yet. They are automatically purged after 24 hours.
   """
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
+  heading = header(title='Pending Reviews', nav_items=[{'type': 'link',
+                                                        'href': '/',
+                                                        'text': 'Main Menu'},
+                                                       {'type': 'link',
+                                                        'href': '/review_rules',
+                                                        'text': 'Review Rules'}])
   conn = psycopg2.connect('dbname=cuny_courses')
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
   cursor.execute("""
     select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
       from pending_reviews""")
+
   if cursor.rowcount == 0:
-    return render_template('review_rules.html', result=Markup("""
-        <h1>There are no pending reviews.</h1>
-        <p>
-          <a href="/"><button>main menu</button></a>
-          <a href="/review_rules"><button>Review Transfer Rules</button></a>
-        </p>
+    return render_template('review_rules.html', result=Markup(f"""
+        {heading}
+        <p class="instructions">There are no pending reviews.</p>
         """))
-  result = '<h1>Pending Reviews</h1>'
+
+  result = f"""
+            {heading}
+            <p class="instructions">
+              The following reviews have been submitted within the past 48 hours, but not yet
+              confirmed by the submitter. Reviews not confirmed within 48 hours of submission will
+              be purged automatically.
+            </p>
+            """
   for pending in cursor.fetchall():
     reviews = json.loads(pending.reviews)
     suffix = 's'
@@ -252,12 +265,7 @@ def pending():
   cursor.close()
   conn.close()
 
-  result += """
-  <p>
-    <a href="/" class="button">Main Menu</a>
-    <a href="/review_rules" class="button">Review Transfer Rules</a>
-  </p>"""
-  return render_template('review_rules.html', result=Markup(result))
+  return render_template('review_rules.html', result=Markup(result), title='Pending Reviews')
 
 
 # CONFIRMATION PAGE
@@ -272,9 +280,7 @@ def confirmation(token):
 
   conn = psycopg2.connect('dbname=cuny_courses')
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-  # Get list of colleges involved in the reviews
-  #
-  q = 'select * from person_roles where role'
+
   # Make sure the token is received and is in the pending table.
   msg = ''
   q = 'select * from pending_reviews where token = %s'
