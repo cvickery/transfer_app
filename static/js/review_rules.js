@@ -373,11 +373,12 @@ $(function ()
     //
     const row_id = $(this).attr('id');
     const review_row = document.getElementById(row_id);
+    const review_cells = review_row.children;
     const review_row_class = review_row.className
       .replace(/selected-rule/, '')
       .replace(/evaluated/, '');
     const review_row_html = `<tr class="${review_row_class}">
-                                 ${review_row.innerHTML.replace(/ id=".*"/, '')}
+                                 ${review_cells}
                                </tr>`;
     const review_rule_table = `<table>${review_row_html}</table>`;
 
@@ -541,11 +542,9 @@ $(function ()
         event_type: $('input[name=reviewed]:checked').val(),
         source_institution: $('input[name=src_institution]').val(),
         destination_institution: $('input[name=dest_institution]').val(),
-        comment_text: $('#comment-text')
-          .val()
-          .replace('\'', '’'),
+        comment_text: $('#comment-text').val().replace('\'', '’'),
         rule_key: rule_key,
-        rule_str: review_row_html,
+        rule_cells: review_cells,
         include: true
       };
 
@@ -601,6 +600,7 @@ $(function ()
      */
     $('#send-email').click(function ()
     {
+      const td = '<td style="border: 1px solid #ccc; padding: 0.5em;">';
       let review_form_html = `
         <h2>Review Your Submissions</h2>
         <p>Un-check the Include button if you don’t want to submit an item.</p>
@@ -648,9 +648,19 @@ $(function ()
           go_nogo = pending_reviews[review].comment_text;
           break;
         }
-        let rule_tds = pending_reviews[review].rule_str.replace(/<tr.*?>/, '');
-        rule_tds = rule_tds.replace('</tr>', `<td>${institution}</td><td>${go_nogo}</td>`);
-        console.log(rule_tds);
+
+        let rule_tds = '';
+        for (let i = 0; i < pending_reviews[review].rule_cells.length; i++)
+        {
+          // Because the rules table is scrollable, it has a min-width style attribute that
+          // interferes with the display in the reviews_table. So we clone each node and remove
+          // the style attribute from the clone.
+          let this_rule_cell = pending_reviews[review].rule_cells[i].cloneNode(true);
+          this_rule_cell.removeAttribute('style');
+          rule_tds += td + this_rule_cell.innerHTML + '</td>';
+        }
+        rule_tds += `${td}${institution}</td>${td}${go_nogo}</td>`;
+        pending_reviews[review].rule_str = '<tr>' + rule_tds + '</tr>';
         reviews_table += `<tr id="review-${review}">
                            <td>
                              <input type="checkbox"
@@ -662,21 +672,11 @@ $(function ()
       }
       reviews_table += '</table>';
 
-      //  Replace or add style info for all td elements to be sure email cells have proper borders.
-      const parser = new DOMParser();
-      const temp_html = `<html><head></head><body>${reviews_table}</body></html>`;
-      let dom = parser.parseFromString(temp_html, 'text/html');
-      let tds = dom.getElementsByTagName('td');
-      for (let td of tds)
-      {
-        td.setAttribute('style', 'border: 1px solid #ccc; padding: 0.5em;');
-      }
-      reviews_table = dom.getElementsByTagName('body')[0].innerHTML;
-      console.log(reviews_table);
       review_form_html += `
           ${reviews_table}
           <div class='controls'>
             <input type="hidden" name="next-function" value="do_form_3" />
+            <input type="hidden" name="reviews" value = "${pending_reviews}" />
             <button class="ok-cancel" type="submit" id="review-submit">Submit</button>
             <button class="ok-cancel dismiss" type="button">Cancel</button>
           </div>

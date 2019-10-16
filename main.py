@@ -285,6 +285,7 @@ def confirmation(token):
     msg = f'<p class="error">Program Error: {cursor.rowcount} pending_reviews.</p>'
   else:
     msg, colleges = process_pending(cursor.fetchone())
+
     # Get list of people to notify
     q = """ select * from person_roles
             where role in ('cuny_registrar', 'webmaster')

@@ -472,7 +472,7 @@ def do_form_2(request, session):
       Generate form_3: the selected transfer rules for review
   """
   if DEBUG:
-    print(f'*** do_form_2(session)')
+    print(f'*** do_form_2({session})')
   conn = psycopg2.connect('dbname=cuny_courses')
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
 
@@ -668,7 +668,7 @@ def do_form_2(request, session):
 # -------------------------------------------------------------------------------------------------
 def do_form_3(request, session):
   if DEBUG:
-      print('*** do_form_3({session})')
+      print(f'*** do_form_3({session})')
   reviews = json.loads(request.form['reviews'])
   kept_reviews = [e for e in reviews if e['include']]
   email = session['email']
@@ -708,7 +708,7 @@ def do_form_3(request, session):
                     <table style="border-collapse:collapse;">
                       <tr>
                         <th colspan="5"{style_str}>Rule</th>
-                        <th>Current Status</th>
+                        <th{style_str}>Current Status</th>
                         <th colspan="2"{style_str}>Your Review{suffix}</th>
                       </tr>
                       """

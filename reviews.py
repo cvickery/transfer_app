@@ -69,7 +69,7 @@ def process_pending(row):
        rel="noopener noreferrer">{new_status_str}</a>"""
     summaries += """
     <tr>
-      <td><table>{}</table></td>
+      {}
       <td>{}</td>
       <td>{}</td>
     </tr>
@@ -83,20 +83,20 @@ def process_pending(row):
   conn.close()
 
   suffix = 's'
-  have_has = 'have'
+  have_has = 'were'
   num_reviews = len(reviews)
   if num_reviews == 1:
     suffix = ''
-    have_has = 'has'
+    have_has = 'was'
   if num_reviews < 13:
     num_reviews = ['', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
                    'eleven', 'twelve'][num_reviews - 1]
   # Return summary as an html table, and the set of institutions affected.
   return """
-  <p>The following {} transfer rule review{} {} been submitted by <em>{}</em> on {}.</p>
+  <p>The following {} transfer rule review{} {} submitted by <em>{}</em> on {}.</p>
     <table>
       <tr>
-        <th>Rule</th>
+        <th colspan="8">Rule</th>
         <th>Previous Review Status</th>
         <th>New Review Status<br/><em>Click for Review History</em></th>
       </tr>
