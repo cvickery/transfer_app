@@ -9,6 +9,16 @@
     <script>
     $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
     </script>
+  {% if not omitjs %}
+  <script>
+    document.getElementById('need-js').style.display = 'none';
+</script>
+  <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js">
+  </script>
+  <script defer src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">
+  </script>
+  {% block scripts %}{% endblock %}
+  {% endif %}
 
   </head>
   <body>
@@ -19,11 +29,4 @@
     {% endif %}
     {{ result }}
   </body>
-  {% if not omitjs %}
-  <script>document.getElementById('need-js').style.display = 'none';
-</script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-  {% block scripts %}{% endblock %}
-  {% endif %}
 </html>
