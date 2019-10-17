@@ -39,9 +39,11 @@ def rule_history(rule_key):
         """.format(event.event_time.replace(' 0', ' '), event.who, what)
   cursor.close()
   conn.close()
-  result = """
-            <h1>Transfer Rule {}</h1>
-            {}
+
+  print(f'>>{format_rule_by_key(rule_key)[1]}<<')
+  result = f"""
+            <h2>Transfer Rule {rule_key}</h2>
+            <p class="instructions">{format_rule_by_key(rule_key)[1]}</p>
             <h2>Review History</h2>
             <table>
               <tr>
@@ -49,8 +51,7 @@ def rule_history(rule_key):
                 <th>Who</th>
                 <th>What</th>
               </tr>
-              {}
+              {history_rows}
             </table>
-            <p><a href="/"><button>main menu</button></a></p>
-           """.format(rule_key, format_rule_by_key(rule_key)[1], history_rows)
+           """
   return result
