@@ -347,7 +347,7 @@ def confirmation(token):
 
   result = f"""
   {heading}
-  <p class="instructions">Review Report ID: {token}</p>
+  <p><em>Review Report ID {token}</em></p>
   {msg}
   """
   return render_template('review_rules.html', result=Markup(result), title="Review Confirmation")

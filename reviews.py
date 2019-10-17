@@ -67,18 +67,14 @@ def process_pending(row):
     <a href="/history/{review['rule_key']}"
        target="_blank"
        rel="noopener noreferrer">{new_status_str}</a>"""
-    summaries += """
+    summaries += f"""
     <tr>
-      {}
-      <td>{}</td>
-      <td>{}</td>
+      {review['rule_str']}
     </tr>
-    """.format(review['rule_str'],
-               old_status_str,
-               new_status_str)
+    """
+
   # Remove record from pending_reviews
   cursor.execute('delete from pending_reviews where token = %s', (token, ))
-
   conn.commit()
   conn.close()
 
@@ -91,19 +87,19 @@ def process_pending(row):
   if num_reviews < 13:
     num_reviews = ['', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
                    'eleven', 'twelve'][num_reviews - 1]
+
   # Return summary as an html table, and the set of institutions affected.
-  return """
-  <p>The following {} transfer rule review{} {} submitted by <em>{}</em> on {}.</p>
-    <table>
-      <tr>
-        <th colspan="8">Rule</th>
-        <th>Previous Review Status</th>
-        <th>New Review Status<br/><em>Click for Review History</em></th>
-      </tr>
-      {}
-    </table>
-    """.format(num_reviews,
-               suffix, have_has,
-               email,
-               when_entered.strftime('%B %d, %Y at %I:%M %p'),
-               summaries), institutions
+  return f"""
+  <p class="instructions">
+    The following {num_reviews} transfer rule review{suffix} {have_has} submitted by
+    <em>{email}</em> on {when_entered.strftime('%B %d, %Y at %I:%M %p')}.
+  </p>
+  <table>
+    <tr>
+      <th colspan="5">Rule</th>
+      <th>Previous Review Status<br/><em>(links show review history)</em></th>
+      <th colspan="2">New Review Status</th>
+    </tr>
+    {summaries}
+  </table>
+    """, institutions

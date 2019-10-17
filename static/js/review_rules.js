@@ -379,7 +379,11 @@ $(function ()
     //
     const row_id = $(this).attr('id');
     const review_row = document.getElementById(row_id);
-    const review_cells = review_row.children;
+    let review_cells = [];
+    if (review_row)
+    {
+      review_cells = review_row.children;
+    }
     const review_row_class = review_row.className
       .replace(/selected-rule/, '')
       .replace(/evaluated/, '');
