@@ -4,6 +4,7 @@ import json
 import re
 import argparse
 
+from flask import session
 from pgconnection import pgconnection
 from reviews_status_utils import status_string
 from copy import copy
@@ -366,10 +367,10 @@ def format_rule(rule, rule_key=None):
     source_credits_str = f'{min_source_credits}'
 
   # If the rule has been evaluated, the last column is a link to the review history. But if it
-  # hasn't been evaluated yet, the last column is just the text that says so.
+  # hasn’t been evaluated yet, the last column is just the text that says so.
   status_cell = status_string(rule.review_status)
   if rule.review_status != 0:
-    status_cell = f"""<a href="/history/{rule_key}"
+    status_cell = f"""<a href="{session['base_url']}history/{rule_key}"
                          target="_blank"
                          rel="noopener noreferrer">{status_cell}</a>"""
   status_cell = '<span title="{}">{}</span>'.format(rule_key, status_cell)
@@ -389,17 +390,11 @@ def format_rule(rule, rule_key=None):
                             rule.destination_institution.rstrip('0123456789'),
                             destination_course_list,
                             status_cell)
-
-  description = """
-      <div><span class="{} description">
-        {} at {}, {} credits, transfers to {} as {}, {} credits.</span>
-      </div>""".format(row_class,
-                       source_course_list,
-                       institution_names[rule.source_institution],
-                       source_credits_str,
-                       institution_names[rule.destination_institution],
-                       destination_course_list,
-                       destination_credits)
+  description = f"""<span class="{row_class} description">{source_course_list}
+        at {institution_names[rule.source_institution]},
+        {source_credits_str} credits, transfers to
+        {institution_names[rule.destination_institution]}
+        as {destination_course_list}, {destination_credits} credits.</span>"""
   description = description.replace('Pass', 'Passing grade in')
   return row, description
 

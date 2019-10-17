@@ -1,4 +1,5 @@
-# CUNY Transfer App
+#! /usr/local/bin/python3
+# CUNY Transfer Explorer
 # C. Vickery
 
 import sys
@@ -128,6 +129,9 @@ def index_page():
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
+  # format_rules needs this for linking to review histories
+  session['base_url'] = request.base_url
+
   """ Display menu of available features.
   """
   conn = psycopg2.connect('dbname=cuny_courses')
@@ -184,7 +188,7 @@ def review_rules():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
   if DEBUG:
-    print('*** {} / ***'.format(request.method))
+    print(f'{request.method} review_rules')
 
   # Dispatcher for forms
   dispatcher = {
@@ -282,7 +286,13 @@ def confirmation(token):
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
 
   # Make sure the token is received and is in the pending table.
-  msg = ''
+  heading = header(title='Review Confirmation', nav_items=[{'type': 'link',
+                                                            'href': '/',
+                                                            'text': 'Main Menu'},
+                                                           {'type': 'link',
+                                                            'href': '/review_rules',
+                                                            'text': 'Review Rules'}])
+
   q = 'select * from pending_reviews where token = %s'
   cursor.execute(q, (token,))
   if cursor.rowcount == 0:
@@ -336,13 +346,11 @@ def confirmation(token):
   conn.close()
 
   result = f"""
-  <h1>Confirmation</h1>
-  <p>Review Report ID: {token}</p>
+  {heading}
+  <p class="instructions">Review Report ID: {token}</p>
   {msg}
-  <p><a href="/"><button>main menu</button></a></p>
   """
-
-  return render_template('review_rules.html', result=Markup(result))
+  return render_template('review_rules.html', result=Markup(result), title="Review Confirmation")
 
 
 # HISTORY PAGE
@@ -356,9 +364,16 @@ def history(rule):
 
   """ Look up all events for the rule, and report back to the visitor.
   """
-  result = rule_history(rule)
-  return render_template('review_rules.html', result=Markup(result))
-
+  result = header(title='Event History', nav_items=[{'type': 'link',
+                                                     'href': '/',
+                                                     'text': 'Main Menu'},
+                                                    {'type': 'link',
+                                                     'href': '/review_rules',
+                                                     'text': 'Review Rules'}])
+  result += rule_history(rule)
+  return render_template('review_rules.html',
+                         result=Markup(result),
+                         title='Review Event History')
 
 # MAP_COURSES PAGE
 # -------------------------------------------------------------------------------------------------
