@@ -243,9 +243,9 @@ def pending():
   result = f"""
             {heading}
             <p class="instructions">
-              The following reviews have been submitted within the past 48 hours, but not yet
-              confirmed by the submitter. Reviews not confirmed within 48 hours of submission will
-              be purged automatically.
+              The following reviews have been submitted within the past 48 hours, but the submitter
+              has not yet responded to an “activation” email message. Reviews not activated within
+              48 hours of submission are ignored.
             </p>
             """
   for pending in cursor.fetchall():

@@ -107,8 +107,7 @@ def top_menu(msg=''):
     <dt><a href="/pending">Pending Reviews</a></dt>
     <dd>
       This is a maintenance utility that shows transfer rule suggestions that have been submitted
-      but not yet confirmed by the submitter. These reviews are purged if not confirmed within two
-      days of submission.
+      but for which the user has not yet responded to an “activation” email message.
     </dd>
 
     <dt><a href="/courses">College Course Catalogs</a></dt>
