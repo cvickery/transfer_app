@@ -952,7 +952,6 @@ def courses():
   if request.method == 'POST':
     institution_code = request.form['inst']
   else:
-    print(request.args)
     institution_code = request.args.get('college', None)
     discipline_code = request.args.get('discipline', None)
     department_code = request.args.get('department', None)
