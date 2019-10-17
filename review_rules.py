@@ -708,7 +708,7 @@ def do_form_3(request, session):
                     <table style="border-collapse:collapse;">
                       <tr>
                         <th colspan="5"{style_str}>Rule</th>
-                        <th{style_str}>Current Status</th>
+                        <th{style_str}>Current Status<br><em>(links show review history)</em></th>
                         <th colspan="2"{style_str}>Your Review{suffix}</th>
                       </tr>
                       """
@@ -718,12 +718,7 @@ def do_form_3(request, session):
     review_rows += '</table>'
 
     # Send the email
-    hostname = os.environ.get('HOSTNAME')
-    if hostname and hostname.endswith('.local'):
-      hostname = 'http://localhost:5000'
-    else:
-      hostname = 'https://transfer-app.qc.cuny.edu'
-    url = hostname + '/confirmation/' + token
+    url = request.url_root + 'confirmation/' + token
 
     response = send_token(email, url, review_rows)
     if response.status_code != 202:

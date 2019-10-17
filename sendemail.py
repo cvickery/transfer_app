@@ -101,7 +101,7 @@ def send_token(email, url, review_rows):
     it_them = 'it'
     this_these = 'this'
   subject_line = f'Confirming your transfer rule review{suffix}'
-  button_text = 'submit {} review{}'.format(this_these, suffix).title()
+  button_text = f'activate {this_these} review{suffix}'.title()
   html_body = f"""
   <p>
     Use the link below to confirm that you want to record the following transfer rule
