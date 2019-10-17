@@ -69,13 +69,19 @@ $(function ()
   $('#submit-form-2').attr('disabled', $('#no-source-subjects') || $('#no-destination_subjects'));
   $('#form-2-submitted').hide();
 
-  // Global action: escape key hides dialogs, currently only the review-panel in form 2.
+  // Global keyboard actions
   $('*').keyup(function (event)
   {
+    // Escape key hides dialogs, currently only the review-panel in form 2.
     if (event.keyCode === 27)
     {
       $('.rule').removeClass('selected-rule');
       $('#review-form').hide();
+    }
+    if (event.keyCode === 13)
+    {
+      // Enter key submits form 1 or 2 if the Next button is enabled.
+      $('#submit-form-1, #submit-form-2').click();
     }
   });
 
