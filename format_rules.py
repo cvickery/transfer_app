@@ -370,9 +370,7 @@ def format_rule(rule, rule_key=None):
   # hasn’t been evaluated yet, the last column is just the text that says so.
   status_cell = status_string(rule.review_status)
   if rule.review_status != 0:
-    status_cell = f"""<a href="{session['base_url']}history/{rule_key}"
-                         target="_blank"
-                         rel="noopener noreferrer">{status_cell}</a>"""
+    status_cell = f"""<a href="{session['base_url']}history/{rule_key}">{status_cell}</a>"""
   status_cell = '<span title="{}">{}</span>'.format(rule_key, status_cell)
   row = """<tr id="{}" class="{}">
               <td title="{}">{}</td>
