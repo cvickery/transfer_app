@@ -713,7 +713,6 @@ def do_form_3(request, session):
                       </tr>
                       """
     for review in kept_reviews:
-      print(review['rule_str'])
       review_rows += review['rule_str']
     review_rows += '</table>'
 
