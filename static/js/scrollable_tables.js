@@ -3,8 +3,8 @@
  *  column widths remaining matched.
  */
 
-const DEBUG_HEIGHT = true;
-const DEBUG_WIDTHS = true;
+const DEBUG_HEIGHT = false;
+const DEBUG_WIDTHS = false;
 
 //  content_width()
 //  ---------------------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ export default class ScrollableTable
     this.table = args.table;
     this.desired_height = args.height;
     this.initial_delay = args.delay ? args.delay : 2000;
-    this.padding_bottom = args.padding ? args.padding : 12;
+    this.padding_bottom = args.padding ? args.padding : 2;
     this.use_heading_widths = args.use_heading;
     this.thead = this.table.getElementsByTagName('thead')[0];
     let head_height = this.thead.offsetHeight;
@@ -182,10 +182,7 @@ overflowY: ${this.tbody.style.overflowY}
    * ids end with '-col'. Uses an alternative heuristic if that requirement does not obtain. */
   adjust_widths(use_heading_widths)
   {
-    if (DEBUG_WIDTHS)
-    {
-      console.log(`use heading widths: ${use_heading_widths}`);
-    }
+    const viewport_width = window.innerWidth;
     // Test if all cells in the first row of the body have proper headers attributes, including
     // at least one that ends with '-col'.
     // “Feature Request”: handle multiple -col headers (cases where multiple body cells match a
@@ -225,6 +222,16 @@ overflowY: ${this.tbody.style.overflowY}
         has_headers = false;
         break;
       }
+    }
+    this.parent_node.overflowX = 'hidden';
+    if (DEBUG_WIDTHS)
+    {
+      console.log(`use heading widths: ${use_heading_widths}
+has headers: ${has_headers}
+viewport width: ${viewport_width}
+header_width: ${this.thead.offsetWidth}
+body_width: ${this.tbody.offsetWidth}
+`);
     }
     if (has_headers)
     {
@@ -286,6 +293,13 @@ overflowY: ${this.tbody.style.overflowY}
       {
         console.error(`Unable to adjust widths: ${head_cells.length} !== ${body_cells.length}`);
       }
+      console.log(`use heading widths: ${use_heading_widths}
+has headers: ${has_headers}
+viewport width: ${viewport_width}
+header_width: ${this.thead.offsetWidth}
+body_width: ${this.tbody.offsetWidth}
+---------------------------------------
+`);
     }
   }
 }
