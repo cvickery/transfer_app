@@ -968,7 +968,7 @@ def courses():
                              and discipline = '{discipline_code}'
                         """)
         if cursor.rowcount == 1:
-          discipline_name = cursor.fetchone().description
+          discipline_name = cursor.fetchone().discipline_name
       if department_code is not None:
         department_code = department_code.upper()
         department_clause = f"and department = '{department_code}'"
