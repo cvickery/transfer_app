@@ -1,5 +1,6 @@
 #! /usr/local/bin/python3
 import os
+import sys
 import re
 import argparse
 
@@ -204,14 +205,8 @@ if __name__ == '__main__':
   # Read plain text body from stdin if no files specified
   if args.html_file is None and args.text_file is None:
     text_body = ''
-    while True:
-        try:
-            line = input()
-        except EOFError:
-            break
-        if not line:
-            break
-        text_body += line + '\n'
+    for line in sys.stdin:
+      text_body += line
 
   # Plain text part
   if args.text_file is not None:
