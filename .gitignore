@@ -18,3 +18,4 @@ Logs/
 /env/
 
 /dgw_processor/
+/tests/test_data/

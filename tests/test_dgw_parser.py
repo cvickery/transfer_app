@@ -13,8 +13,6 @@ import psycopg2
 from psycopg2.extras import NamedTupleCursor
 from collections import namedtuple
 
-sys.path.append('/Users/vickery/Transfer_App/dgw_processor/')
-print(sys.path)
 from dgw_parser import dgw_parser
 
 trans_dict = dict()
@@ -67,19 +65,19 @@ if __name__ == '__main__':
         and period_stop = '99999999'
   """
   for institution in institutions:
-    for type in types:
-      for value in values:
-        cursor.execute(query, (institution, type, value))
+    for b_type in types:
+      for b_value in values:
+        cursor.execute(query, (institution, b_type, b_value))
         if cursor.rowcount == 0:
-          print(f'No match for {institution} {type} {value}')
+          print(f'No match for {institution} {b_type} {b_value}')
         else:
           for row in cursor.fetchall():
             if args.debug:
-              print(f'{institution}, {type} {value} "{row.title}" '
+              print(f'{institution}, {type} {b_value} "{row.title}" '
                     f'{len(row.requirement_text)} chars')
             requirement_text = row.requirement_text\
                                   .translate(trans_table)\
                                   .strip('"')\
                                   .replace('\\r', '\r')\
                                   .replace('\\n', '\n')
-            print(dgw_parser(institution, requirement_text + '\n', type, value, row.title))
+            print(dgw_parser(institution, requirement_text + '\n', b_type, b_value, row.title))
