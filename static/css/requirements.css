@@ -1,0 +1,193 @@
+
+body {
+  padding: 0.5rem;
+  background-color: #cdf;
+  color:#333;
+  font-family:sans-serif;
+  font-size: 16px;
+}
+
+details {
+  border: 1px solid #cbb;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  background-color: white;
+  color: #333;
+}
+
+summary {
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+button, a.button {
+    margin: 1rem;
+    border: 1px solid #999;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    background-color: white;
+    color: black;
+    font-size: 0.8rem;
+    font-variant: small-caps;
+    text-decoration: none;
+    -moz-appearance: button;
+    -webkit-appearance: button;
+    appearance: button;
+}
+
+.pseudo-button {
+  font-variant: small-caps;
+}
+
+button:disabled, a.button:disabled {
+  color: #ccc;
+}
+
+button:enabled:hover, a.button:enabled:hover {
+  background-color: #ccc;
+}
+
+select {
+  cursor: pointer;
+}
+
+header {
+  position:relative;
+  height: 2rem;
+  border: 1px solid #cbb;
+  background-color:white;
+  color:#248;
+  border-radius: 0.25rem;
+}
+
+header>a {
+  display:inline-block;
+  position:absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  height: 1.5rem;
+}
+
+header>a>img {
+  height:100%;
+}
+
+header>span {
+  position:absolute;
+  top:0.4rem;
+  display:block;
+  width:100%;
+  font-size: 1.5rem;
+  font-weight:bold;
+  text-align:center;
+}
+
+header>nav {
+  position:absolute;
+  top:0.25rem;
+  right:0.25rem;
+  bottom:0.25rem;
+}
+
+nav>a {
+  display: inline-block;
+  margin: 0 0.25rem;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  padding: 0.4rem 1rem 0.1rem;
+  font-size: 1rem;
+  font-variant: small-caps;
+  text-decoration:none;
+  background-color: white;
+  color: #248;
+}
+
+nav>button {
+  margin:0 0.25rem;
+  padding:0.125rem 1rem;
+  font-size:1rem;
+  font-variant: small-caps;
+  background-color:white;
+  color:#248;
+  border:1px solid #ccc;
+  border-radius:0.25rem;
+}
+
+header>nav>a:hover, nav>button:enabled:hover {
+  background-color:#248;
+  color:white;
+}
+
+fieldset hr {
+  color: #cbb;
+}
+
+.error {
+  color: #922;
+  font-size: 1.2rem;
+  text-transform: lowercase;
+  font-variant: small-caps;
+}
+
+.warning {
+  color: #992;
+}
+
+.underline {
+  text-decoration: underline;
+}
+
+.clickable:hover {
+  cursor: pointer;
+}
+
+.center {
+  text-align:center;
+}
+
+.instructions {
+  border: 1px solid #cbb;
+  border-radius: 0.25rem;
+  padding: 0.5em;
+  background-color: white;
+  color: #333;
+}
+
+.table-height {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.scrollable tbody {
+  overflow-x: auto;
+  overflow-y: scroll;
+}
+
+/* Animate the loading/please-wait ellipsis. */
+.dot-1 {
+    animation: dot 1.5s infinite;
+    animation-delay: 0.0s;
+}
+
+.dot-2 {
+    animation: dot 1.5s infinite;
+    animation-delay: 0.1s;
+}
+
+.dot-3 {
+    animation: dot 1.5s infinite;
+    animation-delay: 0.2s;
+}
+
+@keyframes dot {
+      0% { opacity: 0; }
+     50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+

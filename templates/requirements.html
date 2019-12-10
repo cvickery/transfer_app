@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>{% block title %}{{title}}{% endblock %}</title>
+    <link rel='stylesheet' href='/static/css/base_style.css' />
+    {% block sheets %}{% endblock %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+  {% if not omitjs %}
+  <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js">
+  </script>
+  <script defer src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">
+  </script>
+  {% block scripts %}{% endblock %}
+  {% endif %}
+
+  </head>
+  <body>
+    {% if not omitjs %}
+    <div id="need-js">
+      <p class="error">Waiting for JavaScript to initialize &hellip;</p>
+    </div>
+    <script>document.getElementById('need-js').style.display = 'none';
+</script>
+    {% endif %}
+    {{ result }}
+  </body>
+</html>
