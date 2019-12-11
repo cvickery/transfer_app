@@ -19,12 +19,12 @@ for c in range(13, 31):
 trans_table = str.maketrans(trans_dict)
 
 # Create dict of known colleges
-colleges = dict()
+cuny_colleges = dict()
 course_conn = psycopg2.connect('dbname=cuny_courses')
 course_cursor = course_conn.cursor(cursor_factory=NamedTupleCursor)
 course_cursor.execute('select substr(lower(code),0,4) as code, name from institutions')
 for row in course_cursor.fetchall():
-  colleges[row.code] = row.name
+  cuny_colleges[row.code] = row.name
 
 
 def get_requirements_text(institution, b_type, b_value, period):

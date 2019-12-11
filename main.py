@@ -36,7 +36,7 @@ from top_menu import top_menu
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from propose_rules import _propose_rules
 
-from program_requirements import Requirements
+from requisites import get_requirements_text
 from dgw_processor import dgw_parser
 
 from flask import Flask, url_for, render_template, make_response,\
@@ -1139,7 +1139,7 @@ def registered_programs(institution, default=None):
 
   # Allow users to supply the institution in QNS01 or qns01 format; force to internal format ('qns')
   if institution is not None:
-    institution = institution.lower().strip('10')
+    institution = institution.upper() + ('01' * len(institution) == 3)
   else:
     institution = 'none'
 
@@ -1378,92 +1378,24 @@ def registered_programs(institution, default=None):
                          title='Registered Programs')
 
 
-@app.route('/academic_plan/<institution>/<plan>/',
-           methods=['GET'],
-           defaults=({'catalog_year': 'current'}))
-def academic_plan(institution, plan, catalog_year):
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-  cursor.execute("""
-                 select distinct r.target_institution as inst, i.name
-                 from registered_programs r, institutions i
-                 where i.code = upper(r.target_institution||'01')
-                 order by i.name
-                 """)
-  cuny_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
-
-  conn = psycopg2.connect('dbname=cuny_programs')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-
-  cursor.execute('select last_update from updates where institution = %s', (institution, ))
-  last_update = cursor.fetchone().last_update.strftime('%B %d, %Y')
-
-  cursor.execute("""select *
-                      from requirement_blocks
-                     where institution = %s
-                       and block_value = %s
-                  order by period_start desc
-                  """, (institution, plan.upper()))
-  result = f'<h1>Program Requirements for {plan} at {cuny_institutions[institution]}</h1>'
-  result += f'<p>DegreeWorks information as of {last_update}</p>'
-  # for row in cursor.fetchall():
-  #   start = row.period_start.strip('UG').replace('-20', '-')
-  #   stop = row.period_stop.strip('UG').replace('-20', '-')
-  #   stop = re.sub('9{3,}', 'Now', stop)
-  #   result += f'<h2>Academic Years {start} to {stop}</h2>'
-  #   requirement_text = [line.replace('(CLOB)', '').strip()
-  #                       for line in row.requirement_text.splitlines()
-  #                       if line.strip() != '' and not line.lower().startswith('log:')]
-  #   result += f"<pre>{'<br>'.join(requirement_text)}</pre>"
-  row = cursor.fetchone()
-  requirements = Requirements(row.requirement_text, row.period_start, row.period_stop)
-  conn.close()
-  result += requirements.html()
-  return render_template('academic_program.html', result=Markup(result))
-
-
-@app.route('/requirements/<institution>/<value>/',
-           methods=['GET'],
-           defaults=({'catalog_year': 'current'}))
-def requirements(institution, value, catalog_year):
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-  cursor.execute("""
-                 select distinct r.target_institution as inst, i.name
-                 from registered_programs r, institutions i
-                 where i.code = upper(r.target_institution||'01')
-                 order by i.name
-                 """)
-  cuny_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
-
-  conn = psycopg2.connect('dbname=cuny_programs')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-
-  cursor.execute('select last_update from updates where institution = %s', (institution, ))
-  last_update = cursor.fetchone().last_update.strftime('%B %d, %Y')
-
-  cursor.execute("""select *
-                      from requirement_blocks
-                     where institution = %s
-                       and block_value = %s
-                  order by period_start desc
-                  """, (institution, plan.upper()))
-  result = f'<h1>Program Requirements for {plan} at {cuny_institutions[institution]}</h1>'
-  result += f'<p>DegreeWorks information as of {last_update}</p>'
-  # for row in cursor.fetchall():
-  #   start = row.period_start.strip('UG').replace('-20', '-')
-  #   stop = row.period_stop.strip('UG').replace('-20', '-')
-  #   stop = re.sub('9{3,}', 'Now', stop)
-  #   result += f'<h2>Academic Years {start} to {stop}</h2>'
-  #   requirement_text = [line.replace('(CLOB)', '').strip()
-  #                       for line in row.requirement_text.splitlines()
-  #                       if line.strip() != '' and not line.lower().startswith('log:')]
-  #   result += f"<pre>{'<br>'.join(requirement_text)}</pre>"
-  row = cursor.fetchone()
-  requirements = Requirements(row.requirement_text, row.period_start, row.period_stop)
-  conn.close()
-  result += requirements.html()
-  return render_template('academic_program.html', result=Markup(result))
+@app.route('/requisites/', methods=['GET'])
+def requisites(college=None, type=None, name=None, period=None):
+  """ Display the requisites for a program.
+      If the instutition, block_type, and block_value are not known, display a form to get them
+      first.
+  """
+  institution = request.args.get('college')
+  b_type = request.args.get('type')
+  b_value = request.args.get('name')
+  period = request.args.get('period')
+  if period is None:
+    period = 'current'
+  if institution is None or b_type is None or b_value is None:
+    result = f'<h1>UR So Lucky</h1>'
+    return render_template('requisites_form.html', result=Markup(result), title='Select A Program')
+  else:
+    result = f'<h1 class="error">Swell!</h1><p>{institution} {b_value} {b_type} {period}</p>'
+    return render_template('requisites.html', result=Markup(result))
 
 
 @app.errorhandler(500)

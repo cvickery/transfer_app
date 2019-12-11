@@ -1,0 +1,16 @@
+{% extends "base_template.html" %}
+{% block sheets%}
+  <link rel='stylesheet' href="/static/css/map_courses.css"/>
+{% endblock %}
+{% block scripts %}
+  <script defer src="/static/js/requisites_form.js"></script>
+{% endblock %}
+{% block static %}
+    <form method="GET", action="/requisites">
+      <input type="hidden" name="college" value="QNS01"/>
+      <input type="hidden" name="type" value="MAJOR"/>
+      <input type="hidden" name="name" value="CSCI-BS"/>
+      <input type="hidden" name="period" value="current"/>
+      <button type="submit">Go For It</button>
+    </form>
+{% endblock %}
