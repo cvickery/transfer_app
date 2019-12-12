@@ -1391,7 +1391,67 @@ def requisites(college=None, type=None, name=None, period=None):
   if period is None:
     period = 'current'
   if institution is None or b_type is None or b_value is None:
-    result = f'<h1>UR So Lucky</h1>'
+    result = f"""
+    <h1 class="warning">Under-developed Application!</h1>
+    <details><summary>Details</summary>
+    <p>Use this form to select a Degreeworks “Scribe Block” to examine. The information provided is
+    as accurate as Degreeworks is, but at this time, it is incomplete. This project is a work in
+    progress!</p>
+    </details>
+    <fieldset><legend>Select Requirements</legend>
+    <form method="GET" action="/requisites">
+      <div>
+        <label for="institution">College</label>
+        <select id="institution" name="college" placeholder="Select College">
+        <option value="LEH01">Lehman College</option>
+        <option value="QNS01">Queens College</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="block-type">Requirement Type</label>
+        <select id="block-type" name="type">
+        <option value="DEGREE">Degree</option>
+        <option value="MAJOR">Major</option>
+        <option value="MINOR">Minor</option>
+        <option value="CONC">Concentration</option>
+        <option value="OTHER">OTHER</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="block-value">Requirement Name</label>
+        <select id="block-value" name="name">
+        <option value="CSCI-BA">ACCT-BA</option>
+        <option value="CSCI-BA">CSCI-BA</option>
+        <option value="CSCI-BA">CSCI-BS</option>
+        <option value="CSCI-BA">LING-BA</option>
+        <option value="CSCI-BA">PSYCH-BA</option>
+        </select>
+      </div>
+
+      <fieldset>
+        <legend>Catalog Year(s)</legend>
+        <p>
+          Do you want to see only the requirements for the current catalog year, the most-recent
+          year (in case the program or degree is no longer being offered), or the requirements for
+          all catalog years in reverse chronological order?
+        </p>
+        <input type="radio" id="period-all" name="period" value="all"/>
+        <label for="period-all">All</label>
+
+        <input type="radio" id="period-recent" name="period" value="recent"/>
+        <label for="period-recent">Most-Recent</label>
+
+        <input type="radio" id="period-current" name="period" value="current" checked/>
+        <label for="period-current">Current</label>
+        </fieldset>
+      <button type="submit">Go For It</button>
+       </div>
+
+
+    </form>
+    """
     return render_template('requisites_form.html', result=Markup(result), title='Select A Program')
   else:
     result = dgw_parser(institution, b_type, b_value)
