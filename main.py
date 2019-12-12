@@ -1139,7 +1139,7 @@ def registered_programs(institution, default=None):
 
   # Allow users to supply the institution in QNS01 or qns01 format; force to internal format ('qns')
   if institution is not None:
-    institution = institution.upper() + ('01' * len(institution) == 3)
+    institution = institution.lower().strip('01')
   else:
     institution = 'none'
 
@@ -1155,8 +1155,10 @@ def registered_programs(institution, default=None):
   except (KeyError, ValueError):
     update_date = '(<em>None or in progress</em>)'
   try:
-    dgw_cursor.execute("select last_update from updates where institution = %s", (institution, ))
-    dgw_update_date = 'was last updated on ' + date2str(str(dgw_cursor.fetchone().last_update))
+    dgw_cursor.execute("select last_update from updates where institution = %s",
+                       (institution.upper() + '01', ))
+    dgw_update_date = (f'for this college was last updated on ' +
+                       date2str(str(dgw_cursor.fetchone().last_update)) + '.')
   except (KeyError, ValueError, AttributeError) as e:
     if institution == 'none':
       dgw_update_date = 'is not available until you select a college.'
