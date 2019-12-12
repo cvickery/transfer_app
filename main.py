@@ -37,7 +37,7 @@ from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from propose_rules import _propose_rules
 
 from requisites import get_requirements_text
-from dgw_processor import dgw_parser
+from dgw_parser import dgw_parser
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify, session
@@ -1394,7 +1394,7 @@ def requisites(college=None, type=None, name=None, period=None):
     result = f'<h1>UR So Lucky</h1>'
     return render_template('requisites_form.html', result=Markup(result), title='Select A Program')
   else:
-    result = f'<h1 class="error">Swell!</h1><p>{institution} {b_value} {b_type} {period}</p>'
+    result = dgw_parser(institution, b_type, b_value)
     return render_template('requisites.html', result=Markup(result))
 
 

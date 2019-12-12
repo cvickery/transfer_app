@@ -1,6 +1,6 @@
 const main = function()
 {
-  alert('connected');
+  console.log('connected');
 };
 
 window.addEventListener('load', main);
