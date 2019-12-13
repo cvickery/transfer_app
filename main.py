@@ -36,7 +36,7 @@ from top_menu import top_menu
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from propose_rules import _propose_rules
 
-from requisites import get_requirements_text
+from requirements import get_requirements_text
 from dgw_parser import dgw_parser
 
 from flask import Flask, url_for, render_template, make_response,\
@@ -1380,8 +1380,8 @@ def registered_programs(institution, default=None):
                          title='Registered Programs')
 
 
-@app.route('/_requisite_values/')
-def _requisite_values():
+@app.route('/_requirement_values/')
+def _requirement_values():
   institution = request.args.get('institution', 0)
   block_type = request.args.get('block_type', 0)
   option_type = f'a {block_type.title()}'
@@ -1403,9 +1403,9 @@ def _requisite_values():
                  {options}"""
 
 
-@app.route('/requisites/', methods=['GET'])
-def requisites(college=None, type=None, name=None, period=None):
-  """ Display the requisites for a program.
+@app.route('/requirements/', methods=['GET'])
+def requirements(college=None, type=None, name=None, period=None):
+  """ Display the requirements for a program.
       If the instutition, block_type, and block_value are not known, display a form to get them
       first.
   """
@@ -1442,7 +1442,7 @@ def requisites(college=None, type=None, name=None, period=None):
     </p>
     </details>
     <fieldset><legend>Select Requirements</legend>
-    <form method="GET" action="/requisites">
+    <form method="GET" action="/requirements">
       <div>
         <label for="institution">College</label>
         <select id="institution" name="college" placeholder="Select College">
@@ -1494,10 +1494,10 @@ def requisites(college=None, type=None, name=None, period=None):
 
     </form>
     """
-    return render_template('requisites_form.html', result=Markup(result), title='Select A Program')
+    return render_template('requirements_form.html', result=Markup(result), title='Select A Program')
   else:
     result = dgw_parser(institution, b_type, b_value)
-    return render_template('requisites.html', result=Markup(result))
+    return render_template('requirements.html', result=Markup(result))
 
 
 @app.errorhandler(500)

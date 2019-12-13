@@ -43,14 +43,8 @@ if __name__ == '__main__':
 
   # Parse args and handle default list of institutions
   args = parser.parse_args()
-  digits = '0123456789'
-  institutions = [f'{i.lower().strip(digits)}' for i in args.institutions]
   types = [f'{t.upper()}' for t in args.types]
   values = [f'{v.upper()}' for v in args.values]
-  if args.debug:
-    print(f'institutions: {institutions}')
-    print(f'types: {types}')
-    print(f'values: {values}')
 
   # Get the top-level requirements to examine: college, block-type, and/or block value
   conn = psycopg2.connect('dbname=cuny_programs')
@@ -64,20 +58,10 @@ if __name__ == '__main__':
         and block_value = %s
         and period_stop = '99999999'
   """
-  for institution in institutions:
+  for institution in args.institutions:
+    institution = institution.upper() + ('01' * (len(institution) == 3))
     for b_type in types:
       for b_value in values:
-        cursor.execute(query, (institution, b_type, b_value))
-        if cursor.rowcount == 0:
-          print(f'No match for {institution} {b_type} {b_value}')
-        else:
-          for row in cursor.fetchall():
-            if args.debug:
-              print(f'{institution}, {type} {b_value} "{row.title}" '
-                    f'{len(row.requirement_text)} chars')
-            requirement_text = row.requirement_text\
-                                  .translate(trans_table)\
-                                  .strip('"')\
-                                  .replace('\\r', '\r')\
-                                  .replace('\\n', '\n')
-            print(dgw_parser(institution, requirement_text + '\n', b_type, b_value, row.title))
+        if args.debug:
+          print(institution, b_type, b_value)
+        print(dgw_parser(institution, b_type, b_value))
