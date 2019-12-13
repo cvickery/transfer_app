@@ -1380,6 +1380,29 @@ def registered_programs(institution, default=None):
                          title='Registered Programs')
 
 
+@app.route('/_requisite_values/')
+def _requisite_values():
+  institution = request.args.get('institution', 0)
+  block_type = request.args.get('block_type', 0)
+  option_type = f'a {block_type.title()}'
+  if block_type == 'CONC':
+    option_type = 'a Concentration'
+  if block_type == 'OTHER':
+    option_type = 'a Requirement'
+  conn = psycopg2.connect('dbname=cuny_programs')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  cursor.execute("""select distinct block_value, title
+                      from requirement_blocks
+                      where institution = %s
+                        and block_type = %s
+                      order by block_value""", (institution, block_type))
+  options = '\n'.join(['<option value="{}">{}</option>\n'.format(x.block_value, x.title)
+                      for x in cursor.fetchall()])
+  conn.close()
+  return f"""<option value="" selected="selected">Select {option_type}</option>\n
+                 {options}"""
+
+
 @app.route('/requisites/', methods=['GET'])
 def requisites(college=None, type=None, name=None, period=None):
   """ Display the requisites for a program.
@@ -1393,20 +1416,37 @@ def requisites(college=None, type=None, name=None, period=None):
   if period is None:
     period = 'current'
   if institution is None or b_type is None or b_value is None:
+    conn = psycopg2.connect('dbname=cuny_programs')
+    cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+    cursor.execute("select distinct last_update from updates where institution != 'HEGIS'")
+    dgw_date = cursor.fetchone().last_update
+    dgw_date = dgw_date.strftime('%B %d, %Y')
+    conn.close()
+    conn = psycopg2.connect('dbname=cuny_courses')
+    cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+    cursor.execute('select code, name from institutions')
+    college_options = '<option value="">Select College</option>\n'
+    for row in cursor.fetchall():
+      college_options += f'<option value="{row.code}">{row.name}</option>\n'
     result = f"""
-    <h1 class="warning">Under-developed Application!</h1>
-    <details><summary>Details</summary>
-    <p>Use this form to select a Degreeworks “Scribe Block” to examine. The information provided is
-    as accurate as Degreeworks is, but at this time, it is incomplete. This project is a work in
-    progress!</p>
+    <h1 class="error">Proof of Concept</h1>
+    <details><summary>More Information</summary>
+    <p>
+      This form lets you examine the information from any CUNY  Degreeworks “Scribe Block.”
+      The information returned is incomplete at this time, but what is shown is extracted from
+      the actual Degreewoks information used to determine program and degree requirements for
+      graduation.
+    </p>
+    <p>
+      Degreeworks information last updated on {dgw_date}.
+    </p>
     </details>
     <fieldset><legend>Select Requirements</legend>
     <form method="GET" action="/requisites">
       <div>
         <label for="institution">College</label>
         <select id="institution" name="college" placeholder="Select College">
-        <option value="LEH01">Lehman College</option>
-        <option value="QNS01">Queens College</option>
+          {college_options}
         </select>
       </div>
 
@@ -1417,11 +1457,11 @@ def requisites(college=None, type=None, name=None, period=None):
         <option value="MAJOR">Major</option>
         <option value="MINOR">Minor</option>
         <option value="CONC">Concentration</option>
-        <option value="OTHER">OTHER</option>
+        <option value="OTHER">Other</option>
         </select>
       </div>
 
-      <div>
+      <div id="value-div">
         <label for="block-value">Requirement Name</label>
         <select id="block-value" name="name">
         <option value="CSCI-BA">ACCT-BA</option>
@@ -1448,7 +1488,7 @@ def requisites(college=None, type=None, name=None, period=None):
         <input type="radio" id="period-current" name="period" value="current" checked/>
         <label for="period-current">Current</label>
         </fieldset>
-      <button type="submit">Go For It</button>
+      <button type="submit" id="goforit">Go For It</button>
        </div>
 
 
