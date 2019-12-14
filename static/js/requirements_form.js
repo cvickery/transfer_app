@@ -37,12 +37,13 @@ const update_values = function()
 {
   const institution = document.getElementById('institution').value;
   const block_type = document.getElementById('block-type').value;
+  const period = document.querySelector('[name=period]:checked').value;
   if (institution !== '' && block_type !== '')
   {
     const request = new XMLHttpRequest();
     request.addEventListener('load', values_listener);
     request.open('GET',
-      `/_requisite_values/?institution=${institution}&block_type=${block_type}`);
+      `/_requirement_values/?institution=${institution}&block_type=${block_type}&period=${period}`);
     request.send();
   }
   // Hide block-value and disable submit button until choices return
@@ -57,6 +58,8 @@ const main = function()
 {
   document.getElementById('institution').addEventListener('change', update_values);
   document.getElementById('block-type').addEventListener('change', update_values);
+  document.querySelectorAll('[name=period]')
+    .forEach((radio) => radio.addEventListener('change', update_values));
   document.getElementById('block-value').addEventListener('change', check_status);
 
   // Initial UI state

@@ -1382,8 +1382,20 @@ def registered_programs(institution, default=None):
 
 @app.route('/_requirement_values/')
 def _requirement_values():
+  """ Return a select element with the options filled in.
+      If the period is 'current' include only values where the period is '999999'.
+      Otherwise, include all values found.
+
+  """
   institution = request.args.get('institution', 0)
   block_type = request.args.get('block_type', 0)
+  period = request.args.get('period', 0)
+  period_clause = ''
+  if period == 'current':
+    period_clause = "and period_stop = '99999999'"
+  # DEVELOPMENT PARAMETER
+  # Durning development, filter out all-numeric values
+  value_clause = r"and block_value !~ '^[\d ]+$'"
   option_type = f'a {block_type.title()}'
   if block_type == 'CONC':
     option_type = 'a Concentration'
@@ -1391,13 +1403,16 @@ def _requirement_values():
     option_type = 'a Requirement'
   conn = psycopg2.connect('dbname=cuny_programs')
   cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-  cursor.execute("""select distinct block_value, title
-                      from requirement_blocks
+  cursor.execute(f"""select distinct block_value, title
+                       from requirement_blocks
                       where institution = %s
                         and block_type = %s
+                       {period_clause}
+                       {value_clause}
                       order by block_value""", (institution, block_type))
-  options = '\n'.join(['<option value="{}">{}</option>\n'.format(x.block_value, x.title)
-                      for x in cursor.fetchall()])
+  print(cursor.query)
+  options = '\n'.join([f'<option value="{r.block_value}">{r.block_value}: {r.title}</option>\n'
+                      for r in cursor.fetchall()])
   conn.close()
   return f"""<option value="" selected="selected">Select {option_type}</option>\n
                  {options}"""
@@ -1429,6 +1444,10 @@ def requirements(college=None, type=None, name=None, period=None):
     for row in cursor.fetchall():
       college_options += f'<option value="{row.code}">{row.name}</option>\n'
     result = f"""
+    {header(title='Requirements Request', nav_items=[{'type': 'link',
+                                              'text': 'Main Menu',
+                                              'href': '/'
+                                              }])}
     <h1 class="error">Proof of Concept</h1>
     <details><summary>More Information</summary>
     <p>
@@ -1444,14 +1463,14 @@ def requirements(college=None, type=None, name=None, period=None):
     <fieldset><legend>Select Requirements</legend>
     <form method="GET" action="/requirements">
       <div>
-        <label for="institution">College</label>
+        <label for="institution">College:</label>
         <select id="institution" name="college" placeholder="Select College">
           {college_options}
         </select>
       </div>
 
       <div>
-        <label for="block-type">Requirement Type</label>
+        <label for="block-type">Requirement Type:</label>
         <select id="block-type" name="type">
         <option value="DEGREE">Degree</option>
         <option value="MAJOR">Major</option>
@@ -1462,7 +1481,7 @@ def requirements(college=None, type=None, name=None, period=None):
       </div>
 
       <div id="value-div">
-        <label for="block-value">Requirement Name</label>
+        <label for="block-value">Requirement Name:</label>
         <select id="block-value" name="name">
         <option value="CSCI-BA">ACCT-BA</option>
         <option value="CSCI-BA">CSCI-BA</option>
@@ -1496,7 +1515,13 @@ def requirements(college=None, type=None, name=None, period=None):
     """
     return render_template('requirements_form.html', result=Markup(result), title='Select A Program')
   else:
-    result = dgw_parser(institution, b_type, b_value)
+    result = f"""
+    {header(title='Requirements Detail', nav_items=[{'type': 'link',
+                                                     'text': 'Main Menu',
+                                                     'href': '/'
+                                                    }])}
+    {dgw_parser(institution, b_type, b_value, period)}
+    """
     return render_template('requirements.html', result=Markup(result))
 
 
