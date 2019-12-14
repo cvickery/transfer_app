@@ -1,0 +1,14 @@
+
+h1+p {
+  margin: -1em 1em 0;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+div.requirements {
+  margin: 1em;
+  padding: 0.5em;
+  background-color: white;
+  border: 1px solid #999;
+  border-radius: 0.25em;
+}
