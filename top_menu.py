@@ -121,6 +121,23 @@ def top_menu(msg=''):
         courses involved in a rule.
       </p>
     </dd>
+    <dt><a href="/requirements">Degree and Program Requirements</a></dt>
+    <dd>
+      This is a proof-of-concept demonstration. Do not use it for meaningful work &hellip; yet!
+      <p>
+        All CUNY colleges use Degreeworks to verify whether students have met their graduation
+        requirements. A Degreeworks “audit” compares a student’s record with the requirements for
+        the degree, major, GenEd, and possibly other graduation requiirements at a college.
+      </p>
+      <p>
+        Here, you can look at the requirements for any degree or program at any CUNY college. When
+        fully implemented, it will show all courses required, with links to the full catalog
+        description for each course. For now, as a proof of concept, you can look up any
+        requirements, and a few pieces of information are extracted from the Degreeworks information
+        for that program: how many credits are required, minimum GPA requirements, and restrictions
+        on what courses cannot be used to satisfy the requirement, for example.
+        </p>
+    </dd>
   </dl>
 </div>
   <h2>Problems?</h2>
