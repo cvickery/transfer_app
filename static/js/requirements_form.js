@@ -1,9 +1,10 @@
 
+let was_selected = ''
 //  check_status()
 //  -----------------------------------------------------------------------------------------------
 /*  Disable the submit button unless all controls have non-empty values.
  */
-const check_status = function()
+const check_status = function ()
 {
   if (document.getElementById('institution').value === '' ||
       document.getElementById('block-type').value === '' ||
@@ -22,9 +23,18 @@ const check_status = function()
 //  -----------------------------------------------------------------------------------------------
 /*  AJAX listener for block_value options.
  */
-const values_listener = function()
+const values_listener = function ()
 {
   document.getElementById('block-value').innerHTML = this.response;
+  const options = document.getElementById('block-value').options;
+  for (let i = 0; i < options.length; i++)
+  {
+    if (options.item(i).value === was_selected)
+    {
+      options.item(i).selected = true;
+      break;
+    }
+  }
   document.getElementById('value-div').style.display = 'block';
   check_status();
 };
@@ -33,11 +43,13 @@ const values_listener = function()
 //  -----------------------------------------------------------------------------------------------
 /*  Initiate AJAX request for block_value options.
  */
-const update_values = function()
+const update_values = function ()
 {
   const institution = document.getElementById('institution').value;
   const block_type = document.getElementById('block-type').value;
   const period = document.querySelector('[name=period]:checked').value;
+  was_selected = document.querySelector('[name=requirement-name]').value;
+
   if (institution !== '' && block_type !== '')
   {
     const request = new XMLHttpRequest();
@@ -54,7 +66,7 @@ const update_values = function()
 //  -----------------------------------------------------------------------------------------------
 /*  Set up listeners
  */
-const main = function()
+const main = function ()
 {
   document.getElementById('institution').addEventListener('change', update_values);
   document.getElementById('block-type').addEventListener('change', update_values);
