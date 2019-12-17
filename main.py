@@ -1322,8 +1322,8 @@ def registered_programs(institution, default=None):
                                 and block_value = %s
                              """, (institution, plan.academic_plan))
           if dgw_cursor.rowcount > 0:
-            cell_content += (f'<br><a href="/requirements/?'
-                             f'college={institution.upper() + "01"}&type=MAJOR&name={program}">'
+            cell_content += (f'<br><a href="/requirements/?college={institution.upper() + "01"}'
+                             f'&requirement-type=MAJOR&requirement-name={program}">'
                              'Requirements</a>')
           if show_institution:
             cell_content += '<br>'
