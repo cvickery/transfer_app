@@ -1117,7 +1117,7 @@ def courses():
                          title="Course Lists")
 
 
-# REGISTERED PROGRAMS PAGE
+# REGISTERED PROGRAMS PAGES
 # =================================================================================================
 #
 @app.route('/download_csv/<filename>')
@@ -1318,11 +1318,12 @@ def registered_programs(institution, default=None):
           dgw_cursor.execute("""
                              select *
                                from requirement_blocks
-                              where institution = %s
+                              where institution ~* %s
                                 and block_value = %s
                              """, (institution, plan.academic_plan))
           if dgw_cursor.rowcount > 0:
-            cell_content += (f'<br><a href="/academic_plan/{institution}/{program}">'
+            cell_content += (f'<br><a href="/requirements/?'
+                             f'college={institution.upper() + "01"}&type=MAJOR&name={program}">'
                              'Requirements</a>')
           if show_institution:
             cell_content += '<br>'
@@ -1513,13 +1514,15 @@ def requirements(college=None, type=None, name=None, period=None):
 
     </form>
     """
-    return render_template('requirements_form.html', result=Markup(result), title='Select A Program')
+    return render_template('requirements_form.html',
+                           result=Markup(result),
+                           title='Select A Program')
   else:
     result = f"""
-    {header(title='Requirements Detail', nav_items=[{'type': 'link',
-                                                     'text': 'Main Menu',
-                                                     'href': '/'
-                                                    }])}
+    {header(title='Requirements Detail',
+            nav_items=[{'type': 'link',
+                        'text': 'Main Menu',
+                        'href': '/'}])}
     {dgw_parser(institution, b_type, b_value, period)}
     """
     return render_template('requirements.html', result=Markup(result))
