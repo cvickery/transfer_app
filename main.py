@@ -1426,8 +1426,8 @@ def requirements(college=None, type=None, name=None, period=None):
       first.
   """
   institution = request.args.get('college')
-  b_type = request.args.get('type')
-  b_value = request.args.get('name')
+  b_type = request.args.get('requirement-type')
+  b_value = request.args.get('requirement-name')
   period = request.args.get('period')
   if period is None:
     period = 'current'
@@ -1472,7 +1472,7 @@ def requirements(college=None, type=None, name=None, period=None):
 
       <div>
         <label for="block-type">Requirement Type:</label>
-        <select id="block-type" name="type">
+        <select id="block-type" name="requirement-type">
         <option value="DEGREE">Degree</option>
         <option value="MAJOR">Major</option>
         <option value="MINOR">Minor</option>
@@ -1483,7 +1483,7 @@ def requirements(college=None, type=None, name=None, period=None):
 
       <div id="value-div">
         <label for="block-value">Requirement Name:</label>
-        <select id="block-value" name="name">
+        <select id="block-value" name="requirement-name">
         <option value="CSCI-BA">ACCT-BA</option>
         <option value="CSCI-BA">CSCI-BA</option>
         <option value="CSCI-BA">CSCI-BS</option>
