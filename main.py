@@ -1536,6 +1536,18 @@ def server_error(e):
     """.format(e), 500
 
 
+@app.errorhandler(404)
+def not_found_error(e):
+    return """
+    <h1 class="error">Page Not Found</h1>
+    <p>If you are looking for academic plans, please refresh your browser cache.</p>
+    <p>
+      See also <a href="https://transfer-app.qc.cuny.edu/requirements/">
+      https://transfer-app.qc.cuny.edu/requirements/</a>
+    </p>
+    """.format(e), 404
+
+
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application as Transfer Explorer.
