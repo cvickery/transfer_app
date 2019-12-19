@@ -1411,7 +1411,6 @@ def _requirement_values():
                        {period_clause}
                        {value_clause}
                       order by block_value""", (institution, block_type))
-  print(cursor.query)
   options = '\n'.join([f'<option value="{r.block_value}">{r.block_value}: {r.title}</option>\n'
                       for r in cursor.fetchall()])
   conn.close()
