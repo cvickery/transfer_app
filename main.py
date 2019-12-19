@@ -1445,19 +1445,37 @@ def requirements(college=None, type=None, name=None, period=None):
     for row in cursor.fetchall():
       college_options += f'<option value="{row.code}">{row.name}</option>\n'
     result = f"""
-    {header(title='Requirements Request', nav_items=[{'type': 'link',
-                                              'text': 'Main Menu',
-                                              'href': '/'
-                                              }])}
+    {header(title='Requirements Search', nav_items=[{'type': 'link',
+                                                      'text': 'Main Menu',
+                                                      'href': '/'
+                                                      },
+                                                      {'type': 'link',
+                                                       'text': 'Programs',
+                                                       'href': '/registered_programs'
+                                                      }])}
     <h1 class="error">Proof of Concept</h1>
-    <details><summary>More Information</summary>
+    <details><summary>More Information</summary><hr>
     <p>
-      This form lets you examine the information from any CUNY  Degreeworks “Scribe Block.”
-      The information returned is incomplete at this time, but what is shown is extracted from
-      the actual Degreewoks information used to determine program and degree requirements for
-      graduation.
+      This page lets you look up the requirements for any degree, major, minor, or concentration at
+      any CUNY college. The information is taken from the Degreeworks “Scribe Blocks” that are
+      designed to provide information based on individual students’ coursework completed and
+      declared or prospective majors, minors, or concentrations.
     </p>
     <p>
+      Here, we extract the program requirements from the scribe blocks in order to develop a
+      database that can be used in various ways: to search and compare programs within and across
+      campuses, to provide degree maps for publication, etc.
+    <p>
+    <p>
+      This is a work in progress. For each program, a complete scribe block is shown in its raw
+      form, followed by information extracted from it as a set of English sentences. Expanding the
+      amount of information extracted is under development.
+    </p>
+    <p>
+      Program requirements change over time. Degreeworks keeps a record of previous program
+      versions, arranged by “catalog year.” By default only the current requirements are shown, but
+      you can choose to look at earlier ones as well.
+    </p>
       Degreeworks information last updated on {dgw_date}.
     </p>
     </details>
@@ -1522,7 +1540,17 @@ def requirements(college=None, type=None, name=None, period=None):
     {header(title='Requirements Detail',
             nav_items=[{'type': 'link',
                         'text': 'Main Menu',
-                        'href': '/'}])}
+                        'href': '/'
+                        },
+                        {'type': 'link',
+                         'text': 'Back',
+                         'href': 'javascript:history.back()'
+                        },
+
+                        {'type': 'link',
+                         'text': 'Search',
+                         'href': '/requirements'
+                        }])}
     {dgw_parser(institution, b_type, b_value, period)}
     """
     return render_template('requirements.html', result=Markup(result))
@@ -1538,14 +1566,29 @@ def server_error(e):
 
 @app.errorhandler(404)
 def not_found_error(e):
-    return """
-    <h1 class="error">Page Not Found</h1>
-    <p>If you are looking for academic plans, please refresh your browser cache.</p>
-    <p>
-      See also <a href="https://transfer-app.qc.cuny.edu/requirements/">
-      https://transfer-app.qc.cuny.edu/requirements/</a>
-    </p>
-    """.format(e), 404
+    result = f"""
+    {header(title='CCCCIV', nav_items=[{'type': 'link',
+                                             'text': 'Main Menu',
+                                              'href': '/'
+                                              }])}
+    <h1 class="error">Not Found!</h1>
+    <ul>
+      <li>
+        The app is being updated often. so you may need to refresh your browser to get the current
+        versions of internal links.
+      </li>
+      <li>
+        If you are coming from a saved URL, you may need to go back to the Main Menu to access
+        current links.
+      </li>
+      <li>
+        If this is a broken link in the app (or any other problem with it), please let me know.<br>
+        <em><a href="mailto:cvickery@qc.cuny.edu?subject='Transfer App issue'">Christopher
+        Vickery</a></em>.
+      </li>
+    </ul>
+    """
+    return render_template('404.html', result=Markup(result), )
 
 
 if __name__ == '__main__':
