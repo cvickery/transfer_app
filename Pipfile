@@ -1,0 +1,19 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+gunicorn = ">=19.9"
+psycopg2 = ">=2.7"
+sendgrid = ">=6.0"
+html2text = ">=2018.1.9"
+redis = ">=3.3"
+Flask = ">=1.0"
+Flask-Session = ">=0.3"
+antlr4-python3-runtime = ">=4.7.2"
+
+[requires]
+python_version = "3.7"
