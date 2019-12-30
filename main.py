@@ -1158,7 +1158,7 @@ def registered_programs(institution, default=None):
   try:
     cursor.execute("select update_date from updates where table_name='requirement_blocks'")
     dgw_update_date = (f'Program requirements from Degreeworks were last updated on  '
-                         f'{date2str(cursor.fetchone().update_date)}.')
+                       f'{date2str(cursor.fetchone().update_date)}.')
   except (KeyError, ValueError):
     dgw_update_date = 'Date of latest Degreeworks access is not available.'
 
