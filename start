@@ -1,12 +1,13 @@
 #! /usr/local/bin/bash
 #
-# Start the transfer-app
+# Start the transfer-app with log file in Logs dir.
+# Must be run from transfer-app dir.
 if [[ -r gunicorn.pid ]]
 then kill `cat gunicorn.pid`
      prefix='re'
 fi
 rm -f gunicorn.pid
 
-/usr/local/bin/gunicorn --config ./gunicorn.conf.py main:app &
+/usr/local/bin/gunicorn --config ./gunicorn.conf.py main:app > ./Logs/transfer-app.log 2>&1 &
 echo $! > gunicorn.pid
 echo gunicorn ${prefix}started with pid $!
