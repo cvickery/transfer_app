@@ -2,25 +2,29 @@
 #   APP_AVAILABLE: True with system is not available. Normally, just means db is being updated, but
 #   could be something more drastic.
 
+import os
 from datetime import datetime, timedelta
+from time import time
+import redis
 
-import psycopg2
-from psycopg2.extras import NamedTupleCursor
+redis_url = os.environ.get("REDIS_URL")
+if redis_url is None:
+  redis_url = 'redis://localhost'
+r = redis.from_url(redis_url)
 
-from time import perf_counter
-
+if r.get('update_db_started') is None:
+  r.set('update_db_started', 0)
+if r.get('maintenance_started') is None:
+  r.set('maintenance_started', 0)
 APP_AVAILABLE = True
 
 
 # get_status()
 # -------------------------------------------------------------------------------------------------
 def get_status():
-  db = psycopg2.connect('dbname=access_control')
-  cursor = db.cursor(cursor_factory=NamedTupleCursor)
-  cursor.execute('select * from access_control')
-  available = not any([x.start_time for x in cursor.fetchall()])
-  cursor.close()
-  db.commit()
+  maintenance_started = int(r.get('maintenance_started'))
+  update_db_started = int(r.get('update_db_started'))
+  available = maintenance_started == 0 and update_db_started == 0
   return available
 
 
@@ -46,16 +50,11 @@ def get_reason():
   """ Explain app availability.
   """
   return_val = ''
-
-  db = psycopg2.connect('dbname=access_control')
-  cursor = db.cursor(cursor_factory=NamedTupleCursor)
-  cursor.execute('select * from access_control')
-  events = dict([(e.event_type, e.start_time) for e in cursor.fetchall()])
-  cursor.close()
-
   time_now = datetime.now()
-  if events['update_db']:
-    end_update = events['update_db'] + timedelta(seconds=1800)
+
+  update_db_started = int(r.get('update_db_started'))
+  if update_db_started > 0:
+    end_update = datetime.fromtimestamp(update_db_started) + timedelta(seconds=1800)
     if time_now < end_update:
       time_remaining = end_update - time_now
       copula = 'is'
@@ -75,14 +74,15 @@ def get_reason():
       when = when.format(minutes)
     return_val = f'<h2>Database update {copula} expected to complete {when}</h2>'
 
-  if events['maintenance']:
-    time_elapsed = time_now - events['maintenance']
+  maintenance_started = int(r.get('maintenance_started'))
+  if maintenance_started > 0:
+    time_elapsed = time_now - datetime.fromtimestamp(maintenance_started)
     days = time_elapsed.days
     hours, remainder = divmod(time_elapsed.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     seconds = min(50, round(seconds, -1))
-    return_val += f"""<h2>Maintenance began
-        {days} days, {hours}:{minutes:02}:{seconds:02} (hr:min:sec) ago.</h2>"""
+    return_val += (f'<h2>Maintenance began {days} days, '
+                   f'{hours}:{minutes:02}:{seconds:02} (hr:min:sec) ago.</h2>')
 
   if return_val == '':
     return_val = 'Application is available.'
@@ -94,11 +94,7 @@ def get_reason():
 def start_update_db():
   """ Make app unavailable: db update in progress.
   """
-  db = psycopg2.connect('dbname=access_control')
-  cursor = db.cursor(cursor_factory=NamedTupleCursor)
-  cursor.execute("update access_control set start_time = now() where event_type='update_db'")
-  cursor.close()
-  db.commit()
+  r.set('update_db_started', int(time()))
   return get_status()
 
 
@@ -107,11 +103,7 @@ def start_update_db():
 def end_update_db():
   """ Make app available when db update ends, unless maintenance in progress.
   """
-  db = psycopg2.connect('dbname=access_control')
-  cursor = db.cursor(cursor_factory=NamedTupleCursor)
-  cursor.execute("update access_control set start_time = NULL where event_type = 'update_db'")
-  cursor.close()
-  db.commit()
+  r.set('update_db_started', 0)
   return get_status()
 
 
@@ -120,13 +112,7 @@ def end_update_db():
 def start_maintenance():
   """ Make app unavailable: unspecified maintenance in progress.
   """
-  db = psycopg2.connect('dbname=access_control')
-  cursor = db.cursor(cursor_factory=NamedTupleCursor)
-  cursor.execute("""
-                 update access_control set start_time = now() where event_type = 'maintenance'
-                 """)
-  cursor.close()
-  db.commit()
+  r.set('maintenance_started', int(time()))
   return get_status()
 
 
@@ -135,11 +121,5 @@ def start_maintenance():
 def end_maintenance():
   """ End maintenance mode: app is available unless db update in progress
   """
-  db = psycopg2.connect('dbname=access_control')
-  cursor = db.cursor(cursor_factory=NamedTupleCursor)
-  cursor.execute("""
-                 update access_control set start_time = NULL where event_type = 'maintenance'
-                 """)
-  cursor.close()
-  db.commit()
+  r.set('maintenance_started', 0)
   return get_status()
