@@ -2,20 +2,12 @@
 
 __pycache__/
 
-client ID and secret.txt
-
 Logs/
-
-/debugging.log
-
-
-/app.yaml
 
 /gunicorn.pid
 
 /static/css/.csslintrc
 
-/env/
-
 /dgw_processor/
+
 /tests/test_data/

@@ -2,8 +2,13 @@ import psycopg2
 from psycopg2.extras import NamedTupleCursor
 
 import os
-import re
-import socket
+# import re
+# import socket
+
+# December 2019
+# Move to environment variable DATABASE_URL for the connection string. This makes the app deployable
+# to heroku, and is best practice anyway.
+
 
 # This module was needed when the app was deployed to the Google Application Environment.
 # I've left that functionality, but commented it out, for historical reference.
@@ -21,6 +26,11 @@ class pgconnection:
       for operational connection functions (commit() and close()).
   """
   def __init__(self, conn_string='dbname=cuny_courses'):
+    """ Get the connection string from the environment and connect to the db.
+    """
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if DATABASE_URL is not None:
+      conn_string = DATABASE_URL
     """ Connect to the database. Handles three cases:
         1. Development on local machine (local host, local user, standard port)
         2. Development using GAE database (local host, user postgres, proxy port)
@@ -62,6 +72,7 @@ class pgconnection:
 
   # Cursor shim
   # By returning the psycopg2 cursor, there is no need to shim other cursor-based functions.
+  # I don't think this is needed.
   def cursor(self, cursor_factory=NamedTupleCursor):
     self._cursor = self._connection.cursor(cursor_factory=cursor_factory)
     return self._cursor

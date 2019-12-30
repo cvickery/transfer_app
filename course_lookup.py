@@ -1,16 +1,16 @@
-import psycopg2
-from psycopg2.extras import NamedTupleCursor
 
 import math
 import re
 import json
 from time import time
 
+from pgconnection import pgconnection
+
 """ Globals
     ----------------------------------------------------------------
 """
-conn = psycopg2.connect('dbname=cuny_courses')
-cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+conn = pgconnection()
+cursor = conn.cursor()
 
 # Public list of all cross-listed courses’s course_ids CUNY-wide
 query = """
@@ -81,8 +81,8 @@ def lookup_course(course_id, active_only=False, offer_nbr=1):
   """ Get HTML for one course_id. In the case of cross-listed courses, give the one with offer_nbr
       equal to 1 unless overridden.
   """
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
 
   # Active courses require both the course and the discipline to be active
   if active_only:
@@ -112,8 +112,8 @@ def lookup_courses(institution, active_only=True, department=None, discipline=No
   """ Lookup all the active courses for an institution. Return giant html string.
       Can restrict to courses offered by a particular department and/or in a particular discipline.
   """
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
 
   # Active courses require both the course and the discipline to be active
   if active_only:
@@ -222,8 +222,8 @@ def format_course(course, active_only=False):
     # as we speak. There are no observed  errors of the other types.)
     # There is no way to get a different attributes list, because those depend only on course_id.
     title_str += '<br/>Cross-listed with:'
-    conn = psycopg2.connect('dbname=cuny_courses')
-    cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+    conn = pgconnection()
+    cursor = conn.cursor()
     cursor.execute("""
         select c.discipline, c.catalog_number, c.title,
           cc. description as career, s.subject_name as cuny_subject,
@@ -314,8 +314,8 @@ def course_search(search_str, include_inactive=False, debug=False):
     and discipline ~* %s
     {cat_num_str}
     """
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   cursor.execute(query, (discipline, ))
   return_list = []
   for row in cursor.fetchall():

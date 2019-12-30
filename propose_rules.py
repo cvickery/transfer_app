@@ -1,11 +1,11 @@
 #! /usr/local/bin/python3
 
-import psycopg2.extras
-from psycopg2.extras import NamedTupleCursor
+from pgconnection import pgconnection
+
 from format_rules import institution_names
 
-db = psycopg2.connect('dbname=cuny_courses')
-cursor = db.cursor(cursor_factory=NamedTupleCursor)
+db = pgconnection()
+cursor = db.cursor()
 cursor.execute('select * from institutions')
 
 

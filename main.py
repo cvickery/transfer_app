@@ -14,8 +14,7 @@ from collections import namedtuple
 from collections import defaultdict
 from collections import Counter
 
-import psycopg2
-from psycopg2.extras import NamedTupleCursor
+from pgconnection import pgconnection
 
 from course_lookup import lookup_courses, lookup_course
 from sendemail import send_token, send_message
@@ -135,8 +134,8 @@ def index_page():
 
   """ Display menu of available features.
   """
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   cursor.execute("select count(*) from transfer_rules")
   num_rules = cursor.fetchone()[0]
   cursor.execute("select * from updates")
@@ -229,8 +228,8 @@ def pending():
                                                        {'type': 'link',
                                                         'href': '/review_rules',
                                                         'text': 'Review Rules'}])
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   cursor.execute("""
     select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
       from pending_reviews""")
@@ -283,8 +282,8 @@ def confirmation(token):
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
 
   # Make sure the token is received and is in the pending table.
   heading = header(title='Review Confirmation', nav_items=[{'type': 'link',
@@ -388,8 +387,8 @@ def map_courses():
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   cursor.execute('select code, prompt from institutions order by prompt')
   options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
   conn.close()
@@ -570,8 +569,8 @@ def map_courses():
 @app.route('/_institutions')
 def _institutions():
   Institution = namedtuple('Institution', 'code, prompt, name, associates, bachelors')
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   cursor.execute("""select code, prompt, name, associates, bachelors
                       from institutions order by code
                  """)
@@ -589,8 +588,8 @@ def _institutions():
 @app.route('/_disciplines')
 def _disciplines():
   institution = request.args.get('institution', 0)
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   cursor.execute("""select discipline
                       from cuny_disciplines
                       where cuny_subject != 'MESG'
@@ -617,8 +616,8 @@ def _find_course_ids():
   institution = request.args.get('institution')
   discipline = request.args.get('discipline')
   ranges_str = request.args.get('ranges_str')
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   cursor.execute("""select course_id, numeric_part(catalog_number) as cat_num
                     from courses
                     where institution = %s and discipline = %s
@@ -667,8 +666,8 @@ def _map_course():
   request_type = request.args.get('request_type', default='show-sending')
 
   table_rows = []
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   for course_id in course_ids:
     cursor.execute("""select  course_id,
                               institution,
@@ -792,8 +791,8 @@ def lookup_rules():
                    Unable to use "{}" as a catalog number.</p>""".format(original_catalog_number))
   type = request.args.get('type')
   # Get the course_ids
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   query = """
   select distinct course_id
     from courses
@@ -898,8 +897,8 @@ def _course_search():
 # then, it's just here in case it's needed.
 @app.route('/_sessions')
 def _sessions():
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   q = 'select session_key, expiration_time from sessions order by expiration_time'
   cursor.execute(q)
   result = '<table>'
@@ -938,8 +937,8 @@ def courses():
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
   institution_code = None
   discipline_code = None
   department_code = None
@@ -1143,29 +1142,25 @@ def registered_programs(institution, default=None):
   else:
     institution = 'none'
 
-  # See when the db was last updated
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-  plan_cursor = conn.cursor(cursor_factory=NamedTupleCursor)
-  dgw_conn = psycopg2.connect('dbname=cuny_programs')
-  dgw_cursor = dgw_conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
+  plan_cursor = conn.cursor()  # For looking up individual plans in CUNYfirst
+
+  # See when NYSED was last accessed
   try:
     cursor.execute("select update_date from updates where table_name='registered_programs'")
-    update_date = date2str(cursor.fetchone().update_date)
+    nysed_update_date = (f'Latest NYSED website acess was on '
+                         f'{date2str(cursor.fetchone().update_date)}.')
   except (KeyError, ValueError):
-    update_date = '(<em>None or in progress</em>)'
+    nysed_update_date = 'Date of latest NYSED website access is not available.'
+
+  # See when Degreeworks requirement_blocks were last updated.
   try:
-    dgw_cursor.execute("select last_update from updates where institution = %s",
-                       (institution.upper() + '01', ))
-    dgw_update_date = (f'for this college was last updated on ' +
-                       date2str(str(dgw_cursor.fetchone().last_update)) + '.')
-  except (KeyError, ValueError, AttributeError) as e:
-    if institution == 'none':
-      dgw_update_date = 'is not available until you select a college.'
-    elif institution == 'all':
-      dgw_update_date = 'is not available when “All CUNY Colleges” is selected.'
-    else:
-      dgw_update_date = 'is not available.'
+    cursor.execute("select update_date from updates where table_name='requirement_blocks'")
+    dgw_update_date = (f'Program requirements from Degreeworks were last updated on  '
+                         f'{date2str(cursor.fetchone().update_date)}.')
+  except (KeyError, ValueError):
+    dgw_update_date = 'Date of latest Degreeworks access is not available.'
 
   # Find out what CUNY colleges are in the db
   cursor.execute("""
@@ -1315,13 +1310,13 @@ def registered_programs(institution, default=None):
           departments_str = andor_list(program_info[inst].departments)
           cell_content += f" {inst_str}{program} ({departments_str})<br>{program_title}"
           # If there is a dgw requirement block for the plan, use link to it
-          dgw_cursor.execute("""
+          plan_cursor.execute("""
                              select *
                                from requirement_blocks
                               where institution ~* %s
                                 and block_value = %s
                              """, (institution, plan.academic_plan))
-          if dgw_cursor.rowcount > 0:
+          if plan_cursor.rowcount > 0:
             cell_content += (f'<br><a href="/requirements/?college={institution.upper() + "01"}'
                              f'&requirement-type=MAJOR&requirement-name={program}">'
                              'Requirements</a>')
@@ -1360,14 +1355,14 @@ def registered_programs(institution, default=None):
           The CUNY Programs column shows matching programs from CUNYfirst with the department that
           offers the program in parentheses. (Some programs are shared by multiple departments.)
           “Requirements” links in that column show the program’s requirements as given in
-          Degreeworks. Degreeworks information {dgw_update_date}
+          Degreeworks. {dgw_update_date}
         </p>
         <p>
-          The last three columns show financial aid eligibility. Hover over the headings for
+          The rightmost three columns show financial aid eligibility. Hover over the headings for
           full names.
         </p>
         <p>
-          Latest NYS Department of Education access was on {update_date}.
+          {nysed_update_date}
         </p>
         <p>
           {csv_link}
@@ -1402,8 +1397,8 @@ def _requirement_values():
     option_type = 'a Concentration'
   if block_type == 'OTHER':
     option_type = 'a Requirement'
-  conn = psycopg2.connect('dbname=cuny_programs')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection('dbname=cuny_programs')
+  cursor = conn.cursor()
   cursor.execute(f"""select distinct block_value, title
                        from requirement_blocks
                       where institution = %s
@@ -1431,14 +1426,14 @@ def requirements(college=None, type=None, name=None, period=None):
   if period is None:
     period = 'current'
   if institution is None or b_type is None or b_value is None:
-    conn = psycopg2.connect('dbname=cuny_programs')
-    cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+    conn = pgconnection('dbname=cuny_programs')
+    cursor = conn.cursor()
     cursor.execute("select distinct last_update from updates where institution != 'HEGIS'")
     dgw_date = cursor.fetchone().last_update
     dgw_date = dgw_date.strftime('%B %d, %Y')
     conn.close()
-    conn = psycopg2.connect('dbname=cuny_courses')
-    cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+    conn = pgconnection()
+    cursor = conn.cursor()
     cursor.execute('select code, name from institutions')
     college_options = '<option value="">Select College</option>\n'
     for row in cursor.fetchall():

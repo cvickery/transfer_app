@@ -10,8 +10,7 @@ from datetime import datetime
 
 from flask import render_template, Markup
 
-import psycopg2
-from psycopg2.extras import NamedTupleCursor
+from pgconnection import pgconnection
 
 from app_header import header
 from sendemail import send_token, send_message
@@ -32,8 +31,8 @@ def do_form_0(request, session):
   """
   if DEBUG:
     print(f'*** do_form_0({session})')
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
 
   cursor.execute("select count(*) from transfer_rules")
   num_rules = cursor.fetchone()[0]
@@ -191,8 +190,8 @@ def do_form_1(request, session):
 
   # Database lookups
   # ----------------
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
 
   # The CUNY Subjects table, for getting subject descriptions from their abbreviations
   cursor.execute("select * from cuny_subjects order by subject")
@@ -473,8 +472,8 @@ def do_form_2(request, session):
   """
   if DEBUG:
     print(f'*** do_form_2({session})')
-  conn = psycopg2.connect('dbname=cuny_courses')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = pgconnection()
+  cursor = conn.cursor()
 
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
   # the source disciplines and the receiving course belongs to a receiving institution and is one of
@@ -684,8 +683,8 @@ def do_form_3(request, session):
       message_tail = '{} reviews'.format(num_reviews)
 
     # Insert these reviews into the pending_reviews table of the db.
-    conn = psycopg2.connect('dbname=cuny_courses')
-    cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+    conn = pgconnection()
+    cursor = conn.cursor()
     token = str(uuid.uuid4())
     reviews = json.dumps(kept_reviews)
     q = "insert into pending_reviews (token, email, reviews) values(%s, %s, %s)"
