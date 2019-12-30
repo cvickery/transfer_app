@@ -3,14 +3,16 @@ import multiprocessing
 
 workers = multiprocessing.cpu_count() * 2 + 1
 bind = '0.0.0.0:5000'
-accesslog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
-errorlog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
 access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s'
 
 if os.getenv('DEVELOPMENT') is not None:
+  accesslog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
+  errorlog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
   loglevel = 'DEBUG'
   reload = True
 else:
+  accesslog = '-'
+  errorlog = '-'
   loglevel = 'INFO'
   reload = False
 
@@ -29,15 +31,8 @@ else:
   time. By default, gunicorn only uses one of these workers. This can often cause your instances to
   be underutilized and increase latency in applications under high load.
 
-  We recommend setting the number of workers to 2-4 times the number of cpu_countU cores for your
+  We recommend setting the number of workers to 2-4 times the number of cpu_count cores for your
   instance plus one. You can specify this in gunicorn.conf.py as:
 
 """
 # workers = multiprocessing.cpu_count() * 2 + 1
-
-"""
-  Trying an async model to deal with 502 errors.
-  502 Errors were (probably) due to use of sqlite and should disappear with the adoption of
-  postgres for the database. However, the async model should do no harm and is retained.
-"""
-# worker_class = 'gevent'
