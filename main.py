@@ -1426,18 +1426,16 @@ def requirements(college=None, type=None, name=None, period=None):
   if period is None:
     period = 'current'
   if institution is None or b_type is None or b_value is None:
-    conn = pgconnection('dbname=cuny_programs')
-    cursor = conn.cursor()
-    cursor.execute("select distinct last_update from updates where institution != 'HEGIS'")
-    dgw_date = cursor.fetchone().last_update
-    dgw_date = dgw_date.strftime('%B %d, %Y')
-    conn.close()
     conn = pgconnection()
     cursor = conn.cursor()
+    cursor.execute("select update_date from updates where table_name = 'requirement_blocks'")
+    dgw_date = datetime.strptime(cursor.fetchone().update_date, '%Y-%m-%d')
+    dgw_date = dgw_date.strftime('%B %d, %Y')
     cursor.execute('select code, name from institutions')
     college_options = '<option value="">Select College</option>\n'
     for row in cursor.fetchall():
       college_options += f'<option value="{row.code}">{row.name}</option>\n'
+    conn.close()
     result = f"""
     {header(title='Requirements Search', nav_items=[{'type': 'link',
                                                       'text': 'Main Menu',
