@@ -11,3 +11,8 @@ Logs/
 /dgw_processor/
 
 /tests/test_data/
+
+/.eslintrc.js
+
+/.node_modules/
+
