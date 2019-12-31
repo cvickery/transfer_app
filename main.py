@@ -36,7 +36,7 @@ from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from propose_rules import _propose_rules
 
 from dgw_requirements import get_requirements_text
-from dgw_parser import dgw_parser
+from dgw_processor.dgw_parser import dgw_parser
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify, session

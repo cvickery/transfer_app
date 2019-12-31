@@ -5,7 +5,7 @@ from collections import namedtuple
 
 from pgconnection import pgconnection
 
-from dgw_parser import dgw_parser
+from dgw_processor.dgw_parser import dgw_parser
 
 RequirementInfo = namedtuple('RequirementInfo',
                              'requirement_id block type block_value title '
