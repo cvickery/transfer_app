@@ -8,8 +8,6 @@ Logs/
 
 /static/css/.csslintrc
 
-/dgw_processor/
-
 /tests/test_data/
 
 /.eslintrc.js
