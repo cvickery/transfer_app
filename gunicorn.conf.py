@@ -2,10 +2,14 @@ import os
 import multiprocessing
 
 workers = multiprocessing.cpu_count() * 2 + 1
+bind = '0.0.0.0:5000'
 # On Heroku, there were 8 cpus, each of which was trying to create a PgConnection pool.
 # But hobby-basic only allows 20 connections total.
-workers = 2
-bind = '0.0.0.0:5000'
+# And the port number is an environment variable
+if os.getenv('HEROKU') is not None:
+  workers = 2
+  bind = f'0.0.0.0:{os.getenv("PORT")}'
+
 access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s'
 
 if os.getenv('DEVELOPMENT') is not None:
