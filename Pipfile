@@ -14,7 +14,7 @@ redis = ">=3.3"
 Flask = ">=1.0"
 Flask-Session = ">=0.3"
 antlr4-python3-runtime = ">=4.7.2"
-dgw_processor = ">=0.0.10"
+dgw_processor = ">=0.0.12"
 
 [requires]
 python_version = "3.7"
