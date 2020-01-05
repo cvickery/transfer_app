@@ -40,7 +40,9 @@ class PgConnection():
     if PgConnection._pool is None:
       pool_max = os.environ.get('DB_POOL_MAX')
       if pool_max is None:
-        pool_max = 10
+        pool_max = 5
+      else:
+        pool_max = int(pool_max)
       conn_string = os.environ.get('DATABASE_URL')
       if conn_string is None:
         conn_string = conn_string
