@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 """ Manage the sequence of forms used for reviewing transfer rules.
 """
 import os
@@ -10,7 +10,7 @@ from datetime import datetime
 
 from flask import render_template, Markup
 
-from pgconnection import pgconnection
+from pgconnection import PgConnection
 
 from app_header import header
 from sendemail import send_token, send_message
@@ -31,7 +31,7 @@ def do_form_0(request, session):
   """
   if DEBUG:
     print(f'*** do_form_0({session})')
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
 
   cursor.execute("select count(*) from transfer_rules")
@@ -190,7 +190,7 @@ def do_form_1(request, session):
 
   # Database lookups
   # ----------------
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
 
   # The CUNY Subjects table, for getting subject descriptions from their abbreviations
@@ -472,7 +472,7 @@ def do_form_2(request, session):
   """
   if DEBUG:
     print(f'*** do_form_2({session})')
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
 
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
@@ -683,7 +683,7 @@ def do_form_3(request, session):
       message_tail = '{} reviews'.format(num_reviews)
 
     # Insert these reviews into the pending_reviews table of the db.
-    conn = pgconnection()
+    conn = PgConnection()
     cursor = conn.cursor()
     token = str(uuid.uuid4())
     reviews = json.dumps(kept_reviews)

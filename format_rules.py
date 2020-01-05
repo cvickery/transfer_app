@@ -1,11 +1,11 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 from collections import namedtuple
 import json
 import re
 import argparse
 
 from flask import session
-from pgconnection import pgconnection
+from pgconnection import PgConnection
 from reviews_status_utils import status_string
 from copy import copy
 
@@ -55,7 +55,7 @@ Destination_Course = namedtuple('Destination_Course', """
                                 discipline_name
                                 """)
 
-conn = pgconnection('dbname=cuny_courses')
+conn = PgConnection('dbname=cuny_courses')
 cursor = conn.cursor()
 cursor.execute("select code, prompt from institutions order by lower(name)")
 institution_names = {row.code: row.prompt for row in cursor}
@@ -177,7 +177,7 @@ def format_rules(rules, scrollable=False):
 def format_rule_by_key(rule_key):
   """ Generate a Transfer_Rule tuple given the key.
   """
-  conn = pgconnection('dbname=cuny_courses')
+  conn = PgConnection('dbname=cuny_courses')
   cursor = conn.cursor()
   cursor.execute("""
   select * from transfer_rules
@@ -254,7 +254,7 @@ def format_rule(rule, rule_key=None):
                                     rule.group_number)
 
   # In case there are cross-listed courses to look up
-  conn = pgconnection('dbname=cuny_courses')
+  conn = PgConnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
   # Extract disciplines and courses from the rule

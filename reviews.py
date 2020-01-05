@@ -5,7 +5,7 @@
 import json
 from datetime import datetime
 
-from pgconnection import pgconnection
+from pgconnection import PgConnection
 from format_rules import format_rule
 from reviews_status_utils import abbr_to_bitmask, status_string
 from collections import namedtuple
@@ -26,7 +26,7 @@ def process_pending(row):
   when_entered = row.when_entered
   summaries = ''
 
-  conn = pgconnection('dbname=cuny_courses')
+  conn = PgConnection('dbname=cuny_courses')
   cursor = conn.cursor()
 
   institutions = set()

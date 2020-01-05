@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 
 import logging
 from datetime import datetime
@@ -18,7 +18,8 @@ from antlr4.error.ErrorListener import ErrorListener
 from .ReqBlockLexer import ReqBlockLexer
 from .ReqBlockParser import ReqBlockParser
 from .ReqBlockListener import ReqBlockListener
-from .pgconnection import pgconnection
+sys.path.insert(0, '..')
+from pgconnection import PgConnection
 
 if not os.getenv('HEROKU'):
   logging.basicConfig(filename='Logs/antlr.log',
@@ -33,7 +34,7 @@ trans_table = str.maketrans(trans_dict)
 
 # Create dict of known colleges
 colleges = dict()
-course_conn = pgconnection()
+course_conn = PgConnection()
 course_cursor = course_conn.cursor()
 course_cursor.execute('select code, name from institutions')
 for row in course_cursor.fetchall():
@@ -269,7 +270,7 @@ def dgw_parser(institution, block_type, block_value, period='current'):
        The period argument can be 'current', 'latest', or 'all', which will be picked out of the
        result set for 'all'
   """
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   query = """
     select requirement_id, title, period_start, period_stop, requirement_text
@@ -341,7 +342,7 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   # Get the top-level requirements to examine: college, block-type, and/or block value
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
 
   query = """

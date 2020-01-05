@@ -1,11 +1,11 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 import os
 from pprint import pprint
 from sendgrid import SendGridAPIClient
 
-from pgconnection import pgconnection
+from pgconnection import PgConnection
 
-conn = pgconnection()
+conn = PgConnection()
 cursor = conn.cursor()
 cursor.execute('select * from person_roles')
 people = dict()

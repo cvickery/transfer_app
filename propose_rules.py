@@ -1,10 +1,12 @@
-#! /usr/local/bin/python3
-
-from pgconnection import pgconnection
+#! /usr/bin/env python3
+""" Form for proposing new transfer rules.
+    Not sure whether this would actually be used if implemented.
+"""
+from pgconnection import PgConnection
 
 from format_rules import institution_names
 
-db = pgconnection()
+db = PgConnection()
 cursor = db.cursor()
 cursor.execute('select * from institutions')
 

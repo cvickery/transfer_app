@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 # CUNY Transfer Explorer
 # C. Vickery
 
@@ -14,7 +14,7 @@ from collections import namedtuple
 from collections import defaultdict
 from collections import Counter
 
-from pgconnection import pgconnection
+from pgconnection import PgConnection
 
 from course_lookup import lookup_courses, lookup_course
 from sendemail import send_token, send_message
@@ -133,7 +133,7 @@ def index_page():
 
   """ Display menu of available features.
   """
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute("select count(*) from transfer_rules")
   num_rules = cursor.fetchone()[0]
@@ -227,7 +227,7 @@ def pending():
                                                        {'type': 'link',
                                                         'href': '/review_rules',
                                                         'text': 'Review Rules'}])
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute("""
     select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
@@ -281,7 +281,7 @@ def confirmation(token):
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
 
   # Make sure the token is received and is in the pending table.
@@ -386,7 +386,7 @@ def map_courses():
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute('select code, prompt from institutions order by prompt')
   options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
@@ -568,7 +568,7 @@ def map_courses():
 @app.route('/_institutions')
 def _institutions():
   Institution = namedtuple('Institution', 'code, prompt, name, associates, bachelors')
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute("""select code, prompt, name, associates, bachelors
                       from institutions order by code
@@ -587,7 +587,7 @@ def _institutions():
 @app.route('/_disciplines')
 def _disciplines():
   institution = request.args.get('institution', 0)
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute("""select discipline
                       from cuny_disciplines
@@ -615,7 +615,7 @@ def _find_course_ids():
   institution = request.args.get('institution')
   discipline = request.args.get('discipline')
   ranges_str = request.args.get('ranges_str')
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute("""select course_id, numeric_part(catalog_number) as cat_num
                     from courses
@@ -665,7 +665,7 @@ def _map_course():
   request_type = request.args.get('request_type', default='show-sending')
 
   table_rows = []
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   for course_id in course_ids:
     cursor.execute("""select  course_id,
@@ -790,7 +790,7 @@ def lookup_rules():
                    Unable to use "{}" as a catalog number.</p>""".format(original_catalog_number))
   type = request.args.get('type')
   # Get the course_ids
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   query = """
   select distinct course_id
@@ -896,7 +896,7 @@ def _course_search():
 # then, it's just here in case it's needed.
 @app.route('/_sessions')
 def _sessions():
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   q = 'select session_key, expiration_time from sessions order by expiration_time'
   cursor.execute(q)
@@ -936,7 +936,7 @@ def courses():
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   institution_code = None
   discipline_code = None
@@ -1141,7 +1141,7 @@ def registered_programs(institution, default=None):
   else:
     institution = 'none'
 
-  conn = pgconnection()
+  conn = PgConnection()
   cursor = conn.cursor()
   plan_cursor = conn.cursor()  # For looking up individual plans in CUNYfirst
 
@@ -1396,7 +1396,7 @@ def _requirement_values():
     option_type = 'a Concentration'
   if block_type == 'OTHER':
     option_type = 'a Requirement'
-  conn = pgconnection('dbname=cuny_programs')
+  conn = PgConnection('dbname=cuny_programs')
   cursor = conn.cursor()
   cursor.execute(f"""select distinct block_value, title
                        from requirement_blocks
@@ -1425,7 +1425,7 @@ def requirements(college=None, type=None, name=None, period=None):
   if period is None:
     period = 'current'
   if institution is None or b_type is None or b_value is None:
-    conn = pgconnection()
+    conn = PgConnection()
     cursor = conn.cursor()
     cursor.execute("select update_date from updates where table_name = 'requirement_blocks'")
     dgw_date = datetime.strptime(cursor.fetchone().update_date, '%Y-%m-%d')

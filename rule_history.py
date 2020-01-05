@@ -1,5 +1,5 @@
 from collections import namedtuple
-from pgconnection import pgconnection
+from pgconnection import PgConnection
 from format_rules import format_rule_by_key
 
 
@@ -8,7 +8,7 @@ from format_rules import format_rule_by_key
 def rule_history(rule_key):
   """ Generate HTML for the review-history of a transfer rule.
   """
-  conn = pgconnection('dbname=cuny_courses')
+  conn = PgConnection('dbname=cuny_courses')
   cursor = conn.cursor()
   cursor.execute("""
       select  s.description,
