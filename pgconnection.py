@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.pool import ThreadedConnectionPool, PoolError
 from psycopg2.extras import NamedTupleCursor
 
 import os
@@ -6,69 +7,53 @@ import os
 # import socket
 
 # December 2019
-# Move to environment variable DATABASE_URL for the connection string. This makes the app deployable
+# Use the environment variable DATABASE_URL for the connection string. This makes the app deployable
 # to heroku, and is best practice anyway.
 
+# January 2020
+# Use a connection pool instead of separate connections for each instance. prompted by trying to
+# deploy to an affordable Heroku app.
+# Also removed commented-out legacy code used during the good old long-gone Google Application
+# Environment days.
 
-# This module was needed when the app was deployed to the Google Application Environment.
-# I've left that functionality, but commented it out, for historical reference.
+# This module was first introduced when the app was deployed to the Google Application Environment.
+# I've left that functionality, but commented it out, for historical reference. (See January 2020
+# note above.)
 
 
-class pgconnection:
-  """ Wrappers for psycopg2 connect() and cursor().
-      The connection will be to:
-        * the local db named cuny_courses if running on GAE
-        * the GAE db named cuny_courses if running on a development machine with pgproxy running
-        * the local testing db named cuny_courses if running on a development machine with pgproxy
-          not running.
-
+class PgConnection():
+  """ Return a connection from the pool.
       The cursor will use the NamedTupleCursor cursor_factory unless overridden. It includes shims
       for operational connection functions (commit() and close()).
   """
+
+  _pool = None
+
   def __init__(self, conn_string='dbname=cuny_courses'):
     """ Get the connection string from the environment and connect to the db.
+        Raises PoolError, disguised as a RuntimeError, if connection pool is exhausted.
     """
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    if DATABASE_URL is not None:
-      conn_string = DATABASE_URL
-    """ Connect to the database. Handles three cases:
-        1. Development on local machine (local host, local user, standard port)
-        2. Development using GAE database (local host, user postgres, proxy port)
-        3. Deployed on GAE (cloud host, user postgres, standard port)
-    """
-    # Development on local machine using local db?
-    # dbname = os.environ.get('USE_LOCAL_DB')
-    # if dbname is not None:
-    #   self._connection = psycopg2.connect('dbname={}'.format(dbname))
-    #   return
-
-    # Connect to the Cloud db from either a development machine or from GAE.
-    # Is proxy server running?
-    # s = socket.socket()
-    # try:
-    #   s.bind(('localhost', 5431))
-    #   # Port 5431 is available, so the proxy server is not running, which means we
-    #   # are running the app on GAE, and need to augment the connection string.
-    #   conn_str += """
-    #               host=/cloudsql/provost-access-148820:us-east1:cuny-courses
-    #               user=postgres
-    #               password=cuny-postgres
-    #               """
-    # except OSError as e:
-    #   # Port 5431 is not available, so the proxy server must be running, which means
-    #   # we running the app locally, but using the Cloud db.
-    #   pass
-    # s.close()
-
-    self._connection = psycopg2.connect(conn_string)
+    # Initialize the pool if not done already
+    if PgConnection._pool is None:
+      pool_max = os.environ.get('DB_POOL_MAX')
+      if pool_max is None:
+        pool_max = 10
+      self.conn_string = os.environ.get('DATABASE_URL')
+      if conn_string is None:
+        conn_string = conn_string
+      PgConnection._pool = ThreadedConnectionPool(5, pool_max, conn_string)
+    try:
+      self._connection = PgConnection._pool.getconn()
+    except PoolError as pe:
+      raise RuntimeError(pe)
     return
 
   # Connection shims
   def commit(self):
-    self._connection.commit()
+    self._connection.commit(self)
 
   def close(self):
-    self._connection.close()
+    PgConnection._pool.putconn(self._connection)
 
   # Cursor shim
   # By returning the psycopg2 cursor, there is no need to shim other cursor-based functions.
