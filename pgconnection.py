@@ -45,7 +45,7 @@ class PgConnection():
       if conn_string is None:
         conn_string = conn_string
       print(f'PgConnection using up to {pool_max} connections on {conn_string}')
-      PgConnection._pool = ThreadedConnectionPool(5, pool_max, conn_string)
+      PgConnection._pool = ThreadedConnectionPool(2, pool_max, conn_string)
     try:
       self._connection = PgConnection._pool.getconn()
     except PoolError as pe:
