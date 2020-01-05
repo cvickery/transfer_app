@@ -41,7 +41,7 @@ class PgConnection():
       pool_max = os.environ.get('DB_POOL_MAX')
       if pool_max is None:
         pool_max = 10
-      self.conn_string = os.environ.get('DATABASE_URL')
+      conn_string = os.environ.get('DATABASE_URL')
       if conn_string is None:
         conn_string = conn_string
       print(f'PgConnection using up to {pool_max} connections on {conn_string}')
