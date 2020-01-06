@@ -1377,6 +1377,8 @@ def registered_programs(institution, default=None):
       </details>
       {table}
 """
+  cursor.close()
+  plan_cursor.close()
   conn.close()
   return render_template('registered_programs.html',
                          result=Markup(result),
