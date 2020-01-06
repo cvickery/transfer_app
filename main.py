@@ -40,14 +40,16 @@ from dgw_processor.dgw_parser import dgw_parser
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify, session
 from flask_session import Session
-from redis import Redis
+import redis
 
-SESSION_TYPE = 'redis'
 if os.getenv('HEROKU'):
   redis_url = os.getenv('REDIS_URL')
 else:
   redis_url = 'localhost'
-SESSION_REDIS = Redis(redis_url)
+print(f'main.py: redis_url is {redis_url}')
+# Uppercase variables in this module are treated as configuration keys by config.from_object()
+SESSION_TYPE = 'redis'
+SESSION_REDIS = redis.from_url(redis_url)
 PERMANENT_SESSION_LIFETIME = timedelta(days=90)
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
