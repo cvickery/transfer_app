@@ -55,7 +55,7 @@ class PgConnection():
 
   # Connection shims
   def commit(self):
-    self._connection.commit(self)
+    self._connection.commit()
 
   def close(self):
     PgConnection._pool.putconn(self._connection)
