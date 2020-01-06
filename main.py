@@ -43,10 +43,10 @@ from flask_session import Session
 import redis
 
 if os.getenv('HEROKU'):
-  redis_url = os.environ.get('REDIS_URL')
+  redis_url = os.getenv('REDIS_URL')
 else:
-  redis_url = 'localhost'
-print(f'main.py: redis_url is {redis_url}')
+  redis_url = 'redis://localhost'
+
 # Uppercase variables in this module are treated as configuration keys by config.from_object()
 SESSION_TYPE = 'redis'
 SESSION_REDIS = redis.from_url(redis_url)
