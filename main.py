@@ -40,8 +40,14 @@ from dgw_processor.dgw_parser import dgw_parser
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify, session
 from flask_session import Session
+from redis import Redis
 
 SESSION_TYPE = 'redis'
+if os.getenv('HEROKU'):
+  redis_url = os.getenv('REDIS_URL')
+else:
+  redis_url = 'localhost'
+SESSION_REDIS = Redis(redis_url)
 PERMANENT_SESSION_LIFETIME = timedelta(days=90)
 app = Flask(__name__)
 app.secret_key = os.urandom(24)

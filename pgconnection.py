@@ -43,11 +43,12 @@ class PgConnection():
         pool_max = 5
       else:
         pool_max = int(pool_max)
-      conn_string = os.environ.get('DATABASE_URL')
-      if conn_string is None:
-        conn_string = conn_string
-      print(f'PgConnection using up to {pool_max} connections on {conn_string}')
-      PgConnection._pool = ThreadedConnectionPool(2, pool_max, conn_string)
+      dsn = os.getenv('DATABASE_URL')
+      print(dsn)
+      if dsn is None:
+        dsn = conn_string
+      print(f'PgConnection using up to {pool_max} connections on {dsn}')
+      PgConnection._pool = ThreadedConnectionPool(2, pool_max, dsn)
     try:
       self._connection = PgConnection._pool.getconn()
     except PoolError as pe:
