@@ -1187,7 +1187,7 @@ def registered_programs(institution, default=None):
   cuny_institutions['all'] = 'All CUNY Colleges'
   options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]}</option>'
                       for inst in cuny_institutions])
-  # csv_link = ''
+  csv_link = ''
   if institution is None or institution not in cuny_institutions.keys():
     h1 = '<h1>Select a CUNY College</h1>'
     table = ''
@@ -1371,9 +1371,9 @@ def registered_programs(institution, default=None):
         <p>
           {nysed_update_date}
         </p>
-        # <p>
-        #   {csv_link}
-        # </p>
+        <p>
+          {csv_link}
+        </p>
       </details>
       {table}
 """
