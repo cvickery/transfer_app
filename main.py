@@ -1187,7 +1187,7 @@ def registered_programs(institution, default=None):
   cuny_institutions['all'] = 'All CUNY Colleges'
   options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]}</option>'
                       for inst in cuny_institutions])
-  csv_link = ''
+  # csv_link = ''
   if institution is None or institution not in cuny_institutions.keys():
     h1 = '<h1>Select a CUNY College</h1>'
     table = ''
@@ -1207,15 +1207,15 @@ def registered_programs(institution, default=None):
     for row in cursor.fetchall():
       short_names[row.code.lower()[0:3]] = row.prompt
     # Link to the current csv file, if there is one.
-    csv_dir = '../registered_programs/csv_files'
-    all_clause = ' (<em>Does not include the “CUNY Program(s)” column.</em>)'
-    for filename in os.listdir(csv_dir):
-      if filename.startswith(institution.upper()):
-        if institution == 'all':
-          all_clause = ''
-        csv_link = f"""<a download class="button" href="/download_csv/{filename}">
-                       Download {filename}</a>{all_clause}<br/>"""
-        break
+    # csv_dir = '../registered_programs/csv_files'
+    # all_clause = ' (<em>Does not include the “CUNY Program(s)” column.</em>)'
+    # for filename in os.listdir(csv_dir):
+    #   if filename.startswith(institution.upper()):
+    #     if institution == 'all':
+    #       all_clause = ''
+    #     csv_link = f"""<a download class="button" href="/download_csv/{filename}">
+    #                    Download {filename}</a>{all_clause}<br/>"""
+    #     break
     h1 = f'<h1>{institution_name}</h1>'
 
     # Generate the HTML table: headings
@@ -1371,9 +1371,9 @@ def registered_programs(institution, default=None):
         <p>
           {nysed_update_date}
         </p>
-        <p>
-          {csv_link}
-        </p>
+        # <p>
+        #   {csv_link}
+        # </p>
       </details>
       {table}
 """
