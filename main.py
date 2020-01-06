@@ -43,7 +43,7 @@ from flask_session import Session
 import redis
 
 if os.getenv('HEROKU'):
-  redis_url = os.getenv('REDIS_URL')
+  redis_url = os.environ.get('REDIS_URL')
 else:
   redis_url = 'localhost'
 print(f'main.py: redis_url is {redis_url}')
