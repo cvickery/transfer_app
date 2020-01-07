@@ -630,6 +630,7 @@ def _find_course_ids():
                     where institution = %s and discipline = %s
                  """, (institution, discipline))
   courses = [[c.course_id, c.cat_num] for c in cursor.fetchall()]
+  conn.close()
 
   # Filter out the deplorables
   # Range string syntax: all | min:max [;...]
@@ -847,6 +848,7 @@ def lookup_rules():
     else:
       rules = '<p>No receiving rules</p>'
 
+  conn.close()
   return jsonify(rules)
 
 
@@ -1406,7 +1408,7 @@ def _requirement_values():
     option_type = 'a Concentration'
   if block_type == 'OTHER':
     option_type = 'a Requirement'
-  conn = PgConnection('dbname=cuny_programs')
+  conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute(f"""select distinct block_value, title
                        from requirement_blocks

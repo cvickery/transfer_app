@@ -12,12 +12,13 @@ bitmask_to_description: Dict[int, str] = dict()
 abbr_to_bitmask: Dict[str, int] = dict()
 event_type_bits: Dict[int, str] = dict()
 
-conn = PgConnection('dbname=cuny_courses')
+conn = PgConnection()
 with conn.cursor() as cursor:
   cursor.execute('select * from review_status_bits')
   for row in cursor.fetchall():
     abbr_to_bitmask[row.abbr] = row.bitmask
     bitmask_to_description[row.bitmask] = row.description
+conn.close()
 
 
 def get_abbr_to_bitmask():

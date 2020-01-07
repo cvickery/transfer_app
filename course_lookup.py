@@ -102,6 +102,8 @@ def lookup_course(course_id, active_only=False, offer_nbr=1):
     raise Exception(f'lookup_course() found {cursor.rowcount} courses for {course_id}:{offer_nbr}')
 
   course = cursor.fetchone()
+  conn.close()
+
   html = format_course(course)
   return [course, html]
 
@@ -320,6 +322,7 @@ def course_search(search_str, include_inactive=False, debug=False):
   return_list = []
   for row in cursor.fetchall():
     return_list.append(lookup_course(row.course_id, offer_nbr=row.offer_nbr)[1])
+  conn.close()
   return json.dumps(return_list)
 
 

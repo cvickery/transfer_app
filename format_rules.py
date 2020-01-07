@@ -285,6 +285,7 @@ def format_rule(rule, rule_key=None):
       assert cursor.rowcount == course.offer_count, \
           f'cross-listed source course counts do not match'
       cross_listed_with[course.course_id] = cursor.fetchall()
+  conn.close()
 
   source_class = ''  # for the HTML credit-mismatch indicator
 
