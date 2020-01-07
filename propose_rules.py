@@ -6,10 +6,6 @@ from pgconnection import PgConnection
 
 from format_rules import institution_names
 
-db = PgConnection()
-cursor = db.cursor()
-cursor.execute('select * from institutions')
-
 
 def _propose_rules():
   """ Return a form for proposing a new transfer rule. With the aid of JavaScript, multiple rules
