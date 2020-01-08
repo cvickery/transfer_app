@@ -4,24 +4,19 @@ import multiprocessing
 workers = multiprocessing.cpu_count() * 2 + 1
 bind = '0.0.0.0:5000'
 # On Heroku, there were 8 cpus, each of which was trying to create a PgConnection pool.
+access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s'
+accesslog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
+errorlog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
+loglevel = 'DEBUG'
+reload = True
+
 # But hobby-basic only allows 20 connections total.
 # And the port number is an environment variable
 if os.getenv('HEROKU') is not None:
   workers = 2
   bind = f'0.0.0.0:{os.getenv("PORT")}'
-
-access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s'
-
-if os.getenv('DEVELOPMENT') is not None:
-  accesslog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
-  errorlog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
-  loglevel = 'DEBUG'
-  reload = True
-else:
   accesslog = '-'
   errorlog = '-'
-  loglevel = 'INFO'
-  reload = False
 
 """
   App Engine terminates the HTTPS connection at the load balancer and forwards the request to your
