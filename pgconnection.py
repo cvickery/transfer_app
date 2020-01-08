@@ -48,8 +48,8 @@ class PgConnection():
         dsn = conn_string
       PgConnection._pool = ThreadedConnectionPool(2, pool_max, dsn)
     try:
+      print('connect:', self)
       self._connection = PgConnection._pool.getconn()
-      print(self)
     except PoolError as pe:
       raise RuntimeError(pe)
     return
@@ -65,7 +65,7 @@ class PgConnection():
 
   def close(self):
     PgConnection._pool.putconn(self._connection)
-    print(self)
+    print('close:', self)
 
   # Cursor shim
   # By returning the psycopg2 cursor, there is no need to shim other cursor-based functions.
