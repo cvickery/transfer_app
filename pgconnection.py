@@ -49,9 +49,15 @@ class PgConnection():
       PgConnection._pool = ThreadedConnectionPool(2, pool_max, dsn)
     try:
       self._connection = PgConnection._pool.getconn()
+      print(self)
     except PoolError as pe:
       raise RuntimeError(pe)
     return
+
+  def __repr__(self):
+    return (f'{PgConnection._pool} =>'
+            f' min: {PgConnection._pool.minconn}; max: {PgConnection._pool.maxconn}'
+            f' num: {len(PgConnection._pool._pool)}; used: {len(PgConnection._pool._used)}')
 
   # Connection shims
   def commit(self):
@@ -59,6 +65,7 @@ class PgConnection():
 
   def close(self):
     PgConnection._pool.putconn(self._connection)
+    print(self)
 
   # Cursor shim
   # By returning the psycopg2 cursor, there is no need to shim other cursor-based functions.
