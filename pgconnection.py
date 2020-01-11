@@ -38,9 +38,9 @@ class PgConnection():
     """
     # Initialize the pool if not done already
     if PgConnection._pool is None:
-      pool_max = os.environ.get('DB_POOL_MAX')
+      pool_max = os.environ.get('DB_POOL_MAX')  # Try to stay in Heroku hobby-basic tier limit
       if pool_max is None:
-        pool_max = 5
+        pool_max = 95  # Default max_connections in postgresql.conf is 100
       else:
         pool_max = int(pool_max)
       dsn = os.getenv('DATABASE_URL')
