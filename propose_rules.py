@@ -2,8 +2,6 @@
 """ Form for proposing new transfer rules.
     Not sure whether this would actually be used if implemented.
 """
-from pgconnection import PgConnection
-
 from format_rules import institution_names
 
 
