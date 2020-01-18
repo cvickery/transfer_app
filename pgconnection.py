@@ -6,8 +6,8 @@ from psycopg2.pool import ThreadedConnectionPool, PoolError
 from psycopg2.extras import NamedTupleCursor
 
 import os
-# import re
-# import socket
+
+DEBUG = os.getenv('DEBUG')
 
 # December 2019
 # Use the environment variable DATABASE_URL for the connection string. This makes the app deployable
@@ -16,7 +16,7 @@ import os
 # January 2020
 # Use a connection pool instead of separate connections for each instance. prompted by trying to
 # deploy to an affordable Heroku app.
-# Also removed commented-out legacy code used during the good old long-gone Google Application
+# Also removed commented-out legacy code used during the good-old long-gone Google Application
 # Environment days.
 
 # This module was first introduced when the app was deployed to the Google Application Environment.
@@ -40,7 +40,7 @@ class PgConnection():
     if PgConnection._pool is None:
       pool_max = os.environ.get('DB_POOL_MAX')  # Try to stay in Heroku hobby-basic tier limit
       if pool_max is None:
-        pool_max = 95  # Default max_connections in postgresql.conf is 100
+        pool_max = 95  # Value of max_connections in default postgresql.conf is 100
       else:
         pool_max = int(pool_max)
       dsn = os.getenv('DATABASE_URL')
@@ -48,7 +48,8 @@ class PgConnection():
         dsn = conn_string
       PgConnection._pool = ThreadedConnectionPool(2, pool_max, dsn)
     try:
-      print('connect:', self)
+      if DEBUG:
+        print('connect:', self)
       self._connection = PgConnection._pool.getconn()
     except PoolError as pe:
       raise RuntimeError(pe)
@@ -65,7 +66,8 @@ class PgConnection():
 
   def close(self):
     PgConnection._pool.putconn(self._connection)
-    print('close:', self)
+    if DEBUG:
+      print('close:', self)
 
   # Cursor shim
   # By returning the psycopg2 cursor, there is no need to shim other cursor-based functions.
