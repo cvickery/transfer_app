@@ -1128,16 +1128,17 @@ def courses():
 # REGISTERED PROGRAMS PAGES
 # =================================================================================================
 #
-@app.route('/download_csv/<filename>')
-def download_csv(filename):
-  """ Download csv file with the registered programs information for a college.
-      THIS IS FRAGILE: The project directory for scraping the NYS DOE website must be located in
-      the same folder as this app’s project directory, and it must be named registered_programs.
-  """
-  return send_file(os.path.join(app.root_path,
-                                f'../registered_programs/csv_files/{filename}'))
-
-
+# @app.route('/download_csv/<filename>')
+# def download_csv(filename):
+#   """ Download csv file with the registered programs information for a college.
+#
+#           THIS IS FRAGILE: The project directory for scraping the NYS DOE website must be located in
+#       the same folder as this app’s project directory, and it must be named registered_programs.
+#
+#           THIS IS BROKEN: Need to generate the CSV files from the db.
+#   """
+#   return send_file(os.path.join(app.root_path,
+#                                 f'../registered_programs/csv_files/{filename}'))
 @app.route('/registered_programs/', methods=['GET'], defaults=({'institution': None}))
 def registered_programs(institution, default=None):
   """ Show the academic programs registered with NYS Department of Education for any CUNY college.
@@ -1183,12 +1184,15 @@ def registered_programs(institution, default=None):
     result = """
     <h1>There is no registered-program information for CUNY colleges available at this time.</h1>
     """
+    conn.close()
     return render_template('registered_programs.html', result=Markup(result))
 
   cuny_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
   cuny_institutions['all'] = 'All CUNY Colleges'
   options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]}</option>'
                       for inst in cuny_institutions])
+  cursor.execute('select hegis_code, description from hegis_codes')
+  hegis_codes = {row.hegis_code: row.description for row in cursor.fetchall()}
   csv_link = ''
   if institution is None or institution not in cuny_institutions.keys():
     h1 = '<h1>Select a CUNY College</h1>'
@@ -1275,6 +1279,15 @@ def registered_programs(institution, default=None):
       # name is available in the known_institutions dict.
       if values[2].isdecimal():
         values[2] = fix_title(known_institutions[values[2]][1])
+
+      # Add title with hegis code description to hegis_code column
+      try:
+        description = hegis_codes[values[5]]
+        element_class = ''
+      except KeyError as ke:
+        description = 'Unknown HEGIS Code'
+        element_class = ' class="error"'
+      values[5] = f'<span title="{description}"{element_class}>{values[5]}</span>'
 
       # Insert list of all CUNY programs (plans) for this program code
       plan_cursor.execute("""
