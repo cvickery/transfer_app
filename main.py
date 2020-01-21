@@ -1228,7 +1228,7 @@ def registered_programs(institution, default=None):
     headings = ['Program Code',
                 'Registration Office',
                 'Institution',
-                'Title',
+                'Program Title',
                 """<a href="http://www.nysed.gov/college-university-evaluation/format-definitions">
                    Formats</a>""",
                 'HEGIS',
@@ -1367,11 +1367,16 @@ def registered_programs(institution, default=None):
         <hr>
         <p>
           <span class="variant">Highlighted rows</span> are for programs with more than one variant,
-          such as multiple institutions and/or multiple awards.
+          such as multiple institutions and/or multiple awards. For multiple institutions, the
+          rows with matching Program Code numbers may not be next to each other because the table
+          is ordered by Program Title, and the titles typically differ across institutions.
         </p>
         <p>
           The Registration Office is either the Department of Education’s Office of the Professions
           (OP) or its Office of College and University Evaluation (OCUE).
+        </p>
+        <p>
+          Hover over HEGIS codes to see what they mean.
         </p>
         <p>
           The CUNY Programs column shows matching programs from CUNYfirst with the department that
