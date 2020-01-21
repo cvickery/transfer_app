@@ -37,8 +37,7 @@ grammar ReqBlock;
  * Parser Rules
  */
 
-req_text    : .*? req_block .*? EOF ;
-req_block   : BEGIN headers ';' rules ENDDOT ;
+req_block   : BEGIN headers ';' rules ENDDOT <EOF>;
 headers     :
             ( mingpa
             | minres
@@ -78,8 +77,8 @@ label       : LABEL ALPHANUM? STRING ';'? label* ;
  * Lexer Rules
  */
 
-BEGIN       : [Bb][Ee][Gg][Ii][Nn] ;
-ENDDOT      : [Ee][Nn][Dd]DOT ;
+BEGIN       : .*? [Bb][Ee][Gg][Ii][Nn] ;
+ENDDOT      : [Ee][Nn][Dd]DOT .* ;
 STRING      : '"' .*? '"' ;
 
 
@@ -128,7 +127,7 @@ WILDSYMBOL  : ((LETTER | DIGIT)*  WILDCARD (LETTER | DIGIT)*)+ ;
 
 RANGE       : NUMBER ':' NUMBER ;
 NUMBER      : DIGIT+ DOT? DIGIT* ;
-SYMBOL      : LETTER (LETTER | DIGIT | '_')* ;
+SYMBOL      : LETTER (LETTER | DIGIT | '_' | '-' | '&')* ;
 ALPHANUM    : (LETTER | DIGIT | DOT | '_')+ ;
 WILDCARD    : '@' ;
 

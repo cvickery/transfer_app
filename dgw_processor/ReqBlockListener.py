@@ -8,15 +8,6 @@ else:
 # This class defines a complete listener for a parse tree produced by ReqBlockParser.
 class ReqBlockListener(ParseTreeListener):
 
-    # Enter a parse tree produced by ReqBlockParser#req_text.
-    def enterReq_text(self, ctx:ReqBlockParser.Req_textContext):
-        pass
-
-    # Exit a parse tree produced by ReqBlockParser#req_text.
-    def exitReq_text(self, ctx:ReqBlockParser.Req_textContext):
-        pass
-
-
     # Enter a parse tree produced by ReqBlockParser#req_block.
     def enterReq_block(self, ctx:ReqBlockParser.Req_blockContext):
         pass
