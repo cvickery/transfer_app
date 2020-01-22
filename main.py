@@ -35,6 +35,8 @@ from top_menu import top_menu
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from propose_rules import _propose_rules
 
+from cipcodes import cip_codes
+
 from dgw_processor.dgw_parser import dgw_parser
 
 from flask import Flask, url_for, render_template, make_response,\
@@ -1233,6 +1235,7 @@ def registered_programs(institution, default=None):
                    Formats</a>""",
                 'HEGIS',
                 'Award',
+                'CIP Code',
                 'CUNY Program(s)',
                 'Certificate or License',
                 'Accreditation',
@@ -1294,17 +1297,18 @@ def registered_programs(institution, default=None):
                             select * from cuny_programs
                              where nys_program_code = %s
                              and program_status = 'A'""", (values[0],))
-      cell_content = ''
+      cuny_cell_content = ''
+      cip_set = set()
       if plan_cursor.rowcount > 0:
         plans = plan_cursor.fetchall()
         # There is just one program and description per college, but the program may be shared
         # among multiple departments at a college.
         Program_Info = namedtuple('Program_Info', 'program program_title departments')
         program_info = dict()
-        program_departments = []
         program = None
         program_title = None
         for plan in plans:
+          cip_set.add(plan.cip_code)
           institution_key = plan.institution.lower()[0:3]
           if institution_key not in program_info.keys():
             program_info[institution_key] = Program_Info._make([plan.academic_plan,
@@ -1315,7 +1319,7 @@ def registered_programs(institution, default=None):
 
         # Add information for this institution to the table cell
         if len(program_info.keys()) > 1:
-          cell_content += '— <em>Multiple Institutions</em> —<br>'
+          cuny_cell_content += '— <em>Multiple Institutions</em> —<br>'
           show_institution = True
         else:
           show_institution = False
@@ -1330,7 +1334,7 @@ def registered_programs(institution, default=None):
           else:
             inst_str = ''
           departments_str = andor_list(program_info[inst].departments)
-          cell_content += f" {inst_str}{program} ({departments_str})<br>{program_title}"
+          cuny_cell_content += f" {inst_str}{program} ({departments_str})<br>{program_title}"
           # If there is a dgw requirement block for the plan, use link to it
           plan_cursor.execute("""
                              select *
@@ -1339,13 +1343,15 @@ def registered_programs(institution, default=None):
                                 and block_value = %s
                              """, (institution, plan.academic_plan))
           if plan_cursor.rowcount > 0:
-            cell_content += (f'<br><a href="/requirements/?college={institution.upper() + "01"}'
-                             f'&requirement-type=MAJOR&requirement-name={program}">'
-                             'Requirements</a>')
+            cuny_cell_content += (f'<br><a href="/requirements/?college='
+                                  f'{institution.upper() + "01"}'
+                                  f'&requirement-type=MAJOR&requirement-name={program}">'
+                                  f'Requirements</a>')
           if show_institution:
-            cell_content += '<br>'
-
-      values.insert(7, cell_content)
+            cuny_cell_content += '<br>'
+      cip_cell = [f'<span title="{cip_codes(cip)}">{cip}</span>' for cip in sorted(cip_set)]
+      values.insert(7, '<br>'.join(cip_cell))
+      values.insert(8, cuny_cell_content)
       cells = ''.join([f'<td>{value}</td>' for value in values])
       data_rows.append(f'<tr{class_str}>{cells}</tr>')
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
@@ -1376,7 +1382,9 @@ def registered_programs(institution, default=None):
           (OP) or its Office of College and University Evaluation (OCUE).
         </p>
         <p>
-          Hover over HEGIS codes to see what they mean.
+          Hover over HEGIS and CIP codes to see what they mean.<br>HEGIS is a NYS taxonomy of
+          program areas. The values shown here come from the NYSED website. CIP is a Federal
+          taxonomy, with the values shown here coming from CUNYfirst.
         </p>
         <p>
           The CUNY Programs column shows matching programs from CUNYfirst with the department that
