@@ -1193,8 +1193,9 @@ def registered_programs(institution, default=None):
   cuny_institutions['all'] = 'All CUNY Colleges'
   options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]}</option>'
                       for inst in cuny_institutions])
-  cursor.execute('select hegis_code, description from hegis_codes')
-  hegis_codes = {row.hegis_code: row.description for row in cursor.fetchall()}
+
+  # cursor.execute('select hegis_code, description from hegis_codes')
+  # hegis_codes = {row.hegis_code: row.description for row in cursor.fetchall()}
   csv_link = ''
   if institution is None or institution not in cuny_institutions.keys():
     h1 = '<h1>Select a CUNY College</h1>'
@@ -1247,113 +1248,122 @@ def registered_programs(institution, default=None):
     heading_row = '<thead><tr>' + ''.join([f'<th>{head}</th>' for head in headings])
     heading_row += '</tr></thead>\n'
 
-    # Generate the HTML table: data rows
+    # # Generate the HTML table: data rows
+    # if institution == 'all':
+    #   institution = ''  # regex will match all values
+    # cursor.execute("""
+    #                select program_code,
+    #                       unit_code,
+    #                       institution,
+    #                       title,
+    #                       formats,
+    #                       hegis,
+    #                       award,
+    #                       certificate_license,
+    #                       accreditation,
+    #                       first_registration_date,
+    #                       last_registration_action,
+    #                       tap, apts, vvta,
+    #                       is_variant
+    #                from registered_programs
+    #                where target_institution ~ %s
+    #                order by title, program_code
+    #                """, (institution,))
+    # data_rows = []
+    # for row in cursor.fetchall():
+    #   if row.is_variant:
+    #     class_str = ' class="variant"'
+    #   else:
+    #     class_str = ''
+
+    #   values = list(row)
+    #   values.pop()  # Don’t display is_variant value: it is indicated by the row’s class.
+
+    #   # If the institution column is a numeric string, it’s a non-CUNY partner school, but the
+    #   # name is available in the known_institutions dict.
+    #   if values[2].isdecimal():
+    #     values[2] = fix_title(known_institutions[values[2]][1])
+
+    #   # Add title with hegis code description to hegis_code column
+    #   try:
+    #     description = hegis_codes[values[5]]
+    #     element_class = ''
+    #   except KeyError as ke:
+    #     description = 'Unknown HEGIS Code'
+    #     element_class = ' class="error"'
+    #   values[5] = f'<span title="{description}"{element_class}>{values[5]}</span>'
+
+    #   # Insert list of all CUNY programs (plans) for this program code
+    #   plan_cursor.execute("""
+    #                         select * from cuny_programs
+    #                          where nys_program_code = %s
+    #                          and program_status = 'A'""", (values[0],))
+    #   cuny_cell_content = ''
+    #   cip_set = set()
+    #   if plan_cursor.rowcount > 0:
+    #     plans = plan_cursor.fetchall()
+    #     # There is just one program and description per college, but the program may be shared
+    #     # among multiple departments at a college.
+    #     Program_Info = namedtuple('Program_Info', 'program program_title departments')
+    #     program_info = dict()
+    #     program = None
+    #     program_title = None
+    #     for plan in plans:
+    #       cip_set.add(plan.cip_code)
+    #       institution_key = plan.institution.lower()[0:3]
+    #       if institution_key not in program_info.keys():
+    #         program_info[institution_key] = Program_Info._make([plan.academic_plan,
+    #                                                            plan.description,
+    #                                                            []
+    #                                                             ])
+    #       program_info[institution_key].departments.append(plan.department)
+
+    #     # Add information for this institution to the table cell
+    #     if len(program_info.keys()) > 1:
+    #       cuny_cell_content += '— <em>Multiple Institutions</em> —<br>'
+    #       show_institution = True
+    #     else:
+    #       show_institution = False
+    #     for inst in program_info.keys():
+    #       program = program_info[inst].program
+    #       program_title = program_info[inst].program_title
+    #       if show_institution:
+    #         if inst in short_names.keys():
+    #           inst_str = f'{short_names[inst]}: '
+    #         else:
+    #           inst_str = f'{inst}: '
+    #       else:
+    #         inst_str = ''
+    #       departments_str = andor_list(program_info[inst].departments)
+    #       cuny_cell_content += f" {inst_str}{program} ({departments_str})<br>{program_title}"
+    #       # If there is a dgw requirement block for the plan, use link to it
+    #       plan_cursor.execute("""
+    #                          select *
+    #                            from requirement_blocks
+    #                           where institution ~* %s
+    #                             and block_value = %s
+    #                          """, (institution, plan.academic_plan))
+    #       if plan_cursor.rowcount > 0:
+    #         cuny_cell_content += (f'<br><a href="/requirements/?college='
+    #                               f'{institution.upper() + "01"}'
+    #                               f'&requirement-type=MAJOR&requirement-name={program}">'
+    #                               f'Requirements</a>')
+    #       if show_institution:
+    #         cuny_cell_content += '<br>'
+    #   cip_cell = [f'<span title="{cip_codes(cip)}">{cip}</span>' for cip in sorted(cip_set)]
+    #   values.insert(7, '<br>'.join(cip_cell))
+    #   values.insert(8, cuny_cell_content)
+    #   cells = ''.join([f'<td>{value}</td>' for value in values])
+    #   data_rows.append(f'<tr{class_str}>{cells}</tr>')
     if institution == 'all':
-      institution = ''  # regex will match all values
-    cursor.execute("""
-                   select program_code,
-                          unit_code,
-                          institution,
-                          title,
-                          formats,
-                          hegis,
-                          award,
-                          certificate_license,
-                          accreditation,
-                          first_registration_date,
-                          last_registration_action,
-                          tap, apts, vvta,
-                          is_variant
-                   from registered_programs
-                   where target_institution ~ %s
-                   order by title, program_code
-                   """, (institution,))
-    data_rows = []
-    for row in cursor.fetchall():
-      if row.is_variant:
-        class_str = ' class="variant"'
-      else:
-        class_str = ''
-
-      values = list(row)
-      values.pop()  # Don’t display is_variant value: it is indicated by the row’s class.
-
-      # If the institution column is a numeric string, it’s a non-CUNY partner school, but the
-      # name is available in the known_institutions dict.
-      if values[2].isdecimal():
-        values[2] = fix_title(known_institutions[values[2]][1])
-
-      # Add title with hegis code description to hegis_code column
-      try:
-        description = hegis_codes[values[5]]
-        element_class = ''
-      except KeyError as ke:
-        description = 'Unknown HEGIS Code'
-        element_class = ' class="error"'
-      values[5] = f'<span title="{description}"{element_class}>{values[5]}</span>'
-
-      # Insert list of all CUNY programs (plans) for this program code
-      plan_cursor.execute("""
-                            select * from cuny_programs
-                             where nys_program_code = %s
-                             and program_status = 'A'""", (values[0],))
-      cuny_cell_content = ''
-      cip_set = set()
-      if plan_cursor.rowcount > 0:
-        plans = plan_cursor.fetchall()
-        # There is just one program and description per college, but the program may be shared
-        # among multiple departments at a college.
-        Program_Info = namedtuple('Program_Info', 'program program_title departments')
-        program_info = dict()
-        program = None
-        program_title = None
-        for plan in plans:
-          cip_set.add(plan.cip_code)
-          institution_key = plan.institution.lower()[0:3]
-          if institution_key not in program_info.keys():
-            program_info[institution_key] = Program_Info._make([plan.academic_plan,
-                                                               plan.description,
-                                                               []
-                                                                ])
-          program_info[institution_key].departments.append(plan.department)
-
-        # Add information for this institution to the table cell
-        if len(program_info.keys()) > 1:
-          cuny_cell_content += '— <em>Multiple Institutions</em> —<br>'
-          show_institution = True
-        else:
-          show_institution = False
-        for inst in program_info.keys():
-          program = program_info[inst].program
-          program_title = program_info[inst].program_title
-          if show_institution:
-            if inst in short_names.keys():
-              inst_str = f'{short_names[inst]}: '
-            else:
-              inst_str = f'{inst}: '
-          else:
-            inst_str = ''
-          departments_str = andor_list(program_info[inst].departments)
-          cuny_cell_content += f" {inst_str}{program} ({departments_str})<br>{program_title}"
-          # If there is a dgw requirement block for the plan, use link to it
-          plan_cursor.execute("""
-                             select *
-                               from requirement_blocks
-                              where institution ~* %s
-                                and block_value = %s
-                             """, (institution, plan.academic_plan))
-          if plan_cursor.rowcount > 0:
-            cuny_cell_content += (f'<br><a href="/requirements/?college='
-                                  f'{institution.upper() + "01"}'
-                                  f'&requirement-type=MAJOR&requirement-name={program}">'
-                                  f'Requirements</a>')
-          if show_institution:
-            cuny_cell_content += '<br>'
-      cip_cell = [f'<span title="{cip_codes(cip)}">{cip}</span>' for cip in sorted(cip_set)]
-      values.insert(7, '<br>'.join(cip_cell))
-      values.insert(8, cuny_cell_content)
-      cells = ''.join([f'<td>{value}</td>' for value in values])
-      data_rows.append(f'<tr{class_str}>{cells}</tr>')
+      cursor.execute('select html from registered_programs order by target_institution, title')
+    else:
+      cursor.execute("""select html
+                          from registered_programs
+                          where target_institution = %s
+                          order by title
+                     """, (institution, ))
+    data_rows = [f'{row.html}' for row in cursor.fetchall()]
     table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
     table = f'<div class="table-height"><table class="scrollable">{table_rows}</table></div>'
   result = f"""
