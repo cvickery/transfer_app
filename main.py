@@ -24,8 +24,6 @@ from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
 from course_lookup import course_attribute_rows, course_search
 
-from known_institutions import known_institutions
-
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
 
@@ -34,8 +32,6 @@ from top_menu import top_menu
 
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from propose_rules import _propose_rules
-
-from cipcodes import cip_codes
 
 from dgw_processor.dgw_parser import dgw_parser
 
@@ -170,22 +166,12 @@ def index_page():
                          omitjs=True)
 
 
-# REVIEW RULES PAGES
-# -------------------------------------------------------------------------------------------------
-#   Not posted: display form_1, which displays email prompt, source, and destination lists. User
-#   must provide email and select exactly one institution from one of the lists and 1+ institutions
-#   from the other list.
-#   Posted form_1: display form_2, which provides list of disciplines for the single institution.
-#   The user may select 1+ of them.
-#   Posted form_2: display form_3, which provides matching transfer rules for all discipline pairs
-#   selected. For each one, display a "verified" checkbox and a "notation" text box.
-#   Posted form_3: enter all verified/notation data, along with person's email into db; send email
-#   for confirmation. When user replies to the email, mark all matching items as confirmed and
-#   notify the proper authorities. If confirmation email says no, notify OUR, who can delete them.
-#   (This allows people to accidentally deny their work without losing it.)
-
+# PROPOSE RULES PAGE
+# =================================================================================================
 @app.route('/propose_rules', methods=['POST', 'GET'])
 def propose_rules():
+  """ This feature not implemented yet.
+  """
   return render_template('propose_rules.html', result=Markup(_propose_rules()))
 
 
@@ -1127,20 +1113,8 @@ def courses():
                          title="Course Lists")
 
 
-# REGISTERED PROGRAMS PAGES
-# =================================================================================================
-#
-# @app.route('/download_csv/<filename>')
-# def download_csv(filename):
-#   """ Download csv file with the registered programs information for a college.
-#
-#           THIS IS FRAGILE: The project directory for scraping the NYS DOE website must be located in
-#       the same folder as this app’s project directory, and it must be named registered_programs.
-#
-#           THIS IS BROKEN: Need to generate the CSV files from the db.
-#   """
-#   return send_file(os.path.join(app.root_path,
-#                                 f'../registered_programs/csv_files/{filename}'))
+# REGISTERED PROGRAMS PAGE
+# -------------------------------------------------------------------------------------------------
 @app.route('/registered_programs/', methods=['GET'], defaults=({'institution': None}))
 def registered_programs(institution, default=None):
   """ Show the academic programs registered with NYS Department of Education for any CUNY college.
@@ -1194,9 +1168,6 @@ def registered_programs(institution, default=None):
   options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]}</option>'
                       for inst in cuny_institutions])
 
-  # cursor.execute('select hegis_code, description from hegis_codes')
-  # hegis_codes = {row.hegis_code: row.description for row in cursor.fetchall()}
-  csv_link = ''
   if institution is None or institution not in cuny_institutions.keys():
     h1 = '<h1>Select a CUNY College</h1>'
     table = ''
@@ -1204,27 +1175,6 @@ def registered_programs(institution, default=None):
     # Complete the page heading
     institution_name = cuny_institutions[institution]
 
-    # List of short CUNY institution names plus known non-CUNY names
-    # Start with the list of all known institutions, then replace CUNY names with their short names.
-    short_names = dict()
-    for key in known_institutions.keys():
-      short_names[key] = known_institutions[key][1]  # value is (prog_code, name, is_cuny)
-    cursor.execute("""
-                      select code, prompt
-                        from institutions
-                   """)
-    for row in cursor.fetchall():
-      short_names[row.code.lower()[0:3]] = row.prompt
-    # Link to the current csv file, if there is one.
-    # csv_dir = '../registered_programs/csv_files'
-    # all_clause = ' (<em>Does not include the “CUNY Program(s)” column.</em>)'
-    # for filename in os.listdir(csv_dir):
-    #   if filename.startswith(institution.upper()):
-    #     if institution == 'all':
-    #       all_clause = ''
-    #     csv_link = f"""<a download class="button" href="/download_csv/{filename}">
-    #                    Download {filename}</a>{all_clause}<br/>"""
-    #     break
     h1 = f'<h1>{institution_name}</h1>'
 
     # Generate the HTML table: headings
@@ -1248,113 +1198,6 @@ def registered_programs(institution, default=None):
     heading_row = '<thead><tr>' + ''.join([f'<th>{head}</th>' for head in headings])
     heading_row += '</tr></thead>\n'
 
-    # # Generate the HTML table: data rows
-    # if institution == 'all':
-    #   institution = ''  # regex will match all values
-    # cursor.execute("""
-    #                select program_code,
-    #                       unit_code,
-    #                       institution,
-    #                       title,
-    #                       formats,
-    #                       hegis,
-    #                       award,
-    #                       certificate_license,
-    #                       accreditation,
-    #                       first_registration_date,
-    #                       last_registration_action,
-    #                       tap, apts, vvta,
-    #                       is_variant
-    #                from registered_programs
-    #                where target_institution ~ %s
-    #                order by title, program_code
-    #                """, (institution,))
-    # data_rows = []
-    # for row in cursor.fetchall():
-    #   if row.is_variant:
-    #     class_str = ' class="variant"'
-    #   else:
-    #     class_str = ''
-
-    #   values = list(row)
-    #   values.pop()  # Don’t display is_variant value: it is indicated by the row’s class.
-
-    #   # If the institution column is a numeric string, it’s a non-CUNY partner school, but the
-    #   # name is available in the known_institutions dict.
-    #   if values[2].isdecimal():
-    #     values[2] = fix_title(known_institutions[values[2]][1])
-
-    #   # Add title with hegis code description to hegis_code column
-    #   try:
-    #     description = hegis_codes[values[5]]
-    #     element_class = ''
-    #   except KeyError as ke:
-    #     description = 'Unknown HEGIS Code'
-    #     element_class = ' class="error"'
-    #   values[5] = f'<span title="{description}"{element_class}>{values[5]}</span>'
-
-    #   # Insert list of all CUNY programs (plans) for this program code
-    #   plan_cursor.execute("""
-    #                         select * from cuny_programs
-    #                          where nys_program_code = %s
-    #                          and program_status = 'A'""", (values[0],))
-    #   cuny_cell_content = ''
-    #   cip_set = set()
-    #   if plan_cursor.rowcount > 0:
-    #     plans = plan_cursor.fetchall()
-    #     # There is just one program and description per college, but the program may be shared
-    #     # among multiple departments at a college.
-    #     Program_Info = namedtuple('Program_Info', 'program program_title departments')
-    #     program_info = dict()
-    #     program = None
-    #     program_title = None
-    #     for plan in plans:
-    #       cip_set.add(plan.cip_code)
-    #       institution_key = plan.institution.lower()[0:3]
-    #       if institution_key not in program_info.keys():
-    #         program_info[institution_key] = Program_Info._make([plan.academic_plan,
-    #                                                            plan.description,
-    #                                                            []
-    #                                                             ])
-    #       program_info[institution_key].departments.append(plan.department)
-
-    #     # Add information for this institution to the table cell
-    #     if len(program_info.keys()) > 1:
-    #       cuny_cell_content += '— <em>Multiple Institutions</em> —<br>'
-    #       show_institution = True
-    #     else:
-    #       show_institution = False
-    #     for inst in program_info.keys():
-    #       program = program_info[inst].program
-    #       program_title = program_info[inst].program_title
-    #       if show_institution:
-    #         if inst in short_names.keys():
-    #           inst_str = f'{short_names[inst]}: '
-    #         else:
-    #           inst_str = f'{inst}: '
-    #       else:
-    #         inst_str = ''
-    #       departments_str = andor_list(program_info[inst].departments)
-    #       cuny_cell_content += f" {inst_str}{program} ({departments_str})<br>{program_title}"
-    #       # If there is a dgw requirement block for the plan, use link to it
-    #       plan_cursor.execute("""
-    #                          select *
-    #                            from requirement_blocks
-    #                           where institution ~* %s
-    #                             and block_value = %s
-    #                          """, (institution, plan.academic_plan))
-    #       if plan_cursor.rowcount > 0:
-    #         cuny_cell_content += (f'<br><a href="/requirements/?college='
-    #                               f'{institution.upper() + "01"}'
-    #                               f'&requirement-type=MAJOR&requirement-name={program}">'
-    #                               f'Requirements</a>')
-    #       if show_institution:
-    #         cuny_cell_content += '<br>'
-    #   cip_cell = [f'<span title="{cip_codes(cip)}">{cip}</span>' for cip in sorted(cip_set)]
-    #   values.insert(7, '<br>'.join(cip_cell))
-    #   values.insert(8, cuny_cell_content)
-    #   cells = ''.join([f'<td>{value}</td>' for value in values])
-    #   data_rows.append(f'<tr{class_str}>{cells}</tr>')
     if institution == 'all':
       cursor.execute('select html from registered_programs order by target_institution, title')
     else:
@@ -1408,9 +1251,6 @@ def registered_programs(institution, default=None):
         </p>
         <p>
           {nysed_update_date}
-        </p>
-        <p>
-          {csv_link}
         </p>
       </details>
       {table}
@@ -1606,7 +1446,7 @@ def server_error(e):
 @app.errorhandler(404)
 def not_found_error(e):
     result = f"""
-    {header(title='CCCCIV', nav_items=[{'type': 'link',
+    {header(title='CDIV', nav_items=[{'type': 'link',
                                              'text': 'Main Menu',
                                               'href': '/'
                                               }])}
