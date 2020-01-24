@@ -19,7 +19,6 @@ from antlr4.error.ErrorListener import ErrorListener
 from .ReqBlockLexer import ReqBlockLexer
 from .ReqBlockParser import ReqBlockParser
 from .ReqBlockListener import ReqBlockListener
-sys.path.insert(0, '..')
 from pgconnection import PgConnection
 
 if not os.getenv('HEROKU'):
