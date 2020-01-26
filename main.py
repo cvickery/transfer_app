@@ -1202,15 +1202,19 @@ def registered_programs(institution, default=None):
                             where target_institution = %s
                             order by title
                        """, (institution, ))
-      with io.StringIO('') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(csv_headings)
-        for row in cursor.fetchall():
-          writer.writerow(json.loads(row.csv))
-        csv_rows = csvfile.getvalue()
+      # with io.StringIO('') as csvfile:
+      #   writer = csv.writer(csvfile, dialect='unix')
+      #   writer.writerow(csv_headings)
+      #   for row in cursor.fetchall():
+      #     writer.writerow(json.loads(row.csv))
+      #   csv_rows = csvfile.getvalue()
+      gen = ','.join([f'"{col}"' for col in csv_headings]) + '\r\n'
+      for row in cursor.fetchall():
+        gen += ','.join([f'"{col}"' for col in json.loads(row.csv)]) + '\r\n'
 
-      link = (f" (<a href='data:text/csv;charset=utf-8,{csv_rows}'"
-              f" download='{filename}' style='text-decoration:none;'>{filename}</a>)")
+      link = (f" (<a href='data:text/csv;charset=utf-8,{gen}'" f""" download='{filename}'
+              style='text-decoration:none;'>Download {filename} <span class="error">Under
+              development: works only with Chrome for now.</span></a>)""")
     else:
       link = ' (No CSV Available)'
 
