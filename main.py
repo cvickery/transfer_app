@@ -2,12 +2,14 @@
 # CUNY Transfer Explorer
 # C. Vickery
 
-import sys
 import os
+import sys
+import io
 import re
 import socket
 
 import json
+import csv
 from datetime import datetime, timedelta
 
 from collections import namedtuple
@@ -1170,33 +1172,72 @@ def registered_programs(institution, default=None):
 
   if institution is None or institution not in cuny_institutions.keys():
     h1 = '<h1>Select a CUNY College</h1>'
-    table = ''
+    html_table = ''
   else:
-    # Complete the page heading
-    institution_name = cuny_institutions[institution]
+    # Complete the page heading with name of institution and link for downloading CSV
+    csv_headings = ['Program Code',
+                    'Registration Office',
+                    'Institution',
+                    'Program Title',
+                    'Formats',
+                    'HEGIS',
+                    'Award',
+                    'CIP Code',
+                    'CUNY Program(s)',
+                    'Certificate or License',
+                    'Accreditation',
+                    'First Reg. Date',
+                    'Latest Reg. Action',
+                    'TAP',
+                    'APTS',
+                    'VVTA']
+    cursor.execute("select update_date from updates where table_name='registered_programs'")
+    if cursor.rowcount == 1:
+      filename = f'{institution.upper()}_{cursor.fetchone().update_date}.csv'
+      if institution == 'all':
+        cursor.execute('select csv from registered_programs order by target_institution, title')
+      else:
+        cursor.execute("""select csv
+                            from registered_programs
+                            where target_institution = %s
+                            order by title
+                       """, (institution, ))
+      with io.StringIO('') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(csv_headings)
+        for row in cursor.fetchall():
+          writer.writerow(json.loads(row.csv))
+        csv_rows = csvfile.getvalue()
+
+      link = (f" (<a href='data:text/csv;charset=utf-8,{csv_rows}'"
+              f" download='{filename}' style='text-decoration:none;'>{filename}</a>)")
+    else:
+      link = ' (No CSV Available)'
+
+    institution_name = cuny_institutions[institution] + link
 
     h1 = f'<h1>{institution_name}</h1>'
 
-    # Generate the HTML table: headings
-    headings = ['Program Code',
-                'Registration Office',
-                'Institution',
-                'Program Title',
-                """<a href="http://www.nysed.gov/college-university-evaluation/format-definitions">
-                   Formats</a>""",
-                'HEGIS',
-                'Award',
-                'CIP Code',
-                'CUNY Program(s)',
-                'Certificate or License',
-                'Accreditation',
-                'First Reg. Date',
-                'Latest Reg. Action',
-                '<span title="Tuition Assistance Program">TAP</span>',
-                '<span title="Aid for Part-Time Study">APTS</span>',
-                '<span title="Veteran’s Tuition Assistance">VVTA</span>']
-    heading_row = '<thead><tr>' + ''.join([f'<th>{head}</th>' for head in headings])
-    heading_row += '</tr></thead>\n'
+    # Generate the HTML table
+    html_headings = ['Program Code',
+                     'Registration Office',
+                     'Institution',
+                     'Program Title',
+                     """<a href="http://www.nysed.gov/college-university-evaluation/format-definitions">
+                        Formats</a>""",
+                     'HEGIS',
+                     'Award',
+                     'CIP Code',
+                     'CUNY Program(s)',
+                     'Certificate or License',
+                     'Accreditation',
+                     'First Reg. Date',
+                     'Latest Reg. Action',
+                     '<span title="Tuition Assistance Program">TAP</span>',
+                     '<span title="Aid for Part-Time Study">APTS</span>',
+                     '<span title="Veteran’s Tuition Assistance">VVTA</span>']
+    html_heading_row = '<thead><tr>' + ''.join([f'<th>{head}</th>' for head in html_headings])
+    html_heading_row += '</tr></thead>\n'
 
     if institution == 'all':
       cursor.execute('select html from registered_programs order by target_institution, title')
@@ -1206,9 +1247,11 @@ def registered_programs(institution, default=None):
                           where target_institution = %s
                           order by title
                      """, (institution, ))
-    data_rows = [f'{row.html}' for row in cursor.fetchall()]
-    table_rows = heading_row + '<tbody>' + '\n'.join(data_rows) + '</tbody>'
-    table = f'<div class="table-height"><table class="scrollable">{table_rows}</table></div>'
+    html_data_rows = [f'{row.html}' for row in cursor.fetchall()]
+    html_table_rows = html_heading_row + '<tbody>' + '\n'.join(html_data_rows) + '</tbody>'
+    html_table = (f'<div class="table-height"><table class="scrollable">{html_table_rows}'
+                  f'</table></div>')
+
   result = f"""
       {header(title='Registered Programs', nav_items=[{'type': 'link',
                                                        'text': 'Main Menu',
@@ -1253,7 +1296,7 @@ def registered_programs(institution, default=None):
           {nysed_update_date}
         </p>
       </details>
-      {table}
+      {html_table}
 """
   cursor.close()
   plan_cursor.close()
