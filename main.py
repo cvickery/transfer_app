@@ -1227,8 +1227,9 @@ def registered_programs(institution, default=None):
                      'Registration Office',
                      'Institution',
                      'Program Title',
-                     """<a href="http://www.nysed.gov/college-university-evaluation/format-definitions">
-                        Formats</a>""",
+                     """<a
+                      href="http://www.nysed.gov/college-university-evaluation/format-definitions">
+                      Formats</a>""",
                      'HEGIS',
                      'Award',
                      'CIP Code',
