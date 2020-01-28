@@ -1209,8 +1209,8 @@ def registered_programs(institution, default=None):
       for row in cursor.fetchall():
         line = ','.join([f'"{col}"' for col in json.loads(row.csv)]) + '\r\n'
         gen += line
-      link = (f' (<a href="data:text/csv;charset=utf-8,{parse.quote(gen)}" download="{filename}"'
-              f'style="text-decoration:none;">Download {filename}</a>)')
+      link = (f'<a href="data:text/csv;charset=utf-8,{parse.quote(gen)}" download="{filename}"'
+              f'class="button">Download {filename}</a>')
     else:
       link = ' (No CSV Available)'
 
