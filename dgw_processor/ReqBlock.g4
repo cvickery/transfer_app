@@ -38,6 +38,7 @@ grammar ReqBlock;
  */
 
 req_block   : BEGIN headers ';' rules ENDDOT <EOF>;
+req_block   : BEGIN headers ';' rules ENDDOT <EOF>;
 headers     :
             ( mingpa
             | minres
