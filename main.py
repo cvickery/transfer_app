@@ -108,6 +108,8 @@ def _status(command):
 def date2str(date_str):
   """Takes a string in YYYY-MM-DD form and returns a text string with the date in full English form.
   """
+  if type(date_str) is not str:
+    return 'Unknown'
   return datetime.fromisoformat(date_str).strftime('%B %e, %Y').replace('  ', ' ')
 
 
