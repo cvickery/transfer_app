@@ -54,7 +54,7 @@ def get_reason():
 
   update_db_started = int(r.get('update_db_started'))
   if update_db_started > 0:
-    end_update = datetime.fromtimestamp(update_db_started) + timedelta(seconds=1800)
+    end_update = datetime.fromtimestamp(update_db_started) + timedelta(seconds=3600)
     if time_now < end_update:
       time_remaining = end_update - time_now
       copula = 'is'
