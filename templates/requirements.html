@@ -11,11 +11,10 @@
     $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
     </script>
   {% if not omitjs %}
-  <script defer src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js">
-  </script>
-  <script defer src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js">
-  </script>
-  {% block scripts %}{% endblock %}
+    {% block scripts %}
+      <script defer src="/static/js/requirements.js">
+      </script>
+    {% endblock %}
   {% endif %}
 
   </head>

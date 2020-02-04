@@ -5,10 +5,33 @@ h1+p {
   font-weight: bold;
 }
 
-div.requirements {
+section {
   margin: 1em;
   padding: 0.5em;
   background-color: white;
   border: 1px solid #999;
   border-radius: 0.25em;
+}
+
+/* Closeable Sections
+ * ---------------------------------------------------
+ */
+
+/* The trangle */
+.closer::before {
+  content: "\25B6";
+  color: black;
+  display: inline-block;
+  margin-right: 0.5em;
+}
+
+/* Style the triangle */
+.closer {
+  cursor: pointer;
+  user-select: none; /* Prevent text selection */
+}
+
+/* Rotate the triangle when open*/
+.open::before {
+  transform: rotate(90deg);
 }
