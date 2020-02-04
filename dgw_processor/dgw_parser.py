@@ -117,7 +117,7 @@ def course_list_to_html(course_list: dict):
   all_blanket = True
   all_writing = True
 
-  html = '<details style="margin-left:1em;">'
+  html = '<ul>'
   for course in course_list:
     for info in course['info']:
       num_courses += 1
@@ -126,22 +126,24 @@ def course_list_to_html(course_list: dict):
       if info.course_status == 'A' and info.max_credits > 0 and 'BKCR' not in info.attributes:
         all_blanket = False
       html += f"""
-                <p title="{info.course_id}:{info.offer_nbr}">
-                  {info.discipline} {info.catalog_number} {info.title}
-                  <br>
-                  {info.designation} {info.attributes}
-                  {'<span class="error">Inactive Course</span>' * (info.course_status == 'I')}
-                </p>
+                <li>
+                  <p title="{info.course_id}:{info.offer_nbr}">
+                    {info.discipline} {info.catalog_number} {info.title}
+                    <br>
+                    {info.designation} {info.attributes}
+                    {'<span class="error">Inactive Course</span>' * (info.course_status == 'I')}
+                  </p>
+                </li>
               """
   attributes = ''
   if all_blanket:
     attributes = 'Blanket Credit '
   if all_writing:
     attributes += 'Writing Intensive '
-  summary = f'<summary> these {num_courses} {attributes} courses.</summary>'
+  summary = f'<li> {num_courses} {attributes} courses.</li>'
   if num_courses == 1:
-    summary = f'<summary> this {attributes} course.</summary>'
-  return html + summary + '</details>'
+    summary = f'<li> {attributes} course.</li>'
+  return summary + html + '</ul>'
 
 
 # Class ReqBlockInterpreter
@@ -155,19 +157,23 @@ class ReqBlockInterpreter(ReqBlockListener):
     self.title = title
     self.period_start = period_start
     self.period_stop = period_stop
-    self.college_name = colleges[institution]
-    self.html = f"""<h1>{self.college_name} {self.title}</h1>
+    self.institution = colleges[institution]
+    self.html = f"""<h1>{self.institution} {self.title}</h1>
                     <p>Requirements for Catalog Years
                     {format_catalog_years(period_start, period_stop)}
                     </p>
-                    <details><summary>Degreeworks Code</summary><hr>
-                      <pre>{requirement_text}</pre>
-                    </details>
-                    <div class="requirements">
-                    <h2>Description (Incomplete)</h2>
+                    <section>
+                      <h1 class="closer">Degreeworks Code</h1>
+                      <div>
+                        <hr>
+                        <pre>{requirement_text}</pre>
+                      </div>
+                    </section>
+                    <section>
+                    <h1 class="closer">Requirements</h1>
+                    <div>
+                      <hr>
                  """
-    if self.block_type == 'conc':
-      self.block_type = 'concentration'
 
   def enterMinres(self, ctx):
     """ MINRES NUMBER (CREDITS | CLASSES)
@@ -291,19 +297,14 @@ def dgw_parser(institution, block_type, block_value, period='current'):
   return_html = ''
   for row in cursor.fetchall():
     if period == 'current' and row.period_stop != '99999999':
-      return f"""<h1 class="error">“{row.title}” is not a currently offered {interpreter.block_type}
-                 at {interpreter.college_name}.</h1>
+      return f"""<h1 class="error">“{row.title}” is not a currently offered {block_type}
+                 at {institution}.</h1>
               """
     requirement_text = row.requirement_text\
                           .translate(trans_table)\
                           .strip('"')\
                           .replace('\\r', '\r')\
                           .replace('\\n', '\n') + '\n'
-    # if possible, suppress extraneous text outside the header and rules.
-    matches = re.match(r'^.*?(begin.*?end\.).*$', requirement_text, re.I | re.S)
-    # if matches:
-    #   requirement_text = matches.group(1) + '\n'
-    #   print(f'Trimmed block has {len(requirement_text)} characters.')
     dgw_logger = DGW_Logger(institution, block_type, block_value, row.period_stop)
     input_stream = InputStream(requirement_text)
     lexer = ReqBlockLexer(input_stream)
@@ -324,7 +325,7 @@ def dgw_parser(institution, block_type, block_value, period='current'):
     try:
       tree = parser.req_block()
       walker.walk(interpreter, tree)
-      return_html += interpreter.html + '</div>'
+      return_html += interpreter.html + '</section>'
     except Exception as e:
       return_html += f"""
                         <p class="error">Currently unable to interpret this block.</p>

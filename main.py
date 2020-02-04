@@ -1125,6 +1125,9 @@ def courses():
 def registered_programs(institution, default=None):
   """ Show the academic programs registered with NYS Department of Education for any CUNY college.
   """
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
   if institution is None:
     institution = request.args.get('institution', None)
 
@@ -1352,6 +1355,9 @@ def requirements(college=None, type=None, name=None, period=None):
       If the instutition, block_type, and block_value are not known, display a form to get them
       first.
   """
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
   institution = request.args.get('college')
   b_type = request.args.get('requirement-type')
   b_value = request.args.get('requirement-name')

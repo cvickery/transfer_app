@@ -38,7 +38,6 @@ grammar ReqBlock;
  */
 
 req_block   : BEGIN headers ';' rules ENDDOT <EOF>;
-req_block   : BEGIN headers ';' rules ENDDOT <EOF>;
 headers     :
             ( mingpa
             | minres
@@ -65,7 +64,7 @@ mingpa      : MINGPA NUMBER ;
 minres      : MINRES NUMBER (CREDITS | CLASSES) ;
 mingrade    : MINGRADE NUMBER ;
 numclasses  : NUMBER CLASSES (and_courses | or_courses) ;
-numcredits  : (NUMBER | RANGE) CREDITS (and_courses | or_courses)? ;
+numcredits  : (NUMBER | RANGE) CREDITS (and_courses | or_courses)? (TAG)? ;
 maxclasses  : MAXCLASSES NUMBER (and_courses | or_courses) ;
 maxcredits  : MAXCREDITS NUMBER (and_courses | or_courses) ;
 proxy_advice: PROXYADVICE STRING proxy_advice* ;
@@ -121,7 +120,7 @@ OR          : (COMMA | ([Oo][Rr])) ;
 AND         : (PLUS | ([Aa][Nn][Dd])) ;
 
 INFROM      : ([Ii][Nn])|([Ff][Rr][Oo][Mm]) ;
-TAG         : [Tt][Aa][Gg] ;
+TAG         : [Tt][Aa][Gg] ( EQ SYMBOL )?;
 
 WILDNUMBER  : (DIGIT+ WILDCARD DIGIT*) | (WILDCARD DIGIT+) ;
 WILDSYMBOL  : ((LETTER | DIGIT)*  WILDCARD (LETTER | DIGIT)*)+ ;
@@ -136,6 +135,7 @@ GE          : '>=' ;
 GT          : '>' ;
 LE          : '<=' ;
 LT          : '<' ;
+EQ          : '=' ;
 
 fragment DOT         : '.' ;
 fragment COMMA       : ',' ;
