@@ -13,6 +13,7 @@ import csv
 
 from urllib import parse
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from collections import namedtuple
 from collections import defaultdict
@@ -1210,11 +1211,20 @@ def registered_programs(institution, default=None):
                             where target_institution = %s
                             order by title
                        """, (institution, ))
-      gen = ','.join([f'{col}' for col in csv_headings]) + '\r\n'
-      for row in cursor.fetchall():
-        line = ','.join([f'"{col}"' for col in json.loads(row.csv)]) + '\r\n'
-        gen += line
-      link = (f'<a href="data:text/csv;charset=utf-8,{parse.quote(gen)}" download="{filename}"'
+      print(f'{app.root_path}/static/csv/{filename}', file=sys.stderr)
+      with open(f'{app.root_path}/static/csv/{filename}', 'w') as outfile:
+        writer = csv.writer(outfile)
+        writer.writerow(csv_headings)
+        for row in cursor.fetchall():
+          line = json.loads(row.csv)
+          writer.writerow(line)
+      # gen = ','.join([f'{col}' for col in csv_headings]) + '\r\n'
+      # for row in cursor.fetchall():
+      #   line = ','.join([f'"{col}"' for col in json.loads(row.csv)]) + '\r\n'
+      #   gen += line
+      # link = (f'<a href="data:text/csv;charset=utf-8,{parse.quote(gen)}" download="{filename}"'
+      #         f'class="button">Download {filename}</a>')
+      link = (f'<a href="/static/csv/{filename}" download="{filename}"'
               f'class="button">Download {filename}</a>')
     else:
       link = ' (No CSV Available)'
