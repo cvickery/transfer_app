@@ -1211,7 +1211,7 @@ def registered_programs(institution, default=None):
                             where target_institution = %s
                             order by title
                        """, (institution, ))
-      print(f'{app.root_path}/static/csv/{filename}', file=sys.stderr)
+      # Regenerate the csv file for every access.
       with open(f'{app.root_path}/static/csv/{filename}', 'w') as outfile:
         writer = csv.writer(outfile)
         writer.writerow(csv_headings)
