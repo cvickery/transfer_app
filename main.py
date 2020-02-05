@@ -1211,21 +1211,26 @@ def registered_programs(institution, default=None):
                             where target_institution = %s
                             order by title
                        """, (institution, ))
-      # Regenerate the csv file for every access.
-      with open(f'{app.root_path}/static/csv/{filename}', 'w') as outfile:
-        writer = csv.writer(outfile)
-        writer.writerow(csv_headings)
-        for row in cursor.fetchall():
-          line = json.loads(row.csv)
-          writer.writerow(line)
+      # Try to (re-)create the csv file. If anything goes wrong, that's too bad.
+      try:
+        csv_dir = Path(app.root_path + '/static/csv')
+        csv_dir.mkdir(exist_ok=True)
+        with open(f'{csv_dir}/{filename}', 'w') as outfile:
+          writer = csv.writer(outfile)
+          writer.writerow(csv_headings)
+          for row in cursor.fetchall():
+            line = json.loads(row.csv)
+            writer.writerow(line)
+        link = (f' <a href="/static/csv/{filename}" download="{filename}"'
+                f'class="button">Download {filename}</a>')
+      except (OSError, RuntimeError) as e:
+        link = f'<br><span class="error">No CSV available: {e}</span>'
       # gen = ','.join([f'{col}' for col in csv_headings]) + '\r\n'
       # for row in cursor.fetchall():
       #   line = ','.join([f'"{col}"' for col in json.loads(row.csv)]) + '\r\n'
       #   gen += line
       # link = (f'<a href="data:text/csv;charset=utf-8,{parse.quote(gen)}" download="{filename}"'
       #         f'class="button">Download {filename}</a>')
-      link = (f'<a href="/static/csv/{filename}" download="{filename}"'
-              f'class="button">Download {filename}</a>')
     else:
       link = ' (No CSV Available)'
 
