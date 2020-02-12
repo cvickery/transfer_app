@@ -155,7 +155,7 @@ def index_page():
   catalog_date = 'unknown'
   rules_date = 'unknown'
   for update in updates:
-    if update.table_name == 'courses':
+    if update.table_name == 'cuny_courses':
       catalog_date = date2str(update.update_date)
     if update.table_name == 'transfer_rules':
       rules_date = date2str(update.update_date)
@@ -391,7 +391,7 @@ def map_courses():
 
   conn = PgConnection()
   cursor = conn.cursor()
-  cursor.execute('select code, prompt from institutions order by prompt')
+  cursor.execute('select code, prompt from cuny_institutions order by prompt')
   options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
   conn.close()
   institution_select = """
@@ -574,7 +574,7 @@ def _institutions():
   conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute("""select code, prompt, name, associates, bachelors
-                      from institutions order by code
+                      from cuny_institutions order by code
                  """)
   institutions = [Institution._make(x)._asdict() for x in cursor.fetchall()]
 
@@ -621,7 +621,7 @@ def _find_course_ids():
   conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute("""select course_id, numeric_part(catalog_number) as cat_num
-                    from courses
+                    from cuny_courses
                     where institution = %s and discipline = %s
                  """, (institution, discipline))
   courses = [[c.course_id, c.cat_num] for c in cursor.fetchall()]
@@ -679,7 +679,7 @@ def _map_course():
                               title,
                               course_status,
                               designation
-                      from courses
+                      from cuny_courses
                       where course_id = %s
                       and discipline = %s
                    """, (course_id, discipline))
@@ -798,7 +798,7 @@ def lookup_rules():
   cursor = conn.cursor()
   query = """
   select distinct course_id
-    from courses
+    from cuny_courses
    where institution = %s
      and discipline = %s
      and catalog_number ~* %s
@@ -985,24 +985,18 @@ def courses():
           department_str = f'Offered By the {cursor.fetchone().department_name} Department'
 
   if institution_code is not None:
-    cursor.execute("""
-              select name, date_updated
-                from institutions
-               where code ~* %s
-               """, (institution_code,))
-    if cursor.rowcount == 1:
-      # Found a college: find out if it offers some courses
-      row = cursor.fetchone()
-      institution_name = row.name
-      date_updated = row.date_updated.strftime('%B %e, %Y')
-      cursor.execute(f"""
-          select count(*) from courses
-           where institution ~* %s {discipline_clause} {department_clause}
-             and course_status = 'A'
-             and can_schedule = 'Y'
-             and discipline_status = 'A'
-          """, (institution_code,))
-      num_active_courses = cursor.fetchone()[0]
+    cursor.execute("select update_date from updates where table_name = 'cuny_institutions'")
+    date_updated = cursor.fetchone().update_date.strftime('%B %e, %Y')
+    cursor.execute('select name from cuny_institutions where code = %s', (institution_code, ))
+    institution_name = cursor.fetchone().name
+    cursor.execute(f"""
+        select count(*) from cuny_courses
+         where institution ~* %s {discipline_clause} {department_clause}
+           and course_status = 'A'
+           and can_schedule = 'Y'
+           and discipline_status = 'A'
+        """, (institution_code, ))
+    num_active_courses = cursor.fetchone()[0]
 
     if discipline_name == '' and department_str == '':
       quantifier = 'All'
@@ -1069,7 +1063,7 @@ def courses():
     <p class="instructions">Pick a college and say “Please”.</p>
     <form method="post" action="#">
     <fieldset><legend>Select a College</legend>"""
-    cursor.execute("select * from institutions order by code")
+    cursor.execute("select * from cuny_institutions order by code")
     n = 0
     college_list = ''
     for row in cursor:
@@ -1161,7 +1155,7 @@ def registered_programs(institution, default=None):
   # Find out what CUNY colleges are in the db
   cursor.execute("""
                  select distinct r.target_institution as inst, i.name
-                 from registered_programs r, institutions i
+                 from registered_programs r, cuny_institutions i
                  where i.code = upper(r.target_institution||'01')
                  order by i.name
                  """)
@@ -1385,7 +1379,7 @@ def requirements(college=None, type=None, name=None, period=None):
     cursor.execute("select update_date from updates where table_name = 'requirement_blocks'")
     dgw_date = datetime.strptime(cursor.fetchone().update_date, '%Y-%m-%d')
     dgw_date = dgw_date.strftime('%B %d, %Y')
-    cursor.execute('select code, name from institutions')
+    cursor.execute('select code, name from cuny_institutions')
     college_options = '<option value="">Select College</option>\n'
     for row in cursor.fetchall():
       college_options += f'<option value="{row.code}">{row.name}</option>\n'

@@ -32,7 +32,7 @@ class PgConnection():
 
   _pool = None
 
-  def __init__(self, conn_string='dbname=cuny_courses'):
+  def __init__(self, conn_string='dbname=cuny_curriculum'):
     """ Get the connection string from the environment and connect to the db.
         Raises PoolError, disguised as a RuntimeError, if connection pool is exhausted.
     """

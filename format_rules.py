@@ -57,7 +57,7 @@ Destination_Course = namedtuple('Destination_Course', """
 
 conn = PgConnection('dbname=cuny_courses')
 cursor = conn.cursor()
-cursor.execute("select code, prompt from institutions order by lower(name)")
+cursor.execute("select code, prompt from cuny_institutions order by lower(name)")
 institution_names = {row.code: row.prompt for row in cursor}
 # cursor.execute('select * from transfer_rules')
 # rule_ids = dict()

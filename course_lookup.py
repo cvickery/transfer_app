@@ -14,7 +14,7 @@ cursor = conn.cursor()
 
 # Public list of all cross-listed courses’s course_ids CUNY-wide
 query = """
-  select course_id from courses
+  select course_id from cuny_courses
   where offer_nbr > 1 and offer_nbr < 5
   group by course_id
   order by course_id
@@ -54,8 +54,8 @@ select  c.course_id                       as course_id,
         c.course_status                   as course_status,
         c.attributes                      as attributes
 
-  from  courses           c,
-        institutions      i,
+  from  cuny_courses      c,
+        cuny_institutions i,
         cuny_departments  d,
         cuny_subjects     s,
         cuny_careers      cc,
@@ -159,8 +159,8 @@ def lookup_courses(institution, active_only=True, department=None, discipline=No
           c.course_status                   as course_status,
           c.attributes                      as attributes
 
-    from  courses           c,
-          institutions      i,
+    from  cuny_courses      c,
+          cuny_institutions i,
           cuny_departments  d,
           cuny_subjects     s,
           cuny_careers      cc,
@@ -230,7 +230,7 @@ def format_course(course, active_only=False):
         select c.discipline, c.catalog_number, c.title,
           cc. description as career, s.subject_name as cuny_subject,
           c.designation, c.requisites, c.attributes
-        from courses c, cuny_subjects s, cuny_careers cc
+        from cuny_courses c, cuny_subjects s, cuny_careers cc
         where course_id = %s
         and offer_nbr != %s
         and cc.career = c.career
@@ -310,7 +310,7 @@ def course_search(search_str, include_inactive=False, debug=False):
 
   query = f"""
     select course_id, offer_nbr, course_status, institution, discipline, catalog_number
-    from courses
+    from cuny_courses
     where {status_str}
     {institution_str}
     and discipline ~* %s
