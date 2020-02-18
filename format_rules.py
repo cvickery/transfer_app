@@ -55,7 +55,7 @@ Destination_Course = namedtuple('Destination_Course', """
                                 discipline_name
                                 """)
 
-conn = PgConnection('dbname=cuny_courses')
+conn = PgConnection()
 cursor = conn.cursor()
 cursor.execute("select code, prompt from cuny_institutions order by lower(name)")
 institution_names = {row.code: row.prompt for row in cursor}
@@ -177,7 +177,7 @@ def format_rules(rules, scrollable=False):
 def format_rule_by_key(rule_key):
   """ Generate a Transfer_Rule tuple given the key.
   """
-  conn = PgConnection('dbname=cuny_courses')
+  conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute("""
   select * from transfer_rules
@@ -254,7 +254,7 @@ def format_rule(rule, rule_key=None):
                                     rule.group_number)
 
   # In case there are cross-listed courses to look up
-  conn = PgConnection('dbname=cuny_courses')
+  conn = PgConnection()
   cursor = conn.cursor()
 
   # Extract disciplines and courses from the rule
@@ -279,7 +279,7 @@ def format_rule(rule, rule_key=None):
   for course in source_courses:
     if course.offer_count > 1:
       cursor.execute("""select discipline, catalog_number, cuny_subject
-                          from courses
+                          from cuny_courses
                          where course_id = %s""",
                      (course.course_id,))
       assert cursor.rowcount == course.offer_count, \
