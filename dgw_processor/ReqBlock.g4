@@ -37,8 +37,8 @@ grammar ReqBlock;
  * Parser Rules
  */
 
-req_block   : BEGIN header ';' rules ENDDOT <EOF>;
-header     :
+req_block   : BEGIN head ';' body ENDDOT <EOF>;
+head       :
             ( mingpa
             | minres
             | mingrade
@@ -53,7 +53,7 @@ header     :
             | label
             )*
             ;
-rules       : .*? ;
+body        : .*? ;
 
 class_item  : (SYMBOL | WILDSYMBOL)? (NUMBER | RANGE | WILDNUMBER) ;
 or_courses  : INFROM? class_item (OR class_item)* ;

@@ -96,8 +96,8 @@ WHITESPACE
 
 rule names:
 req_block
-header
-rules
+head
+body
 class_item
 or_courses
 and_courses

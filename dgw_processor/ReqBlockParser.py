@@ -124,8 +124,8 @@ class ReqBlockParser ( Parser ):
                       "LOG", "WHITESPACE" ]
 
     RULE_req_block = 0
-    RULE_header = 1
-    RULE_rules = 2
+    RULE_head = 1
+    RULE_body = 2
     RULE_class_item = 3
     RULE_or_courses = 4
     RULE_and_courses = 5
@@ -144,7 +144,7 @@ class ReqBlockParser ( Parser ):
     RULE_label = 18
     RULE_symbol = 19
 
-    ruleNames =  [ "req_block", "header", "rules", "class_item", "or_courses", 
+    ruleNames =  [ "req_block", "head", "body", "class_item", "or_courses", 
                    "and_courses", "mingpa", "minres", "mingrade", "numclasses", 
                    "numcredits", "maxclasses", "maxcredits", "proxy_advice", 
                    "exclusive", "maxpassfail", "noncourses", "remark", "label", 
@@ -215,12 +215,12 @@ class ReqBlockParser ( Parser ):
         def BEGIN(self):
             return self.getToken(ReqBlockParser.BEGIN, 0)
 
-        def header(self):
-            return self.getTypedRuleContext(ReqBlockParser.HeaderContext,0)
+        def head(self):
+            return self.getTypedRuleContext(ReqBlockParser.HeadContext,0)
 
 
-        def rules(self):
-            return self.getTypedRuleContext(ReqBlockParser.RulesContext,0)
+        def body(self):
+            return self.getTypedRuleContext(ReqBlockParser.BodyContext,0)
 
 
         def ENDDOT(self):
@@ -249,11 +249,11 @@ class ReqBlockParser ( Parser ):
             self.state = 40
             self.match(ReqBlockParser.BEGIN)
             self.state = 41
-            self.header()
+            self.head()
             self.state = 42
             self.match(ReqBlockParser.T__0)
             self.state = 43
-            self.rules()
+            self.body()
             self.state = 44
             self.match(ReqBlockParser.ENDDOT)
         except RecognitionException as re:
@@ -265,7 +265,7 @@ class ReqBlockParser ( Parser ):
         return localctx
 
 
-    class HeaderContext(ParserRuleContext):
+    class HeadContext(ParserRuleContext):
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -356,23 +356,23 @@ class ReqBlockParser ( Parser ):
 
 
         def getRuleIndex(self):
-            return ReqBlockParser.RULE_header
+            return ReqBlockParser.RULE_head
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterHeader" ):
-                listener.enterHeader(self)
+            if hasattr( listener, "enterHead" ):
+                listener.enterHead(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitHeader" ):
-                listener.exitHeader(self)
+            if hasattr( listener, "exitHead" ):
+                listener.exitHead(self)
 
 
 
 
-    def header(self):
+    def head(self):
 
-        localctx = ReqBlockParser.HeaderContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 2, self.RULE_header)
+        localctx = ReqBlockParser.HeadContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 2, self.RULE_head)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
@@ -457,7 +457,7 @@ class ReqBlockParser ( Parser ):
         return localctx
 
 
-    class RulesContext(ParserRuleContext):
+    class BodyContext(ParserRuleContext):
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -465,23 +465,23 @@ class ReqBlockParser ( Parser ):
 
 
         def getRuleIndex(self):
-            return ReqBlockParser.RULE_rules
+            return ReqBlockParser.RULE_body
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRules" ):
-                listener.enterRules(self)
+            if hasattr( listener, "enterBody" ):
+                listener.enterBody(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRules" ):
-                listener.exitRules(self)
+            if hasattr( listener, "exitBody" ):
+                listener.exitBody(self)
 
 
 
 
-    def rules(self):
+    def body(self):
 
-        localctx = ReqBlockParser.RulesContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 4, self.RULE_rules)
+        localctx = ReqBlockParser.BodyContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 4, self.RULE_body)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 66
