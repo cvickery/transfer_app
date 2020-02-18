@@ -13,6 +13,7 @@ from io import StringIO
 import re
 
 from collections import namedtuple
+from enum import Enum
 
 from antlr4 import *
 from antlr4.error.ErrorListener import ErrorListener
@@ -23,7 +24,7 @@ from .ReqBlockListener import ReqBlockListener
 
 from pgconnection import PgConnection
 
-from closeable_objects import dict2html
+from closeable_objects import dict2html, items2html
 from templates import *
 
 DEBUG = os.getenv('DEBUG_PARSER')
@@ -33,7 +34,7 @@ if not os.getenv('HEROKU'):
                       format='%(asctime)s %(message)s',
                       level=logging.DEBUG)
 
-Requirement = namedtuple('Requirement', 'keyword, value, text')
+Requirement = namedtuple('Requirement', 'keyword, value, text, course')
 
 trans_dict: Dict[int, None] = dict()
 for c in range(13, 31):
@@ -105,7 +106,7 @@ def build_course_list(institution, ctx) -> list:
       search_number = f"catalog_number ~ '{display_number.replace('@', '.*')}'"
     course_query = f"""
                       select institution, course_id, offer_nbr, discipline, catalog_number, title,
-                             course_status, max_credits, designation, attributes
+                             description, course_status, max_credits, designation, attributes
                         from cuny_courses
                        where institution ~* '{institution}'
                          and discipline ~ '{search_discipline}'
@@ -114,49 +115,56 @@ def build_course_list(institution, ctx) -> list:
     conn = PgConnection()
     cursor = conn.cursor()
     cursor.execute(course_query)
+    print(f'{institution} {search_discipline} {search_number} returned {cursor.rowcount} rows', file=sys.stderr)
     # Convert generator to list.
     details = [row for row in cursor.fetchall()]
     course_list.append({'display': f'{display_discipline} {display_number}',
                         'info': details})
     conn.close()
+  if DEBUG:
+    print(f'return list len {len(course_list)}', file=sys.stderr)
   return course_list
 
 
-def course_list_to_html(course_list: dict):
-  """ Generate a details element that has the number of courses as the summary, and the catalog
-      descriptions when opened. The total number of courses is the sum of each group of courses.
+def course_list2html(course_list: dict):
+  """ Look up all the courses in course_list, and return their catalog entries as HTML divs
   """
-  num_courses = 0
   all_blanket = True
   all_writing = True
 
-  html = '<ul>'
+  return_list = []
   for course in course_list:
+    print(course)
     for info in course['info']:
-      num_courses += 1
       if info.course_status == 'A' and 'WRIC' not in info.attributes:
         all_writing = False
       if info.course_status == 'A' and info.max_credits > 0 and 'BKCR' not in info.attributes:
         all_blanket = False
-      html += f"""
-                <li>
-                  <p title="{info.course_id}:{info.offer_nbr}">
+      return_list.append(f"""
+                  <div title="{info.course_id}:{info.offer_nbr}">
                     {info.discipline} {info.catalog_number} {info.title}
+                    <br>
+                    {info.description}
                     <br>
                     {info.designation} {info.attributes}
                     {'<span class="error">Inactive Course</span>' * (info.course_status == 'I')}
-                  </p>
-                </li>
-              """
-  attributes = ''
+                  </div>
+              """)
+  attributes = []
   if all_blanket:
-    attributes = 'Blanket Credit '
+    attributes.append('Blanket Credit')
   if all_writing:
-    attributes += 'Writing Intensive '
-  summary = f'<li> {num_courses} {attributes} courses.</li>'
-  if num_courses == 1:
-    summary = f'<li> {attributes} course.</li>'
-  return summary + html + '</ul>'
+    attributes.append('Writing Intensive')
+
+  return attributes, return_list
+
+
+class ScribeSection(Enum):
+  """ Keep track of which section of a Scribe Block is being processed.
+  """
+  NONE = 0
+  HEAD = 1
+  BODY = 2
 
 
 # Class ReqBlockInterpreter
@@ -164,18 +172,26 @@ def course_list_to_html(course_list: dict):
 class ReqBlockInterpreter(ReqBlockListener):
   def __init__(self, institution, block_type, block_value, title, period_start, period_stop,
                requirement_text):
+    if DEBUG:
+      print(f'*** ReqBlockInterpreter({institution}, {block_type}, {block_value})', file=sys.stderr)
     self.institution = institution
-    self.block_type = block_type.lower()
+    self.block_type = block_type
+    self.block_type_str = block_type.lower().replace('conc', 'concentration')
     self.block_value = block_value
     self.title = title
     self.period_start = period_start
     self.period_stop = period_stop
     self.institution = colleges[institution]
     self.requirement_text = requirement_text
-    self.requirements = {header: [], rule: []}
+    self.scribe_section = ScribeSection.NONE
+    self.sections = [[], [], []]  # NONE, HEAD, BODY
 
   @property
   def html(self):
+    len_empty = len(self.sections[ScribeSection.NONE.value])
+    assert len_empty == 0, (
+        f'ERROR: Scribe Block Section {ScribeSection.NONE.name} has'
+        f'{len_empty} item{"" if len_empty == 1 else "s"} instead of none.')
     html_body = f"""
 <h1>{self.institution} {self.title}</h1>
 <p>Requirements for Catalog Years
@@ -192,22 +208,23 @@ class ReqBlockInterpreter(ReqBlockListener):
   <h1 class="closer">Interpretation</h1>
   <div>
     <hr>
-    {dict2html(self.requirements, 'Requirement Section')}
+    {items2html(self.sections[ScribeSection.HEAD.value], 'Head Item')}
+    {items2html(self.sections[ScribeSection.BODY.value], 'Body Item')}
   </div>
 </section
 """
 
     return html_body
 
-  def enterHeader(self, ctx):
+  def enterHead(self, ctx):
     if DEBUG:
-      print('enterHeader()', file=sys.stderr)
-    pass
+      print('enterHead()', file=sys.stderr)
+    self.scribe_section = ScribeSection.HEAD
 
-  def enterRules(self, ctx):
+  def enterBody(self, ctx):
     if DEBUG:
-      print('enterRules()', file=sys.stderr)
-    pass
+      print('enterBody()', file=sys.stderr)
+    self.scribe_section = ScribeSection.BODY
 
   def enterMinres(self, ctx):
     """ MINRES NUMBER (CREDITS | CLASSES)
@@ -218,45 +235,90 @@ class ReqBlockInterpreter(ReqBlockListener):
     # print(inspect.getmembers(ctx))
     if float(str(ctx.NUMBER())) == 1:
       classes_credits = classes_credits.strip('es')
-    self.requirements[header].append(
+    self.sections[self.scribe_section.value].append(
         Requirement('minres',
                     f'{ctx.NUMBER()} {classes_credits}',
                     f'At least {ctx.NUMBER()} {str(classes_credits).lower()} '
-                    f'must be completed in residency.'))
+                    f'must be completed in residency.',
+                    None))
 
   def enterNumcredits(self, ctx):
     """ (NUMBER | RANGE) CREDITS (and_courses | or_courses)?
     """
     if DEBUG:
       print('enterNumcredits()', file=sys.stderr)
+    text = f'This {self.block_type_str} requires '
     if ctx.NUMBER() is not None:
-      print(f'<p>This {self.block_type} requires {ctx.NUMBER()} credits.')
+      text += f'{ctx.NUMBER()} credits'
     elif ctx.RANGE() is not None:
-       low, high = str(ctx.RANGE()).split(':')
-       print(f'<p>This {self.block_type} requires between {low} and {high} credits.')
+      low, high = str(ctx.RANGE()).split(':')
+      text += f'between {low} and {high} credits'
     else:
-      print(f'<p class="warning">This {self.block_type} requires an '
-            f'<strong>unknown</strong> number of credits.')
+      text += f'an <span class="error">unknown</span> number of credits'
+
+    course_list = None
     if ctx.and_courses() is not None:
-      print(course_list_to_html(build_course_list(self.institution, ctx.and_courses())), end='')
+      course_list = build_course_list(self.institution, ctx.and_courses())
+      list_quantifier = 'all'
     if ctx.or_courses() is not None:
-      print(course_list_to_html(build_course_list(self.institution, ctx.or_courses())), end='')
-    print()
+      course_list = build_course_list(self.institution, ctx.or_courses())
+      list_quantifier = 'any'
+
+    if course_list is None:
+      text += '.'
+      courses = None
+    else:
+      len_list = len(course_list)
+      attributes, html_list = course_list2html(course_list)
+      if len_list == 1:
+        preamble = f' in {list_quantifier}'
+        courses = html_list[0]
+      else:
+        preamble = f' in {list_quantifier} of these {len_list} {" and ".join(attributes)} courses:'
+        courses = html_list
+      text += f' {preamble} '
+    self.sections[self.scribe_section.value].append(
+        Requirement('credits',
+                    f'{ctx.NUMBER()} credits',
+                    f'{text}',
+                    courses))
 
   def enterMaxcredits(self, ctx):
     """ MAXCREDITS NUMBER (and_courses | or_courses)
     """
     if DEBUG:
       print('enterMaxcredits()', file=sys.stderr)
-    limit_type = 'a maximum of'
+    limit = f'a maximum of {ctx.NUMBER()}'
     if ctx.NUMBER() == '0':
-      limit_type = 'zero'
-    print(f'<p>This {self.block_type} allows {limit_type} of {ctx.NUMBER()} credits in ', end='')
+      limit = 'zero'
+    text = f'This {self.block_type} allows {limit} credits'
+    course_list = None
     if ctx.and_courses() is not None:
-      print(course_list_to_html(build_course_list(self.institution, ctx.and_courses())), end='')
+      course_list = build_course_list(self.institution, ctx.and_courses())
+      list_quantifier = 'all'
     if ctx.or_courses() is not None:
-      print(course_list_to_html(build_course_list(self.institution, ctx.or_courses())), end='')
-    print()
+      course_list = build_course_list(self.institution, ctx.or_courses())
+      list_quantifier = 'any'
+
+    if course_list is None:
+      text += '.'
+      courses = None
+    else:
+      len_list = len(course_list)
+      attributes, html_list = course_list2html(course_list)
+      assert len_list == len(html_list), f'{len_list} is not {len(html_list)}'
+      if len_list == 1:
+        preamble = f' in {list_quantifier}'
+        courses = html_list[0]
+      else:
+        preamble = f' in {list_quantifier} of these {len_list} {" and ".join(attributes)} courses:'
+        courses = html_list
+      text += f' {preamble} '
+    self.sections[self.scribe_section.value].append(
+        Requirement('maxcredits',
+                    f'{ctx.NUMBER()} credits',
+                    f'{text}',
+                    courses))
 
   def enterMaxclasses(self, ctx):
     """ MAXCLASSES NUMBER (and_courses | or_courses)
@@ -271,9 +333,9 @@ class ReqBlockInterpreter(ReqBlockListener):
     if ctx.and_courses() is not None:
       build_course_list(ctx.and_courses())
     if ctx.and_courses() is not None:
-      print(course_list_to_html(build_course_list(self.institution, ctx.and_courses())), end='')
+      print(course_list2html(build_course_list(self.institution, ctx.and_courses())), end='')
     if ctx.or_courses() is not None:
-      print(course_list_to_html(build_course_list(self.institution, ctx.or_courses())), end='')
+      print(course_list2html(build_course_list(self.institution, ctx.or_courses())), end='')
     print()
 
   def enterMaxpassfail(self, ctx):
@@ -325,6 +387,8 @@ def dgw_parser(institution, block_type, block_value, period='current'):
        The period argument can be 'current', 'latest', or 'all', which will be picked out of the
        result set for 'all'
   """
+  if DEBUG:
+    print(f'*** dgw_parser({institution}, {block_type}, {block_value}. {period})')
   conn = PgConnection()
   cursor = conn.cursor()
   query = """
@@ -338,7 +402,7 @@ def dgw_parser(institution, block_type, block_value, period='current'):
   cursor.execute(query, (institution, block_type.upper(), block_value.upper()))
   if cursor.rowcount == 0:
     # This is a bug, not an error
-    return f'<h1 class="error">No Requisites Found</h1><p>{cursor.query}</p>'
+    return f'<h1 class="error">No Requirements Found</h1><p>{cursor.query}</p>'
   return_html = ''
   for row in cursor.fetchall():
     if period == 'current' and row.period_stop != '99999999':
