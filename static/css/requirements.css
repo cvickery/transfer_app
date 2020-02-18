@@ -21,6 +21,10 @@ ul {
   list-style-type: none;
 }
 
+li {
+  margin-top: 1em;
+}
+
 /* The trangle */
 .closer::before {
   content: "\25B6";
