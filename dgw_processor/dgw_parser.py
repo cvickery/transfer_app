@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import logging
+import inspect
 from datetime import datetime
 from pprint import pprint
 from typing import List, Set, Dict, Tuple, Optional, Union
@@ -19,12 +20,20 @@ from antlr4.error.ErrorListener import ErrorListener
 from .ReqBlockLexer import ReqBlockLexer
 from .ReqBlockParser import ReqBlockParser
 from .ReqBlockListener import ReqBlockListener
+
 from pgconnection import PgConnection
+
+from closeable_objects import dict2html
+from templates import *
+
+DEBUG = os.getenv('DEBUG_PARSER')
 
 if not os.getenv('HEROKU'):
   logging.basicConfig(filename='Logs/antlr.log',
                       format='%(asctime)s %(message)s',
                       level=logging.DEBUG)
+
+Requirement = namedtuple('Requirement', 'keyword, value, text')
 
 trans_dict: Dict[int, None] = dict()
 for c in range(13, 31):
@@ -36,7 +45,7 @@ trans_table = str.maketrans(trans_dict)
 colleges = dict()
 conn = PgConnection()
 cursor = conn.cursor()
-cursor.execute('select code, name from institutions')
+cursor.execute('select code, name from cuny_institutions')
 for row in cursor.fetchall():
   colleges[row.code] = row.name
 conn.close()
@@ -56,6 +65,8 @@ def format_catalog_years(period_start: str, period_stop: str) -> str:
 def classes_or_credits(ctx) -> str:
   """
   """
+  if DEBUG:
+    print('classes_or_credits()', file=sys.stderr)
   classes_credits = ctx.CREDITS()
   if classes_credits is None:
     classes_credits = ctx.CLASSES()
@@ -66,6 +77,8 @@ def build_course_list(institution, ctx) -> list:
   """ INFROM? class_item (AND class_item)*
       INFROM? class_item (OR class_item)*
   """
+  if DEBUG:
+    print('build_course_list()', file=sys.stderr)
   course_list: list = []
   if ctx is None:
     return course_list
@@ -93,7 +106,7 @@ def build_course_list(institution, ctx) -> list:
     course_query = f"""
                       select institution, course_id, offer_nbr, discipline, catalog_number, title,
                              course_status, max_credits, designation, attributes
-                        from courses
+                        from cuny_courses
                        where institution ~* '{institution}'
                          and discipline ~ '{search_discipline}'
                          and {search_number}
@@ -158,83 +171,116 @@ class ReqBlockInterpreter(ReqBlockListener):
     self.period_start = period_start
     self.period_stop = period_stop
     self.institution = colleges[institution]
-    self.html = f"""<h1>{self.institution} {self.title}</h1>
-                    <p>Requirements for Catalog Years
-                    {format_catalog_years(period_start, period_stop)}
-                    </p>
-                    <section>
-                      <h1 class="closer">Degreeworks Code</h1>
-                      <div>
-                        <hr>
-                        <pre>{requirement_text}</pre>
-                      </div>
-                    </section>
-                    <section>
-                    <h1 class="closer">Requirements</h1>
-                    <div>
-                      <hr>
-                 """
+    self.requirement_text = requirement_text
+    self.requirements = {header: [], rule: []}
+
+  @property
+  def html(self):
+    html_body = f"""
+<h1>{self.institution} {self.title}</h1>
+<p>Requirements for Catalog Years
+{format_catalog_years(self.period_start, self.period_stop)}
+</p>
+<section>
+  <h1 class="closer">Degreeworks Code</h1>
+  <div>
+    <hr>
+    <pre>{self.requirement_text.replace('<','&lt;')}</pre>
+  </div>
+</section>
+<section>
+  <h1 class="closer">Interpretation</h1>
+  <div>
+    <hr>
+    {dict2html(self.requirements, 'Requirement Section')}
+  </div>
+</section
+"""
+
+    return html_body
+
+  def enterHeader(self, ctx):
+    if DEBUG:
+      print('enterHeader()', file=sys.stderr)
+    pass
+
+  def enterRules(self, ctx):
+    if DEBUG:
+      print('enterRules()', file=sys.stderr)
+    pass
 
   def enterMinres(self, ctx):
     """ MINRES NUMBER (CREDITS | CLASSES)
     """
+    if DEBUG:
+      print('enterMinres()', file=sys.stderr)
     classes_credits = classes_or_credits(ctx)
     # print(inspect.getmembers(ctx))
     if float(str(ctx.NUMBER())) == 1:
       classes_credits = classes_credits.strip('es')
-    self.html += (f'<p>At least {ctx.NUMBER()} {str(classes_credits).lower()} '
-                  f'must be completed in residency.</p>')
+    self.requirements[header].append(
+        Requirement('minres',
+                    f'{ctx.NUMBER()} {classes_credits}',
+                    f'At least {ctx.NUMBER()} {str(classes_credits).lower()} '
+                    f'must be completed in residency.'))
 
   def enterNumcredits(self, ctx):
     """ (NUMBER | RANGE) CREDITS (and_courses | or_courses)?
     """
+    if DEBUG:
+      print('enterNumcredits()', file=sys.stderr)
     if ctx.NUMBER() is not None:
-      self.html += (f'<p>This {self.block_type} requires {ctx.NUMBER()} credits.')
+      print(f'<p>This {self.block_type} requires {ctx.NUMBER()} credits.')
     elif ctx.RANGE() is not None:
        low, high = str(ctx.RANGE()).split(':')
-       self.html += (f'<p>This {self.block_type} requires between {low} and {high} credits.')
+       print(f'<p>This {self.block_type} requires between {low} and {high} credits.')
     else:
-      self.html += (f'<p class="warning">This {self.block_type} requires an '
-                    f'<strong>unknown</strong> number of credits.')
+      print(f'<p class="warning">This {self.block_type} requires an '
+            f'<strong>unknown</strong> number of credits.')
     if ctx.and_courses() is not None:
-      self.html += course_list_to_html(build_course_list(self.institution, ctx.and_courses()))
+      print(course_list_to_html(build_course_list(self.institution, ctx.and_courses())), end='')
     if ctx.or_courses() is not None:
-      self.html += course_list_to_html(build_course_list(self.institution, ctx.or_courses()))
-    self.html += '</p>'
+      print(course_list_to_html(build_course_list(self.institution, ctx.or_courses())), end='')
+    print()
 
   def enterMaxcredits(self, ctx):
     """ MAXCREDITS NUMBER (and_courses | or_courses)
     """
+    if DEBUG:
+      print('enterMaxcredits()', file=sys.stderr)
     limit_type = 'a maximum of'
     if ctx.NUMBER() == '0':
       limit_type = 'zero'
-    self.html += (f'<p>This {self.block_type} allows {limit_type} of {ctx.NUMBER()} credits in ')
+    print(f'<p>This {self.block_type} allows {limit_type} of {ctx.NUMBER()} credits in ', end='')
     if ctx.and_courses() is not None:
-      self.html += course_list_to_html(build_course_list(self.institution, ctx.and_courses()))
+      print(course_list_to_html(build_course_list(self.institution, ctx.and_courses())), end='')
     if ctx.or_courses() is not None:
-      self.html += course_list_to_html(build_course_list(self.institution, ctx.or_courses()))
-    self.html += '</p>'
+      print(course_list_to_html(build_course_list(self.institution, ctx.or_courses())), end='')
+    print()
 
   def enterMaxclasses(self, ctx):
     """ MAXCLASSES NUMBER (and_courses | or_courses)
     """
+    if DEBUG:
+      print('enterMaxclasses()', file=sys.stderr)
     num_classes = int(str(ctx.NUMBER()))
     limit = f'no more than {num_classes}'
     if num_classes == 0:
       limit = 'no'
-    self.html += (f'<p>This {self.block_type} allows {limit} '
-                  f'class{"es" * (num_classes != 1)} from ')
+    print(f'This {self.block_type} allows {limit} class{"es" * (num_classes != 1)} from ', end='')
     if ctx.and_courses() is not None:
       build_course_list(ctx.and_courses())
     if ctx.and_courses() is not None:
-      self.html += course_list_to_html(build_course_list(self.institution, ctx.and_courses()))
+      print(course_list_to_html(build_course_list(self.institution, ctx.and_courses())), end='')
     if ctx.or_courses() is not None:
-      self.html += course_list_to_html(build_course_list(self.institution, ctx.or_courses()))
-    self.html += '</p>'
+      print(course_list_to_html(build_course_list(self.institution, ctx.or_courses())), end='')
+    print()
 
   def enterMaxpassfail(self, ctx):
     """ MAXPASSFAIL NUMBER (CREDITS | CLASSES) (TAG '=' SYMBOL)?
     """
+    if DEBUG:
+      print('enterMaxpassfail()', file=sys.stderr)
     num = int(str(ctx.NUMBER()))
     limit = f'no more than {ctx.NUMBER()}'
     if num == 0:
@@ -242,8 +288,7 @@ class ReqBlockInterpreter(ReqBlockListener):
     which = classes_or_credits(ctx)
     if num == 1:
       which = which[0:-1].strip('e')
-    self.html += (f'<p>This {self.block_type} allows {limit} {which} ')
-    self.html += 'to be taken Pass/Fail.</p>'
+    print(f'<p>This {self.block_type} allows {limit} {which} to be taken Pass/Fail!</p>')
 
 
 # Class DGW_Logger
@@ -306,7 +351,12 @@ def dgw_parser(institution, block_type, block_value, period='current'):
                           .replace('\\r', '\r')\
                           .replace('\\n', '\n') + '\n'
     dgw_logger = DGW_Logger(institution, block_type, block_value, row.period_stop)
-    input_stream = InputStream(requirement_text)
+    # Unable to get Antlr to ignore cruft before BEGIN and after END. so, reluctantly, removing the
+    # cruft here in order to get on with parsing.
+    match = re.search(r'.*?(BEGIN.*?END\.).*', requirement_text, re.I | re.S)
+    if match is None:
+      raise ValueError(f'BEGIN...;...END. not found:\n{requirement_text}')
+    input_stream = InputStream(match.group(1))
     lexer = ReqBlockLexer(input_stream)
     lexer.removeErrorListeners()
     lexer.addErrorListener(dgw_logger)
@@ -321,11 +371,11 @@ def dgw_parser(institution, block_type, block_value, period='current'):
                                       row.period_start,
                                       row.period_stop,
                                       requirement_text)
-    walker = ParseTreeWalker()
     try:
+      walker = ParseTreeWalker()
       tree = parser.req_block()
       walker.walk(interpreter, tree)
-      return_html += interpreter.html + '</section>'
+      return_html += interpreter.html
     except Exception as e:
       return_html += f"""
                         <p class="error">Currently unable to interpret this block.</p>

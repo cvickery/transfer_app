@@ -17,6 +17,10 @@ section {
  * ---------------------------------------------------
  */
 
+ul {
+  list-style-type: none;
+}
+
 /* The trangle */
 .closer::before {
   content: "\25B6";

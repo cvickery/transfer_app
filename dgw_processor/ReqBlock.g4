@@ -37,8 +37,8 @@ grammar ReqBlock;
  * Parser Rules
  */
 
-req_block   : BEGIN headers ';' rules ENDDOT <EOF>;
-headers     :
+req_block   : BEGIN header ';' rules ENDDOT <EOF>;
+header     :
             ( mingpa
             | minres
             | mingrade
@@ -46,7 +46,6 @@ headers     :
             | numcredits
             | maxcredits
             | maxclasses
-            | maxcredits
             | maxpassfail
             | proxy_advice
             | exclusive
@@ -56,29 +55,31 @@ headers     :
             ;
 rules       : .*? ;
 
+class_item  : (SYMBOL | WILDSYMBOL)? (NUMBER | RANGE | WILDNUMBER) ;
 or_courses  : INFROM? class_item (OR class_item)* ;
 and_courses : INFROM? class_item (AND class_item)* ;
 
-class_item  : (SYMBOL | WILDSYMBOL)? (NUMBER | RANGE | WILDNUMBER) ;
 mingpa      : MINGPA NUMBER ;
 minres      : MINRES NUMBER (CREDITS | CLASSES) ;
 mingrade    : MINGRADE NUMBER ;
 numclasses  : NUMBER CLASSES (and_courses | or_courses) ;
-numcredits  : (NUMBER | RANGE) CREDITS (and_courses | or_courses)? (TAG)? ;
+numcredits  : (NUMBER | RANGE) CREDITS (and_courses | or_courses)? TAG? ;
 maxclasses  : MAXCLASSES NUMBER (and_courses | or_courses) ;
 maxcredits  : MAXCREDITS NUMBER (and_courses | or_courses) ;
 proxy_advice: PROXYADVICE STRING proxy_advice* ;
 exclusive   : EXCLUSIVE '(' ~')'* ')' ;
-maxpassfail : MAXPASSFAIL NUMBER (CREDITS | CLASSES) (TAG '=' SYMBOL)? ;
+maxpassfail : MAXPASSFAIL NUMBER (CREDITS | CLASSES) TAG? ;
+noncourses  : NUMBER NONCOURSES LP SYMBOL (',' SYMBOL)* RP ;
 remark      : REMARK STRING ';' remark* ;
 label       : LABEL ALPHANUM? STRING ';'? label* ;
+symbol      : SYMBOL ;
 
 /*
  * Lexer Rules
  */
 
-BEGIN       : .*? [Bb][Ee][Gg][Ii][Nn] ;
-ENDDOT      : [Ee][Nn][Dd]DOT .* ;
+BEGIN       : [Bb][Ee][Gg][Ii][Nn] ;
+ENDDOT      : [Ee][Nn][Dd]DOT ;
 STRING      : '"' .*? '"' ;
 
 
@@ -89,7 +90,7 @@ CREDITS     : [Cc][Rr][Ee][Dd][Ii][Tt][Ss]? ;
 MINCREDITS  : [Mm][Ii][Nn] CREDITS ;
 MAXCREDITS  : [Mm][Aa][Xx] CREDITS ;
 
-
+NONCOURSES  : [Nn][Oo][Nn][Cc][Oo][Uu][Rr][Ss][Ee][Ss]? ;
 CLASSES     : [Cc][Ll][Aa][Ss][Ss]([Ee][Ss])? ;
 MINCLASSES  : [Mm][Ii][Nn] CLASSES ;
 MAXCLASSES  : [Mm][Aa][Xx] CLASSES ;
@@ -120,7 +121,7 @@ OR          : (COMMA | ([Oo][Rr])) ;
 AND         : (PLUS | ([Aa][Nn][Dd])) ;
 
 INFROM      : ([Ii][Nn])|([Ff][Rr][Oo][Mm]) ;
-TAG         : [Tt][Aa][Gg] ( EQ SYMBOL )?;
+TAG         : ([Tt][Aa][Gg]) ( EQ SYMBOL )?;
 
 WILDNUMBER  : (DIGIT+ WILDCARD DIGIT*) | (WILDCARD DIGIT+) ;
 WILDSYMBOL  : ((LETTER | DIGIT)*  WILDCARD (LETTER | DIGIT)*)+ ;
@@ -136,10 +137,12 @@ GT          : '>' ;
 LE          : '<=' ;
 LT          : '<' ;
 EQ          : '=' ;
+LP          : '(' ;
+RP          : ')' ;
+COMMA       : ',' ;
+PLUS        : '+' ;
 
 fragment DOT         : '.' ;
-fragment COMMA       : ',' ;
-fragment PLUS        : '+' ;
 fragment DIGIT       : [0-9] ;
 fragment LETTER      : [a-zA-Z] ;
 
