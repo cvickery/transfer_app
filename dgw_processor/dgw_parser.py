@@ -67,7 +67,7 @@ def classes_or_credits(ctx) -> str:
   """
   """
   if DEBUG:
-    print('classes_or_credits()', file=sys.stderr)
+    print('*** classes_or_credits()', file=sys.stderr)
   classes_credits = ctx.CREDITS()
   if classes_credits is None:
     classes_credits = ctx.CLASSES()
@@ -77,14 +77,18 @@ def classes_or_credits(ctx) -> str:
 def build_course_list(institution, ctx) -> list:
   """ INFROM? class_item (AND class_item)*
       INFROM? class_item (OR class_item)*
+      If the list is an AND list, but there are wildcards, say it's an OR list. This is a parser
+      ambiguity that needs to be resolved ...
   """
   if DEBUG:
-    print('build_course_list()', file=sys.stderr)
-  course_list: list = []
+    print(f'*** build_course_list()', file=sys.stderr)
   if ctx is None:
-    return course_list
-  # if ctx.INFROM():
-  #   print(f'INFROM: {ctx.INFROM()}')
+    return None
+  course_list: list = []
+  if type(ctx).__name__ == 'Or_coursesContext':
+    list_type = 'or'
+  else:
+    list_type = 'and'
   for class_item in ctx.class_item():
     if class_item.SYMBOL():
       display_discipline = str(class_item.SYMBOL())
@@ -92,18 +96,21 @@ def build_course_list(institution, ctx) -> list:
     if class_item.WILDSYMBOL():
       display_discipline = str(class_item.WILDSYMBOL())
       search_discipline = display_discipline.replace('@', '.*')
+      list_type = 'or'
     if class_item.NUMBER():
       display_number = str(class_item.NUMBER())
       search_number = f"catalog_number = '{display_number}'"
     if class_item.RANGE():
       display_number = str(class_item.RANGE())
       low, high = display_number.split(':')
+      list_type = 'or'
       search_number = f""" numeric_part(catalog_number) >= {float(low)} and
                            numeric_part(catalog_number) <' {float(high)}'
                       """
     if class_item.WILDNUMBER():
       display_number = str(class_item.wildnumber)
       search_number = f"catalog_number ~ '{display_number.replace('@', '.*')}'"
+      list_type = 'or'
     course_query = f"""
                       select institution, course_id, offer_nbr, discipline, catalog_number, title,
                              description, course_status, max_credits, designation, attributes
@@ -111,19 +118,17 @@ def build_course_list(institution, ctx) -> list:
                        where institution ~* '{institution}'
                          and discipline ~ '{search_discipline}'
                          and {search_number}
+                         order by numeric_part(catalog_number), discipline
                     """
     conn = PgConnection()
     cursor = conn.cursor()
     cursor.execute(course_query)
-    print(f'{institution} {search_discipline} {search_number} returned {cursor.rowcount} rows', file=sys.stderr)
     # Convert generator to list.
     details = [row for row in cursor.fetchall()]
     course_list.append({'display': f'{display_discipline} {display_number}',
                         'info': details})
     conn.close()
-  if DEBUG:
-    print(f'return list len {len(course_list)}', file=sys.stderr)
-  return course_list
+  return {'courses': course_list, 'list_type': list_type}
 
 
 def course_list2html(course_list: dict):
@@ -134,27 +139,29 @@ def course_list2html(course_list: dict):
 
   return_list = []
   for course in course_list:
-    print(course)
     for info in course['info']:
-      if info.course_status == 'A' and 'WRIC' not in info.attributes:
+      if all_writing and info.course_status == 'A' and 'WRIC' not in info.attributes:
         all_writing = False
-      if info.course_status == 'A' and info.max_credits > 0 and 'BKCR' not in info.attributes:
+      if all_blanket and info.course_status == 'A' and 'BKCR' not in info.attributes \
+         and info.max_credits > 0:
+        if DEBUG:
+          print('***', info.discipline, info.catalog_number, 'is a wet blanket', file=sys.stderr)
         all_blanket = False
-      return_list.append(f"""
-                  <div title="{info.course_id}:{info.offer_nbr}">
-                    {info.discipline} {info.catalog_number} {info.title}
-                    <br>
-                    {info.description}
-                    <br>
-                    {info.designation} {info.attributes}
-                    {'<span class="error">Inactive Course</span>' * (info.course_status == 'I')}
-                  </div>
-              """)
+      if info.course_status == 'A':  # include only active courses.
+        return_list.append(f"""
+                    <div title="{info.course_id}:{info.offer_nbr}">
+                      <strong>{info.discipline} {info.catalog_number} {info.title}</strong>
+                      <br>
+                      {info.description}
+                      <br>
+                      {info.designation} {info.attributes}
+                    </div>
+                """)
   attributes = []
   if all_blanket:
-    attributes.append('Blanket Credit')
+    attributes.append('blanket credit')
   if all_writing:
-    attributes.append('Writing Intensive')
+    attributes.append('writing intensive')
 
   return attributes, return_list
 
@@ -181,7 +188,7 @@ class ReqBlockInterpreter(ReqBlockListener):
     self.title = title
     self.period_start = period_start
     self.period_stop = period_stop
-    self.institution = colleges[institution]
+    self.institution_name = colleges[institution]
     self.requirement_text = requirement_text
     self.scribe_section = ScribeSection.NONE
     self.sections = [[], [], []]  # NONE, HEAD, BODY
@@ -193,7 +200,7 @@ class ReqBlockInterpreter(ReqBlockListener):
         f'ERROR: Scribe Block Section {ScribeSection.NONE.name} has'
         f'{len_empty} item{"" if len_empty == 1 else "s"} instead of none.')
     html_body = f"""
-<h1>{self.institution} {self.title}</h1>
+<h1>{self.institution_name} {self.title}</h1>
 <p>Requirements for Catalog Years
 {format_catalog_years(self.period_start, self.period_stop)}
 </p>
@@ -218,21 +225,20 @@ class ReqBlockInterpreter(ReqBlockListener):
 
   def enterHead(self, ctx):
     if DEBUG:
-      print('enterHead()', file=sys.stderr)
+      print('*** enterHead()', file=sys.stderr)
     self.scribe_section = ScribeSection.HEAD
 
   def enterBody(self, ctx):
     if DEBUG:
-      print('enterBody()', file=sys.stderr)
+      print('*** enterBody()', file=sys.stderr)
     self.scribe_section = ScribeSection.BODY
 
   def enterMinres(self, ctx):
     """ MINRES NUMBER (CREDITS | CLASSES)
     """
     if DEBUG:
-      print('enterMinres()', file=sys.stderr)
+      print('*** enterMinres()', file=sys.stderr)
     classes_credits = classes_or_credits(ctx)
-    # print(inspect.getmembers(ctx))
     if float(str(ctx.NUMBER())) == 1:
       classes_credits = classes_credits.strip('es')
     self.sections[self.scribe_section.value].append(
@@ -246,7 +252,7 @@ class ReqBlockInterpreter(ReqBlockListener):
     """ (NUMBER | RANGE) CREDITS (and_courses | or_courses)?
     """
     if DEBUG:
-      print('enterNumcredits()', file=sys.stderr)
+      print('*** enterNumcredits()', file=sys.stderr)
     text = f'This {self.block_type_str} requires '
     if ctx.NUMBER() is not None:
       text += f'{ctx.NUMBER()} credits'
@@ -255,23 +261,21 @@ class ReqBlockInterpreter(ReqBlockListener):
       text += f'between {low} and {high} credits'
     else:
       text += f'an <span class="error">unknown</span> number of credits'
-
     course_list = None
     if ctx.and_courses() is not None:
       course_list = build_course_list(self.institution, ctx.and_courses())
-      list_quantifier = 'all'
     if ctx.or_courses() is not None:
       course_list = build_course_list(self.institution, ctx.or_courses())
-      list_quantifier = 'any'
 
     if course_list is None:
       text += '.'
       courses = None
     else:
-      len_list = len(course_list)
-      attributes, html_list = course_list2html(course_list)
+      list_quantifier = 'any' if course_list['list_type'] == 'or' else 'all'
+      attributes, html_list = course_list2html(course_list['courses'])
+      len_list = len(html_list)
       if len_list == 1:
-        preamble = f' in {list_quantifier}'
+        preamble = f' in '
         courses = html_list[0]
       else:
         preamble = f' in {list_quantifier} of these {len_list} {" and ".join(attributes)} courses:'
@@ -287,28 +291,26 @@ class ReqBlockInterpreter(ReqBlockListener):
     """ MAXCREDITS NUMBER (and_courses | or_courses)
     """
     if DEBUG:
-      print('enterMaxcredits()', file=sys.stderr)
+      print(f'*** enterMaxcredits()', file=sys.stderr)
     limit = f'a maximum of {ctx.NUMBER()}'
-    if ctx.NUMBER() == '0':
+    if ctx.NUMBER() == 0:
       limit = 'zero'
-    text = f'This {self.block_type} allows {limit} credits'
+    text = f'This {self.block_type_str} allows {limit} credits'
     course_list = None
     if ctx.and_courses() is not None:
       course_list = build_course_list(self.institution, ctx.and_courses())
-      list_quantifier = 'all'
     if ctx.or_courses() is not None:
       course_list = build_course_list(self.institution, ctx.or_courses())
-      list_quantifier = 'any'
 
-    if course_list is None:
+    if course_list is None:  # Weird: no credits allowed, but no course list provided.
       text += '.'
       courses = None
     else:
-      len_list = len(course_list)
-      attributes, html_list = course_list2html(course_list)
-      assert len_list == len(html_list), f'{len_list} is not {len(html_list)}'
+      list_quantifier = 'any' if course_list['list_type'] == 'or' else 'all'
+      attributes, html_list = course_list2html(course_list['courses'])
+      len_list = len(html_list)
       if len_list == 1:
-        preamble = f' in {list_quantifier}'
+        preamble = f' in '
         courses = html_list[0]
       else:
         preamble = f' in {list_quantifier} of these {len_list} {" and ".join(attributes)} courses:'
@@ -324,25 +326,44 @@ class ReqBlockInterpreter(ReqBlockListener):
     """ MAXCLASSES NUMBER (and_courses | or_courses)
     """
     if DEBUG:
-      print('enterMaxclasses()', file=sys.stderr)
+      print('*** enterMaxclasses()', file=sys.stderr)
     num_classes = int(str(ctx.NUMBER()))
-    limit = f'no more than {num_classes}'
+    suffix = '' if num_classes == 1 else 'es'
+    limit = f'no more than {num_classes} class{suffix}'
     if num_classes == 0:
-      limit = 'no'
-    print(f'This {self.block_type} allows {limit} class{"es" * (num_classes != 1)} from ', end='')
+      limit = 'no classes'
+    text = f'This {self.block_type_str} allows {limit}'
+    course_list = None
     if ctx.and_courses() is not None:
-      build_course_list(ctx.and_courses())
-    if ctx.and_courses() is not None:
-      print(course_list2html(build_course_list(self.institution, ctx.and_courses())), end='')
+      course_list = build_course_list(self.institution, ctx.and_courses())
     if ctx.or_courses() is not None:
-      print(course_list2html(build_course_list(self.institution, ctx.or_courses())), end='')
-    print()
+      course_list = build_course_list(self.institution, ctx.or_courses())
+
+    if course_list is None:  # Weird: no classes allowed, but no course list provided.
+      text += '.'
+      courses = None
+    else:
+      list_quantifier = 'any' if course_list['list_type'] == 'or' else 'all'
+      attributes, html_list = course_list2html(course_list['courses'])
+      len_list = len(html_list)
+      if len_list == 1:
+        preamble = f' in '
+        courses = html_list[0]
+      else:
+        preamble = f' in {list_quantifier} of these {len_list} {" and ".join(attributes)} courses:'
+        courses = html_list
+      text += f' {preamble} '
+    self.sections[self.scribe_section.value].append(
+        Requirement('maxlasses',
+                    f'{num_classes} class{suffix}',
+                    f'{text}',
+                    courses))
 
   def enterMaxpassfail(self, ctx):
     """ MAXPASSFAIL NUMBER (CREDITS | CLASSES) (TAG '=' SYMBOL)?
     """
     if DEBUG:
-      print('enterMaxpassfail()', file=sys.stderr)
+      print('*** enterMaxpassfail()', file=sys.stderr)
     num = int(str(ctx.NUMBER()))
     limit = f'no more than {ctx.NUMBER()}'
     if num == 0:
@@ -350,7 +371,12 @@ class ReqBlockInterpreter(ReqBlockListener):
     which = classes_or_credits(ctx)
     if num == 1:
       which = which[0:-1].strip('e')
-    print(f'<p>This {self.block_type} allows {limit} {which} to be taken Pass/Fail!</p>')
+    text = f'This {self.block_type_str} allows {limit} {which} to be taken Pass/Fail.'
+    self.sections[self.scribe_section.value].append(
+        Requirement('maxpassfail',
+                    f'{num} {which}',
+                    f'{text}',
+                    None))
 
 
 # Class DGW_Logger
