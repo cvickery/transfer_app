@@ -134,6 +134,13 @@ fieldset hr {
   font-variant: small-caps;
 }
 
+.error-box {
+  padding:0 1em;
+  background-color:white;
+  border:1px solid #992;
+  border-radius:0.25em;
+}
+
 .warning {
   color: #992;
 }
