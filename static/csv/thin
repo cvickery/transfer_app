@@ -1,0 +1,8 @@
+#! /usr/local/bin/bash
+for file in *.csv
+do file_date=${file: 4:10}
+  if [[ $file_date < `date -I -d 'yesterday'` ]]
+  then echo $file is old
+  fi
+done
+
