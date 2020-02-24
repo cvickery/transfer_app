@@ -14,6 +14,7 @@ import re
 
 from collections import namedtuple
 from enum import Enum
+from urllib import parse
 
 from antlr4 import *
 from antlr4.error.ErrorListener import ErrorListener
@@ -35,6 +36,7 @@ if not os.getenv('HEROKU'):
                       level=logging.DEBUG)
 
 Requirement = namedtuple('Requirement', 'keyword, value, text, course')
+ShareList = namedtuple('ShareList', 'keyword share_list')
 
 trans_dict: Dict[int, None] = dict()
 for c in range(13, 31):
@@ -89,33 +91,43 @@ def build_course_list(institution, ctx) -> list:
     list_type = 'or'
   else:
     list_type = 'and'
+
   for class_item in ctx.class_item():
     if class_item.SYMBOL():
       display_discipline = str(class_item.SYMBOL())
       search_discipline = display_discipline
-    if class_item.WILDSYMBOL():
+    elif class_item.WILDSYMBOL():
       display_discipline = str(class_item.WILDSYMBOL())
       search_discipline = display_discipline.replace('@', '.*')
       list_type = 'or'
-    if class_item.NUMBER():
+    if class_item.CATALOG_NUMBER():
+      display_number = str(class_item.CATALOG_NUMBER())
+      search_number = f"catalog_number = '{display_number}'"
+    elif class_item.NUMBER():
       display_number = str(class_item.NUMBER())
       search_number = f"catalog_number = '{display_number}'"
-    if class_item.RANGE():
+    elif class_item.RANGE():
       display_number = str(class_item.RANGE())
       low, high = display_number.split(':')
       list_type = 'or'
       search_number = f""" numeric_part(catalog_number) >= {float(low)} and
-                           numeric_part(catalog_number) <' {float(high)}'
+                           numeric_part(catalog_number) <=' {float(high)}'
                       """
-    if class_item.WILDNUMBER():
-      display_number = str(class_item.wildnumber)
+    elif class_item.WILDNUMBER():
+      display_number = str(class_item.WILDNUMBER())
       search_number = f"catalog_number ~ '{display_number.replace('@', '.*')}'"
       list_type = 'or'
+
+    # Note change of attributes from a semicolon-separated list of name:value pairs to a comma-
+    # separated list of values.
     course_query = f"""
                       select institution, course_id, offer_nbr, discipline, catalog_number, title,
-                             description, course_status, max_credits, designation, attributes
+                             requisites, description, contact_hours, max_credits, designation,
+                             replace(regexp_replace(attributes, '[A-Z]+:', '', 'g'), ';', ',')
+                             as attributes
                         from cuny_courses
                        where institution ~* '{institution}'
+                         and course_status = 'A'
                          and discipline ~ '{search_discipline}'
                          and {search_number}
                          order by numeric_part(catalog_number), discipline
@@ -123,6 +135,7 @@ def build_course_list(institution, ctx) -> list:
     conn = PgConnection()
     cursor = conn.cursor()
     cursor.execute(course_query)
+
     # Convert generator to list.
     details = [row for row in cursor.fetchall()]
     course_list.append({'display': f'{display_discipline} {display_number}',
@@ -140,23 +153,25 @@ def course_list2html(course_list: dict):
   return_list = []
   for course in course_list:
     for info in course['info']:
-      if all_writing and info.course_status == 'A' and 'WRIC' not in info.attributes:
+      if all_writing and 'WRIC' not in info.attributes:
         all_writing = False
-      if all_blanket and info.course_status == 'A' and 'BKCR' not in info.attributes \
+      if all_blanket and 'BKCR' not in info.attributes \
          and info.max_credits > 0:
         if DEBUG:
           print('***', info.discipline, info.catalog_number, 'is a wet blanket', file=sys.stderr)
         all_blanket = False
-      if info.course_status == 'A':  # include only active courses.
-        return_list.append(f"""
-                    <div title="{info.course_id}:{info.offer_nbr}">
-                      <strong>{info.discipline} {info.catalog_number} {info.title}</strong>
-                      <br>
-                      {info.description}
-                      <br>
-                      {info.designation} {info.attributes}
-                    </div>
-                """)
+      return_list.append(f"""
+                  <div title="{info.course_id}:{info.offer_nbr}">
+                    <strong>{info.discipline} {info.catalog_number} {info.title}</strong>
+                    <br>
+                    {info.contact_hours:0.1f} hr; {info.max_credits:0.1f} cr Requisites:
+                    <em>{info.requisites}</em>
+                    <br>
+                    {info.description}
+                    <br>
+                    <em>Designation: {info.designation}; Attributes: {info.attributes}</em>
+                  </div>
+              """)
   attributes = []
   if all_blanket:
     attributes.append('blanket credit')
@@ -212,7 +227,7 @@ class ReqBlockInterpreter(ReqBlockListener):
   </div>
 </section>
 <section>
-  <h1 class="closer">Interpretation</h1>
+  <h1 class="closer">Extracted Requirements</h1>
   <div>
     <hr>
     {items2html(self.sections[ScribeSection.HEAD.value], 'Head Item')}
@@ -231,6 +246,13 @@ class ReqBlockInterpreter(ReqBlockListener):
   def enterBody(self, ctx):
     if DEBUG:
       print('*** enterBody()', file=sys.stderr)
+
+# numclasses  : NUMBER CLASSES (and_courses | or_courses) ;
+# proxy_advice: PROXYADVICE STRING proxy_advice* ;
+# noncourses  : NUMBER NONCOURSES LP SYMBOL (',' SYMBOL)* RP ;
+
+# symbol      : SYMBOL ;
+
     self.scribe_section = ScribeSection.BODY
 
   def enterMinres(self, ctx):
@@ -248,8 +270,11 @@ class ReqBlockInterpreter(ReqBlockListener):
                     f'must be completed in residency.',
                     None))
 
+# mingpa      : MINGPA NUMBER ;
+# mingrade    : MINGRADE NUMBER ;
+
   def enterNumcredits(self, ctx):
-    """ (NUMBER | RANGE) CREDITS (and_courses | or_courses)?
+    """ (NUMBER | RANGE) CREDITS (and_courses | or_courses)? TAG? ;
     """
     if DEBUG:
       print('*** enterNumcredits()', file=sys.stderr)
@@ -378,6 +403,66 @@ class ReqBlockInterpreter(ReqBlockListener):
                     f'{text}',
                     None))
 
+  def enterNumclasses(self, ctx):
+    if DEBUG:
+      print('*** enterNumClasses', file=sys.stderr)
+    pass
+
+  def enterRule_subset(self, ctx):
+    if DEBUG:
+      print('*** enterRule_subset', file=sys.stderr)
+    pass
+
+  def enterBlocktype(self, ctx):
+    """ NUMBER BLOCKTYPE LP DEGREE|CONC|MAJOR|MINOR RP label
+    """
+    if DEBUG:
+      print('*** enterBlocktype', file=sys.stderr)
+      print(ctx.SHARE_LIST())
+    pass
+
+  def enterBeginsub(self, ctx):
+    if DEBUG:
+      print('*** enterBeginSub', file=sys.stderr)
+    pass
+
+  def enterEndsub(self, ctx):
+    if DEBUG:
+      print('*** enterEndSub', file=sys.stderr)
+    pass
+
+  def enterRemark(self, ctx):
+    """ REMARK STRING ';' remark* ;
+    """
+    if DEBUG:
+      print('*** enterRemark()', file=sys.stderr)
+    pass
+
+  def enterLabel(self, ctx):
+    """ REMARK STRING ';' remark* ;
+    """
+    if DEBUG:
+      print('*** enterLabel()', file=sys.stderr)
+    pass
+
+  def enterShare(self, ctx):
+    """ SHARE SHARE_LIST
+    """
+    if DEBUG:
+      print('*** enterShare()', file=sys.stderr)
+      token = str(ctx.SHARE())
+      share_type = 'share' \
+          if token.lower() in ['share', 'sharewith', 'nonexclusive'] \
+          else 'exclusive'
+      this_section = self.sections[self.scribe_section.value]
+      for i, item in enumerate(this_section):
+        if item.keyword == share_type:
+          break
+      else:
+        i += 1
+        this_section.append(ShareList(share_type, []))
+      this_section[i].share_list.append(str(ctx.SHARE_LIST()).strip('()'))
+
 
 # Class DGW_Logger
 # =================================================================================================
@@ -465,12 +550,24 @@ def dgw_parser(institution, block_type, block_value, period='current'):
       walker = ParseTreeWalker()
       tree = parser.req_block()
       walker.walk(interpreter, tree)
-      return_html += interpreter.html
     except Exception as e:
-      return_html += f"""
-                        <p class="error">Currently unable to interpret this block.</p>
-                        <p>Internal Error Message: “<em>{e}</em>”</p>
-                      """
+      msg_body = f"""College: {interpreter.institution}
+                     Block Type: {interpreter.block_type}
+                     Block Value: {interpreter.block_value}
+                     Period Start: {interpreter.period_start}
+                     Period Stop: {interpreter.period_stop}
+                     Error: {e}"""
+      msg_body = parse.quote(re.sub(r'\n\s*', r'\n', msg_body))
+      email_link = f"""
+      <a href="mailto:cvickery@qc.cuny.edu?subject=DGW%20Parser%20Failure&body={msg_body}"
+         class="button">report this problem (optional)</a>"""
+
+      return_html = (f"""<div class="error-box">
+                        <p class="error">Currently unable to interpret this block completely.</p>
+                        <p class="error">Internal Error Message: “<em>{e}</em>”</p>
+                        <p>{email_link}</p></div>"""
+                     + return_html)
+    return_html += interpreter.html
 
     if period == 'current' or period == 'latest':
       break

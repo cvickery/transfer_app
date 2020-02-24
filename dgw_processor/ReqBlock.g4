@@ -48,30 +48,41 @@ head       :
             | maxclasses
             | maxpassfail
             | proxy_advice
-            | exclusive
+            | share
             | remark
             | label
             )*
             ;
-body        : .*? ;
+body        : rule_subset
+            | blocktype
+            | mingrade
+            | label
+            | remark
+            | numclasses
+            | numcredits
+            | maxperdisc
+            ;
 
-class_item  : (SYMBOL | WILDSYMBOL)? (NUMBER | RANGE | WILDNUMBER) ;
+class_item  : (SYMBOL | WILDSYMBOL)? (CATALOG_NUMBER | WILDNUMBER | NUMBER | RANGE) ;
 or_courses  : INFROM? class_item (OR class_item)* ;
 and_courses : INFROM? class_item (AND class_item)* ;
 
+rule_subset : BEGINSUB (numclasses | numcredits label)+ ENDSUB label ;
+blocktype   : NUMBER BLOCKTYPE SHARE_LIST label ;
+label       : LABEL ALPHANUM*? STRING ';' label* ;
+remark      : REMARK STRING ';' remark* ;
 mingpa      : MINGPA NUMBER ;
 minres      : MINRES NUMBER (CREDITS | CLASSES) ;
 mingrade    : MINGRADE NUMBER ;
-numclasses  : NUMBER CLASSES (and_courses | or_courses) ;
+numclasses  : (NUMBER | RANGE) CLASSES (and_courses | or_courses)? TAG? label*;
 numcredits  : (NUMBER | RANGE) CREDITS (and_courses | or_courses)? TAG? ;
 maxclasses  : MAXCLASSES NUMBER (and_courses | or_courses) ;
 maxcredits  : MAXCREDITS NUMBER (and_courses | or_courses) ;
 proxy_advice: PROXYADVICE STRING proxy_advice* ;
-exclusive   : EXCLUSIVE '(' ~')'* ')' ;
+share       : SHARE SHARE_LIST ;
+maxperdisc  : MAXPERDISC NUMBER (CREDITS | CLASSES) INFROM? LP SYMBOL (',' SYMBOL)* TAG? ;
 maxpassfail : MAXPASSFAIL NUMBER (CREDITS | CLASSES) TAG? ;
 noncourses  : NUMBER NONCOURSES LP SYMBOL (',' SYMBOL)* RP ;
-remark      : REMARK STRING ';' remark* ;
-label       : LABEL ALPHANUM? STRING ';'? label* ;
 symbol      : SYMBOL ;
 
 /*
@@ -82,7 +93,8 @@ BEGIN       : [Bb][Ee][Gg][Ii][Nn] ;
 ENDDOT      : [Ee][Nn][Dd]DOT ;
 STRING      : '"' .*? '"' ;
 
-
+BEGINSUB    : [Bb][Ee][Gg][Ii][Nn][Ss][Uu][Bb] ;
+ENDSUB      : [Ee][Nn][Dd][Ss][Uu][Bb] ;
 LABEL       : [Ll][Aa][Bb][Ee][Ll] ;
 REMARK      : [Rr][Ee][Mm][Aa][Rr][Kk] ;
 
@@ -95,23 +107,28 @@ CLASSES     : [Cc][Ll][Aa][Ss][Ss]([Ee][Ss])? ;
 MINCLASSES  : [Mm][Ii][Nn] CLASSES ;
 MAXCLASSES  : [Mm][Aa][Xx] CLASSES ;
 
+MAXPERDISC  : [Mm][Aa][Xx][Pp][Ee][Rr][Dd][Ii][Ss][Cc] ;
 
 MINRES      : [Mm][Ii][Nn][Rr][Ee][Ss] ;
 MINGPA      : [Mm][Ii][Nn][Gg][Pp][Aa] ;
 MINGRADE    : [Mm][Ii][Nn][Gg][Rr][Aa][Dd][Ee] ;
 MAXPASSFAIL : [Mm][Aa][Xx][Pp][Aa][Ss][Ss][Ff][Aa][Ii][Ll] ;
 PROXYADVICE : [Pp][Rr][Oo][Xx][Yy][\-]?[Aa][Dd][Vv][Ii][Cc][Ee] ;
-EXCLUSIVE   : [Ee][Xx][Cc][Ll][Uu][Ss][Ii][Vv][Ee]
-            | [Nn][Oo][Nn] '-'? EXCLUSIVE
+SHARE       : ([Nn][Oo][Nn] '-'?)?[Ee][Xx][Cc][Ll][Uu][Ss][Ii][Vv][Ee]
+            | [Dd][Oo][Nn][Tt][Ss][Ss][Hh][Aa][Rr][Ee]
+            | [Ss][Hh][Aa][Rr][Ee]([Ww][Ii][Tt][Hh])?
             ;
 
+BLOCKTYPE   : [Bb][Ll][Oo][Cc][Kk][Tt][Yy][Pp][Ee][Ss]? ;
 
-BLOCKTYPE   : ([Dd][Ee][Gg][Rr][Ee][Ee]
-            | [Cc][Oo][Nn][Cc]
-            | [Mm][Aa][Jj][Oo][Rr]
-            | [Mm][Ii][Nn][Oo][Rr]
-            | [Oo][Tt][Hh][Ee][Rr])
-            ;
+SHARE_LIST  : LP SHARE_ITEM (COMMA SHARE_ITEM)* RP ;
+SHARE_ITEM  : DEGREE | CONC | MAJOR | MINOR | (OTHER (EQ SYMBOL)?) ;
+
+DEGREE      : [Dd][Ee][Gg][Rr][Ee][Ee] ;
+CONC        : [Cc][Oo][Nn][Cc] ;
+MAJOR       : [Mm][Aa][Jj][Oo][Rr] ;
+MINOR       : [Mm][Ii][Nn][Oo][Rr] ;
+OTHER       : [Oo][Tt][Hh][Ee][Rr] ;
 
 /* DWResident, DW... etc. are DWIDs */
 /* (Decide=DWID) is a phrase used for tie-breaking by the auditor.*/
@@ -123,14 +140,15 @@ AND         : (PLUS | ([Aa][Nn][Dd])) ;
 INFROM      : ([Ii][Nn])|([Ff][Rr][Oo][Mm]) ;
 TAG         : ([Tt][Aa][Gg]) ( EQ SYMBOL )?;
 
-WILDNUMBER  : (DIGIT+ WILDCARD DIGIT*) | (WILDCARD DIGIT+) ;
+WILDNUMBER  : (DIGIT+ WILDCARD DIGIT* LETTER?) | (WILDCARD DIGIT+ LETTER?) ;
 WILDSYMBOL  : ((LETTER | DIGIT)*  WILDCARD (LETTER | DIGIT)*)+ ;
+WILDCARD    : '@' ;
 
+CATALOG_NUMBER : NUMBER LETTER ;
 RANGE       : NUMBER ':' NUMBER ;
-NUMBER      : DIGIT+ DOT? DIGIT* ;
+NUMBER      : DIGIT+ (DOT DIGIT*)? ;
 SYMBOL      : LETTER (LETTER | DIGIT | '_' | '-' | '&')* ;
 ALPHANUM    : (LETTER | DIGIT | DOT | '_')+ ;
-WILDCARD    : '@' ;
 
 GE          : '>=' ;
 GT          : '>' ;

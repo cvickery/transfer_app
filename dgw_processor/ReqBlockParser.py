@@ -11,85 +11,111 @@ else:
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3/")
-        buf.write("\u00c6\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3:")
+        buf.write("\u00f6\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
-        buf.write("\4\24\t\24\4\25\t\25\3\2\3\2\3\2\3\2\3\2\3\2\3\3\3\3\3")
-        buf.write("\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\7\3=\n\3\f\3\16")
-        buf.write("\3@\13\3\3\4\7\4C\n\4\f\4\16\4F\13\4\3\5\5\5I\n\5\3\5")
-        buf.write("\3\5\3\6\5\6N\n\6\3\6\3\6\3\6\7\6S\n\6\f\6\16\6V\13\6")
-        buf.write("\3\7\5\7Y\n\7\3\7\3\7\3\7\7\7^\n\7\f\7\16\7a\13\7\3\b")
-        buf.write("\3\b\3\b\3\t\3\t\3\t\3\t\3\n\3\n\3\n\3\13\3\13\3\13\3")
-        buf.write("\13\5\13q\n\13\3\f\3\f\3\f\3\f\5\fw\n\f\3\f\5\fz\n\f\3")
-        buf.write("\r\3\r\3\r\3\r\5\r\u0080\n\r\3\16\3\16\3\16\3\16\5\16")
-        buf.write("\u0086\n\16\3\17\3\17\3\17\7\17\u008b\n\17\f\17\16\17")
-        buf.write("\u008e\13\17\3\20\3\20\3\20\7\20\u0093\n\20\f\20\16\20")
-        buf.write("\u0096\13\20\3\20\3\20\3\21\3\21\3\21\3\21\5\21\u009e")
-        buf.write("\n\21\3\22\3\22\3\22\3\22\3\22\3\22\7\22\u00a6\n\22\f")
-        buf.write("\22\16\22\u00a9\13\22\3\22\3\22\3\23\3\23\3\23\3\23\7")
-        buf.write("\23\u00b1\n\23\f\23\16\23\u00b4\13\23\3\24\3\24\5\24\u00b8")
-        buf.write("\n\24\3\24\3\24\5\24\u00bc\n\24\3\24\7\24\u00bf\n\24\f")
-        buf.write("\24\16\24\u00c2\13\24\3\25\3\25\3\25\3D\2\26\2\4\6\b\n")
-        buf.write("\f\16\20\22\24\26\30\32\34\36 \"$&(\2\7\4\2\34\34\37\37")
-        buf.write("\4\2\33\33\35\36\4\2\t\t\r\r\3\2\35\36\3\2((\2\u00d1\2")
-        buf.write("*\3\2\2\2\4>\3\2\2\2\6D\3\2\2\2\bH\3\2\2\2\nM\3\2\2\2")
-        buf.write("\fX\3\2\2\2\16b\3\2\2\2\20e\3\2\2\2\22i\3\2\2\2\24l\3")
-        buf.write("\2\2\2\26r\3\2\2\2\30{\3\2\2\2\32\u0081\3\2\2\2\34\u0087")
-        buf.write("\3\2\2\2\36\u008f\3\2\2\2 \u0099\3\2\2\2\"\u009f\3\2\2")
-        buf.write("\2$\u00ac\3\2\2\2&\u00b5\3\2\2\2(\u00c3\3\2\2\2*+\7\4")
-        buf.write("\2\2+,\5\4\3\2,-\7\3\2\2-.\5\6\4\2./\7\5\2\2/\3\3\2\2")
-        buf.write("\2\60=\5\16\b\2\61=\5\20\t\2\62=\5\22\n\2\63=\5\24\13")
-        buf.write("\2\64=\5\26\f\2\65=\5\32\16\2\66=\5\30\r\2\67=\5 \21\2")
-        buf.write("8=\5\34\17\29=\5\36\20\2:=\5$\23\2;=\5&\24\2<\60\3\2\2")
-        buf.write("\2<\61\3\2\2\2<\62\3\2\2\2<\63\3\2\2\2<\64\3\2\2\2<\65")
-        buf.write("\3\2\2\2<\66\3\2\2\2<\67\3\2\2\2<8\3\2\2\2<9\3\2\2\2<")
-        buf.write(":\3\2\2\2<;\3\2\2\2=@\3\2\2\2><\3\2\2\2>?\3\2\2\2?\5\3")
-        buf.write("\2\2\2@>\3\2\2\2AC\13\2\2\2BA\3\2\2\2CF\3\2\2\2DE\3\2")
-        buf.write("\2\2DB\3\2\2\2E\7\3\2\2\2FD\3\2\2\2GI\t\2\2\2HG\3\2\2")
-        buf.write("\2HI\3\2\2\2IJ\3\2\2\2JK\t\3\2\2K\t\3\2\2\2LN\7\31\2\2")
-        buf.write("ML\3\2\2\2MN\3\2\2\2NO\3\2\2\2OT\5\b\5\2PQ\7\27\2\2QS")
-        buf.write("\5\b\5\2RP\3\2\2\2SV\3\2\2\2TR\3\2\2\2TU\3\2\2\2U\13\3")
-        buf.write("\2\2\2VT\3\2\2\2WY\7\31\2\2XW\3\2\2\2XY\3\2\2\2YZ\3\2")
-        buf.write("\2\2Z_\5\b\5\2[\\\7\30\2\2\\^\5\b\5\2][\3\2\2\2^a\3\2")
-        buf.write("\2\2_]\3\2\2\2_`\3\2\2\2`\r\3\2\2\2a_\3\2\2\2bc\7\21\2")
-        buf.write("\2cd\7\36\2\2d\17\3\2\2\2ef\7\20\2\2fg\7\36\2\2gh\t\4")
-        buf.write("\2\2h\21\3\2\2\2ij\7\22\2\2jk\7\36\2\2k\23\3\2\2\2lm\7")
-        buf.write("\36\2\2mp\7\r\2\2nq\5\f\7\2oq\5\n\6\2pn\3\2\2\2po\3\2")
-        buf.write("\2\2q\25\3\2\2\2rs\t\5\2\2sv\7\t\2\2tw\5\f\7\2uw\5\n\6")
-        buf.write("\2vt\3\2\2\2vu\3\2\2\2vw\3\2\2\2wy\3\2\2\2xz\7\32\2\2")
-        buf.write("yx\3\2\2\2yz\3\2\2\2z\27\3\2\2\2{|\7\17\2\2|\177\7\36")
-        buf.write("\2\2}\u0080\5\f\7\2~\u0080\5\n\6\2\177}\3\2\2\2\177~\3")
-        buf.write("\2\2\2\u0080\31\3\2\2\2\u0081\u0082\7\13\2\2\u0082\u0085")
-        buf.write("\7\36\2\2\u0083\u0086\5\f\7\2\u0084\u0086\5\n\6\2\u0085")
-        buf.write("\u0083\3\2\2\2\u0085\u0084\3\2\2\2\u0086\33\3\2\2\2\u0087")
-        buf.write("\u0088\7\24\2\2\u0088\u008c\7\6\2\2\u0089\u008b\5\34\17")
-        buf.write("\2\u008a\u0089\3\2\2\2\u008b\u008e\3\2\2\2\u008c\u008a")
-        buf.write("\3\2\2\2\u008c\u008d\3\2\2\2\u008d\35\3\2\2\2\u008e\u008c")
-        buf.write("\3\2\2\2\u008f\u0090\7\25\2\2\u0090\u0094\7\'\2\2\u0091")
-        buf.write("\u0093\n\6\2\2\u0092\u0091\3\2\2\2\u0093\u0096\3\2\2\2")
-        buf.write("\u0094\u0092\3\2\2\2\u0094\u0095\3\2\2\2\u0095\u0097\3")
-        buf.write("\2\2\2\u0096\u0094\3\2\2\2\u0097\u0098\7(\2\2\u0098\37")
-        buf.write("\3\2\2\2\u0099\u009a\7\23\2\2\u009a\u009b\7\36\2\2\u009b")
-        buf.write("\u009d\t\4\2\2\u009c\u009e\7\32\2\2\u009d\u009c\3\2\2")
-        buf.write("\2\u009d\u009e\3\2\2\2\u009e!\3\2\2\2\u009f\u00a0\7\36")
-        buf.write("\2\2\u00a0\u00a1\7\f\2\2\u00a1\u00a2\7\'\2\2\u00a2\u00a7")
-        buf.write("\7\37\2\2\u00a3\u00a4\7)\2\2\u00a4\u00a6\7\37\2\2\u00a5")
-        buf.write("\u00a3\3\2\2\2\u00a6\u00a9\3\2\2\2\u00a7\u00a5\3\2\2\2")
-        buf.write("\u00a7\u00a8\3\2\2\2\u00a8\u00aa\3\2\2\2\u00a9\u00a7\3")
-        buf.write("\2\2\2\u00aa\u00ab\7(\2\2\u00ab#\3\2\2\2\u00ac\u00ad\7")
-        buf.write("\b\2\2\u00ad\u00ae\7\6\2\2\u00ae\u00b2\7\3\2\2\u00af\u00b1")
-        buf.write("\5$\23\2\u00b0\u00af\3\2\2\2\u00b1\u00b4\3\2\2\2\u00b2")
-        buf.write("\u00b0\3\2\2\2\u00b2\u00b3\3\2\2\2\u00b3%\3\2\2\2\u00b4")
-        buf.write("\u00b2\3\2\2\2\u00b5\u00b7\7\7\2\2\u00b6\u00b8\7 \2\2")
-        buf.write("\u00b7\u00b6\3\2\2\2\u00b7\u00b8\3\2\2\2\u00b8\u00b9\3")
-        buf.write("\2\2\2\u00b9\u00bb\7\6\2\2\u00ba\u00bc\7\3\2\2\u00bb\u00ba")
-        buf.write("\3\2\2\2\u00bb\u00bc\3\2\2\2\u00bc\u00c0\3\2\2\2\u00bd")
-        buf.write("\u00bf\5&\24\2\u00be\u00bd\3\2\2\2\u00bf\u00c2\3\2\2\2")
-        buf.write("\u00c0\u00be\3\2\2\2\u00c0\u00c1\3\2\2\2\u00c1\'\3\2\2")
-        buf.write("\2\u00c2\u00c0\3\2\2\2\u00c3\u00c4\7\37\2\2\u00c4)\3\2")
-        buf.write("\2\2\27<>DHMTX_pvy\177\u0085\u008c\u0094\u009d\u00a7\u00b2")
-        buf.write("\u00b7\u00bb\u00c0")
+        buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\3\2")
+        buf.write("\3\2\3\2\3\2\3\2\3\2\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3")
+        buf.write("\3\3\3\3\3\3\3\7\3C\n\3\f\3\16\3F\13\3\3\4\3\4\3\4\3\4")
+        buf.write("\3\4\3\4\3\4\3\4\5\4P\n\4\3\5\5\5S\n\5\3\5\3\5\3\6\5\6")
+        buf.write("X\n\6\3\6\3\6\3\6\7\6]\n\6\f\6\16\6`\13\6\3\7\5\7c\n\7")
+        buf.write("\3\7\3\7\3\7\7\7h\n\7\f\7\16\7k\13\7\3\b\3\b\3\b\3\b\3")
+        buf.write("\b\6\br\n\b\r\b\16\bs\3\b\3\b\3\b\3\t\3\t\3\t\3\t\3\t")
+        buf.write("\3\n\3\n\7\n\u0080\n\n\f\n\16\n\u0083\13\n\3\n\3\n\3\n")
+        buf.write("\7\n\u0088\n\n\f\n\16\n\u008b\13\n\3\13\3\13\3\13\3\13")
+        buf.write("\7\13\u0091\n\13\f\13\16\13\u0094\13\13\3\f\3\f\3\f\3")
+        buf.write("\r\3\r\3\r\3\r\3\16\3\16\3\16\3\17\3\17\3\17\3\17\5\17")
+        buf.write("\u00a4\n\17\3\17\5\17\u00a7\n\17\3\17\7\17\u00aa\n\17")
+        buf.write("\f\17\16\17\u00ad\13\17\3\20\3\20\3\20\3\20\5\20\u00b3")
+        buf.write("\n\20\3\20\5\20\u00b6\n\20\3\21\3\21\3\21\3\21\5\21\u00bc")
+        buf.write("\n\21\3\22\3\22\3\22\3\22\5\22\u00c2\n\22\3\23\3\23\3")
+        buf.write("\23\7\23\u00c7\n\23\f\23\16\23\u00ca\13\23\3\24\3\24\3")
+        buf.write("\24\3\25\3\25\3\25\3\25\5\25\u00d3\n\25\3\25\3\25\3\25")
+        buf.write("\3\25\7\25\u00d9\n\25\f\25\16\25\u00dc\13\25\3\25\5\25")
+        buf.write("\u00df\n\25\3\26\3\26\3\26\3\26\5\26\u00e5\n\26\3\27\3")
+        buf.write("\27\3\27\3\27\3\27\3\27\7\27\u00ed\n\27\f\27\16\27\u00f0")
+        buf.write("\13\27\3\27\3\27\3\30\3\30\3\30\3\u0081\2\31\2\4\6\b\n")
+        buf.write("\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\2\6\4\2&&++\4\2")
+        buf.write("%%(*\4\2\13\13\17\17\3\2)*\2\u010a\2\60\3\2\2\2\4D\3\2")
+        buf.write("\2\2\6O\3\2\2\2\bR\3\2\2\2\nW\3\2\2\2\fb\3\2\2\2\16l\3")
+        buf.write("\2\2\2\20x\3\2\2\2\22}\3\2\2\2\24\u008c\3\2\2\2\26\u0095")
+        buf.write("\3\2\2\2\30\u0098\3\2\2\2\32\u009c\3\2\2\2\34\u009f\3")
+        buf.write("\2\2\2\36\u00ae\3\2\2\2 \u00b7\3\2\2\2\"\u00bd\3\2\2\2")
+        buf.write("$\u00c3\3\2\2\2&\u00cb\3\2\2\2(\u00ce\3\2\2\2*\u00e0\3")
+        buf.write("\2\2\2,\u00e6\3\2\2\2.\u00f3\3\2\2\2\60\61\7\4\2\2\61")
+        buf.write("\62\5\4\3\2\62\63\7\3\2\2\63\64\5\6\4\2\64\65\7\5\2\2")
+        buf.write("\65\3\3\2\2\2\66C\5\26\f\2\67C\5\30\r\28C\5\32\16\29C")
+        buf.write("\5\34\17\2:C\5\36\20\2;C\5\"\22\2<C\5 \21\2=C\5*\26\2")
+        buf.write(">C\5$\23\2?C\5&\24\2@C\5\24\13\2AC\5\22\n\2B\66\3\2\2")
+        buf.write("\2B\67\3\2\2\2B8\3\2\2\2B9\3\2\2\2B:\3\2\2\2B;\3\2\2\2")
+        buf.write("B<\3\2\2\2B=\3\2\2\2B>\3\2\2\2B?\3\2\2\2B@\3\2\2\2BA\3")
+        buf.write("\2\2\2CF\3\2\2\2DB\3\2\2\2DE\3\2\2\2E\5\3\2\2\2FD\3\2")
+        buf.write("\2\2GP\5\16\b\2HP\5\20\t\2IP\5\32\16\2JP\5\22\n\2KP\5")
+        buf.write("\24\13\2LP\5\34\17\2MP\5\36\20\2NP\5(\25\2OG\3\2\2\2O")
+        buf.write("H\3\2\2\2OI\3\2\2\2OJ\3\2\2\2OK\3\2\2\2OL\3\2\2\2OM\3")
+        buf.write("\2\2\2ON\3\2\2\2P\7\3\2\2\2QS\t\2\2\2RQ\3\2\2\2RS\3\2")
+        buf.write("\2\2ST\3\2\2\2TU\t\3\2\2U\t\3\2\2\2VX\7#\2\2WV\3\2\2\2")
+        buf.write("WX\3\2\2\2XY\3\2\2\2Y^\5\b\5\2Z[\7!\2\2[]\5\b\5\2\\Z\3")
+        buf.write("\2\2\2]`\3\2\2\2^\\\3\2\2\2^_\3\2\2\2_\13\3\2\2\2`^\3")
+        buf.write("\2\2\2ac\7#\2\2ba\3\2\2\2bc\3\2\2\2cd\3\2\2\2di\5\b\5")
+        buf.write("\2ef\7\"\2\2fh\5\b\5\2ge\3\2\2\2hk\3\2\2\2ig\3\2\2\2i")
+        buf.write("j\3\2\2\2j\r\3\2\2\2ki\3\2\2\2lq\7\7\2\2mr\5\34\17\2n")
+        buf.write("o\5\36\20\2op\5\22\n\2pr\3\2\2\2qm\3\2\2\2qn\3\2\2\2r")
+        buf.write("s\3\2\2\2sq\3\2\2\2st\3\2\2\2tu\3\2\2\2uv\7\b\2\2vw\5")
+        buf.write("\22\n\2w\17\3\2\2\2xy\7*\2\2yz\7\31\2\2z{\7\32\2\2{|\5")
+        buf.write("\22\n\2|\21\3\2\2\2}\u0081\7\t\2\2~\u0080\7,\2\2\177~")
+        buf.write("\3\2\2\2\u0080\u0083\3\2\2\2\u0081\u0082\3\2\2\2\u0081")
+        buf.write("\177\3\2\2\2\u0082\u0084\3\2\2\2\u0083\u0081\3\2\2\2\u0084")
+        buf.write("\u0085\7\6\2\2\u0085\u0089\7\3\2\2\u0086\u0088\5\22\n")
+        buf.write("\2\u0087\u0086\3\2\2\2\u0088\u008b\3\2\2\2\u0089\u0087")
+        buf.write("\3\2\2\2\u0089\u008a\3\2\2\2\u008a\23\3\2\2\2\u008b\u0089")
+        buf.write("\3\2\2\2\u008c\u008d\7\n\2\2\u008d\u008e\7\6\2\2\u008e")
+        buf.write("\u0092\7\3\2\2\u008f\u0091\5\24\13\2\u0090\u008f\3\2\2")
+        buf.write("\2\u0091\u0094\3\2\2\2\u0092\u0090\3\2\2\2\u0092\u0093")
+        buf.write("\3\2\2\2\u0093\25\3\2\2\2\u0094\u0092\3\2\2\2\u0095\u0096")
+        buf.write("\7\24\2\2\u0096\u0097\7*\2\2\u0097\27\3\2\2\2\u0098\u0099")
+        buf.write("\7\23\2\2\u0099\u009a\7*\2\2\u009a\u009b\t\4\2\2\u009b")
+        buf.write("\31\3\2\2\2\u009c\u009d\7\25\2\2\u009d\u009e\7*\2\2\u009e")
+        buf.write("\33\3\2\2\2\u009f\u00a0\t\5\2\2\u00a0\u00a3\7\17\2\2\u00a1")
+        buf.write("\u00a4\5\f\7\2\u00a2\u00a4\5\n\6\2\u00a3\u00a1\3\2\2\2")
+        buf.write("\u00a3\u00a2\3\2\2\2\u00a3\u00a4\3\2\2\2\u00a4\u00a6\3")
+        buf.write("\2\2\2\u00a5\u00a7\7$\2\2\u00a6\u00a5\3\2\2\2\u00a6\u00a7")
+        buf.write("\3\2\2\2\u00a7\u00ab\3\2\2\2\u00a8\u00aa\5\22\n\2\u00a9")
+        buf.write("\u00a8\3\2\2\2\u00aa\u00ad\3\2\2\2\u00ab\u00a9\3\2\2\2")
+        buf.write("\u00ab\u00ac\3\2\2\2\u00ac\35\3\2\2\2\u00ad\u00ab\3\2")
+        buf.write("\2\2\u00ae\u00af\t\5\2\2\u00af\u00b2\7\13\2\2\u00b0\u00b3")
+        buf.write("\5\f\7\2\u00b1\u00b3\5\n\6\2\u00b2\u00b0\3\2\2\2\u00b2")
+        buf.write("\u00b1\3\2\2\2\u00b2\u00b3\3\2\2\2\u00b3\u00b5\3\2\2\2")
+        buf.write("\u00b4\u00b6\7$\2\2\u00b5\u00b4\3\2\2\2\u00b5\u00b6\3")
+        buf.write("\2\2\2\u00b6\37\3\2\2\2\u00b7\u00b8\7\21\2\2\u00b8\u00bb")
+        buf.write("\7*\2\2\u00b9\u00bc\5\f\7\2\u00ba\u00bc\5\n\6\2\u00bb")
+        buf.write("\u00b9\3\2\2\2\u00bb\u00ba\3\2\2\2\u00bc!\3\2\2\2\u00bd")
+        buf.write("\u00be\7\r\2\2\u00be\u00c1\7*\2\2\u00bf\u00c2\5\f\7\2")
+        buf.write("\u00c0\u00c2\5\n\6\2\u00c1\u00bf\3\2\2\2\u00c1\u00c0\3")
+        buf.write("\2\2\2\u00c2#\3\2\2\2\u00c3\u00c4\7\27\2\2\u00c4\u00c8")
+        buf.write("\7\6\2\2\u00c5\u00c7\5$\23\2\u00c6\u00c5\3\2\2\2\u00c7")
+        buf.write("\u00ca\3\2\2\2\u00c8\u00c6\3\2\2\2\u00c8\u00c9\3\2\2\2")
+        buf.write("\u00c9%\3\2\2\2\u00ca\u00c8\3\2\2\2\u00cb\u00cc\7\30\2")
+        buf.write("\2\u00cc\u00cd\7\32\2\2\u00cd\'\3\2\2\2\u00ce\u00cf\7")
+        buf.write("\22\2\2\u00cf\u00d0\7*\2\2\u00d0\u00d2\t\4\2\2\u00d1\u00d3")
+        buf.write("\7#\2\2\u00d2\u00d1\3\2\2\2\u00d2\u00d3\3\2\2\2\u00d3")
+        buf.write("\u00d4\3\2\2\2\u00d4\u00d5\7\62\2\2\u00d5\u00da\7+\2\2")
+        buf.write("\u00d6\u00d7\7\64\2\2\u00d7\u00d9\7+\2\2\u00d8\u00d6\3")
+        buf.write("\2\2\2\u00d9\u00dc\3\2\2\2\u00da\u00d8\3\2\2\2\u00da\u00db")
+        buf.write("\3\2\2\2\u00db\u00de\3\2\2\2\u00dc\u00da\3\2\2\2\u00dd")
+        buf.write("\u00df\7$\2\2\u00de\u00dd\3\2\2\2\u00de\u00df\3\2\2\2")
+        buf.write("\u00df)\3\2\2\2\u00e0\u00e1\7\26\2\2\u00e1\u00e2\7*\2")
+        buf.write("\2\u00e2\u00e4\t\4\2\2\u00e3\u00e5\7$\2\2\u00e4\u00e3")
+        buf.write("\3\2\2\2\u00e4\u00e5\3\2\2\2\u00e5+\3\2\2\2\u00e6\u00e7")
+        buf.write("\7*\2\2\u00e7\u00e8\7\16\2\2\u00e8\u00e9\7\62\2\2\u00e9")
+        buf.write("\u00ee\7+\2\2\u00ea\u00eb\7\64\2\2\u00eb\u00ed\7+\2\2")
+        buf.write("\u00ec\u00ea\3\2\2\2\u00ed\u00f0\3\2\2\2\u00ee\u00ec\3")
+        buf.write("\2\2\2\u00ee\u00ef\3\2\2\2\u00ef\u00f1\3\2\2\2\u00f0\u00ee")
+        buf.write("\3\2\2\2\u00f1\u00f2\7\63\2\2\u00f2-\3\2\2\2\u00f3\u00f4")
+        buf.write("\7+\2\2\u00f4/\3\2\2\2\34BDORW^biqs\u0081\u0089\u0092")
+        buf.write("\u00a3\u00a6\u00ab\u00b2\u00b5\u00bb\u00c1\u00c8\u00d2")
+        buf.write("\u00da\u00de\u00e4\u00ee")
         return buf.getvalue()
 
 
@@ -110,18 +136,24 @@ class ReqBlockParser ( Parser ):
                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                     "<INVALID>", "<INVALID>", "'@'", "'>='", "'>'", "'<='", 
-                     "'<'", "'='", "'('", "')'", "','", "'+'" ]
+                     "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                     "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                     "'@'", "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                     "<INVALID>", "'>='", "'>'", "'<='", "'<'", "'='", "'('", 
+                     "')'", "','", "'+'" ]
 
     symbolicNames = [ "<INVALID>", "<INVALID>", "BEGIN", "ENDDOT", "STRING", 
-                      "LABEL", "REMARK", "CREDITS", "MINCREDITS", "MAXCREDITS", 
-                      "NONCOURSES", "CLASSES", "MINCLASSES", "MAXCLASSES", 
-                      "MINRES", "MINGPA", "MINGRADE", "MAXPASSFAIL", "PROXYADVICE", 
-                      "EXCLUSIVE", "BLOCKTYPE", "OR", "AND", "INFROM", "TAG", 
-                      "WILDNUMBER", "WILDSYMBOL", "RANGE", "NUMBER", "SYMBOL", 
-                      "ALPHANUM", "WILDCARD", "GE", "GT", "LE", "LT", "EQ", 
-                      "LP", "RP", "COMMA", "PLUS", "HIDE", "DECIDE", "COMMENT", 
-                      "LOG", "WHITESPACE" ]
+                      "BEGINSUB", "ENDSUB", "LABEL", "REMARK", "CREDITS", 
+                      "MINCREDITS", "MAXCREDITS", "NONCOURSES", "CLASSES", 
+                      "MINCLASSES", "MAXCLASSES", "MAXPERDISC", "MINRES", 
+                      "MINGPA", "MINGRADE", "MAXPASSFAIL", "PROXYADVICE", 
+                      "SHARE", "BLOCKTYPE", "SHARE_LIST", "SHARE_ITEM", 
+                      "DEGREE", "CONC", "MAJOR", "MINOR", "OTHER", "OR", 
+                      "AND", "INFROM", "TAG", "WILDNUMBER", "WILDSYMBOL", 
+                      "WILDCARD", "CATALOG_NUMBER", "RANGE", "NUMBER", "SYMBOL", 
+                      "ALPHANUM", "GE", "GT", "LE", "LT", "EQ", "LP", "RP", 
+                      "COMMA", "PLUS", "HIDE", "DECIDE", "COMMENT", "LOG", 
+                      "WHITESPACE" ]
 
     RULE_req_block = 0
     RULE_head = 1
@@ -129,73 +161,87 @@ class ReqBlockParser ( Parser ):
     RULE_class_item = 3
     RULE_or_courses = 4
     RULE_and_courses = 5
-    RULE_mingpa = 6
-    RULE_minres = 7
-    RULE_mingrade = 8
-    RULE_numclasses = 9
-    RULE_numcredits = 10
-    RULE_maxclasses = 11
-    RULE_maxcredits = 12
-    RULE_proxy_advice = 13
-    RULE_exclusive = 14
-    RULE_maxpassfail = 15
-    RULE_noncourses = 16
-    RULE_remark = 17
-    RULE_label = 18
-    RULE_symbol = 19
+    RULE_rule_subset = 6
+    RULE_blocktype = 7
+    RULE_label = 8
+    RULE_remark = 9
+    RULE_mingpa = 10
+    RULE_minres = 11
+    RULE_mingrade = 12
+    RULE_numclasses = 13
+    RULE_numcredits = 14
+    RULE_maxclasses = 15
+    RULE_maxcredits = 16
+    RULE_proxy_advice = 17
+    RULE_share = 18
+    RULE_maxperdisc = 19
+    RULE_maxpassfail = 20
+    RULE_noncourses = 21
+    RULE_symbol = 22
 
     ruleNames =  [ "req_block", "head", "body", "class_item", "or_courses", 
-                   "and_courses", "mingpa", "minres", "mingrade", "numclasses", 
-                   "numcredits", "maxclasses", "maxcredits", "proxy_advice", 
-                   "exclusive", "maxpassfail", "noncourses", "remark", "label", 
-                   "symbol" ]
+                   "and_courses", "rule_subset", "blocktype", "label", "remark", 
+                   "mingpa", "minres", "mingrade", "numclasses", "numcredits", 
+                   "maxclasses", "maxcredits", "proxy_advice", "share", 
+                   "maxperdisc", "maxpassfail", "noncourses", "symbol" ]
 
     EOF = Token.EOF
     T__0=1
     BEGIN=2
     ENDDOT=3
     STRING=4
-    LABEL=5
-    REMARK=6
-    CREDITS=7
-    MINCREDITS=8
-    MAXCREDITS=9
-    NONCOURSES=10
-    CLASSES=11
-    MINCLASSES=12
-    MAXCLASSES=13
-    MINRES=14
-    MINGPA=15
-    MINGRADE=16
-    MAXPASSFAIL=17
-    PROXYADVICE=18
-    EXCLUSIVE=19
-    BLOCKTYPE=20
-    OR=21
-    AND=22
-    INFROM=23
-    TAG=24
-    WILDNUMBER=25
-    WILDSYMBOL=26
-    RANGE=27
-    NUMBER=28
-    SYMBOL=29
-    ALPHANUM=30
-    WILDCARD=31
-    GE=32
-    GT=33
-    LE=34
-    LT=35
-    EQ=36
-    LP=37
-    RP=38
-    COMMA=39
-    PLUS=40
-    HIDE=41
-    DECIDE=42
-    COMMENT=43
-    LOG=44
-    WHITESPACE=45
+    BEGINSUB=5
+    ENDSUB=6
+    LABEL=7
+    REMARK=8
+    CREDITS=9
+    MINCREDITS=10
+    MAXCREDITS=11
+    NONCOURSES=12
+    CLASSES=13
+    MINCLASSES=14
+    MAXCLASSES=15
+    MAXPERDISC=16
+    MINRES=17
+    MINGPA=18
+    MINGRADE=19
+    MAXPASSFAIL=20
+    PROXYADVICE=21
+    SHARE=22
+    BLOCKTYPE=23
+    SHARE_LIST=24
+    SHARE_ITEM=25
+    DEGREE=26
+    CONC=27
+    MAJOR=28
+    MINOR=29
+    OTHER=30
+    OR=31
+    AND=32
+    INFROM=33
+    TAG=34
+    WILDNUMBER=35
+    WILDSYMBOL=36
+    WILDCARD=37
+    CATALOG_NUMBER=38
+    RANGE=39
+    NUMBER=40
+    SYMBOL=41
+    ALPHANUM=42
+    GE=43
+    GT=44
+    LE=45
+    LT=46
+    EQ=47
+    LP=48
+    RP=49
+    COMMA=50
+    PLUS=51
+    HIDE=52
+    DECIDE=53
+    COMMENT=54
+    LOG=55
+    WHITESPACE=56
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -246,15 +292,15 @@ class ReqBlockParser ( Parser ):
         self.enterRule(localctx, 0, self.RULE_req_block)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 40
+            self.state = 46
             self.match(ReqBlockParser.BEGIN)
-            self.state = 41
+            self.state = 47
             self.head()
-            self.state = 42
+            self.state = 48
             self.match(ReqBlockParser.T__0)
-            self.state = 43
+            self.state = 49
             self.body()
-            self.state = 44
+            self.state = 50
             self.match(ReqBlockParser.ENDDOT)
         except RecognitionException as re:
             localctx.exception = re
@@ -334,11 +380,11 @@ class ReqBlockParser ( Parser ):
                 return self.getTypedRuleContext(ReqBlockParser.Proxy_adviceContext,i)
 
 
-        def exclusive(self, i:int=None):
+        def share(self, i:int=None):
             if i is None:
-                return self.getTypedRuleContexts(ReqBlockParser.ExclusiveContext)
+                return self.getTypedRuleContexts(ReqBlockParser.ShareContext)
             else:
-                return self.getTypedRuleContext(ReqBlockParser.ExclusiveContext,i)
+                return self.getTypedRuleContext(ReqBlockParser.ShareContext,i)
 
 
         def remark(self, i:int=None):
@@ -376,75 +422,75 @@ class ReqBlockParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 60
+            self.state = 66
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << ReqBlockParser.LABEL) | (1 << ReqBlockParser.REMARK) | (1 << ReqBlockParser.MAXCREDITS) | (1 << ReqBlockParser.MAXCLASSES) | (1 << ReqBlockParser.MINRES) | (1 << ReqBlockParser.MINGPA) | (1 << ReqBlockParser.MINGRADE) | (1 << ReqBlockParser.MAXPASSFAIL) | (1 << ReqBlockParser.PROXYADVICE) | (1 << ReqBlockParser.EXCLUSIVE) | (1 << ReqBlockParser.RANGE) | (1 << ReqBlockParser.NUMBER))) != 0):
-                self.state = 58
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << ReqBlockParser.LABEL) | (1 << ReqBlockParser.REMARK) | (1 << ReqBlockParser.MAXCREDITS) | (1 << ReqBlockParser.MAXCLASSES) | (1 << ReqBlockParser.MINRES) | (1 << ReqBlockParser.MINGPA) | (1 << ReqBlockParser.MINGRADE) | (1 << ReqBlockParser.MAXPASSFAIL) | (1 << ReqBlockParser.PROXYADVICE) | (1 << ReqBlockParser.SHARE) | (1 << ReqBlockParser.RANGE) | (1 << ReqBlockParser.NUMBER))) != 0):
+                self.state = 64
                 self._errHandler.sync(self)
                 la_ = self._interp.adaptivePredict(self._input,0,self._ctx)
                 if la_ == 1:
-                    self.state = 46
+                    self.state = 52
                     self.mingpa()
                     pass
 
                 elif la_ == 2:
-                    self.state = 47
+                    self.state = 53
                     self.minres()
                     pass
 
                 elif la_ == 3:
-                    self.state = 48
+                    self.state = 54
                     self.mingrade()
                     pass
 
                 elif la_ == 4:
-                    self.state = 49
+                    self.state = 55
                     self.numclasses()
                     pass
 
                 elif la_ == 5:
-                    self.state = 50
+                    self.state = 56
                     self.numcredits()
                     pass
 
                 elif la_ == 6:
-                    self.state = 51
+                    self.state = 57
                     self.maxcredits()
                     pass
 
                 elif la_ == 7:
-                    self.state = 52
+                    self.state = 58
                     self.maxclasses()
                     pass
 
                 elif la_ == 8:
-                    self.state = 53
+                    self.state = 59
                     self.maxpassfail()
                     pass
 
                 elif la_ == 9:
-                    self.state = 54
+                    self.state = 60
                     self.proxy_advice()
                     pass
 
                 elif la_ == 10:
-                    self.state = 55
-                    self.exclusive()
+                    self.state = 61
+                    self.share()
                     pass
 
                 elif la_ == 11:
-                    self.state = 56
+                    self.state = 62
                     self.remark()
                     pass
 
                 elif la_ == 12:
-                    self.state = 57
+                    self.state = 63
                     self.label()
                     pass
 
 
-                self.state = 62
+                self.state = 68
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -462,6 +508,37 @@ class ReqBlockParser ( Parser ):
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
+
+        def rule_subset(self):
+            return self.getTypedRuleContext(ReqBlockParser.Rule_subsetContext,0)
+
+
+        def blocktype(self):
+            return self.getTypedRuleContext(ReqBlockParser.BlocktypeContext,0)
+
+
+        def mingrade(self):
+            return self.getTypedRuleContext(ReqBlockParser.MingradeContext,0)
+
+
+        def label(self):
+            return self.getTypedRuleContext(ReqBlockParser.LabelContext,0)
+
+
+        def remark(self):
+            return self.getTypedRuleContext(ReqBlockParser.RemarkContext,0)
+
+
+        def numclasses(self):
+            return self.getTypedRuleContext(ReqBlockParser.NumclassesContext,0)
+
+
+        def numcredits(self):
+            return self.getTypedRuleContext(ReqBlockParser.NumcreditsContext,0)
+
+
+        def maxperdisc(self):
+            return self.getTypedRuleContext(ReqBlockParser.MaxperdiscContext,0)
 
 
         def getRuleIndex(self):
@@ -483,17 +560,57 @@ class ReqBlockParser ( Parser ):
         localctx = ReqBlockParser.BodyContext(self, self._ctx, self.state)
         self.enterRule(localctx, 4, self.RULE_body)
         try:
-            self.enterOuterAlt(localctx, 1)
-            self.state = 66
+            self.state = 77
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,2,self._ctx)
-            while _alt!=1 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1+1:
-                    self.state = 63
-                    self.matchWildcard() 
-                self.state = 68
-                self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,2,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,2,self._ctx)
+            if la_ == 1:
+                self.enterOuterAlt(localctx, 1)
+                self.state = 69
+                self.rule_subset()
+                pass
+
+            elif la_ == 2:
+                self.enterOuterAlt(localctx, 2)
+                self.state = 70
+                self.blocktype()
+                pass
+
+            elif la_ == 3:
+                self.enterOuterAlt(localctx, 3)
+                self.state = 71
+                self.mingrade()
+                pass
+
+            elif la_ == 4:
+                self.enterOuterAlt(localctx, 4)
+                self.state = 72
+                self.label()
+                pass
+
+            elif la_ == 5:
+                self.enterOuterAlt(localctx, 5)
+                self.state = 73
+                self.remark()
+                pass
+
+            elif la_ == 6:
+                self.enterOuterAlt(localctx, 6)
+                self.state = 74
+                self.numclasses()
+                pass
+
+            elif la_ == 7:
+                self.enterOuterAlt(localctx, 7)
+                self.state = 75
+                self.numcredits()
+                pass
+
+            elif la_ == 8:
+                self.enterOuterAlt(localctx, 8)
+                self.state = 76
+                self.maxperdisc()
+                pass
+
 
         except RecognitionException as re:
             localctx.exception = re
@@ -510,14 +627,17 @@ class ReqBlockParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
+        def CATALOG_NUMBER(self):
+            return self.getToken(ReqBlockParser.CATALOG_NUMBER, 0)
+
+        def WILDNUMBER(self):
+            return self.getToken(ReqBlockParser.WILDNUMBER, 0)
+
         def NUMBER(self):
             return self.getToken(ReqBlockParser.NUMBER, 0)
 
         def RANGE(self):
             return self.getToken(ReqBlockParser.RANGE, 0)
-
-        def WILDNUMBER(self):
-            return self.getToken(ReqBlockParser.WILDNUMBER, 0)
 
         def SYMBOL(self):
             return self.getToken(ReqBlockParser.SYMBOL, 0)
@@ -546,11 +666,11 @@ class ReqBlockParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 70
+            self.state = 80
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==ReqBlockParser.WILDSYMBOL or _la==ReqBlockParser.SYMBOL:
-                self.state = 69
+                self.state = 79
                 _la = self._input.LA(1)
                 if not(_la==ReqBlockParser.WILDSYMBOL or _la==ReqBlockParser.SYMBOL):
                     self._errHandler.recoverInline(self)
@@ -559,9 +679,9 @@ class ReqBlockParser ( Parser ):
                     self.consume()
 
 
-            self.state = 72
+            self.state = 82
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << ReqBlockParser.WILDNUMBER) | (1 << ReqBlockParser.RANGE) | (1 << ReqBlockParser.NUMBER))) != 0)):
+            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << ReqBlockParser.WILDNUMBER) | (1 << ReqBlockParser.CATALOG_NUMBER) | (1 << ReqBlockParser.RANGE) | (1 << ReqBlockParser.NUMBER))) != 0)):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -618,25 +738,25 @@ class ReqBlockParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 75
+            self.state = 85
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==ReqBlockParser.INFROM:
-                self.state = 74
+                self.state = 84
                 self.match(ReqBlockParser.INFROM)
 
 
-            self.state = 77
+            self.state = 87
             self.class_item()
-            self.state = 82
+            self.state = 92
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==ReqBlockParser.OR:
-                self.state = 78
+                self.state = 88
                 self.match(ReqBlockParser.OR)
-                self.state = 79
+                self.state = 89
                 self.class_item()
-                self.state = 84
+                self.state = 94
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -692,27 +812,325 @@ class ReqBlockParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 86
+            self.state = 96
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==ReqBlockParser.INFROM:
-                self.state = 85
+                self.state = 95
                 self.match(ReqBlockParser.INFROM)
 
 
-            self.state = 88
+            self.state = 98
             self.class_item()
-            self.state = 93
+            self.state = 103
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==ReqBlockParser.AND:
-                self.state = 89
+                self.state = 99
                 self.match(ReqBlockParser.AND)
-                self.state = 90
+                self.state = 100
                 self.class_item()
-                self.state = 95
+                self.state = 105
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
+
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class Rule_subsetContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def BEGINSUB(self):
+            return self.getToken(ReqBlockParser.BEGINSUB, 0)
+
+        def ENDSUB(self):
+            return self.getToken(ReqBlockParser.ENDSUB, 0)
+
+        def label(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(ReqBlockParser.LabelContext)
+            else:
+                return self.getTypedRuleContext(ReqBlockParser.LabelContext,i)
+
+
+        def numclasses(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(ReqBlockParser.NumclassesContext)
+            else:
+                return self.getTypedRuleContext(ReqBlockParser.NumclassesContext,i)
+
+
+        def numcredits(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(ReqBlockParser.NumcreditsContext)
+            else:
+                return self.getTypedRuleContext(ReqBlockParser.NumcreditsContext,i)
+
+
+        def getRuleIndex(self):
+            return ReqBlockParser.RULE_rule_subset
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterRule_subset" ):
+                listener.enterRule_subset(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitRule_subset" ):
+                listener.exitRule_subset(self)
+
+
+
+
+    def rule_subset(self):
+
+        localctx = ReqBlockParser.Rule_subsetContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 12, self.RULE_rule_subset)
+        self._la = 0 # Token type
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 106
+            self.match(ReqBlockParser.BEGINSUB)
+            self.state = 111 
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            while True:
+                self.state = 111
+                self._errHandler.sync(self)
+                la_ = self._interp.adaptivePredict(self._input,8,self._ctx)
+                if la_ == 1:
+                    self.state = 107
+                    self.numclasses()
+                    pass
+
+                elif la_ == 2:
+                    self.state = 108
+                    self.numcredits()
+                    self.state = 109
+                    self.label()
+                    pass
+
+
+                self.state = 113 
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                if not (_la==ReqBlockParser.RANGE or _la==ReqBlockParser.NUMBER):
+                    break
+
+            self.state = 115
+            self.match(ReqBlockParser.ENDSUB)
+            self.state = 116
+            self.label()
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class BlocktypeContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def NUMBER(self):
+            return self.getToken(ReqBlockParser.NUMBER, 0)
+
+        def BLOCKTYPE(self):
+            return self.getToken(ReqBlockParser.BLOCKTYPE, 0)
+
+        def SHARE_LIST(self):
+            return self.getToken(ReqBlockParser.SHARE_LIST, 0)
+
+        def label(self):
+            return self.getTypedRuleContext(ReqBlockParser.LabelContext,0)
+
+
+        def getRuleIndex(self):
+            return ReqBlockParser.RULE_blocktype
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterBlocktype" ):
+                listener.enterBlocktype(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitBlocktype" ):
+                listener.exitBlocktype(self)
+
+
+
+
+    def blocktype(self):
+
+        localctx = ReqBlockParser.BlocktypeContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 14, self.RULE_blocktype)
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 118
+            self.match(ReqBlockParser.NUMBER)
+            self.state = 119
+            self.match(ReqBlockParser.BLOCKTYPE)
+            self.state = 120
+            self.match(ReqBlockParser.SHARE_LIST)
+            self.state = 121
+            self.label()
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class LabelContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def LABEL(self):
+            return self.getToken(ReqBlockParser.LABEL, 0)
+
+        def STRING(self):
+            return self.getToken(ReqBlockParser.STRING, 0)
+
+        def ALPHANUM(self, i:int=None):
+            if i is None:
+                return self.getTokens(ReqBlockParser.ALPHANUM)
+            else:
+                return self.getToken(ReqBlockParser.ALPHANUM, i)
+
+        def label(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(ReqBlockParser.LabelContext)
+            else:
+                return self.getTypedRuleContext(ReqBlockParser.LabelContext,i)
+
+
+        def getRuleIndex(self):
+            return ReqBlockParser.RULE_label
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterLabel" ):
+                listener.enterLabel(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitLabel" ):
+                listener.exitLabel(self)
+
+
+
+
+    def label(self):
+
+        localctx = ReqBlockParser.LabelContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 16, self.RULE_label)
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 123
+            self.match(ReqBlockParser.LABEL)
+            self.state = 127
+            self._errHandler.sync(self)
+            _alt = self._interp.adaptivePredict(self._input,10,self._ctx)
+            while _alt!=1 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt==1+1:
+                    self.state = 124
+                    self.match(ReqBlockParser.ALPHANUM) 
+                self.state = 129
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,10,self._ctx)
+
+            self.state = 130
+            self.match(ReqBlockParser.STRING)
+            self.state = 131
+            self.match(ReqBlockParser.T__0)
+            self.state = 135
+            self._errHandler.sync(self)
+            _alt = self._interp.adaptivePredict(self._input,11,self._ctx)
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt==1:
+                    self.state = 132
+                    self.label() 
+                self.state = 137
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,11,self._ctx)
+
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class RemarkContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def REMARK(self):
+            return self.getToken(ReqBlockParser.REMARK, 0)
+
+        def STRING(self):
+            return self.getToken(ReqBlockParser.STRING, 0)
+
+        def remark(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(ReqBlockParser.RemarkContext)
+            else:
+                return self.getTypedRuleContext(ReqBlockParser.RemarkContext,i)
+
+
+        def getRuleIndex(self):
+            return ReqBlockParser.RULE_remark
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterRemark" ):
+                listener.enterRemark(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitRemark" ):
+                listener.exitRemark(self)
+
+
+
+
+    def remark(self):
+
+        localctx = ReqBlockParser.RemarkContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 18, self.RULE_remark)
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 138
+            self.match(ReqBlockParser.REMARK)
+            self.state = 139
+            self.match(ReqBlockParser.STRING)
+            self.state = 140
+            self.match(ReqBlockParser.T__0)
+            self.state = 144
+            self._errHandler.sync(self)
+            _alt = self._interp.adaptivePredict(self._input,12,self._ctx)
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt==1:
+                    self.state = 141
+                    self.remark() 
+                self.state = 146
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,12,self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -752,12 +1170,12 @@ class ReqBlockParser ( Parser ):
     def mingpa(self):
 
         localctx = ReqBlockParser.MingpaContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 12, self.RULE_mingpa)
+        self.enterRule(localctx, 20, self.RULE_mingpa)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 96
+            self.state = 147
             self.match(ReqBlockParser.MINGPA)
-            self.state = 97
+            self.state = 148
             self.match(ReqBlockParser.NUMBER)
         except RecognitionException as re:
             localctx.exception = re
@@ -803,15 +1221,15 @@ class ReqBlockParser ( Parser ):
     def minres(self):
 
         localctx = ReqBlockParser.MinresContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 14, self.RULE_minres)
+        self.enterRule(localctx, 22, self.RULE_minres)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 99
+            self.state = 150
             self.match(ReqBlockParser.MINRES)
-            self.state = 100
+            self.state = 151
             self.match(ReqBlockParser.NUMBER)
-            self.state = 101
+            self.state = 152
             _la = self._input.LA(1)
             if not(_la==ReqBlockParser.CREDITS or _la==ReqBlockParser.CLASSES):
                 self._errHandler.recoverInline(self)
@@ -856,12 +1274,12 @@ class ReqBlockParser ( Parser ):
     def mingrade(self):
 
         localctx = ReqBlockParser.MingradeContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 16, self.RULE_mingrade)
+        self.enterRule(localctx, 24, self.RULE_mingrade)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 103
+            self.state = 154
             self.match(ReqBlockParser.MINGRADE)
-            self.state = 104
+            self.state = 155
             self.match(ReqBlockParser.NUMBER)
         except RecognitionException as re:
             localctx.exception = re
@@ -878,11 +1296,14 @@ class ReqBlockParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
+        def CLASSES(self):
+            return self.getToken(ReqBlockParser.CLASSES, 0)
+
         def NUMBER(self):
             return self.getToken(ReqBlockParser.NUMBER, 0)
 
-        def CLASSES(self):
-            return self.getToken(ReqBlockParser.CLASSES, 0)
+        def RANGE(self):
+            return self.getToken(ReqBlockParser.RANGE, 0)
 
         def and_courses(self):
             return self.getTypedRuleContext(ReqBlockParser.And_coursesContext,0)
@@ -890,6 +1311,16 @@ class ReqBlockParser ( Parser ):
 
         def or_courses(self):
             return self.getTypedRuleContext(ReqBlockParser.Or_coursesContext,0)
+
+
+        def TAG(self):
+            return self.getToken(ReqBlockParser.TAG, 0)
+
+        def label(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(ReqBlockParser.LabelContext)
+            else:
+                return self.getTypedRuleContext(ReqBlockParser.LabelContext,i)
 
 
         def getRuleIndex(self):
@@ -909,26 +1340,49 @@ class ReqBlockParser ( Parser ):
     def numclasses(self):
 
         localctx = ReqBlockParser.NumclassesContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 18, self.RULE_numclasses)
+        self.enterRule(localctx, 26, self.RULE_numclasses)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 106
-            self.match(ReqBlockParser.NUMBER)
-            self.state = 107
+            self.state = 157
+            _la = self._input.LA(1)
+            if not(_la==ReqBlockParser.RANGE or _la==ReqBlockParser.NUMBER):
+                self._errHandler.recoverInline(self)
+            else:
+                self._errHandler.reportMatch(self)
+                self.consume()
+            self.state = 158
             self.match(ReqBlockParser.CLASSES)
-            self.state = 110
+            self.state = 161
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,8,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,13,self._ctx)
             if la_ == 1:
-                self.state = 108
+                self.state = 159
                 self.and_courses()
-                pass
 
             elif la_ == 2:
-                self.state = 109
+                self.state = 160
                 self.or_courses()
-                pass
 
+
+            self.state = 164
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la==ReqBlockParser.TAG:
+                self.state = 163
+                self.match(ReqBlockParser.TAG)
+
+
+            self.state = 169
+            self._errHandler.sync(self)
+            _alt = self._interp.adaptivePredict(self._input,15,self._ctx)
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt==1:
+                    self.state = 166
+                    self.label() 
+                self.state = 171
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,15,self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -982,36 +1436,36 @@ class ReqBlockParser ( Parser ):
     def numcredits(self):
 
         localctx = ReqBlockParser.NumcreditsContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 20, self.RULE_numcredits)
+        self.enterRule(localctx, 28, self.RULE_numcredits)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 112
+            self.state = 172
             _la = self._input.LA(1)
             if not(_la==ReqBlockParser.RANGE or _la==ReqBlockParser.NUMBER):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 113
+            self.state = 173
             self.match(ReqBlockParser.CREDITS)
-            self.state = 116
+            self.state = 176
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,9,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,16,self._ctx)
             if la_ == 1:
-                self.state = 114
+                self.state = 174
                 self.and_courses()
 
             elif la_ == 2:
-                self.state = 115
+                self.state = 175
                 self.or_courses()
 
 
-            self.state = 119
+            self.state = 179
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==ReqBlockParser.TAG:
-                self.state = 118
+                self.state = 178
                 self.match(ReqBlockParser.TAG)
 
 
@@ -1061,23 +1515,23 @@ class ReqBlockParser ( Parser ):
     def maxclasses(self):
 
         localctx = ReqBlockParser.MaxclassesContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 22, self.RULE_maxclasses)
+        self.enterRule(localctx, 30, self.RULE_maxclasses)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 121
+            self.state = 181
             self.match(ReqBlockParser.MAXCLASSES)
-            self.state = 122
+            self.state = 182
             self.match(ReqBlockParser.NUMBER)
-            self.state = 125
+            self.state = 185
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,11,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,18,self._ctx)
             if la_ == 1:
-                self.state = 123
+                self.state = 183
                 self.and_courses()
                 pass
 
             elif la_ == 2:
-                self.state = 124
+                self.state = 184
                 self.or_courses()
                 pass
 
@@ -1128,23 +1582,23 @@ class ReqBlockParser ( Parser ):
     def maxcredits(self):
 
         localctx = ReqBlockParser.MaxcreditsContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 24, self.RULE_maxcredits)
+        self.enterRule(localctx, 32, self.RULE_maxcredits)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 127
+            self.state = 187
             self.match(ReqBlockParser.MAXCREDITS)
-            self.state = 128
+            self.state = 188
             self.match(ReqBlockParser.NUMBER)
-            self.state = 131
+            self.state = 191
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,12,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,19,self._ctx)
             if la_ == 1:
-                self.state = 129
+                self.state = 189
                 self.and_courses()
                 pass
 
             elif la_ == 2:
-                self.state = 130
+                self.state = 190
                 self.or_courses()
                 pass
 
@@ -1194,23 +1648,23 @@ class ReqBlockParser ( Parser ):
     def proxy_advice(self):
 
         localctx = ReqBlockParser.Proxy_adviceContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 26, self.RULE_proxy_advice)
+        self.enterRule(localctx, 34, self.RULE_proxy_advice)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 133
+            self.state = 193
             self.match(ReqBlockParser.PROXYADVICE)
-            self.state = 134
+            self.state = 194
             self.match(ReqBlockParser.STRING)
-            self.state = 138
+            self.state = 198
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,13,self._ctx)
+            _alt = self._interp.adaptivePredict(self._input,20,self._ctx)
             while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
                 if _alt==1:
-                    self.state = 135
+                    self.state = 195
                     self.proxy_advice() 
-                self.state = 140
+                self.state = 200
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,13,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input,20,self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -1221,66 +1675,154 @@ class ReqBlockParser ( Parser ):
         return localctx
 
 
-    class ExclusiveContext(ParserRuleContext):
+    class ShareContext(ParserRuleContext):
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def EXCLUSIVE(self):
-            return self.getToken(ReqBlockParser.EXCLUSIVE, 0)
+        def SHARE(self):
+            return self.getToken(ReqBlockParser.SHARE, 0)
+
+        def SHARE_LIST(self):
+            return self.getToken(ReqBlockParser.SHARE_LIST, 0)
+
+        def getRuleIndex(self):
+            return ReqBlockParser.RULE_share
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterShare" ):
+                listener.enterShare(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitShare" ):
+                listener.exitShare(self)
+
+
+
+
+    def share(self):
+
+        localctx = ReqBlockParser.ShareContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 36, self.RULE_share)
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 201
+            self.match(ReqBlockParser.SHARE)
+            self.state = 202
+            self.match(ReqBlockParser.SHARE_LIST)
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class MaxperdiscContext(ParserRuleContext):
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def MAXPERDISC(self):
+            return self.getToken(ReqBlockParser.MAXPERDISC, 0)
+
+        def NUMBER(self):
+            return self.getToken(ReqBlockParser.NUMBER, 0)
 
         def LP(self):
             return self.getToken(ReqBlockParser.LP, 0)
 
-        def RP(self, i:int=None):
+        def SYMBOL(self, i:int=None):
             if i is None:
-                return self.getTokens(ReqBlockParser.RP)
+                return self.getTokens(ReqBlockParser.SYMBOL)
             else:
-                return self.getToken(ReqBlockParser.RP, i)
+                return self.getToken(ReqBlockParser.SYMBOL, i)
+
+        def CREDITS(self):
+            return self.getToken(ReqBlockParser.CREDITS, 0)
+
+        def CLASSES(self):
+            return self.getToken(ReqBlockParser.CLASSES, 0)
+
+        def INFROM(self):
+            return self.getToken(ReqBlockParser.INFROM, 0)
+
+        def COMMA(self, i:int=None):
+            if i is None:
+                return self.getTokens(ReqBlockParser.COMMA)
+            else:
+                return self.getToken(ReqBlockParser.COMMA, i)
+
+        def TAG(self):
+            return self.getToken(ReqBlockParser.TAG, 0)
 
         def getRuleIndex(self):
-            return ReqBlockParser.RULE_exclusive
+            return ReqBlockParser.RULE_maxperdisc
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterExclusive" ):
-                listener.enterExclusive(self)
+            if hasattr( listener, "enterMaxperdisc" ):
+                listener.enterMaxperdisc(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitExclusive" ):
-                listener.exitExclusive(self)
+            if hasattr( listener, "exitMaxperdisc" ):
+                listener.exitMaxperdisc(self)
 
 
 
 
-    def exclusive(self):
+    def maxperdisc(self):
 
-        localctx = ReqBlockParser.ExclusiveContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 28, self.RULE_exclusive)
+        localctx = ReqBlockParser.MaxperdiscContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 38, self.RULE_maxperdisc)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 141
-            self.match(ReqBlockParser.EXCLUSIVE)
-            self.state = 142
-            self.match(ReqBlockParser.LP)
-            self.state = 146
+            self.state = 204
+            self.match(ReqBlockParser.MAXPERDISC)
+            self.state = 205
+            self.match(ReqBlockParser.NUMBER)
+            self.state = 206
+            _la = self._input.LA(1)
+            if not(_la==ReqBlockParser.CREDITS or _la==ReqBlockParser.CLASSES):
+                self._errHandler.recoverInline(self)
+            else:
+                self._errHandler.reportMatch(self)
+                self.consume()
+            self.state = 208
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << ReqBlockParser.T__0) | (1 << ReqBlockParser.BEGIN) | (1 << ReqBlockParser.ENDDOT) | (1 << ReqBlockParser.STRING) | (1 << ReqBlockParser.LABEL) | (1 << ReqBlockParser.REMARK) | (1 << ReqBlockParser.CREDITS) | (1 << ReqBlockParser.MINCREDITS) | (1 << ReqBlockParser.MAXCREDITS) | (1 << ReqBlockParser.NONCOURSES) | (1 << ReqBlockParser.CLASSES) | (1 << ReqBlockParser.MINCLASSES) | (1 << ReqBlockParser.MAXCLASSES) | (1 << ReqBlockParser.MINRES) | (1 << ReqBlockParser.MINGPA) | (1 << ReqBlockParser.MINGRADE) | (1 << ReqBlockParser.MAXPASSFAIL) | (1 << ReqBlockParser.PROXYADVICE) | (1 << ReqBlockParser.EXCLUSIVE) | (1 << ReqBlockParser.BLOCKTYPE) | (1 << ReqBlockParser.OR) | (1 << ReqBlockParser.AND) | (1 << ReqBlockParser.INFROM) | (1 << ReqBlockParser.TAG) | (1 << ReqBlockParser.WILDNUMBER) | (1 << ReqBlockParser.WILDSYMBOL) | (1 << ReqBlockParser.RANGE) | (1 << ReqBlockParser.NUMBER) | (1 << ReqBlockParser.SYMBOL) | (1 << ReqBlockParser.ALPHANUM) | (1 << ReqBlockParser.WILDCARD) | (1 << ReqBlockParser.GE) | (1 << ReqBlockParser.GT) | (1 << ReqBlockParser.LE) | (1 << ReqBlockParser.LT) | (1 << ReqBlockParser.EQ) | (1 << ReqBlockParser.LP) | (1 << ReqBlockParser.COMMA) | (1 << ReqBlockParser.PLUS) | (1 << ReqBlockParser.HIDE) | (1 << ReqBlockParser.DECIDE) | (1 << ReqBlockParser.COMMENT) | (1 << ReqBlockParser.LOG) | (1 << ReqBlockParser.WHITESPACE))) != 0):
-                self.state = 143
-                _la = self._input.LA(1)
-                if _la <= 0 or _la==ReqBlockParser.RP:
-                    self._errHandler.recoverInline(self)
-                else:
-                    self._errHandler.reportMatch(self)
-                    self.consume()
-                self.state = 148
+            if _la==ReqBlockParser.INFROM:
+                self.state = 207
+                self.match(ReqBlockParser.INFROM)
+
+
+            self.state = 210
+            self.match(ReqBlockParser.LP)
+            self.state = 211
+            self.match(ReqBlockParser.SYMBOL)
+            self.state = 216
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            while _la==ReqBlockParser.COMMA:
+                self.state = 212
+                self.match(ReqBlockParser.COMMA)
+                self.state = 213
+                self.match(ReqBlockParser.SYMBOL)
+                self.state = 218
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 149
-            self.match(ReqBlockParser.RP)
+            self.state = 220
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la==ReqBlockParser.TAG:
+                self.state = 219
+                self.match(ReqBlockParser.TAG)
+
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1328,26 +1870,26 @@ class ReqBlockParser ( Parser ):
     def maxpassfail(self):
 
         localctx = ReqBlockParser.MaxpassfailContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 30, self.RULE_maxpassfail)
+        self.enterRule(localctx, 40, self.RULE_maxpassfail)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 151
+            self.state = 222
             self.match(ReqBlockParser.MAXPASSFAIL)
-            self.state = 152
+            self.state = 223
             self.match(ReqBlockParser.NUMBER)
-            self.state = 153
+            self.state = 224
             _la = self._input.LA(1)
             if not(_la==ReqBlockParser.CREDITS or _la==ReqBlockParser.CLASSES):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            self.state = 155
+            self.state = 226
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==ReqBlockParser.TAG:
-                self.state = 154
+                self.state = 225
                 self.match(ReqBlockParser.TAG)
 
 
@@ -1407,180 +1949,32 @@ class ReqBlockParser ( Parser ):
     def noncourses(self):
 
         localctx = ReqBlockParser.NoncoursesContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 32, self.RULE_noncourses)
+        self.enterRule(localctx, 42, self.RULE_noncourses)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 157
+            self.state = 228
             self.match(ReqBlockParser.NUMBER)
-            self.state = 158
+            self.state = 229
             self.match(ReqBlockParser.NONCOURSES)
-            self.state = 159
+            self.state = 230
             self.match(ReqBlockParser.LP)
-            self.state = 160
+            self.state = 231
             self.match(ReqBlockParser.SYMBOL)
-            self.state = 165
+            self.state = 236
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==ReqBlockParser.COMMA:
-                self.state = 161
+                self.state = 232
                 self.match(ReqBlockParser.COMMA)
-                self.state = 162
+                self.state = 233
                 self.match(ReqBlockParser.SYMBOL)
-                self.state = 167
+                self.state = 238
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 168
+            self.state = 239
             self.match(ReqBlockParser.RP)
-        except RecognitionException as re:
-            localctx.exception = re
-            self._errHandler.reportError(self, re)
-            self._errHandler.recover(self, re)
-        finally:
-            self.exitRule()
-        return localctx
-
-
-    class RemarkContext(ParserRuleContext):
-
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
-            super().__init__(parent, invokingState)
-            self.parser = parser
-
-        def REMARK(self):
-            return self.getToken(ReqBlockParser.REMARK, 0)
-
-        def STRING(self):
-            return self.getToken(ReqBlockParser.STRING, 0)
-
-        def remark(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(ReqBlockParser.RemarkContext)
-            else:
-                return self.getTypedRuleContext(ReqBlockParser.RemarkContext,i)
-
-
-        def getRuleIndex(self):
-            return ReqBlockParser.RULE_remark
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRemark" ):
-                listener.enterRemark(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRemark" ):
-                listener.exitRemark(self)
-
-
-
-
-    def remark(self):
-
-        localctx = ReqBlockParser.RemarkContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 34, self.RULE_remark)
-        try:
-            self.enterOuterAlt(localctx, 1)
-            self.state = 170
-            self.match(ReqBlockParser.REMARK)
-            self.state = 171
-            self.match(ReqBlockParser.STRING)
-            self.state = 172
-            self.match(ReqBlockParser.T__0)
-            self.state = 176
-            self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,17,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
-                    self.state = 173
-                    self.remark() 
-                self.state = 178
-                self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,17,self._ctx)
-
-        except RecognitionException as re:
-            localctx.exception = re
-            self._errHandler.reportError(self, re)
-            self._errHandler.recover(self, re)
-        finally:
-            self.exitRule()
-        return localctx
-
-
-    class LabelContext(ParserRuleContext):
-
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
-            super().__init__(parent, invokingState)
-            self.parser = parser
-
-        def LABEL(self):
-            return self.getToken(ReqBlockParser.LABEL, 0)
-
-        def STRING(self):
-            return self.getToken(ReqBlockParser.STRING, 0)
-
-        def ALPHANUM(self):
-            return self.getToken(ReqBlockParser.ALPHANUM, 0)
-
-        def label(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(ReqBlockParser.LabelContext)
-            else:
-                return self.getTypedRuleContext(ReqBlockParser.LabelContext,i)
-
-
-        def getRuleIndex(self):
-            return ReqBlockParser.RULE_label
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterLabel" ):
-                listener.enterLabel(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitLabel" ):
-                listener.exitLabel(self)
-
-
-
-
-    def label(self):
-
-        localctx = ReqBlockParser.LabelContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 36, self.RULE_label)
-        self._la = 0 # Token type
-        try:
-            self.enterOuterAlt(localctx, 1)
-            self.state = 179
-            self.match(ReqBlockParser.LABEL)
-            self.state = 181
-            self._errHandler.sync(self)
-            _la = self._input.LA(1)
-            if _la==ReqBlockParser.ALPHANUM:
-                self.state = 180
-                self.match(ReqBlockParser.ALPHANUM)
-
-
-            self.state = 183
-            self.match(ReqBlockParser.STRING)
-            self.state = 185
-            self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,19,self._ctx)
-            if la_ == 1:
-                self.state = 184
-                self.match(ReqBlockParser.T__0)
-
-
-            self.state = 190
-            self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,20,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
-                    self.state = 187
-                    self.label() 
-                self.state = 192
-                self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,20,self._ctx)
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1616,10 +2010,10 @@ class ReqBlockParser ( Parser ):
     def symbol(self):
 
         localctx = ReqBlockParser.SymbolContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 38, self.RULE_symbol)
+        self.enterRule(localctx, 44, self.RULE_symbol)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 193
+            self.state = 241
             self.match(ReqBlockParser.SYMBOL)
         except RecognitionException as re:
             localctx.exception = re
