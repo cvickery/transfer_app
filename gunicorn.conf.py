@@ -1,15 +1,7 @@
 import os
 import multiprocessing
 
-workers = multiprocessing.cpu_count() * 2 + 1
-bind = '0.0.0.0:5000'
 # On Heroku, there were 8 cpus, each of which was trying to create a PgConnection pool.
-access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s'
-accesslog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
-errorlog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
-loglevel = 'DEBUG'
-reload = True
-
 # But hobby-basic only allows 20 connections total.
 # And the port number is an environment variable
 if os.getenv('HEROKU') is not None:
@@ -17,6 +9,16 @@ if os.getenv('HEROKU') is not None:
   bind = f'0.0.0.0:{os.getenv("PORT")}'
   accesslog = '-'
   errorlog = '-'
+else:
+  workers = multiprocessing.cpu_count() * 2 + 1
+  bind = '0.0.0.0:5000'
+  accesslog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
+  errorlog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
+  loglevel = 'DEBUG'
+
+access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s'
+reload = True
+
 
 """
   App Engine terminates the HTTPS connection at the load balancer and forwards the request to your
@@ -35,6 +37,5 @@ if os.getenv('HEROKU') is not None:
 
   We recommend setting the number of workers to 2-4 times the number of cpu_count cores for your
   instance plus one. You can specify this in gunicorn.conf.py as:
-
 """
 # workers = multiprocessing.cpu_count() * 2 + 1
