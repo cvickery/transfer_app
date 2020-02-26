@@ -12,7 +12,7 @@ import json
 import csv
 
 from urllib import parse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from pathlib import Path
 
 from collections import namedtuple
@@ -985,8 +985,8 @@ def courses():
           department_str = f'Offered By the {cursor.fetchone().department_name} Department'
 
   if institution_code is not None:
-    cursor.execute("select update_date from updates where table_name = 'cuny_institutions'")
-    date_updated = cursor.fetchone().update_date.strftime('%B %e, %Y')
+    cursor.execute("select update_date from updates where table_name = 'cuny_courses'")
+    date_updated = date2str(cursor.fetchone().update_date)
     cursor.execute('select name from cuny_institutions where code = %s', (institution_code, ))
     institution_name = cursor.fetchone().name
     cursor.execute(f"""
