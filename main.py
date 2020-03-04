@@ -392,14 +392,19 @@ def map_courses():
   conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute('select code, prompt from cuny_institutions order by prompt')
-  options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
+
+  options = [f"""
+    <div class="institution-option">
+      <input id="radio-{i.code}"
+             type="radio"
+             name="institution"
+             value="{i.code}" />
+      <label for="radio-{i.code}">{i.prompt}</label>
+    </div>
+      """ for i in cursor.fetchall()]
   conn.close()
-  institution_select = """
-  <select id="institution" name="institution">
-    <option value="none" selected="selected">Select a College</option>
-    {}
-  </select>
-  """.format('\n'.join(options))
+
+  institution_select = '<div id="institutions">' + '\r'.join(options) + '</div>'
   # Supply colleges from db now, but use ajax to get a college's disciplines
 
   result = f"""
