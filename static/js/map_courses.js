@@ -39,7 +39,7 @@ $(function ()
 
 
   //  Globals
-  //  ===============================================================================================
+  //  ==============================================================================================
   let course_list = [];
   let institutions = [];
   const institutions_request = $.getJSON($SCRIPT_ROOT + '/_institutions');
@@ -57,8 +57,8 @@ $(function ()
 
   //  update_course_count()
   // -----------------------------------------------------------------------------------------------
-  /*  Utility to show user how many courses have been selected, and to enable course map activators if
-   *  that number is greater than zero.
+  /*  Utility to show user how many courses have been selected, and to enable course map activators
+   *  if that number is greater than zero.
    */
   function update_course_count()
   {
@@ -89,11 +89,11 @@ $(function ()
    */
   const part_a_change = function ()
   {
-    const institution = $('#institution').val();
+    const institution = $('input[name="institution"]:checked').val();
     const discipline = $('#discipline').val();
     const course_groups = $('#course-groups').val();
 
-    if ($(this).attr('id') === 'institution')
+    if ($(this).attr('name') === 'institution')
     {
       course_list = [];
       update_course_count();
@@ -208,7 +208,7 @@ $(function ()
     }
   });
 
-  $('#institution, #course-groups').change(part_a_change);
+  $('input[name="institution"], #course-groups').change(part_a_change);
 
   /* Show Setup
    */

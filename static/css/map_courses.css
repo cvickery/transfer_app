@@ -43,6 +43,11 @@ label {
   margin:0.1em;
 }
 
+.institution-option {
+  display: inline-block;
+  width: 11em;
+}
+
 input[type="text"] {
   display: inline-block;
   width:10em;
