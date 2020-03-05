@@ -1,5 +1,5 @@
 
-let was_selected = ''
+let was_selected = '';
 //  check_status()
 //  -----------------------------------------------------------------------------------------------
 /*  Disable the submit button unless all controls have non-empty values.
@@ -45,21 +45,23 @@ const values_listener = function ()
  */
 const update_values = function ()
 {
-  const institution = document.getElementById('institution').value;
+  // const institution = document.getElementById('institution').value;
+  const college = document.querySelector('input[name="college"]:checked').value;
   const block_type = document.getElementById('block-type').value;
   const period = document.querySelector('[name=period]:checked').value;
   was_selected = document.querySelector('[name=requirement-name]').value;
 
-  if (institution !== '' && block_type !== '')
+  if (college !== '' && block_type !== '')
   {
     const request = new XMLHttpRequest();
     request.addEventListener('load', values_listener);
     request.open('GET',
-      `/_requirement_values/?institution=${institution}&block_type=${block_type}&period=${period}`);
+      `/_requirement_values/?institution=${college}&block_type=${block_type}&period=${period}`);
     request.send();
   }
   // Hide block-value and disable submit button until choices return
   document.getElementById('value-div').style.display = 'none';
+  document.getElementById('institution').value = college;
 };
 
 //  main()
@@ -68,9 +70,8 @@ const update_values = function ()
  */
 const main = function ()
 {
-  document.getElementById('institution').addEventListener('change', update_values);
   document.getElementById('block-type').addEventListener('change', update_values);
-  document.querySelectorAll('[name=period]')
+  document.querySelectorAll('[type=radio]')
     .forEach((radio) => radio.addEventListener('change', update_values));
   document.getElementById('block-value').addEventListener('change', check_status);
 
