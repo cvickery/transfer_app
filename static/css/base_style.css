@@ -176,6 +176,11 @@ fieldset hr {
   overflow-y: scroll;
 }
 
+.institution-option {
+  display: inline-block;
+  width: 11em;
+}
+
 /* Animate the loading/please-wait ellipsis. */
 .dot-1 {
     animation: dot 1.5s infinite;

@@ -38,7 +38,7 @@ from top_menu import top_menu
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from propose_rules import _propose_rules
 
-from dgw_processor.dgw_parser import dgw_parser
+from dgw_parser import dgw_parser
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify, session
@@ -392,14 +392,19 @@ def map_courses():
   conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute('select code, prompt from cuny_institutions order by prompt')
-  options = ['<option value="{}">{}</option>'.format(x[0], x[1]) for x in cursor.fetchall()]
+
+  options = [f"""
+    <div class="institution-option">
+      <input id="radio-{i.code}"
+             type="radio"
+             name="institution"
+             value="{i.code}" />
+      <label for="radio-{i.code}">{i.prompt}</label>
+    </div>
+      """ for i in cursor.fetchall()]
   conn.close()
-  institution_select = """
-  <select id="institution" name="institution">
-    <option value="none" selected="selected">Select a College</option>
-    {}
-  </select>
-  """.format('\n'.join(options))
+
+  institution_select = '<div id="institutions">' + '\r'.join(options) + '</div>'
   # Supply colleges from db now, but use ajax to get a college's disciplines
 
   result = f"""
@@ -1379,10 +1384,17 @@ def requirements(college=None, type=None, name=None, period=None):
     cursor.execute("select update_date from updates where table_name = 'requirement_blocks'")
     dgw_date = datetime.strptime(cursor.fetchone().update_date, '%Y-%m-%d')
     dgw_date = dgw_date.strftime('%B %d, %Y')
-    cursor.execute('select code, name from cuny_institutions')
-    college_options = '<option value="">Select College</option>\n'
+    cursor.execute('select code, prompt from cuny_institutions')
+    college_choices = '<p><strong>College:</strong></p>\n'
     for row in cursor.fetchall():
-      college_options += f'<option value="{row.code}">{row.name}</option>\n'
+      college_choices += f"""<div class="institution-option">
+                               <input id="radio-{row.code}"
+                                      type="radio"
+                                      name="college"
+                                      value="{row.code}" />
+                               <label for="radio-{row.code}">{row.prompt}</label>
+                             </div>\n
+                          """
     conn.close()
     result = f"""
     {header(title='Requirements Search', nav_items=[{'type': 'link',
@@ -1393,8 +1405,8 @@ def requirements(college=None, type=None, name=None, period=None):
                                                        'text': 'Programs',
                                                        'href': '/registered_programs'
                                                       }])}
-    <h1 class="error">Proof of Concept</h1>
-    <details><summary>More Information</summary><hr>
+    <h1 class="error">Work in Progress</h1>
+    <details><summary>Information About This Project</summary><hr>
     <p>
       This page lets you look up the requirements for any degree, major, minor, or concentration at
       any CUNY college. The information is taken from the Degreeworks “Scribe Blocks” that are
@@ -1408,28 +1420,27 @@ def requirements(college=None, type=None, name=None, period=None):
     <p>
     <p>
       This is a work in progress. For each program, a complete scribe block is shown in its raw
-      form, followed by information extracted from it as a set of English sentences. Expanding the
-      amount of information extracted is under development.
+      form, followed by information extracted from it in a format useful during
+      development.
     </p>
     <p>
       Program requirements change over time. Degreeworks keeps a record of previous program
       versions, arranged by “catalog year.” By default only the current requirements are shown, but
       you can choose to look at earlier ones as well.
     </p>
-      Degreeworks information last updated on {dgw_date}.
+      Degreeworks information used here is normally updated once a week. It was last updated on
+      {dgw_date}.
     </p>
     </details>
-    <fieldset><legend>Select Requirements</legend>
+    <fieldset><legend>Options</legend>
     <form method="GET" action="/requirements">
+      <input type="hidden" name="institution" id="institution" value="" />
       <div>
-        <label for="institution">College:</label>
-        <select id="institution" name="college" placeholder="Select College">
-          {college_options}
-        </select>
+        {college_choices}
       </div>
 
       <div>
-        <label for="block-type">Requirement Type:</label>
+        <label for="block-type"><strong>Requirement Type:</strong></label>
         <select id="block-type" name="requirement-type">
         <option value="DEGREE">Degree</option>
         <option value="MAJOR">Major</option>
@@ -1440,7 +1451,7 @@ def requirements(college=None, type=None, name=None, period=None):
       </div>
 
       <div id="value-div">
-        <label for="block-value">Requirement Name:</label>
+        <label for="block-value"><strong>Requirement Name:</strong></label>
         <select id="block-value" name="requirement-name">
         <option value="CSCI-BA">ACCT-BA</option>
         <option value="CSCI-BA">CSCI-BA</option>

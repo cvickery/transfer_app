@@ -1,14 +1,20 @@
 body {
   max-width: 60em;
 }
+
 label:first-child {
-  width: 9em;
+  width: 11em;
   display: inline-block;
 }
+
 details {
   margin-bottom:2em;
 }
 
 fieldset {
   margin:1em;
+}
+
+form>div {
+  margin-top: 1em;
 }
