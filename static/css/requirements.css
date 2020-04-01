@@ -44,3 +44,13 @@ li {
 .open::before {
   transform: rotate(90deg);
 }
+
+.with-numbers {
+  display:grid;
+  grid-template-columns: 3em auto;
+}
+
+.line-numbers {
+  color: #999;
+  display:none;
+}
