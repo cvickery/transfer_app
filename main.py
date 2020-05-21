@@ -1464,17 +1464,17 @@ def requirements(college=None, type=None, name=None, period=None):
       <fieldset>
         <legend>Catalog Year(s)</legend>
         <p>
-          Do you want to see only the requirements for the current catalog year, the most-recent
-          year (in case the program or degree is no longer being offered), or the requirements for
-          all catalog years in reverse chronological order?
+          Do you want to see the requirements for all catalog years, the most-recent catalog
+          year (includes programs or degrees no longer being offered), or just the requirements
+          for the currently catalog year?
         </p>
         <input type="radio" id="period-all" name="period" value="all"/>
         <label for="period-all">All</label>
 
-        <input type="radio" id="period-recent" name="period" value="recent"/>
+        <input type="radio" id="period-recent" name="period" value="recent" checked/>
         <label for="period-recent">Most-Recent</label>
 
-        <input type="radio" id="period-current" name="period" value="current" checked/>
+        <input type="radio" id="period-current" name="period" value="current"/>
         <label for="period-current">Current</label>
         </fieldset>
       <button type="submit" id="goforit">Go For It</button>
