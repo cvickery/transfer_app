@@ -24,6 +24,7 @@ from pgconnection import PgConnection
 from course_lookup import lookup_courses, lookup_course
 from sendemail import send_token, send_message
 from reviews import process_pending
+from rule_diff import diff_rules
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
@@ -54,6 +55,7 @@ else:
 SESSION_TYPE = 'redis'
 SESSION_REDIS = redis.from_url(redis_url)
 PERMANENT_SESSION_LIFETIME = timedelta(days=90)
+SESSION_COOKIE_SAMESITE = "None"
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Needed for session support
 app.config.from_object(__name__)
@@ -1363,6 +1365,41 @@ def _requirement_values():
                  {options}"""
 
 
+# RULE CHANGES PAGE
+# -------------------------------------------------------------------------------------------------
+@app.route('/rule_changes/', methods=['GET'])
+def rule_changes():
+  first_date = request.args.get('first_date')
+  second_date = request.args.get('second_date')
+  print(f'*** {first_date} {second_date}')
+  if first_date == '' or second_date == '':
+    result = """
+    <h1>Select Dates</h1>
+    <p>
+      Select two dates to see what transfer rules that have changed between them.
+      <br>
+      <em>It will take several seconds to process your request, so please be patient!</em>
+    </p>
+    <form action="/rule_changes">
+      <label for="first_date">First Date:</label>
+      <input type="date" name="first_date" id="first_date" value=""/>
+      <br>
+      <label for="second_date">Second Date:</label>
+      <input type="date" name="second_date" id="second_date" value=""/>
+      <br>
+      <button type="select">Look Up Changes</button>
+    </form>
+    """
+  else:
+    diffs = diff_rules(first_date, second_date)
+    result = diffs
+  return render_template('rule_changes.html',
+                         result=Markup(result),
+                         title='Rule Changes')
+
+
+# REQUIREMENTS PAGE
+# -------------------------------------------------------------------------------------------------
 @app.route('/requirements/', methods=['GET'])
 def requirements(college=None, type=None, name=None, period=None):
   """ Display the requirements for a program.

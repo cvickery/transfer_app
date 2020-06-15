@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>{% block title %}{{title}}{% endblock %}</title>
+    <link rel='stylesheet' href='/static/css/base_style.css' />
+    <link rel='stylesheet' href='/static/css/rule_changes.css' />
+    {% block sheets %}{% endblock %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+  {% if not omitjs %}
+    <script src="/static/js/rule_changes.js"></script>
+  {% endif %}
+  {% block scripts %}{% endblock %}
+
+  </head>
+  <body>
+    {% if not omitjs %}
+    <div id="need-js">
+      <p class="error">Waiting for JavaScript to initialize &hellip;</p>
+    </div>
+    <script>document.getElementById('need-js').style.display = 'none';
+</script>
+    {% endif %}
+    {{ result }}
+    {% block static %}{% endblock %}
+  </body>
+</html>

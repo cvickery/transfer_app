@@ -1,0 +1,7 @@
+label {
+  display: inline-block;
+  width:8em;
+}
+button {
+  disabled:disabled;
+}
