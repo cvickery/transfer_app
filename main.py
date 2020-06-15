@@ -24,7 +24,7 @@ from pgconnection import PgConnection
 from course_lookup import lookup_courses, lookup_course
 from sendemail import send_token, send_message
 from reviews import process_pending
-from rule_diff import diff_rules
+from rule_diff import diff_rules, archive_dates
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
@@ -1372,11 +1372,17 @@ def rule_changes():
   first_date = request.args.get('first_date')
   second_date = request.args.get('second_date')
   print(f'*** {first_date} {second_date}')
-  if first_date == '' or second_date == '':
-    result = """
+  if first_date == '' or first_date is None or second_date == '' or second_date is None:
+    first_date, last_date = archive_dates()
+    result = f"""
+    {header(title='Rule Changes', nav_items=[{'type': 'link',
+                                                     'text': 'Main Menu',
+                                                     'href': '/'
+                                                    }])}
     <h1>Select Dates</h1>
     <p>
-      Select two dates to see what transfer rules that have changed between them.
+      Select two dates to see what transfer rules that have changed between them. Currently, there
+      is a record of changes between {first_date} and {last_date}.
       <br>
       <em>It will take several seconds to process your request, so please be patient!</em>
     </p>
@@ -1392,7 +1398,17 @@ def rule_changes():
     """
   else:
     diffs = diff_rules(first_date, second_date)
-    result = diffs
+    result = f"""
+    {header(title='Rule Changes', nav_items=[{'type': 'link',
+                                                     'text': 'Main Menu',
+                                                     'href': '/'
+                                                    }])}
+    <h1>Rule Changes</h1>
+    """
+    # Format table rows based on the diffs.
+    table_rows = []
+    for diff in diffs:
+      table_row = f'<tr>'
   return render_template('rule_changes.html',
                          result=Markup(result),
                          title='Rule Changes')

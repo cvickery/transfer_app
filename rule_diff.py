@@ -27,17 +27,17 @@ if _archive_dir is None:
   _archive_dir = '/Users/vickery/CUNY_Curriculum/rules_archive'
 
 # Get available archive sets.
-archive_files = Path(_archive_dir).glob('*.bz2')
-all_archives = defaultdict(list)
-for archive_file in archive_files:
+_archive_files = Path(_archive_dir).glob('*.bz2')
+_all_archives = defaultdict(list)
+for archive_file in _archive_files:
   archive_date = archive_file.name[0:10]
-  all_archives[archive_date].append(archive_file)
-if len(all_archives) < 2:
-  raise ValueError(f'Not enough archive sets available. {len(all_archives)} found.')
+  _all_archives[archive_date].append(archive_file)
+if len(_all_archives) < 2:
+  raise ValueError(f'Not enough archive sets available. {len(_all_archives)} found.')
 
 # Put the keys in order
-all_archive_keys = list(all_archives.keys())
-all_archive_keys.sort()
+_all_archive_keys = list(_all_archives.keys())
+_all_archive_keys.sort()
 
 
 # archive_dates()
@@ -45,8 +45,8 @@ all_archive_keys.sort()
 def archive_dates():
   """ Return dates of earliest and latest archives available.
   """
-  first_date = date.fromisoformat(all_archive_keys[0])
-  last_date = date.fromisoformat(all_archive_keys[-1])
+  first_date = date.fromisoformat(_all_archive_keys[0])
+  last_date = date.fromisoformat(_all_archive_keys[-1])
   return (first_date.strftime('%b %d, %Y'), last_date.strftime('%b %d, %Y'))
 
 
@@ -59,7 +59,6 @@ def diff_rules(first, second, debug=False):
       Return a dict keyed by rule with tuple of from-to course_id lists for the two archive dates
       used. Tuple is None for added/deleted rules.
   """
-
   if first is None:
     first = 'latest'
   if second is None:
@@ -67,25 +66,25 @@ def diff_rules(first, second, debug=False):
   first, second = (min(first, second), max(first, second))
 
   if first == 'latest':
-    first_date = all_archive_keys[-2]
+    first_date = _all_archive_keys[-2]
   else:
     # Get latest date that is earlier than first
-    all_archive_keys.reverse()
-    for first_date in all_archive_keys:
+    _all_archive_keys.reverse()
+    for first_date in _all_archive_keys:
       if first_date < first:
         break
-    all_archive_keys.reverse()
+    _all_archive_keys.reverse()
 
   if second == 'latest':
-    second_date = all_archive_keys[-1]
+    second_date = _all_archive_keys[-1]
   else:
     # Get earliest date that is later than second
-    for second_date in all_archive_keys:
+    for second_date in _all_archive_keys:
       if second_date > second:
         break
 
-  first_set = ArchiveSet._make(sorted(all_archives[first_date]))
-  second_set = ArchiveSet._make(sorted(all_archives[second_date]))
+  first_set = ArchiveSet._make(sorted(_all_archives[first_date]))
+  second_set = ArchiveSet._make(sorted(_all_archives[second_date]))
 
   if debug:
     print(f'Asked for {first}, {second}. Using {first_date}, {second_date}.', file=sys.stderr)
@@ -195,6 +194,7 @@ def diff_rules(first, second, debug=False):
 """ Module Test
 """
 if __name__ == '__main__':
+
   # Command line options
   parser = ArgumentParser('Compare two rule archives')
   parser.add_argument('-d', '--debug', action='store_true')

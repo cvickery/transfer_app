@@ -1,8 +1,6 @@
 #! /usr/local/bin/python3
 
 from app_header import header
-from rule_diff import archive_dates
-first_archive_date, last_archive_date = archive_dates()
 
 
 def top_menu(msg=''):
@@ -86,8 +84,7 @@ def top_menu(msg=''):
     <dt><a href="/rule_changes">Rule Changes</a></dt>
     <dd>
       <p>
-        See what transfer rules have changed between two dates. At the present time, information is
-        available for rule changes between {first_archive_date} and {last_archive_date}.
+        See what transfer rules have changed between two dates.
       </p>
     </dd>
 
