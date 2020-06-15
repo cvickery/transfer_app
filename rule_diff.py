@@ -9,6 +9,7 @@ import csv
 import sys
 from argparse import ArgumentParser
 from collections import defaultdict, namedtuple
+from datetime import date
 from pathlib import Path
 
 # An ArchiveSet consists of lists of source courses and destination courses, linked by a common
@@ -19,14 +20,39 @@ SourceCourses = namedtuple('SourceCourses', 'rule_key course_id offer_nbr '
 DestinationCourses = namedtuple('DestinationCourses', 'rule_key course_id offer_nbr '
                                 ' transfer_credits')
 
+# Module initialization
+# =================================================================================================
 _archive_dir = os.getenv('ARCHIVE_DIR')
 if _archive_dir is None:
   _archive_dir = '/Users/vickery/CUNY_Curriculum/rules_archive'
 
+# Get available archive sets.
+archive_files = Path(_archive_dir).glob('*.bz2')
+all_archives = defaultdict(list)
+for archive_file in archive_files:
+  archive_date = archive_file.name[0:10]
+  all_archives[archive_date].append(archive_file)
+if len(all_archives) < 2:
+  raise ValueError(f'Not enough archive sets available. {len(all_archives)} found.')
+
+# Put the keys in order
+all_archive_keys = list(all_archives.keys())
+all_archive_keys.sort()
+
+
+# archive_dates()
+# -------------------------------------------------------------------------------------------------
+def archive_dates():
+  """ Return dates of earliest and latest archives available.
+  """
+  first_date = date.fromisoformat(all_archive_keys[0])
+  last_date = date.fromisoformat(all_archive_keys[-1])
+  return (first_date.strftime('%b %d, %Y'), last_date.strftime('%b %d, %Y'))
+
 
 # diff_rules()
 # -------------------------------------------------------------------------------------------------
-def diff_rules(first, second, archive_dir=_archive_dir, debug=False):
+def diff_rules(first, second, debug=False):
   """ Diff rules from the archive. Default is the most recent two. Otherwise, use the last
       available archive before first and the most recent one since second.
 
@@ -40,34 +66,21 @@ def diff_rules(first, second, archive_dir=_archive_dir, debug=False):
     second = 'latest'
   first, second = (min(first, second), max(first, second))
 
-  # Get available archive sets.
-  archive_files = Path(archive_dir).glob('*.bz2')
-  all_archives = defaultdict(list)
-  for archive_file in archive_files:
-    date = archive_file.name[0:10]
-    all_archives[date].append(archive_file)
-  if len(all_archives) < 2:
-    raise ValueError(f'Not enough archive sets available. {len(all_archives)} found.')
-
-  # Select matching sets
-  all_keys = list(all_archives.keys())
-  all_keys.sort()
-
   if first == 'latest':
-    first_date = all_keys[-2]
+    first_date = all_archive_keys[-2]
   else:
     # Get latest date that is earlier than first
-    all_keys.reverse()
-    for first_date in all_keys:
+    all_archive_keys.reverse()
+    for first_date in all_archive_keys:
       if first_date < first:
         break
-    all_keys.reverse()
+    all_archive_keys.reverse()
 
   if second == 'latest':
-    second_date = all_keys[-1]
+    second_date = all_archive_keys[-1]
   else:
     # Get earliest date that is later than second
-    for second_date in all_keys:
+    for second_date in all_archive_keys:
       if second_date > second:
         break
 
@@ -140,13 +153,13 @@ def diff_rules(first, second, archive_dir=_archive_dir, debug=False):
   assert second_keys == set(second_rules_destination.keys())
 
   # Work with the union of the two sets of rules
-  all_keys = first_keys | second_keys
+  all_archive_keys = first_keys | second_keys
   if debug:
     print(f'{len(first_keys):,} {first_date} rules and {len(second_keys):,} {second_date} rules '
-          f'=>  {len(all_keys):,} rules to check', file=sys.stderr)
+          f'=>  {len(all_archive_keys):,} rules to check', file=sys.stderr)
 
   result = dict()
-  for key in all_keys:
+  for key in all_archive_keys:
     try:
       # if key == 'BAR01-LEH01-AAM-1':
       #   print(key, first_rules_source[key], second_rules_source[key],

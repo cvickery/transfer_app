@@ -1,12 +1,15 @@
 #! /usr/local/bin/python3
 
 from app_header import header
+from rule_diff import archive_dates
+first_archive_date, last_archive_date = archive_dates()
 
 
 def top_menu(msg=''):
   """ This is the "landing page" for the app.
   """
   header_str = header(title='CUNY Transfer Explorer')
+
   return f"""
 {header_str}
 <details>
@@ -74,8 +77,18 @@ def top_menu(msg=''):
 
     <dt><a href="/map_courses">Course Transfer Maps</a></dt>
     <dd>
+     <p>
       Find out how courses transfer across CUNY colleges. Results are presented in tabular form with
       cells highlighted to identify possible problems with the transfer rules.
+     </p>
+    </dd>
+
+    <dt><a href="/rule_changes">Rule Changes</a></dt>
+    <dd>
+      <p>
+        See what transfer rules have changed between two dates. At the present time, information is
+        available for rule changes between {first_archive_date} and {last_archive_date}.
+      </p>
     </dd>
 
     <dt><a href="/registered_programs">Academic Programs</a></dt>
