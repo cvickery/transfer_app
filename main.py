@@ -24,6 +24,7 @@ from pgconnection import PgConnection
 from course_lookup import lookup_courses, lookup_course
 from sendemail import send_token, send_message
 from reviews import process_pending
+from rule_diff import diff_rules, archive_dates
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
@@ -54,6 +55,7 @@ else:
 SESSION_TYPE = 'redis'
 SESSION_REDIS = redis.from_url(redis_url)
 PERMANENT_SESSION_LIFETIME = timedelta(days=90)
+SESSION_COOKIE_SAMESITE = "None"
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Needed for session support
 app.config.from_object(__name__)
@@ -1363,6 +1365,148 @@ def _requirement_values():
                  {options}"""
 
 
+# RULE CHANGES PAGE
+# -------------------------------------------------------------------------------------------------
+@app.route('/rule_changes/', methods=['GET'])
+def rule_changes():
+  first_date = request.args.get('first_date')
+  second_date = request.args.get('second_date')
+  if first_date == '' or first_date is None or second_date == '' or second_date is None:
+    first_date, last_date = archive_dates()
+    result = f"""
+    {header(title='Rule Changes', nav_items=[{'type': 'link',
+                                                     'text': 'Main Menu',
+                                                     'href': '/'
+                                                    }])}
+    <h1>Select Dates</h1>
+    <p>
+      Select two dates to see what transfer rules that have changed between them. Currently, there
+      is a record of changes between {first_date} and {last_date}.
+      <br>
+      <em>It will take several seconds to process your request, so please be patient!</em>
+    </p>
+    <form action="/rule_changes">
+      <label for="first_date">First Date:</label>
+      <input type="date" name="first_date" id="first_date" value=""/>
+      <br>
+      <label for="second_date">Second Date:</label>
+      <input type="date" name="second_date" id="second_date" value=""/>
+      <br>
+      <button type="select">Look Up Changes</button>
+    </form>
+    """
+  else:
+    first_date, second_date, diffs = diff_rules(first_date, second_date)
+    first_date_str = date.fromisoformat(first_date).strftime('%b %d, %Y')
+    second_date_str = date.fromisoformat(second_date).strftime('%b %d, %Y')
+    result = f"""
+    {header(title='Rule Changes', nav_items=[{'type': 'link',
+                                                     'text': 'Main Menu',
+                                                     'href': '/'
+                                                    }])}
+    <h1>Rule Changes</h1>
+    <p>
+      The following {len(diffs)} rules changed between {first_date_str} and {second_date_str}.
+    </p>
+    <table>
+      <tr>
+        <th>Type</th>
+        <th>{first_date_str}</th>
+        <th>{second_date_str}</th>
+        <th>Rule Key<sup>1</sup></th></tr>
+    """
+    # Format table rows based on the diffs.
+    table_rows = []
+    conn = PgConnection()
+    cursor = conn.cursor()
+    for rule_key in sorted(diffs.keys()):
+
+      delta_type, first_rule_text, second_rule_text = lookup_courses(first_date,
+                                                                     second_date,
+                                                                     diffs[rule_key],
+                                                                     cursor)
+      table_rows.append(f"""
+        <tr>
+          <th>{delta_type}</th>
+          <td>{first_rule_text}</td>
+          <td>{second_rule_text}</td>
+          <td>{rule_key}</td>
+        </tr>""")
+    conn.close()
+    nl = '\n'
+    result += f"""
+      {nl.join(table_rows)}
+      </table>
+      <hr>
+      <sup>1</sup>The rule key contains information that could be used to locate the rule in
+      CUNYfirst.
+               """
+  return render_template('rule_changes.html',
+                         result=Markup(result),
+                         title='Rule Changes')
+
+
+def lookup_courses(first_date, second_date, rules_dict, cursor):
+  """
+  """
+  delta_type = 'Change'
+  if rules_dict[first_date] is None:
+    first_rule_text = 'None'
+    delta_type = 'Add'
+  else:
+    course_ids = ','.join(rules_dict[first_date][0])
+    cursor.execute(f"""
+         select institution, discipline, catalog_number, title, course_status
+         from cuny_courses
+         where course_id in ({course_ids})
+         order by discipline, numeric_part(catalog_number)
+         """)
+    first_rule_send = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                f'{row.discipline} {row.catalog_number}</span>'
+                                for row in cursor.fetchall()])
+    course_ids = ','.join(rules_dict[first_date][1])
+    cursor.execute(f"""
+         select institution, discipline, catalog_number, title, course_status
+         from cuny_courses
+         where course_id in ({course_ids})
+         order by discipline, numeric_part(catalog_number)
+         """)
+    first_rule_recv = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                f'{row.discipline} {row.catalog_number}</span>'
+                                for row in cursor.fetchall()])
+    first_rule_text = f'{first_rule_send} => {first_rule_recv}'
+
+  if rules_dict[second_date] is None:
+    second_rule_text = 'None'
+    delta_type = 'Delete'
+  else:
+    course_ids = ','.join(rules_dict[second_date][0])
+    cursor.execute(f"""
+         select institution, discipline, catalog_number, title, course_status
+         from cuny_courses
+         where course_id in ({course_ids})
+         order by discipline, numeric_part(catalog_number)
+         """)
+    second_rule_send = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                f'{row.discipline} {row.catalog_number}</span>'
+                                 for row in cursor.fetchall()])
+    course_ids = ','.join(rules_dict[second_date][1])
+    cursor.execute(f"""
+         select institution, discipline, catalog_number, title, course_status
+         from cuny_courses
+         where course_id in ({course_ids})
+         order by discipline, numeric_part(catalog_number)
+         """)
+    second_rule_recv = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                f'{row.discipline} {row.catalog_number}</span>'
+                                 for row in cursor.fetchall()])
+    second_rule_text = f'{second_rule_send} => {second_rule_recv}'
+
+  return delta_type, first_rule_text, second_rule_text
+
+
+# REQUIREMENTS PAGE
+# -------------------------------------------------------------------------------------------------
 @app.route('/requirements/', methods=['GET'])
 def requirements(college=None, type=None, name=None, period=None):
   """ Display the requirements for a program.

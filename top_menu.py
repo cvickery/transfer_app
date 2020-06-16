@@ -7,6 +7,7 @@ def top_menu(msg=''):
   """ This is the "landing page" for the app.
   """
   header_str = header(title='CUNY Transfer Explorer')
+
   return f"""
 {header_str}
 <details>
@@ -74,8 +75,17 @@ def top_menu(msg=''):
 
     <dt><a href="/map_courses">Course Transfer Maps</a></dt>
     <dd>
+     <p>
       Find out how courses transfer across CUNY colleges. Results are presented in tabular form with
       cells highlighted to identify possible problems with the transfer rules.
+     </p>
+    </dd>
+
+    <dt><a href="/rule_changes">Rule Changes</a></dt>
+    <dd>
+      <p>
+        See what transfer rules have changed between two dates.
+      </p>
     </dd>
 
     <dt><a href="/registered_programs">Academic Programs</a></dt>
