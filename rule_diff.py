@@ -71,7 +71,7 @@ def diff_rules(first, second, debug=False):
     # Get latest date that is earlier than first
     _all_archive_keys.reverse()
     for first_date in _all_archive_keys:
-      if first_date < first:
+      if first_date <= first:
         break
     _all_archive_keys.reverse()
 
@@ -188,7 +188,7 @@ def diff_rules(first, second, debug=False):
                        second_date: None}
       else:
         raise KeyError(f'{key:<20}\t Unexpected KeyError')
-  return result
+  return first_date, second_date, result
 
 
 """ Module Test
@@ -204,6 +204,7 @@ if __name__ == '__main__':
   dates = args.dates
   while len(dates) < 2:
     dates += [None]
-  result = diff_rules(dates[0], dates[1], debug=args.debug)
+  first_date, second_date, result = diff_rules(dates[0], dates[1], debug=args.debug)
+  print(first_date, second_date)
   for key, value in result.items():
     print(key, value)

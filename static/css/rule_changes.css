@@ -5,3 +5,13 @@ label {
 button {
   disabled:disabled;
 }
+table {
+  background-color: white;
+  border-collapse: collapse;
+  border: 1px solid #ccc;
+}
+
+td, th {
+  border: 1px solid #ccc;
+  padding: 0.25em;
+}
