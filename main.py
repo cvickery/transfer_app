@@ -1510,7 +1510,6 @@ def lookup_courses(first_date, second_date, rules_dict, cursor):
 # -------------------------------------------------------------------------------------------------
 @app.route('/_archive_dates')
 def _archive_dates():
-  print(json.dumps(available_archive_dates))
   return json.dumps(available_archive_dates)
 
 
