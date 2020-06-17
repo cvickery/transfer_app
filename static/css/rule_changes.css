@@ -15,3 +15,11 @@ td, th {
   border: 1px solid #ccc;
   padding: 0.25em;
 }
+
+.warning {
+  color:#611;
+}
+
+.good {
+  color:#161;
+}

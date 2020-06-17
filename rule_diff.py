@@ -39,6 +39,11 @@ if len(_all_archives) < 2:
 _all_archive_keys = list(_all_archives.keys())
 _all_archive_keys.sort()
 
+# Provide public list of available archive_dates
+available_archive_dates = dict()
+for key in _all_archive_keys:
+  available_archive_dates[key] = date.fromisoformat(key).strftime('%b %d, %Y')
+
 
 # archive_dates()
 # -------------------------------------------------------------------------------------------------

@@ -24,7 +24,7 @@ from pgconnection import PgConnection
 from course_lookup import lookup_courses, lookup_course
 from sendemail import send_token, send_message
 from reviews import process_pending
-from rule_diff import diff_rules, archive_dates
+from rule_diff import diff_rules, archive_dates, available_archive_dates
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
@@ -1380,17 +1380,18 @@ def rule_changes():
                                                     }])}
     <h1>Select Dates</h1>
     <p>
-      Select two dates to see what transfer rules that have changed between them. Currently, there
-      is a record of changes between {first_date} and {last_date}.
-      <br>
-      <em>It will take several seconds to process your request, so please be patient!</em>
+      Select two dates to see what transfer rules have changed between them. Currently, there
+      is a record of weekly changes between {first_date} and {last_date}.
+    </p>
+    <p>
+      <em>It can take as long as 60 seconds to process your request, so please be patient!</em>
     </p>
     <form action="/rule_changes">
       <label for="first_date">First Date:</label>
-      <input type="date" name="first_date" id="first_date" value=""/>
+      <input type="date" name="first_date" id="first_date" value=""/> <span></span>
       <br>
       <label for="second_date">Second Date:</label>
-      <input type="date" name="second_date" id="second_date" value=""/>
+      <input type="date" name="second_date" id="second_date" value=""/> <span></span>
       <br>
       <button type="select">Look Up Changes</button>
     </form>
@@ -1503,6 +1504,14 @@ def lookup_courses(first_date, second_date, rules_dict, cursor):
     second_rule_text = f'{second_rule_send} => {second_rule_recv}'
 
   return delta_type, first_rule_text, second_rule_text
+
+
+# _archive_dates()
+# -------------------------------------------------------------------------------------------------
+@app.route('/_archive_dates')
+def _archive_dates():
+  print(json.dumps(available_archive_dates))
+  return json.dumps(available_archive_dates)
 
 
 # REQUIREMENTS PAGE
