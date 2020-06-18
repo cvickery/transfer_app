@@ -9,7 +9,7 @@ window.addEventListener('load', function()
     .then(something => something.json())
     .then(data =>
     {
-      archive_dates = Object.getOwnPropertyNames(data);
+      archive_dates = Reflect.ownKeys(data);
       archive_date_strings = data;
     });
 
@@ -101,7 +101,7 @@ window.addEventListener('load', function()
       }
       else if (second_date.value < archive_dates[1])
       {
-        second_msg.innerText = 'Using earliest archive available for comparison —' +
+        second_msg.innerText = 'Using earliest archive available for comparison — ' +
                                archive_date_strings[archive_dates[1]];
         second_msg.classList.add('warning');
         second_date.value = archive_dates[1];
