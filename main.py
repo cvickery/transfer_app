@@ -1393,13 +1393,13 @@ def rule_changes():
       <label for="second_date">Second Date:</label>
       <input type="date" name="second_date" id="second_date" value=""/> <span></span>
       <br>
-      <button type="select">Look Up Changes</button>
+      <button type="select" id="submit_button">Look Up Changes</button> <span></span>
     </form>
     """
   else:
     first_date, second_date, diffs = diff_rules(first_date, second_date)
-    first_date_str = date.fromisoformat(first_date).strftime('%b %d, %Y')
-    second_date_str = date.fromisoformat(second_date).strftime('%b %d, %Y')
+    first_date_str = date.fromisoformat(first_date).strftime('%B %-d, %Y')
+    second_date_str = date.fromisoformat(second_date).strftime('%B %-d, %Y')
     result = f"""
     {header(title='Rule Changes', nav_items=[{'type': 'link',
                                                      'text': 'Main Menu',

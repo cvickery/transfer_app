@@ -14,11 +14,12 @@ from pathlib import Path
 
 # An ArchiveSet consists of lists of source courses and destination courses, linked by a common
 # rule_key.
-ArchiveSet = namedtuple('ArchiveSet', 'destination_courses source_courses')
+ArchiveSet = namedtuple('ArchiveSet', 'destination_courses effective_dates source_courses')
 SourceCourses = namedtuple('SourceCourses', 'rule_key course_id offer_nbr '
                            ' min_credits max_credits credits_source min_gpa max_gpa')
 DestinationCourses = namedtuple('DestinationCourses', 'rule_key course_id offer_nbr '
                                 ' transfer_credits')
+EffectiveDates = namedtuple('EffectiveDates', 'rule_key, effective_date')
 
 # Module initialization
 # =================================================================================================
@@ -64,32 +65,30 @@ def diff_rules(first, second, debug=False):
       Return a dict keyed by rule with tuple of from-to course_id lists for the two archive dates
       used. Tuple is None for added/deleted rules.
   """
-  if first is None:
-    first = 'latest'
-  if second is None:
-    second = 'latest'
-  first, second = (min(first, second), max(first, second))
 
-  if first == 'latest':
+  # Missing dates default to two most recent ones
+  if first is None or first == 'latest':
     first_date = _all_archive_keys[-2]
   else:
-    # Get latest date that is earlier than first
-    _all_archive_keys.reverse()
-    for first_date in _all_archive_keys:
-      if first_date <= first:
-        break
-    _all_archive_keys.reverse()
-
-  if second == 'latest':
-    second_date = _all_archive_keys[-1]
+    first_date = first
+  if second is None or second == 'latest':
+    second_date = all_archive_keys[-1]
   else:
-    # Get earliest date that is later than second
-    for second_date in _all_archive_keys:
-      if second_date > second:
-        break
+    second_date = second
 
-  first_set = ArchiveSet._make(sorted(_all_archives[first_date]))
-  second_set = ArchiveSet._make(sorted(_all_archives[second_date]))
+  # Display results in date order even if entered backwards
+  first_date, second_date = (min(first_date, second_date), max(first_date, second_date))
+
+  # Short-circuit if user asks for the same dates
+  if first_date == second_date:
+    return first_date, second_date, dict()
+
+  # Put archive files in alphabetic order: destination -> effective_date -> source
+  _all_archives[first_date].sort()
+  _all_archives[second_date].sort()
+
+  first_set = ArchiveSet._make(_all_archives[first_date])
+  second_set = ArchiveSet._make(_all_archives[second_date])
 
   if debug:
     print(f'Asked for {first}, {second}. Using {first_date}, {second_date}.', file=sys.stderr)
@@ -210,6 +209,7 @@ if __name__ == '__main__':
   while len(dates) < 2:
     dates += [None]
   first_date, second_date, result = diff_rules(dates[0], dates[1], debug=args.debug)
-  print(first_date, second_date)
+  if args.debug:
+    print(first_date, second_date, file=sys.stderr)
   for key, value in result.items():
     print(key, value)
