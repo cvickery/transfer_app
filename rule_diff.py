@@ -43,7 +43,7 @@ _all_archive_keys.sort()
 # Provide public list of available archive_dates
 available_archive_dates = dict()
 for key in _all_archive_keys:
-  available_archive_dates[key] = date.fromisoformat(key).strftime('%b %d, %Y')
+  available_archive_dates[key] = date.fromisoformat(key).strftime('%B %-d, %Y')
 
 
 # archive_dates()
@@ -53,7 +53,7 @@ def archive_dates():
   """
   first_date = date.fromisoformat(_all_archive_keys[0])
   last_date = date.fromisoformat(_all_archive_keys[-1])
-  return (first_date.strftime('%b %d, %Y'), last_date.strftime('%b %d, %Y'))
+  return (first_date.strftime('%b %d, %Y'), last_date.strftime('%B %-d, %Y'))
 
 
 # diff_rules()

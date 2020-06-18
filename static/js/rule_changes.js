@@ -42,7 +42,7 @@ window.addEventListener('load', function()
       // find last archive before selected date, or earliest archive date if none.
       if (first_date.value < archive_dates[0])
       {
-        first_msg.innerText = 'Using earliest archive available: ' +
+        first_msg.innerText = 'Using earliest archive available — ' +
                               archive_date_strings[archive_dates[0]];
         first_msg.classList.add('warning');
         first_date.value = archive_dates[0];
@@ -94,7 +94,7 @@ window.addEventListener('load', function()
     {
       if (second_date.value > archive_dates[last_d])
       {
-        second_msg.innerText = 'Using most recent archive available: ' +
+        second_msg.innerText = 'Using most recent archive available — ' +
                                archive_date_strings[archive_dates[last_d]];
         second_msg.classList.add('warning');
         second_date.value = archive_dates[last_d];
