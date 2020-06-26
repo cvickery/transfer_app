@@ -1330,47 +1330,6 @@ def registered_programs(institution, default=None):
                          title='Registered Programs')
 
 
-@app.route('/_requirement_values/')
-def _requirement_values():
-  """ Return a select element with the options filled in.
-      If the period is 'current' include only values where the period is '999999'.
-      Otherwise, include all values found.
-
-  """
-  institution = request.args.get('institution', 0)
-  block_type = request.args.get('block_type', 0)
-  period = request.args.get('period', 0)
-  period_clause = ''
-  if period == 'current':
-    period_clause = "and period_stop = '99999999'"
-  # DEVELOPMENT PARAMETER
-  # Durning development, filter out all-numeric values
-  value_clause = r"and block_value !~ '^[\d ]+$'"
-  option_type = f'a {block_type.title()}'
-  if block_type == 'CONC':
-    option_type = 'a Concentration'
-  if block_type == 'OTHER':
-    option_type = 'a Requirement'
-  conn = PgConnection()
-  cursor = conn.cursor()
-  cursor.execute(f"""select distinct block_value, title
-                       from requirement_blocks
-                      where institution = %s
-                        and block_type = %s
-                       {period_clause}
-                       {value_clause}
-                      order by block_value""", (institution, block_type))
-  if cursor.rowcount == 0:
-    conn.close()
-    return f'<p class="error">No {block_type} blocks found for {institution}.</p>'
-  else:
-    options = '\n'.join([f'<option value="{r.block_value}">{r.block_value}: {r.title}</option>\n'
-                        for r in cursor.fetchall()])
-    conn.close()
-    return f"""<option value="" selected="selected">Select {option_type}</option>\n
-                   {options}"""
-
-
 # RULE CHANGES PAGE
 # -------------------------------------------------------------------------------------------------
 @app.route('/rule_changes/', methods=['GET'])
@@ -1520,6 +1479,57 @@ def _archive_dates():
 
 
 # REQUIREMENTS PAGE
+# =================================================================================================
+
+# /_requirement_values() -- AJAX support
+# -------------------------------------------------------------------------------------------------
+@app.route('/_requirement_values/')
+def _requirement_values():
+  """ Return a select element with the options filled in.
+      If the period is 'current' include only values where the period is '999999'.
+      Otherwise, include all values found.
+
+  """
+  institution = request.args.get('institution', 0)
+  block_type = request.args.get('block_type', 0)
+  period = request.args.get('period', 0)
+  period_clause = ''
+  if period == 'current':
+    period_clause = "and period_stop = '99999999'"
+  # DEVELOPMENT PARAMETER
+  # Durning development, filter out all-numeric values
+  value_clause = r"and block_value !~ '^[\d ]+$'"
+  option_type = f'a {block_type.title()}'
+  if block_type == 'CONC':
+    option_type = 'a Concentration'
+  if block_type == 'OTHER':
+    option_type = 'a Requirement'
+  conn = PgConnection()
+  cursor = conn.cursor()
+  cursor.execute(f"""select distinct block_value, title
+                       from requirement_blocks
+                      where institution = %s
+                        and block_type = %s
+                       {period_clause}
+                       {value_clause}
+                      order by block_value""", (institution, block_type))
+  if cursor.rowcount == 0:
+    selected_option = (f'<option value="" selected="selected">No {block_type.title()} blocks found '
+                       f'for {institution}</option>\n')
+  else:
+    selected_option = (f'<option value="" selected="selected">Select {option_type}</option>\n')
+  options = '\n'.join([f'<option value="{r.block_value}">{r.block_value}: {r.title}</option>\n'
+                      for r in cursor.fetchall()])
+  conn.close()
+  return f"""
+  <label for="block-value"><strong>Requirement Name:</strong></label>
+  <select id="block-value" name="requirement-name">
+  {selected_option}
+  {options}
+  </select>
+    """
+
+# /requirements route()
 # -------------------------------------------------------------------------------------------------
 @app.route('/requirements/', methods=['GET'])
 def requirements(college=None, type=None, name=None, period=None):

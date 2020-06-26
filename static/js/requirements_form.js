@@ -25,7 +25,7 @@ const check_status = function ()
  */
 const values_listener = function ()
 {
-  document.getElementById('block-value').innerHTML = this.response;
+  document.getElementById('value-div').innerHTML = this.response;
   const options = document.getElementById('block-value').options;
   for (let i = 0; i < options.length; i++)
   {
