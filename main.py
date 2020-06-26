@@ -1697,4 +1697,5 @@ def not_found_error(e):
 if __name__ == '__main__':
     # This is used when running locally. Gunicorn is used to run the
     # application as Transfer Explorer.
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    PORT = 5000 if os.getenv('DEBUG_PORT') is None else int(os.getenv('DEBUG_PORT'))
+    app.run(host='0.0.0.0', port=PORT, debug=True)

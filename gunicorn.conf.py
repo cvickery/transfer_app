@@ -10,8 +10,9 @@ if os.getenv('HEROKU') is not None:
   accesslog = '-'
   errorlog = '-'
 else:
+  PORT = '5000' if os.getenv('DEBUG_PORT') is None else os.getenv('DEBUG_PORT')
   workers = multiprocessing.cpu_count() * 2 + 1
-  bind = '0.0.0.0:5000'
+  bind = f'0.0.0.0:{PORT}'
   accesslog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
   errorlog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
   loglevel = 'DEBUG'
