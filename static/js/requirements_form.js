@@ -49,7 +49,6 @@ const update_values = function ()
   const block_type = document.getElementById('block-type').value;
   const period = document.querySelector('[name=period]:checked').value;
   was_selected = document.querySelector('[name=requirement-name]').value;
-  console.log(college, block_type, period);
   if (college !== '' && block_type !== '')
   {
     const request = new XMLHttpRequest();
@@ -71,7 +70,7 @@ const main = function ()
 {
   document.getElementById('block-type').addEventListener('change', update_values);
   document.querySelectorAll('[type=radio]')
-    .forEach((radio) => radio.addEventListener('change', update_values));
+    .forEach(radio => radio.addEventListener('change', update_values));
   document.getElementById('block-value').addEventListener('change', check_status);
 
   // Initial UI state
