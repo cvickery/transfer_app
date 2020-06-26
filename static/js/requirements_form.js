@@ -45,12 +45,11 @@ const values_listener = function ()
  */
 const update_values = function ()
 {
-  // const institution = document.getElementById('institution').value;
   const college = document.querySelector('input[name="college"]:checked').value;
   const block_type = document.getElementById('block-type').value;
   const period = document.querySelector('[name=period]:checked').value;
   was_selected = document.querySelector('[name=requirement-name]').value;
-
+  console.log(college, block_type, period);
   if (college !== '' && block_type !== '')
   {
     const request = new XMLHttpRequest();
