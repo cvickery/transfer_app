@@ -1360,11 +1360,15 @@ def _requirement_values():
                        {period_clause}
                        {value_clause}
                       order by block_value""", (institution, block_type))
-  options = '\n'.join([f'<option value="{r.block_value}">{r.block_value}: {r.title}</option>\n'
-                      for r in cursor.fetchall()])
-  conn.close()
-  return f"""<option value="" selected="selected">Select {option_type}</option>\n
-                 {options}"""
+  if cursor.rowcount == 0:
+    conn.close()
+    return f'<p class="error">No {block_type} blocks found for {institution}.</p>'
+  else:
+    options = '\n'.join([f'<option value="{r.block_value}">{r.block_value}: {r.title}</option>\n'
+                        for r in cursor.fetchall()])
+    conn.close()
+    return f"""<option value="" selected="selected">Select {option_type}</option>\n
+                   {options}"""
 
 
 # RULE CHANGES PAGE
