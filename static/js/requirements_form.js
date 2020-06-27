@@ -6,6 +6,9 @@ let was_selected = '';
  */
 const check_status = function ()
 {
+  // console.log(document.getElementById('institution').value);
+  // console.log(document.getElementById('block-type').value);
+  // console.log(document.getElementById('block-value').value);
   if (document.getElementById('institution').value === '' ||
       document.getElementById('block-type').value === '' ||
       document.getElementById('block-value').value === '')
@@ -25,7 +28,9 @@ const check_status = function ()
  */
 const values_listener = function ()
 {
+  console.log('listener');
   document.getElementById('value-div').innerHTML = this.response;
+  document.getElementById('block-value').addEventListener('change', update_values);
   const options = document.getElementById('block-value').options;
   for (let i = 0; i < options.length; i++)
   {
