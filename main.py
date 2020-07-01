@@ -1387,10 +1387,10 @@ def rule_changes():
     cursor = conn.cursor()
     for rule_key in sorted(diffs.keys()):
 
-      delta_type, first_rule_text, second_rule_text = lookup_courses(first_date,
-                                                                     second_date,
-                                                                     diffs[rule_key],
-                                                                     cursor)
+      delta_type, first_rule_text, second_rule_text = expand_delta(first_date,
+                                                                   second_date,
+                                                                   diffs[rule_key],
+                                                                   cursor)
       table_rows.append(f"""
         <tr>
           <th>{delta_type}</th>
@@ -1412,8 +1412,8 @@ def rule_changes():
                          title='Rule Changes')
 
 
-def lookup_courses(first_date, second_date, rules_dict, cursor):
-  """
+def expand_delta(first_date, second_date, rules_dict, cursor):
+  """ Determine the type of rule change, and fill in course information for the courses involved
   """
   delta_type = 'Change'
   if rules_dict[first_date] is None:
