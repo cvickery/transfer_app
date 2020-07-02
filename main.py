@@ -1573,7 +1573,27 @@ def requirements(college=None, type=None, name=None, period=None):
                                                        'text': 'Programs',
                                                        'href': '/registered_programs'
                                                       }])}
-    <h1 class="error">Work in Progress</h1>
+  <div id="disclaimer">
+    <h1 class="error">Research Work in Progress</h1>
+    <p class="error">
+      The Degreeworks Scribe Blocks available here are not suitable for any use other than research
+      into how they might be used outside of the scope of the services already offered by Ellucian.
+    </p>
+    <p>
+      When Degreeworks uses these Scribe Blocks, they have to be combined with a student’s academic
+      record and other information maintained in the Degreeworks system to produce reports such as
+      degree audits, transfer what-if analyses, and student program plans.
+    </p>
+    <p>
+      One research project behind making these blocks available is to extract program requiirements
+      without having recourse to student academic records or other internal Degreeworkds
+      information.
+    </p>
+    <p>
+      It would be a misuse of this information to use it for anything other than exploring how
+      requirements are represented.
+    </p>
+  </div>
     <details><summary>Information About This Project</summary><hr>
     <p>
       This page lets you look up the requirements for any degree, major, minor, or concentration at
