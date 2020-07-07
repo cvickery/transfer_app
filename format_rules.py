@@ -402,6 +402,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser('Testing transfer rules')
   parser.add_argument('--debug', '-d', action='store_true', default=False)
   parser.add_argument('--grade', '-g', nargs=2)
+  parser.add_argument('--rule', '-r')
   args = parser.parse_args()
 
   if args.debug:
@@ -410,3 +411,6 @@ if __name__ == '__main__':
     min_gpa = float(args.grade[0])
     max_gpa = float(args.grade[1])
     print(f'"{_grade(min_gpa, max_gpa)}"')
+  if args.rule:
+    html, description = format_rule_by_key(args.rule)
+    print(f'<h3>{args.rule}</h3><p>{description}</p>')
