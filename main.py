@@ -24,7 +24,7 @@ from pgconnection import PgConnection
 from course_lookup import lookup_courses, lookup_course
 from sendemail import send_token, send_message
 from reviews import process_pending
-from rule_diff import diff_rules, archive_dates, available_archive_dates
+from rules_diff import diff_rules, archive_dates, available_archive_dates
 from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
