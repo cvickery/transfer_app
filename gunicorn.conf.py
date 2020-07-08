@@ -16,7 +16,7 @@ else:
   accesslog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
   errorlog = '/Users/vickery/Transfer_App/Logs/transfer-app.log'
   loglevel = 'DEBUG'
-  timeout = 60
+  timeout = 120
 
 access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s'
 reload = True

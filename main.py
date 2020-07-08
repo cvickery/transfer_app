@@ -1349,7 +1349,8 @@ def rule_changes():
       is a record of weekly changes between {first_date} and {last_date}.
     </p>
     <p>
-      <em>It can take as long as 60 seconds to process your request, so please be patient!</em>
+      <em>It can take as long as two minutes to process your request, so please be patient!</em>
+      <br>(If there is no response after two minutes, please let me know.)
     </p>
     <form action="/rule_changes">
       <label for="first_date">First Date:</label>

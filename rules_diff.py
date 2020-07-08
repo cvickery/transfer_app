@@ -164,30 +164,21 @@ def diff_rules(first, second, debug=False):
   result = dict()
   for key in all_archive_keys:
     try:
-      # if key == 'BAR01-LEH01-AAM-1':
-      #   print(key, first_rules_source[key], second_rules_source[key],
-      #         first_rules_destination[key], second_rules_destination[key], file=sys.stderr)
       first_rules_source[key].sort()
       second_rules_source[key].sort()
       first_rules_destination[key].sort()
       second_rules_destination[key].sort()
       if (first_rules_source[key] == second_rules_source[key]
          and first_rules_destination[key] == second_rules_destination[key]):
-        # print(f'{key:<20}\t No Change')
         pass
       else:
-        # print(f'{key:<20}\t Changed', end='')
-        # print(f' from {first_rules_source[key]} => {first_rules_destination[key]}'
-        #       f' to {second_rules_source[key]} => {second_rules_destination[key]}\n')
         result[key] = {first_date: (first_rules_source[key], first_rules_destination[key]),
                        second_date: (second_rules_source[key], second_rules_destination[key])}
     except KeyError as e:
       if key not in first_keys:
-        # print(f'{key:<20}\t Added')
         result[key] = {first_date: None,
                        second_date: (second_rules_source[key], second_rules_destination[key])}
       elif key not in second_keys:
-        # print(f'{key:<20}\t Deleted')
         result[key] = {first_date: (first_rules_source[key], first_rules_destination[key]),
                        second_date: None}
       else:
