@@ -1427,9 +1427,13 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          where course_id in ({course_ids})
          order by discipline, numeric_part(catalog_number)
          """)
-    first_rule_send = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                f'{row.discipline} {row.catalog_number}</span>'
-                                for row in cursor.fetchall()])
+    if cursor.rowcount > 0:
+      first_rule_send = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                  f'{row.discipline} {row.catalog_number}</span>'
+                                  for row in cursor.fetchall()])
+    else:
+      first_rule_send = 'No sending sending courses'
+
     course_ids = ','.join(rules_dict[first_date][1])
     cursor.execute(f"""
          select institution, discipline, catalog_number, title, course_status
@@ -1437,9 +1441,13 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          where course_id in ({course_ids})
          order by discipline, numeric_part(catalog_number)
          """)
-    first_rule_recv = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                f'{row.discipline} {row.catalog_number}</span>'
-                                for row in cursor.fetchall()])
+    if cursor.rowcount > 0:
+      first_rule_recv = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                  f'{row.discipline} {row.catalog_number}</span>'
+                                  for row in cursor.fetchall()])
+    else:
+      first_rule_recv = 'No receiving courses'
+
     first_rule_text = f'{first_rule_send} => {first_rule_recv}'
 
   if rules_dict[second_date] is None:
@@ -1453,9 +1461,13 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          where course_id in ({course_ids})
          order by discipline, numeric_part(catalog_number)
          """)
-    second_rule_send = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                f'{row.discipline} {row.catalog_number}</span>'
-                                 for row in cursor.fetchall()])
+    if cursor.rowcount > 0:
+      second_rule_send = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                  f'{row.discipline} {row.catalog_number}</span>'
+                                  for row in cursor.fetchall()])
+    else:
+      second_rule_send = 'No sending sending courses'
+
     course_ids = ','.join(rules_dict[second_date][1])
     cursor.execute(f"""
          select institution, discipline, catalog_number, title, course_status
@@ -1463,9 +1475,13 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          where course_id in ({course_ids})
          order by discipline, numeric_part(catalog_number)
          """)
-    second_rule_recv = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                f'{row.discipline} {row.catalog_number}</span>'
-                                 for row in cursor.fetchall()])
+    if cursor.rowcount > 0:
+      second_rule_recv = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                  f'{row.discipline} {row.catalog_number}</span>'
+                                  for row in cursor.fetchall()])
+    else:
+      second_rule_recv = 'No receiving courses'
+
     second_rule_text = f'{second_rule_send} => {second_rule_recv}'
 
   return delta_type, first_rule_text, second_rule_text
