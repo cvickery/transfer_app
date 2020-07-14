@@ -1163,10 +1163,9 @@ def registered_programs(institution, default=None):
 
   # Find out what CUNY colleges are in the db
   cursor.execute("""
-                 select distinct r.target_institution as inst, n.institution_id as sed_code, i.name
-                 from registered_programs r, cuny_institutions i, nys_institutions n
+                 select distinct r.target_institution as inst, i.name
+                 from registered_programs r, cuny_institutions i
                  where i.code = upper(r.target_institution||'01')
-                 and n.id = r.target_institution
                  order by i.name
                  """)
 
@@ -1177,11 +1176,11 @@ def registered_programs(institution, default=None):
     conn.close()
     return render_template('registered_programs.html', result=Markup(result))
 
-  cuny_institutions = dict([(row.inst, row.name) for row in cursor.fetchall()])
-  cuny_institutions['all'] = 'All CUNY Colleges'
-  options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]}</option>'
+  cuny_institutions = dict([(row.inst, {'name': row.name})
+                           for row in cursor.fetchall()])
+  cuny_institutions['all'] = {'name': 'All CUNY Colleges'}
+  options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]["name"]}</option>'
                       for inst in cuny_institutions])
-
   if institution is None or institution not in cuny_institutions.keys():
     h1 = '<h1>Select a CUNY College</h1>'
     html_table = ''
@@ -1232,7 +1231,7 @@ def registered_programs(institution, default=None):
     else:
       link = ' (No CSV Available)'
 
-    institution_name = cuny_institutions[institution] + link
+    institution_name = cuny_institutions[institution]['name'] + link
 
     h1 = f'<h1>{institution_name}</h1>'
 
