@@ -55,3 +55,9 @@ details p {
   text-align:left;
   padding-left: 1em;
 }
+
+.sed-note {
+  font-weight:normal;
+  font-style:italic;
+  font-size:0.8em;
+}

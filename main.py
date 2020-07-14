@@ -1238,7 +1238,7 @@ def registered_programs(institution, default=None):
     # Generate the HTML table
     html_headings = ['Program Code',
                      'Registration Office',
-                     'Institution',
+                     'Institution <span class="sed-note">(Hover for NYSED Institution ID)</span>',
                      'Program Title',
                      """<a
                       href="http://www.nysed.gov/college-university-evaluation/format-definitions">
