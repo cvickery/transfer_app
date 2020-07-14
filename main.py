@@ -1163,9 +1163,10 @@ def registered_programs(institution, default=None):
 
   # Find out what CUNY colleges are in the db
   cursor.execute("""
-                 select distinct r.target_institution as inst, i.name
-                 from registered_programs r, cuny_institutions i
+                 select distinct r.target_institution as inst, n.institution_id as sed_code, i.name
+                 from registered_programs r, cuny_institutions i, nys_institutions n
                  where i.code = upper(r.target_institution||'01')
+                 and n.id = r.target_institution
                  order by i.name
                  """)
 
@@ -1228,12 +1229,6 @@ def registered_programs(institution, default=None):
                 f'class="button">Download {filename}</a>')
       except (OSError, RuntimeError) as e:
         link = f'<br><span class="error">No CSV available: {e}</span>'
-      # gen = ','.join([f'{col}' for col in csv_headings]) + '\r\n'
-      # for row in cursor.fetchall():
-      #   line = ','.join([f'"{col}"' for col in json.loads(row.csv)]) + '\r\n'
-      #   gen += line
-      # link = (f'<a href="data:text/csv;charset=utf-8,{parse.quote(gen)}" download="{filename}"'
-      #         f'class="button">Download {filename}</a>')
     else:
       link = ' (No CSV Available)'
 
@@ -1591,9 +1586,9 @@ def requirements(college=None, type=None, name=None, period=None):
                                                        'href': '/registered_programs'
                                                       }])}
   <div id="disclaimer">
-    <h1 class="error">Research Work in Progress</h1>
+    <h1 class="error">Research: Work in Progress</h1>
     <p class="error">
-      The Degreeworks Scribe Blocks available here are not suitable for any use other than research
+      The Degreeworks Scribe Blocks available here are not for any use other than research
       into how they might be used outside of the scope of the services already offered by Ellucian.
     </p>
     <p>
@@ -1602,13 +1597,13 @@ def requirements(college=None, type=None, name=None, period=None):
       degree audits, transfer what-if analyses, and student program plans.
     </p>
     <p>
-      One research project behind making these blocks available is to extract program requiirements
-      without having recourse to student academic records or other internal Degreeworkds
+      The research project that led to making these blocks available is an effort to extract program
+      requirements without reference to student academic records or other internal Degreeworks
       information.
     </p>
     <p>
-      It would be a misuse of this information to use it for anything other than exploring how
-      requirements are represented.
+      Do not use this information for anything other than to explore how degree requirements are
+      represented.
     </p>
   </div>
     <details><summary>Information About This Project</summary><hr>
