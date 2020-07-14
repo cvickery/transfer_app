@@ -1586,7 +1586,7 @@ def requirements(college=None, type=None, name=None, period=None):
                                                        'href': '/registered_programs'
                                                       }])}
   <div id="disclaimer">
-    <h1 class="error">Research: Work in Progress</h1>
+    <h1 class="error">Research Project: Work in Progress</h1>
     <p class="error">
       The Degreeworks Scribe Blocks available here are not for any use other than research
       into how they might be used outside of the scope of the services already offered by Ellucian.
@@ -1597,9 +1597,9 @@ def requirements(college=None, type=None, name=None, period=None):
       degree audits, transfer what-if analyses, and student program plans.
     </p>
     <p>
-      The research project that led to making these blocks available is an effort to extract program
+      The project that led to making these blocks available is an effort to extract program
       requirements without reference to student academic records or other internal Degreeworks
-      information.
+      information. Open the “Information About This Project” section for more details.
     </p>
     <p>
       Do not use this information for anything other than to explore how degree requirements are
@@ -1620,13 +1620,13 @@ def requirements(college=None, type=None, name=None, period=None):
     <p>
     <p>
       This is a work in progress. For each program, a complete scribe block is shown in its raw
-      form, followed by information extracted from it in a format useful during
+      form, sometimes followed by information extracted from it in a format useful during project
       development.
     </p>
     <p>
       Program requirements change over time. Degreeworks keeps a record of previous program
-      versions, arranged by “catalog year.” By default only the current requirements are shown, but
-      you can choose to look at earlier ones as well.
+      versions, arranged by “catalog year.” By default only the most recent requirements are shown,
+      but you can choose to look at earlier ones as well.
     </p>
       Degreeworks information used here is normally updated once a week. It was last updated on
       {dgw_date}.
