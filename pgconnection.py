@@ -6,6 +6,7 @@ from psycopg2.pool import ThreadedConnectionPool, PoolError
 from psycopg2.extras import NamedTupleCursor
 
 import os
+import sys
 
 DEBUG = os.getenv('DEBUG')
 
@@ -49,7 +50,7 @@ class PgConnection():
       PgConnection._pool = ThreadedConnectionPool(2, pool_max, dsn)
     try:
       if DEBUG:
-        print('connect:', self)
+        print('connect:', self, file=sys.stderr)
       self._connection = PgConnection._pool.getconn()
     except PoolError as pe:
       raise RuntimeError(pe)
@@ -67,7 +68,7 @@ class PgConnection():
   def close(self):
     PgConnection._pool.putconn(self._connection)
     if DEBUG:
-      print('close:', self)
+      print('close:', self, file=sys.stderr)
 
   # Cursor shim
   # By returning the psycopg2 cursor, there is no need to shim other cursor-based functions.
