@@ -39,8 +39,6 @@ from top_menu import top_menu
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from propose_rules import _propose_rules
 
-from dgw_parser import dgw_parser
-
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify, session
 from flask_session import Session
@@ -1686,6 +1684,28 @@ def requirements(college=None, type=None, name=None, period=None):
                            result=Markup(result),
                            title='Select A Program')
   else:
+    # Get the information about the block from the db
+    conn = PgConnection()
+    cursor = conn.cursor()
+    cursor.execute(f""" select title, period_stop, requirement_html, head_objects, body_objects
+                        from requirement_blocks
+                        where institution = '{institution}'
+                        and block_type = '{b_type}'
+                        and block_value = '{b_value}'
+                        order by period_stop desc
+                    """)
+    assert cursor.rowcount > 0, f'<h1 class="error">No Requirements Found</h1><p>{cursor.query}</p>'
+    if period == 'recent' or period == 'current':
+      # In these cases, only the first result matters
+        first_match = cursor.fetchone()
+        if period == 'current' and first_match.period_stop != '99999999':
+          display = (f'<h1 class="error">“{row.title}” is not a currently offered {block_type}'
+                     f'at {institution}.</h1>')
+        else:
+          display = first_match.requirement_html
+    else:
+      display = '\n'.join([row.requirement_html for row in cursor.fetchall()])
+
     result = f"""
     {header(title='Requirements Detail',
             nav_items=[{'type': 'link',
@@ -1701,7 +1721,7 @@ def requirements(college=None, type=None, name=None, period=None):
                          'text': 'Search',
                          'href': '/requirements'
                         }])}
-    {dgw_parser(institution, b_type, b_value, period)}
+    {display}
     """
     return render_template('requirements.html', result=Markup(result))
 
