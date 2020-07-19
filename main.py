@@ -1650,11 +1650,6 @@ def requirements(college=None, type=None, name=None, period=None):
       <div id="value-div">
         <label for="block-value"><strong>Requirement Name:</strong></label>
         <select id="block-value" name="requirement-name">
-        <option value="CSCI-BA">ACCT-BA</option>
-        <option value="CSCI-BA">CSCI-BA</option>
-        <option value="CSCI-BA">CSCI-BS</option>
-        <option value="CSCI-BA">LING-BA</option>
-        <option value="CSCI-BA">PSYCH-BA</option>
         </select>
       </div>
 
@@ -1702,9 +1697,9 @@ def requirements(college=None, type=None, name=None, period=None):
           display = (f'<h1 class="error">“{row.title}” is not a currently offered {block_type}'
                      f'at {institution}.</h1>')
         else:
-          display = first_match.requirement_html
+          requirements_html = requirements_to_html(first_match)
     else:
-      display = '\n'.join([row.requirement_html for row in cursor.fetchall()])
+      requirements_html = '\n'.join([requirements_to_html(row) for row in cursor.fetchall()])
 
     result = f"""
     {header(title='Requirements Detail',
@@ -1721,9 +1716,59 @@ def requirements(college=None, type=None, name=None, period=None):
                          'text': 'Search',
                          'href': '/requirements'
                         }])}
-    {display}
+    {requirements_html}
     """
     return render_template('requirements.html', result=Markup(result))
+
+
+def requirements_to_html(row):
+  """ Given a result row from the query in requirements(), generate html for the scribe block and
+      the lists of head and body objects
+  """
+  if row.requirement_html == 'Not Available':
+    return '<h1>This scribe block has not been parsed yet.</h1>'
+
+  head_objects = """<section>
+                      <h1 class="closer">Head Objects</h1>
+                      <div>
+                        <hr>
+                        <section>
+                 """
+  for object in row.head_objects:
+    head_objects += f'<pre><h3>{object["object_type"].replace("_", " ").title()}</h3>'
+    head_objects += f'               Context: {object["context_path"]}\n'
+    head_objects += f'   Num Scribed Courses: {len(object["scribed_courses"]):>4}\n'
+    if len(object["scribed_courses"]) > 1:
+      head_objects += f'             List Type: {object["list_type"]:>4}\n'
+    head_objects += f'    Num Active Courses: {len(object["active_courses"]):>4}\n'
+    if len(object["list_qualifiers"]) > 0:
+      head_objects += f'       List Qualifiers: {", ".join(object["list_qualifiers"])}\n'
+    head_objects += f'                 Label: {object["label"]}\n'
+    if len(object["attributes"]) > 0:
+      head_objects += f'  Attributes in Common: {", ".join(object["attributes"])}\n'
+  head_objects += '</pre></section></div></section>'
+
+  body_objects = """<section>
+                      <h1 class="closer">Body Objects</h1>
+                      <div>
+                        <hr>
+                        <section>
+                 """
+  for object in row.body_objects:
+    body_objects += f'<pre><h3>{object["object_type"].replace("_", " ").title()}</h3>'
+    body_objects += f'               Context: {object["context_path"]}\n'
+    body_objects += f'   Num Scribed Courses: {len(object["scribed_courses"]):>4}\n'
+    if len(object["scribed_courses"]) > 1:
+      body_objects += f'             List Type: {object["list_type"]:>4}\n'
+    body_objects += f'    Num Active Courses: {len(object["active_courses"]):>4}\n'
+    if len(object["list_qualifiers"]) > 0:
+      body_objects += f'       List Qualifiers: {", ".join(object["list_qualifiers"])}\n'
+    body_objects += f'                 Label: {object["label"]}\n'
+    if len(object["attributes"]) > 0:
+      body_objects += f'  Attributes in Common: {", ".join(object["attributes"])}\n'
+  body_objects += '</pre></section></div></section>'
+
+  return row.requirement_html + head_objects + body_objects
 
 
 @app.errorhandler(500)
