@@ -1726,8 +1726,9 @@ def requirements_to_html(row):
       the lists of head and body objects
   """
   if row.requirement_html == 'Not Available':
-    return '<h1>This scribe block has not been parsed yet.</h1>'
-
+    return '<h1>This scribe block is not available.</h1><p><em>Should not occur.</em></p>'
+  if len(row.head_objects) == 0 and len(row.body_objects) == 0:
+    return row.requirement_html + '<p>This block has not been parsed yet.</p>'
   head_objects = """<section>
                       <h1 class="closer">Head Objects</h1>
                       <div>
