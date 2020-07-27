@@ -1700,6 +1700,7 @@ def requirements(college=None, type=None, name=None, period=None):
           requirements_html = requirements_to_html(first_match)
     else:
       requirements_html = '\n'.join([requirements_to_html(row) for row in cursor.fetchall()])
+    conn.close()
 
     result = f"""
     {header(title='Requirements Detail',
