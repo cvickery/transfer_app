@@ -1689,8 +1689,11 @@ def requirements(college=None, type=None, name=None, period=None):
                         and block_value = '{b_value}'
                         order by period_stop desc
                     """)
-    assert cursor.rowcount > 0, (f'<h1 class="error">No Requirements Found</h1>'
-                                 f'<p>{institution} {b_type} {b_value}</p>')
+    if cursor.rowcount < 1:
+      return render_template('requirements_form.html',
+                             result=Markup(f'<h1 class="error">No Requirements Found</h1>'
+                                           f'<p>{institution} {b_type} {b_value}</p>'),
+                             title='No Requirements')
     if period == 'recent' or period == 'current':
       # In these cases, only the first result matters
         first_match = cursor.fetchone()
