@@ -1689,7 +1689,8 @@ def requirements(college=None, type=None, name=None, period=None):
                         and block_value = '{b_value}'
                         order by period_stop desc
                     """)
-    assert cursor.rowcount > 0, f'<h1 class="error">No Requirements Found</h1><p>{cursor.query}</p>'
+    assert cursor.rowcount > 0, (f'<h1 class="error">No Requirements Found</h1>'
+                                 f'<p>{institution} {b_type} {b_value}</p>')
     if period == 'recent' or period == 'current':
       # In these cases, only the first result matters
         first_match = cursor.fetchone()
