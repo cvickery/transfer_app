@@ -53,12 +53,13 @@ else:
 SESSION_TYPE = 'redis'
 SESSION_REDIS = redis.from_url(redis_url)
 PERMANENT_SESSION_LIFETIME = timedelta(days=90)
-SESSION_COOKIE_SECURE = True,
+SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Needed for session support
 app.config.from_object(__name__)
+
 Session(app)  # Session gets its configuration params from the app config dict.
 
 # During local development, enable more detailed log messages from the app.
