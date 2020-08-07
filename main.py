@@ -1606,6 +1606,13 @@ def requirements(college=None, type=None, name=None, period=None):
   </div>
     <details><summary>Information About This Project</summary><hr>
     <p>
+      This project is supported in part by a grant from the <a
+      href="https://www.heckscherfoundation.org/">Heckscher Foundation for Children</a> to improve
+      the transfer process at CUNY. See <a
+      href="https://sr.ithaka.org/blog/streamlining-transfer-for-cuny-students-in-the-bronx/">Streamlining
+      Transfer for CUNY Students in the Bronx</a> for more information about the grant.
+    </p>
+    <p>
       This page lets you look up the requirements for any degree, major, minor, or concentration at
       any CUNY college. The information is taken from the Degreeworks “Scribe Blocks” that are
       designed to provide information based on individual students’ coursework completed and
@@ -1734,7 +1741,7 @@ def requirements_to_html(row):
   if row.requirement_html == 'Not Available':
     return '<h1>This scribe block is not available.</h1><p><em>Should not occur.</em></p>'
   if len(row.head_objects) == 0 and len(row.body_objects) == 0:
-    return row.requirement_html + '<p>This block has not been parsed yet.</p>'
+    return row.requirement_html + '<p>This block has not been analyzed yet.</p>'
   head_objects = """<section>
                       <h1 class="closer">Head Objects</h1>
                       <div>
