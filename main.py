@@ -29,6 +29,7 @@ from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
 from course_lookup import course_attribute_rows, course_search
+from dgw_course_lists import course_lists_to_tables
 
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
@@ -1749,6 +1750,7 @@ def requirements_to_html(row):
                         <section>
                  """
   for object in row.head_objects:
+    table_lists = course_lists_to_tables(object)
     head_objects += f'<pre><h3>{object["object_type"].replace("_", " ").title()}</h3>'
     head_objects += f'               Context: {object["context_path"]}\n'
     head_objects += f'   Num Scribed Courses: {len(object["scribed_courses"]):>4}\n'
@@ -1769,6 +1771,7 @@ def requirements_to_html(row):
                         <section>
                  """
   for object in row.body_objects:
+    table_lists = course_lists_to_tables(object)
     body_objects += f'<pre><h3>{object["object_type"].replace("_", " ").title()}</h3>'
     body_objects += f'               Context: {object["context_path"]}\n'
     body_objects += f'   Num Scribed Courses: {len(object["scribed_courses"]):>4}\n'
