@@ -19,14 +19,19 @@ def requirements_to_html(row):
     table_lists = course_list_to_tables(course_list)
     head_course_lists += f'<pre><h3>{course_list["object_type"].replace("_", " ").title()}</h3>'
     head_course_lists += f'               Context: {course_list["context_path"]}\n'
-    if len(course_list["scribed_courses"]) > 1:
-      head_course_lists += (f'   Num Scribed Courses: {len(course_list["scribed_courses"]):>4} '
-                            f'<span class="course-list">Show Scribed Courses</span>\n')
-    else:
-      head_course_lists += (f'        Scribed Course: {table_lists["scribed_courses"]}')
-    if len(course_list["scribed_courses"]) > 1:
-      head_course_lists += f'             List Type: {course_list["list_type"]:>4}\n'
+
+    head_course_lists += f'   Num Scribed Courses: {len(course_list["scribed_courses"]):>4}\n'
+    scribed_courses = f' {course_list["list_type"]} '.join([format_course(course)
+                                                           for course in
+                                                           course_list["scribed_courses"]])
+    head_course_lists += (f'   Scribed Course List: {scribed_courses}\n')
+
     head_course_lists += f'    Num Active Courses: {len(course_list["active_courses"]):>4}\n'
+    active_courses = f' {course_list["list_type"]} '.join([format_course(course, active=True)
+                                                           for course in
+                                                           course_list["active_courses"]])
+    head_course_lists += (f'    Active Course List: {active_courses}\n')
+
     if len(course_list["list_qualifiers"]) > 0:
       head_course_lists += f'       List Qualifiers: {", ".join(course_list["list_qualifiers"])}\n'
     head_course_lists += f'                 Label: {course_list["label"]}\n'
@@ -46,10 +51,16 @@ def requirements_to_html(row):
     body_course_lists += f'<pre><h3>{course_list["object_type"].replace("_", " ").title()}</h3>'
     body_course_lists += f'               Context: {course_list["context_path"]}\n'
     body_course_lists += f'   Num Scribed Courses: {len(course_list["scribed_courses"]):>4}\n'
-    if len(course_list["scribed_courses"]) > 1:
-      body_course_lists += f'             List Type: {course_list["list_type"]:>4}\n'
-    body_course_lists += (f'    Num Active Courses: {len(course_list["active_courses"]):>4} '
-                          f'<span class="course-list">Show Active Courses</span>\n')
+    scribed_courses = f' {course_list["list_type"]} '.join([format_course(course)
+                                                           for course in
+                                                           course_list["scribed_courses"]])
+    body_course_lists += (f'   Scribed Course List: {scribed_courses}\n')
+    body_course_lists += f'    Num Active Courses: {len(course_list["active_courses"]):>4}\n'
+    active_courses = f' {course_list["list_type"]} '.join([format_course(course, active=True)
+                                                           for course in
+                                                           course_list["active_courses"]])
+    body_course_lists += (f'    Active Course List: {active_courses}\n')
+
     if len(course_list["list_qualifiers"]) > 0:
       body_course_lists += f'       List Qualifiers: {", ".join(course_list["list_qualifiers"])}\n'
     body_course_lists += f'                 Label: {course_list["label"]}\n'
@@ -58,6 +69,21 @@ def requirements_to_html(row):
   body_course_lists += '</pre></section></div></section>'
 
   return row.requirement_html + head_course_lists + body_course_lists
+
+
+def format_course(course_tuple, active=False):
+  """
+  """
+  if not active:
+    course = f'{course_tuple[0]} {course_tuple[1]}'
+    if course_tuple[2] is not None:
+      course += f' with({course_tuple[2]})'
+  else:
+    course = f'{course_tuple[2]} {course_tuple[3]}'
+    if course_tuple[5] is not None:
+      course += f' with({course_tuple[5]})'
+
+  return course
 
 
 def course_list_to_tables(course_list):
