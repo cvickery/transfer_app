@@ -29,7 +29,7 @@ from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
 from course_lookup import course_attribute_rows, course_search
-from dgw_course_lists import course_lists_to_tables
+from dgw_course_lists import requirements_to_html
 
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
@@ -1540,6 +1540,7 @@ def _requirement_values():
   </select>
     """
 
+
 # /requirements route()
 # -------------------------------------------------------------------------------------------------
 @app.route('/requirements/', methods=['GET'])
@@ -1672,7 +1673,7 @@ def requirements(college=None, type=None, name=None, period=None):
         <input type="radio" id="period-all" name="period" value="all"/>
         <label for="period-all">All</label>
 
-        <input type="radio" id="period-recent" name="period" value="recent" checked/>
+        <input type="radio" id="period-recent" name="period" value="latest" checked/>
         <label for="period-recent">Most-Recent</label>
 
         <input type="radio" id="period-current" name="period" value="current"/>
@@ -1703,7 +1704,7 @@ def requirements(college=None, type=None, name=None, period=None):
                              result=Markup(f'<h1 class="error">No Requirements Found</h1>'
                                            f'<p>{institution} {b_type} {b_value}</p>'),
                              title='No Requirements')
-    if period == 'recent' or period == 'current':
+    if period == 'latest' or period == 'current':
       # In these cases, only the first result matters
         first_match = cursor.fetchone()
         if period == 'current' and first_match.period_stop != '99999999':
@@ -1733,59 +1734,6 @@ def requirements(college=None, type=None, name=None, period=None):
     {requirements_html}
     """
     return render_template('requirements.html', result=Markup(result))
-
-
-def requirements_to_html(row):
-  """ Given a result row from the query in requirements(), generate html for the scribe block and
-      the lists of head and body objects
-  """
-  if row.requirement_html == 'Not Available':
-    return '<h1>This scribe block is not available.</h1><p><em>Should not occur.</em></p>'
-  if len(row.head_objects) == 0 and len(row.body_objects) == 0:
-    return row.requirement_html + '<p>This block has not been analyzed yet.</p>'
-  head_objects = """<section>
-                      <h1 class="closer">Head Objects</h1>
-                      <div>
-                        <hr>
-                        <section>
-                 """
-  for object in row.head_objects:
-    table_lists = course_lists_to_tables(object)
-    head_objects += f'<pre><h3>{object["object_type"].replace("_", " ").title()}</h3>'
-    head_objects += f'               Context: {object["context_path"]}\n'
-    head_objects += f'   Num Scribed Courses: {len(object["scribed_courses"]):>4}\n'
-    if len(object["scribed_courses"]) > 1:
-      head_objects += f'             List Type: {object["list_type"]:>4}\n'
-    head_objects += f'    Num Active Courses: {len(object["active_courses"]):>4}\n'
-    if len(object["list_qualifiers"]) > 0:
-      head_objects += f'       List Qualifiers: {", ".join(object["list_qualifiers"])}\n'
-    head_objects += f'                 Label: {object["label"]}\n'
-    if len(object["attributes"]) > 0:
-      head_objects += f'  Attributes in Common: {", ".join(object["attributes"])}\n'
-  head_objects += '</pre></section></div></section>'
-
-  body_objects = """<section>
-                      <h1 class="closer">Body Objects</h1>
-                      <div>
-                        <hr>
-                        <section>
-                 """
-  for object in row.body_objects:
-    table_lists = course_lists_to_tables(object)
-    body_objects += f'<pre><h3>{object["object_type"].replace("_", " ").title()}</h3>'
-    body_objects += f'               Context: {object["context_path"]}\n'
-    body_objects += f'   Num Scribed Courses: {len(object["scribed_courses"]):>4}\n'
-    if len(object["scribed_courses"]) > 1:
-      body_objects += f'             List Type: {object["list_type"]:>4}\n'
-    body_objects += f'    Num Active Courses: {len(object["active_courses"]):>4}\n'
-    if len(object["list_qualifiers"]) > 0:
-      body_objects += f'       List Qualifiers: {", ".join(object["list_qualifiers"])}\n'
-    body_objects += f'                 Label: {object["label"]}\n'
-    if len(object["attributes"]) > 0:
-      body_objects += f'  Attributes in Common: {", ".join(object["attributes"])}\n'
-  body_objects += '</pre></section></div></section>'
-
-  return row.requirement_html + head_objects + body_objects
 
 
 @app.errorhandler(500)

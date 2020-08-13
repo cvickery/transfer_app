@@ -54,3 +54,28 @@ li {
   color: #999;
   display:none;
 }
+
+.course-list {
+  border: 1px solid #ccc;
+  border-radius: 0.25em;
+  padding: 0.125em 0.25em;
+}
+
+.course-list:hover {
+  color:white;
+  background-color: #ccc;
+}
+
+.course-list-table {
+  margin-left: 15em;
+  border-collapse:collapse;
+}
+.course-list-table th {
+  border: 1px solid #999;
+  padding: 0.5em;
+  background-color:#ccc;
+}
+.course-list-table td {
+  border: 1px solid #999;
+  padding: 0.5em;
+}
