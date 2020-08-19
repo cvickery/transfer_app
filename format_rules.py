@@ -129,9 +129,9 @@ def _grade(min_gpa, max_gpa):
     return f'{letter} or above in'
   if min_gpa < 0.8 and max_gpa < 3.9:
     letter = letters[int(round(max_gpa * 3))]
-    return 'below ' + letter + ' in'
+    return 'Below ' + letter + ' in'
   if min_gpa > 0.8 and max_gpa < 3.9:
-    return f'between {letters[int(round(min_gpa * 3))]} and {letters[int(round(max_gpa * 3))]} in'
+    return f'Between {letters[int(round(min_gpa * 3))]} and {letters[int(round(max_gpa * 3))]} in'
   return 'Pass'
 
 
