@@ -24,7 +24,12 @@ def requirements_to_html(row):
     scribed_courses = f' {course_list["list_type"]} '.join([format_course(course)
                                                            for course in
                                                            course_list["scribed_courses"]])
+
     head_course_lists += (f'   Scribed Course List: {scribed_courses}\n')
+    if len(course_list["including_courses"]) > 0:
+      head_course_lists += f'          Must Include: {course_list["including_courses"]}\n'
+    if len(course_list["except_courses"]) > 0:
+      head_course_lists += f'      Nust Not Include: {course_list["except_courses"]}\n'
 
     head_course_lists += f'    Num Active Courses: {len(course_list["active_courses"]):>4}\n'
     active_courses = f' {course_list["list_type"]} '.join([format_course(course, active=True)
@@ -55,6 +60,13 @@ def requirements_to_html(row):
                                                            for course in
                                                            course_list["scribed_courses"]])
     body_course_lists += (f'   Scribed Course List: {scribed_courses}\n')
+    if len(course_list["including_courses"]) > 0:
+      include_list = ' AND '.join([f'{course[0]} {course[1]}'
+                                  for course in course_list["including_courses"]])
+      body_course_lists += f'          Must Include: {include_list}\n'
+    if len(course_list["except_courses"]) > 0:
+      body_course_lists += f'      Nust Not Include: {course_list["except_courses"]}\n'
+
     body_course_lists += f'    Num Active Courses: {len(course_list["active_courses"]):>4}\n'
     active_courses = f' {course_list["list_type"]} '.join([format_course(course, active=True)
                                                            for course in
