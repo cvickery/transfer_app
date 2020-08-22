@@ -1708,8 +1708,8 @@ def requirements(college=None, type=None, name=None, period=None):
       # In these cases, only the first result matters
         first_match = cursor.fetchone()
         if period == 'current' and first_match.period_stop != '99999999':
-          display = (f'<h1 class="error">“{b_value}” is not a currently offered {b_type}'
-                     f'at {institution}.</h1>')
+          requirements_html = (f'<h1 class="error">“{b_value}” is not a currently offered {b_type} '
+                               f'at {institution}.</h1>')
         else:
           requirements_html = requirements_to_html(first_match)
     else:
