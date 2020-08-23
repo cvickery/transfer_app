@@ -1,5 +1,7 @@
 #! /usr/local/bin/python3
 
+import sys
+
 def requirements_to_html(row):
   """ Given a result row from the query in requirements(), generate html for the scribe block and
       the lists of head and body objects
@@ -69,8 +71,8 @@ def requirements_to_html(row):
                                   for course in course_list["including_courses"]])
       body_course_lists += f'          Must Include: {include_list}\n'
     if len(course_list["except_courses"]) > 0:
-      except_list = ' OR '.join([f'{course[0]} {course[1]}' for course in
-                                course_list["except_courses"]])
+      except_list = ', '.join([f'{course[0]} {course[1]}' for course in
+                               course_list["except_courses"]])
       body_course_lists += f'      Must Not Include: {except_list}\n'
 
     body_course_lists += f'    Num Active Courses: {len(course_list["active_courses"]):>4}\n'
