@@ -2,6 +2,7 @@
 
 import sys
 
+
 def requirements_to_html(row):
   """ Given a result row from the query in requirements(), generate html for the scribe block and
       the lists of head and body objects
