@@ -45,10 +45,19 @@ def requirements_to_html(row):
     head_course_lists += (f'    Active Course List: {active_courses}\n')
 
     if len(course_list["list_qualifiers"]) > 0:
-      head_course_lists += f'       List Qualifiers: {", ".join(course_list["list_qualifiers"])}\n'
+      head_course_lists += (f'       List Qualifiers: '
+                            f'{"; ".join([q["text"] for q in course_list["list_qualifiers"]])}.'
+                            f'\n')
+
     head_course_lists += f'                 Label: {course_list["label"]}\n'
+
     if len(course_list["attributes"]) > 0:
       head_course_lists += f'  Attributes in Common: {", ".join(course_list["attributes"])}\n'
+
+    if len(course_list["missing_courses"]) > 0:
+      head_course_lists += (f'       <span class="missing">Missing Courses: '
+                            f'{", ".join([format_course(c, False) for c in course_list["missing_courses"]])}</span>\n')
+
   head_course_lists += '</pre></section></div></section>'
 
   body_course_lists = """
@@ -83,10 +92,19 @@ def requirements_to_html(row):
     body_course_lists += (f'    Active Course List: {active_courses}\n')
 
     if len(course_list["list_qualifiers"]) > 0:
-      body_course_lists += f'       List Qualifiers: {", ".join(course_list["list_qualifiers"])}\n'
+      body_course_lists += (f'       List Qualifiers: '
+                            f'{"; ".join([q["text"] for q in course_list["list_qualifiers"]])}.'
+                            f'\n')
+
     body_course_lists += f'                 Label: {course_list["label"]}\n'
+
     if len(course_list["attributes"]) > 0:
       body_course_lists += f'  Attributes in Common: {", ".join(course_list["attributes"])}\n'
+
+    if len(course_list["missing_courses"]) > 0:
+      body_course_lists += (f'       <span class="missing">Missing Courses: '
+                            f'{", ".join([format_course(c, False) for c in course_list["missing_courses"]])}</span>\n')
+
   body_course_lists += '</pre></section></div></section>'
 
   return row.requirement_html + head_course_lists + body_course_lists

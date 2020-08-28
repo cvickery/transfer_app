@@ -145,6 +145,10 @@ fieldset hr {
   color: #992;
 }
 
+.missing {
+  color: #922;
+}
+
 .underline {
   text-decoration: underline;
 }
