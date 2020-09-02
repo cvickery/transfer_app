@@ -72,7 +72,7 @@ def diff_rules(first, second, debug=False):
   else:
     first_date = first
   if second is None or second == 'latest':
-    second_date = all_archive_keys[-1]
+    second_date = _all_archive_keys[-1]
   else:
     second_date = second
 
@@ -83,6 +83,17 @@ def diff_rules(first, second, debug=False):
   if first_date == second_date:
     return first_date, second_date, dict()
 
+  # Find the last archive dates that are before or equal to the ones selected.
+  first_target = first_date
+  second_target = second_date
+  for archive_date in _all_archive_keys:
+    if archive_date <= first_target:
+      first_date = archive_date
+    if archive_date <= second_target:
+      second_date = archive_date
+
+  if debug:
+    print(f'Asked for {first_target} and {second_target}. Using {first_date} and {second_date}')
   # Put archive files in alphabetic order: destination -> effective_date -> source
   _all_archives[first_date].sort()
   _all_archives[second_date].sort()
@@ -192,6 +203,7 @@ if __name__ == '__main__':
 
   # Command line options
   parser = ArgumentParser('Compare two rule archives')
+  parser.add_argument('-c', '--count_only', action='store_true')
   parser.add_argument('-d', '--debug', action='store_true')
   parser.add_argument('dates', nargs='*')
   args = parser.parse_args()
@@ -199,8 +211,14 @@ if __name__ == '__main__':
   dates = args.dates
   while len(dates) < 2:
     dates += [None]
-  first_date, second_date, result = diff_rules(dates[0], dates[1], debug=args.debug)
+
   if args.debug:
-    print(first_date, second_date, file=sys.stderr)
-  for key, value in result.items():
-    print(key, value)
+    print(dates[0], dates[1])
+
+  first_date, second_date, result = diff_rules(dates[0], dates[1], debug=args.debug)
+
+  if args.count_only:
+    print(f'There were {len(result)} rule changes between {first_date} and {second_date}')
+  else:
+    for key, value in result.items():
+      print(key, value)
