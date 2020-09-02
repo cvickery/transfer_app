@@ -1427,7 +1427,7 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
                                   f'{row.discipline} {row.catalog_number}</span>'
                                   for row in cursor.fetchall()])
     else:
-      first_rule_send = 'No sending sending courses'
+      first_rule_send = 'No sending courses'
 
     course_ids = ','.join(rules_dict[first_date][1])
     cursor.execute(f"""
@@ -1458,10 +1458,10 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          """)
     if cursor.rowcount > 0:
       second_rule_send = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                  f'{row.discipline} {row.catalog_number}</span>'
-                                  for row in cursor.fetchall()])
+                                   f'{row.discipline} {row.catalog_number}</span>'
+                                   for row in cursor.fetchall()])
     else:
-      second_rule_send = 'No sending sending courses'
+      second_rule_send = 'No sending courses'
 
     course_ids = ','.join(rules_dict[second_date][1])
     cursor.execute(f"""
