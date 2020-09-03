@@ -413,5 +413,5 @@ if __name__ == '__main__':
     print(f'"{_grade(min_gpa, max_gpa)}"')
   if args.rule:
     html, description = format_rule_by_key(args.rule)
-    description = re.sub('\s+', ' ', re.sub('<.*?>', '', description).replace('\n', ' '))
+    description = re.sub(r'\s+', ' ', re.sub('<.*?>', '', description).replace('\n', ' '))
     print(f"{args.rule}\n{description}")
