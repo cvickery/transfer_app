@@ -11,6 +11,7 @@ from argparse import ArgumentParser
 from collections import defaultdict, namedtuple
 from datetime import date
 from pathlib import Path
+from pgconnection import PgConnection
 
 # An ArchiveSet consists of lists of source courses and destination courses, linked by a common
 # rule_key.
@@ -46,6 +47,26 @@ for key in _all_archive_keys:
   available_archive_dates[key] = date.fromisoformat(key).strftime('%B %-d, %Y')
 
 
+# is_bkcr()
+# -------------------------------------------------------------------------------------------------
+def is_bkcr(course_id):
+  """ Look up the course to see if it has the BKCR attribute
+  """
+  course_id = int(course_id)
+  conn = PgConnection()
+  cursor = conn.cursor()
+  cursor.execute(f"""
+select * from cuny_courses
+ where course_id = {course_id}
+   and attributes ~* 'BKCR'
+   """)
+  assert cursor.rowcount < 2
+  rowcount = cursor.rowcount
+  conn.close()
+
+  return rowcount > 0
+
+
 # archive_dates()
 # -------------------------------------------------------------------------------------------------
 def archive_dates():
@@ -58,7 +79,7 @@ def archive_dates():
 
 # diff_rules()
 # -------------------------------------------------------------------------------------------------
-def diff_rules(first, second, debug=False):
+def diff_rules(first, second, debug=False, rogues=False):
   """ Diff rules from the archive. Default is the most recent two. Otherwise, use the last
       available archive before first and the most recent one since second.
 
@@ -185,6 +206,15 @@ def diff_rules(first, second, debug=False):
       else:
         result[key] = {first_date: (first_rules_source[key], first_rules_destination[key]),
                        second_date: (second_rules_source[key], second_rules_destination[key])}
+        if rogues:
+          # Rogue detector: if new rule is one course and it's blanket credit, report it to the
+          # proper authorities.
+          if len(first_rules_destination[key]) == 1 and \
+             len(second_rules_destination[key]) == 1 and \
+             not is_bkcr(first_rules_destination[key][0]) and\
+             is_bkcr(second_rules_destination[key][0]):
+            print(f'{key} has gone rogue')
+
     except KeyError as e:
       if key not in first_keys:
         result[key] = {first_date: None,
@@ -205,6 +235,7 @@ if __name__ == '__main__':
   parser = ArgumentParser('Compare two rule archives')
   parser.add_argument('-c', '--count_only', action='store_true')
   parser.add_argument('-d', '--debug', action='store_true')
+  parser.add_argument('-r', '--rogues', action='store_true')
   parser.add_argument('dates', nargs='*')
   args = parser.parse_args()
 
@@ -215,7 +246,10 @@ if __name__ == '__main__':
   if args.debug:
     print(dates[0], dates[1])
 
-  first_date, second_date, result = diff_rules(dates[0], dates[1], debug=args.debug)
+  first_date, second_date, result = diff_rules(dates[0],
+                                               dates[1],
+                                               debug=args.debug,
+                                               rogues=args.rogues)
 
   if args.count_only:
     print(f'There were {len(result)} rule changes between {first_date} and {second_date}')
