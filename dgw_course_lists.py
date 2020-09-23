@@ -10,7 +10,7 @@ def requirements_to_html(row):
   if row.requirement_html == 'Not Available':
     return '<h1>This scribe block is not available.</h1><p><em>Should not occur.</em></p>'
   if len(row.head_objects) == 0 and len(row.body_objects) == 0:
-    return row.requirement_html + '<p>This block has not been analyzed yet.</p>'
+    return row.requirement_html + '<p>This block has not been interpreted yet.</p>'
   head_course_lists = """
 <section>
   <h1 class="closer">Head Objects</h1>
