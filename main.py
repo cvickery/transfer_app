@@ -29,7 +29,7 @@ from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
 from course_lookup import course_attribute_rows, course_search
-from dgw_course_lists import requirements_to_html
+from htmlificization import scribe_block_to_html
 
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
@@ -1711,9 +1711,9 @@ def requirements(college=None, type=None, name=None, period=None):
           requirements_html = (f'<h1 class="error">“{b_value}” is not a currently offered {b_type} '
                                f'at {institution}.</h1>')
         else:
-          requirements_html = requirements_to_html(first_match)
+          requirements_html = scribe_block_to_html(first_match)
     else:
-      requirements_html = '\n'.join([requirements_to_html(row) for row in cursor.fetchall()])
+      requirements_html = '\n'.join([scribe_block_to_html(row) for row in cursor.fetchall()])
     conn.close()
 
     result = f"""
