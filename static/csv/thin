@@ -1,7 +1,7 @@
 #! /usr/local/bin/bash
 for file in *.csv
 do file_date=${file: 4:10}
-  if [[ $file_date < `date -I -d 'yesterday'` ]]
+  if [[ $file_date < `/usr/local/opt/coreutils/libexec/gnubin/date -I -d 'yesterday'` ]]
   then echo $file is old and will nevermore be seen
        rm $file
   fi
