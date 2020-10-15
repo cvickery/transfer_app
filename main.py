@@ -1154,13 +1154,13 @@ def registered_programs(institution, default=None):
   except (KeyError, ValueError):
     nysed_update_date = 'Date of latest NYSED website access is not available.'
 
-  # See when Degreeworks requirement_blocks were last updated.
+  # See when DegreeWorks requirement_blocks were last updated.
   try:
     cursor.execute("select update_date from updates where table_name='requirement_blocks'")
-    dgw_update_date = (f'Program requirements from Degreeworks were last updated on  '
+    dgw_update_date = (f'Program requirements from DegreeWorks were last updated on  '
                        f'{date2str(cursor.fetchone().update_date)}.')
   except (KeyError, ValueError):
-    dgw_update_date = 'Date of latest Degreeworks access is not available.'
+    dgw_update_date = 'Date of latest DegreeWorks access is not available.'
 
   # Find out what CUNY colleges are in the db
   cursor.execute("""
@@ -1305,7 +1305,7 @@ def registered_programs(institution, default=None):
           The CUNY Programs column shows matching programs from CUNYfirst with the department that
           offers the program in parentheses. (Some programs are shared by multiple departments.)
           “Requirements” links in that column show the program’s requirements as given in
-          Degreeworks. {dgw_update_date}
+          DegreeWorks. {dgw_update_date}
         </p>
         <p>
           The rightmost three columns show financial aid eligibility. Hover over the headings for
@@ -1473,8 +1473,8 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          """)
     if cursor.rowcount > 0:
       second_rule_recv = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                  f'{row.discipline} {row.catalog_number}</span>'
-                                  for row in cursor.fetchall()])
+                                   f'{row.discipline} {row.catalog_number}</span>'
+                                   for row in cursor.fetchall()])
     else:
       second_rule_recv = 'No receiving courses'
 
@@ -1616,17 +1616,17 @@ def requirements(college=None, type=None, name=None, period=None):
   <div id="disclaimer">
     <h1 class="error">Research Project: Work in Progress</h1>
     <p class="error">
-      The Degreeworks Scribe Blocks available here are not for any use other than research
+      The DegreeWorks Scribe Blocks available here are not for any use other than research
       into how they might be used outside of the scope of the services already offered by Ellucian.
     </p>
     <p>
-      When Degreeworks uses these Scribe Blocks, they have to be combined with a student’s academic
-      record and other information maintained in the Degreeworks system to produce reports such as
+      When DegreeWorks uses these Scribe Blocks, they have to be combined with a student’s academic
+      record and other information maintained in the DegreeWorks system to produce reports such as
       degree audits, transfer what-if analyses, and student program plans.
     </p>
     <p>
       The project that led to making these blocks available is an effort to extract program
-      requirements without reference to student academic records or other internal Degreeworks
+      requirements without reference to student academic records or other internal DegreeWorks
       information. Open the “Information About This Project” section for more details.
     </p>
     <p>
@@ -1644,7 +1644,7 @@ def requirements(college=None, type=None, name=None, period=None):
     </p>
     <p>
       This page lets you look up the requirements for any degree, major, minor, or concentration at
-      any CUNY college. The information is taken from the Degreeworks “Scribe Blocks” that are
+      any CUNY college. The information is taken from the DegreeWorks “Scribe Blocks” that are
       designed to provide information based on individual students’ coursework completed and
       declared or prospective majors, minors, or concentrations.
     </p>
@@ -1659,12 +1659,9 @@ def requirements(college=None, type=None, name=None, period=None):
       development.
     </p>
     <p>
-      Program requirements change over time. Degreeworks keeps a record of previous program
+      Program requirements change over time. DegreeWorks keeps a record of previous program
       versions, arranged by “catalog year.” By default only the most recent requirements are shown,
       but you can choose to look at earlier ones as well.
-    </p>
-      Degreeworks information used here is normally updated once a week. It was last updated on
-      {dgw_date}.
     </p>
     </details>
     <fieldset><legend>Options</legend>
@@ -1707,11 +1704,15 @@ def requirements(college=None, type=None, name=None, period=None):
         <input type="radio" id="period-current" name="period" value="current"/>
         <label for="period-current">Current</label>
         </fieldset>
+      <p>
+        <strong>NOTE:</strong> It takes a few seconds to interpret each block the first time it is
+        viewed. If you have checked the All option, the delay can be annoyingly long.
+      </p>
       <button type="submit" id="goforit">Go For It</button>
        </div>
-
-
     </form>
+    <p><em>DegreeWorks information used here was last updated on {dgw_date}.</em>
+    </p>
     """
     return render_template('requirements_form.html',
                            result=Markup(result),
