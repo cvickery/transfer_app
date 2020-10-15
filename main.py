@@ -29,6 +29,7 @@ from rule_history import rule_history
 from format_rules import format_rule, format_rules, format_rule_by_key, \
     Transfer_Rule, Source_Course, Destination_Course, andor_list
 from course_lookup import course_attribute_rows, course_search
+
 from htmlificization import scribe_block_to_html
 
 from system_status import app_available, app_unavailable, get_reason, \
@@ -1498,47 +1499,74 @@ def _archive_dates():
 def _requirement_values():
   """ Return a select element with the options filled in.
       If the period is 'current' include only values where the period is '999999'.
+      If the period is 'latest' include latest of all values.
       Otherwise, include all values found.
-
   """
   institution = request.args.get('institution', 0)
   block_type = request.args.get('block_type', 0)
   period = request.args.get('period', 0)
+
+  # Durning development, filter out all-numeric values
+  value_clause = r"and block_value !~ '^[\d ]+$'"
   period_clause = ''
   if period == 'current':
     period_clause = "and period_stop = '99999999'"
-  # DEVELOPMENT PARAMETER
-  # Durning development, filter out all-numeric values
-  value_clause = r"and block_value !~ '^[\d ]+$'"
+
   option_type = f'a {block_type.title()}'
   if block_type == 'CONC':
     option_type = 'a Concentration'
   if block_type == 'OTHER':
     option_type = 'a Requirement'
+
   conn = PgConnection()
   cursor = conn.cursor()
-  cursor.execute(f"""select distinct block_value, title
-                       from requirement_blocks
-                      where institution = %s
-                        and block_type = %s
-                       {period_clause}
-                       {value_clause}
-                      order by block_value""", (institution, block_type))
+  cursor.execute(f"""
+  select requirement_id, block_value, title, period_start, period_stop
+    from requirement_blocks
+   where institution = %s
+     and block_type = %s
+    {value_clause}
+    {period_clause}
+    order by block_value, period_stop desc""", (institution, block_type))
+
+  options = ''
+  previous_value = ''
   if cursor.rowcount == 0:
     selected_option = (f'<option value="" selected="selected">No {block_type.title()} blocks found '
                        f'for {institution}</option>\n')
   else:
     selected_option = (f'<option value="" selected="selected">Select {option_type}</option>\n')
-  options = '\n'.join([f'<option value="{r.block_value}">{r.block_value}: {r.title}</option>\n'
-                      for r in cursor.fetchall()])
+    for row in cursor.fetchall():
+      requirement_id = f'({row.requirement_id})'
+      if period == 'current':
+        period_str = ' '
+      elif row.block_value == previous_value:
+          continue
+      else:
+        previous_value = row.block_value
+        if period == 'all':
+          period_str = ' '
+          requirement_id = ''
+        else:
+          period_start = row.period_start.strip('UG')
+          period_start = f'{period_start[:4]}-{period_start[-4:]}'
+          period_stop = row.period_stop.strip('UG')
+          if period_stop == '99999999':
+            period_stop = 'now'
+          else:
+            period_stop = f'{period_stop[:4]}-{period_stop[-4:]}'
+          period_str = f'{period_start} to {period_stop} '
+
+      options += (f'<option value="{row.block_value}">{row.block_value}: {row.title} '
+                  f'{period_str}{requirement_id}</option>\n')
   conn.close()
   return f"""
-  <label for="block-value"><strong>Requirement Name:</strong></label>
-  <select id="block-value" name="requirement-name">
-  {selected_option}
-  {options}
-  </select>
-    """
+    <label for="block-value"><strong>Requirement:</strong></label>
+    <select id="block-value" name="requirement-name">
+    {selected_option}
+    {options}
+    </select>
+      """
 
 
 # /requirements route()
@@ -1666,9 +1694,9 @@ def requirements(college=None, type=None, name=None, period=None):
       <fieldset>
         <legend>Catalog Year(s)</legend>
         <p>
-          Do you want to see the requirements for all catalog years, the most-recent catalog
-          year (includes programs or degrees no longer being offered), or just the requirements
-          for the currently catalog year?
+          Do you want to see the requirements for all catalog years (will be shown in reverse
+          chronological order), the most-recent catalog year (includes programs or degrees no longer
+          being offered), or just the requirements currently in effect?
         </p>
         <input type="radio" id="period-all" name="period" value="all"/>
         <label for="period-all">All</label>
@@ -1692,12 +1720,21 @@ def requirements(college=None, type=None, name=None, period=None):
     # Get the information about the block from the db
     conn = PgConnection()
     cursor = conn.cursor()
-    cursor.execute(f""" select title, period_stop, requirement_html, head_objects, body_objects
-                        from requirement_blocks
-                        where institution = '{institution}'
-                        and block_type = '{b_type}'
-                        and block_value = '{b_value}'
-                        order by period_stop desc
+    cursor.execute(f"""
+select institution,
+       requirement_id,
+       block_type,
+       block_value,
+       title,
+       period_stop,
+       requirement_html,
+       head_objects,
+       body_objects
+  from requirement_blocks
+ where institution = '{institution}'
+   and block_type = '{b_type}'
+   and block_value = '{b_value}'
+ order by period_stop desc
                     """)
     if cursor.rowcount < 1:
       return render_template('requirements_form.html',
@@ -1711,9 +1748,9 @@ def requirements(college=None, type=None, name=None, period=None):
           requirements_html = (f'<h1 class="error">“{b_value}” is not a currently offered {b_type} '
                                f'at {institution}.</h1>')
         else:
-          requirements_html = scribe_block_to_html(first_match)
+          requirements_html = scribe_block_to_html(first_match, period)
     else:
-      requirements_html = '\n'.join([scribe_block_to_html(row) for row in cursor.fetchall()])
+      requirements_html = '\n'.join([scribe_block_to_html(row, period) for row in cursor.fetchall()])
     conn.close()
 
     result = f"""

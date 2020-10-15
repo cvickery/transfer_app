@@ -28,7 +28,6 @@ const check_status = function ()
  */
 const values_listener = function ()
 {
-  console.log('listener');
   document.getElementById('value-div').innerHTML = this.response;
   document.getElementById('block-value').addEventListener('change', update_values);
   const options = document.getElementById('block-value').options;
