@@ -1613,7 +1613,7 @@ def requirements(college=None, type=None, name=None, period=None):
                                                        'text': 'Programs',
                                                        'href': '/registered_programs'
                                                       }])}
-  <div id="disclaimer">
+  <div class="disclaimer">
     <h1 class="error">Research Project: Work in Progress</h1>
     <p class="error">
       The DegreeWorks Scribe Blocks available here are not for any use other than research
