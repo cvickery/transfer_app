@@ -1751,7 +1751,8 @@ select institution,
         else:
           requirements_html = scribe_block_to_html(first_match, period)
     else:
-      requirements_html = '\n'.join([scribe_block_to_html(row, period) for row in cursor.fetchall()])
+      requirements_html = '\n'.join([scribe_block_to_html(row, period)
+                                    for row in cursor.fetchall()])
     conn.close()
 
     result = f"""
