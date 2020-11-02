@@ -218,3 +218,13 @@ fieldset hr {
 .disclaimer h1 {
   text-align: center;
 }
+
+.signature {
+  font-style:italic;
+  text-decoration: none;
+  color:black;
+  font-size:1.2em;
+}
+.signature:hover {
+  color:#09f;
+}
