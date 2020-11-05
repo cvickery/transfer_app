@@ -94,7 +94,7 @@ def do_form_0(request, session):
   if 'email' in session:
     email = session['email']
   remember_me = ''
-  if 'remember-me'in session:
+  if 'remember-me' in session:
     remember_me = 'checked="checked"'
 
   # Return Form 1
