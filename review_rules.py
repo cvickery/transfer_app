@@ -2,6 +2,8 @@
 """ Manage the sequence of forms used for reviewing transfer rules.
 """
 import os
+import sys
+
 import json
 import uuid
 import re
@@ -529,6 +531,7 @@ def do_form_2(request, session):
      {source_subjects_clause}
   order by source_institution, destination_institution, subject_area, group_number"""
   cursor.execute(q, (session['source_institutions'] + session['destination_institutions']))
+
   if cursor.rowcount < 1:
     return render_template('review_rules.html', result=Markup(
                            '<h1 class="error">There are no matching rules.</h1>'))
