@@ -11,9 +11,10 @@ window.addEventListener('load', function()
     // This is only getting keyup events when the focus is on the summary, not the body of the
     // details elements, which defeats the purpose of wanting to close (toggle) the state by
     // typing escape while hovering over the body part. Sigh.
-    details[i].addEventListener('keyup', function(e)
+    // But it works for dblclick
+    details[i].addEventListener('dblclick', function(e)
     {
-      console.log(e);
+      e.target.toggleAttribute('open');
     });
   }
 
