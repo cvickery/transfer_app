@@ -14,7 +14,12 @@ window.addEventListener('load', function()
     // But it works for dblclick
     details[i].addEventListener('dblclick', function(e)
     {
-      e.target.toggleAttribute('open');
+      let target = e.target;
+      while (target.tagName !== 'DETAILS')
+      {
+        target = target.parentElement;
+      }
+      target.toggleAttribute('open');
     });
   }
 
