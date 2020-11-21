@@ -18,7 +18,7 @@ else:
   loglevel = 'DEBUG'
   timeout = 120
 
-access_log_format = '%(h)s %(t)s %(r)s %(s)s %(b)s %(f)s %({x-forwarded-for}i)s'
+access_log_format = '%(h)s %({x-forwarded-for}i)s %(t)s %(r)s %(s)s %(b)s %(f)s'
 reload = True
 
 
