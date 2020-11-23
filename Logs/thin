@@ -1,0 +1,14 @@
+#! /usr/local/bin/bash
+
+# For acceesses through 149.4.99.6 extract the forwarded-for address, the date, and the URL
+#149.4.99.6 67.85.75.1 [21/Nov/2020:10:00:04 -0500] GET /requirements/?college=CSI01&requirement-type=MAJOR&requirement-name=ENS-BS HTTP/1.1 200 49895 https://www.google.com/
+
+./filter_access.py < transfer_access.log
+csv_size=`wc -c access.csv`
+if [[ $? == 0 && $csv_size > 50 ]]
+then sendemail -s "Access log from `hostname`" -t ./access.csv cvickery@qc.cuny.edu
+fi
+# ack ' /academic_plan| /requirements|traceback' transfer_access.log > transfer_access.thin.log
+# truncate -s 0 transfer_access.log
+# logrotate --mail /Users/vickery/bin/sendemail ./logrotate.conf
+logrotate ./logrotate.conf
