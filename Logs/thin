@@ -5,7 +5,7 @@
 
 ./filter_access.py < transfer_access.log
 csv_size=`wc -c access.csv`
-if [[ $? == 0 && $csv_size > 50 ]]
+if [[ $? == 0 && $csv_size -ge 50 ]]
 then sendemail -s "Access log from `hostname`" -t ./access.csv cvickery@qc.cuny.edu
 fi
 # ack ' /academic_plan| /requirements|traceback' transfer_access.log > transfer_access.thin.log
