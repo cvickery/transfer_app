@@ -4,7 +4,7 @@
 #149.4.99.6 67.85.75.1 [21/Nov/2020:10:00:04 -0500] GET /requirements/?college=CSI01&requirement-type=MAJOR&requirement-name=ENS-BS HTTP/1.1 200 49895 https://www.google.com/
 
 ./filter_access.py < transfer_access.log
-csv_size=`wc -c access.csv`
+csv_size=`wc -c < access.csv`
 if [[ $? == 0 && $csv_size -ge 50 ]]
 then sendemail -s "Access log from `hostname`" -t ./access.csv cvickery@qc.cuny.edu
 fi
