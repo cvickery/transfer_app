@@ -1729,8 +1729,8 @@ select institution,
        title,
        period_stop,
        requirement_html,
-       head_objects,
-       body_objects
+       header_list,
+       body_list
   from requirement_blocks
  where institution = '{institution}'
    and block_type = '{b_type}'
