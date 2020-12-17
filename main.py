@@ -39,7 +39,7 @@ from app_header import header
 from top_menu import top_menu
 
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
-from propose_rules import _propose_rules
+from course_info import _course_info
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify, session
@@ -178,13 +178,17 @@ def index_page():
                          omitjs=True)
 
 
-# PROPOSE RULES PAGE
+# COURSE INFO PAGE
 # =================================================================================================
-@app.route('/propose_rules', methods=['POST', 'GET'])
-def propose_rules():
-  """ This feature not implemented yet.
+@app.route('/course_info', methods=['GET'])
+def course_info():
+  """ Lots of information about a course.
   """
-  return render_template('propose_rules.html', result=Markup(_propose_rules()))
+  try:
+    title, result = _course_info(request.args['course'])
+    return render_template('course_info.html', result=Markup(result), title=Markup(title))
+  except KeyError as ke:
+    return render_template('404.html', result=Markup('<p class="error">No course specified</p>'), )
 
 
 # REVIEW_RULES PAGE
@@ -381,6 +385,7 @@ def history(rule):
   return render_template('review_rules.html',
                          result=Markup(result),
                          title='Review Event History')
+
 
 # MAP_COURSES PAGE
 # -------------------------------------------------------------------------------------------------

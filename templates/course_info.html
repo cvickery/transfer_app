@@ -4,7 +4,8 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CUNY Transfer App</title>
-    <link rel='stylesheet' href='/static/css/propose_rules.css' />
+    <link rel='stylesheet' href='/static/css/base_style.css' />
+    <link rel='stylesheet' href='/static/css/course_info.css' />
     <script type=text/javascript>
     $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
     </script>
@@ -13,7 +14,7 @@
     <script src="/static/js/propose_rules.js"></script>
   </head>
   <body>
-    <h1>Propose Transfer Rule(s)</h1>
+    {{ title }}
     <div id="need-js">
       <p>Waiting for JavaScript to initialize &hellip;</p>
       <p>
@@ -21,8 +22,6 @@
         versions of the JavaScript language and will not work with this application.
       </p>
     </div>
-    <div>
-      {{ result }}
-    </div>
+    {{ result }}
   </body>
 </html>
