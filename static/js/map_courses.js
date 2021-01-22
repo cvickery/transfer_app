@@ -384,7 +384,7 @@ $(function ()
   //  Double-clicking on a rule in the pop-up brings up the catalog descriptions for the courses
   //  involved in that same pop-up. Back arrow takes you back to the list of rules.
   //  -----------------------------------------------------------------------------------
-  /*  The row id is rule_key-source_ids-dest_ids
+  /*  The row id is rule_key|source_ids|dest_ids
    */
   $('#pop-up-content').dblclick(function (event)
   {
@@ -400,15 +400,15 @@ $(function ()
     }
     let row_id = target.id;
 
-    // split it by hyphens
-    let hyphenated = row_id.split('-');
+    // split it by | symbol
+    let split_row_id = row_id.split('|');
     // source and dest ids
-    let source_ids = hyphenated[4];
-    let destination_ids = hyphenated[5];
+    let source_ids = split_row_id[1];
+    let destination_ids = split_row_id[2];
     let suffix = (source_ids.indexOf(':') === -1) ? '' : 's';
-    let source_heading = `${hyphenated[0].replace(/\d+/, '')} Course${suffix}`;
+    let source_heading = `${split_row_id[0].substring(0, 3)} Course${suffix}`;
     suffix = (destination_ids.indexOf(':') === -1) ? '' : 's';
-    let destination_heading = `${hyphenated[1].replace(/\d+/, '')} Course${suffix}`;
+    let destination_heading = `${split_row_id[0].substring(6, 9)} Course${suffix}`;
     // Clear the pop-up and request catalog info for source and dest courses
     $('#pop-up-content').html(`<div id="catalogs-for-rule">
                                 <div>${source_heading}

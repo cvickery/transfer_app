@@ -12,7 +12,7 @@ const DEBUG_WIDTHS = false;
  *  computed width minus the sum of its left and right padding and the width of the wider of its
  *  left and right border.
  */
-const content_width = (cell) =>
+const content_width = cell =>
 {
   let cell_style = getComputedStyle(cell);
   let pl = Number.parseFloat(cell_style.getPropertyValue('padding-left'), 10);
@@ -293,13 +293,17 @@ body_width: ${this.tbody.offsetWidth}
       {
         console.error(`Unable to adjust widths: ${head_cells.length} !== ${body_cells.length}`);
       }
-      console.log(`use heading widths: ${use_heading_widths}
+      if (DEBUG_WIDTHS)
+      {
+
+        console.log(`use heading widths: ${use_heading_widths}
 has headers: ${has_headers}
 viewport width: ${viewport_width}
 header_width: ${this.thead.offsetWidth}
 body_width: ${this.tbody.offsetWidth}
 ---------------------------------------
 `);
+      }
     }
   }
 }

@@ -741,7 +741,7 @@ def _map_course():
     rule_counts = Counter()
     rules = defaultdict(list)
     for rule in all_rules:
-      rule_key = '{}-{}-{}-{}'.format(rule.source_institution,
+      rule_key = '{}:{}:{}:{}'.format(rule.source_institution,
                                       rule.destination_institution,
                                       rule.subject_area,
                                       rule.group_number)
@@ -764,7 +764,7 @@ def _map_course():
       num_rules = rule_counts[college]
       if num_rules > 0:
         class_info = 'clickable '
-      rules_str = ':'.join(rules[college])
+      rules_str = '|'.join(rules[college])
       if course_info.course_status == 'A' and num_rules == 0 and college != course_info.institution:
         class_info += 'missing-rule'
       if num_rules == 1 and (course_info.designation == 'MLA' or course_info.designation == 'MNL'):
@@ -868,7 +868,7 @@ def lookup_rules():
 # the rules. Acts as an interface to format_rule().
 @app.route('/_rules_to_html')
 def _rules_to_html():
-  rule_keys = request.args.get('rule_keys').split(':')
+  rule_keys = request.args.get('rule_keys').split('|')
   return jsonify('<hr>'.join([format_rule_by_key(rule_key)[0] for rule_key in rule_keys]))
 
 

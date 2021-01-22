@@ -186,9 +186,9 @@ def do_form_1(request, session):
   session['source_institutions'] = request.form.getlist('source')
   session['destination_institutions'] = request.form.getlist('destination')
   session['email'] = request.form.get('email')
-  session['remember-me'] = request.form.get('remember-me') == 'on'
+  session['remember_me'] = request.form.get('remember-me') == 'on'
   # The session: does the user want her to persist?
-  session.permanent = session['remember-me']
+  session.permanent = session['remember_me']
 
   # Database lookups
   # ----------------
@@ -474,6 +474,9 @@ def do_form_2(request, session):
   """
   if DEBUG:
     print(f'*** do_form_2({session})')
+  for k, v in session.items():
+    print(f'{k}: {v}')
+
   conn = PgConnection()
   cursor = conn.cursor()
 

@@ -370,11 +370,10 @@ $(function ()
     $('.rule').removeClass('selected-rule');
     $(this).addClass('selected-rule');
 
-    //     Row IDs: source_institution; hyphen;
-    //              destination_institution; hyphen;
-    //              subject_area; hyphen;
-    //              group_number; hyphen;
-    //              colon-separated list of source course IDs; hyphen;
+    //     Row IDs: source_institution:destination_institution:subject_area:group_number
+    //              hyphen
+    //              colon-separated list of source course IDs
+    //              hyphen
     //              colon-separated list of destination course IDs.
     //
     const row_id = $(this).attr('id');
@@ -393,23 +392,23 @@ $(function ()
     const review_rule_table = `<table>${review_row_html}</table>`;
 
     const first_parse = row_id.split('-');
-    const rule_key =
-      first_parse[0] + '-' + first_parse[1] + '-' + first_parse[2] + '-' + first_parse[3];
-    const source_institution = first_parse[0].replace(/_/g, ' ');
+    const rule_key = first_parse[0];
+    const parts = rule_key.split(':');
+    const source_institution = parts[0].replace(/_/g, ' ');
     const source_institution_str = source_institution.replace(/\d+/, '');
-    const destination_institution = first_parse[1].replace(/_/g, ' ');
+    const destination_institution = parts[1].replace(/_/g, ' ');
     const destination_institution_str = destination_institution.replace(/\d+/, '');
-    // var discipline = first_parse[2];
-    // var group_number = first_parse[3];
-    const source_course_ids = first_parse[4].split(':');
-    const destination_course_ids = first_parse[5].split(':');
+    // var discipline = parts[2];
+    // var group_number = parts[3];
+    const source_course_ids = first_parse[1].split(':');
+    const destination_course_ids = first_parse[2].split(':');
     const source_request = $.getJSON($SCRIPT_ROOT + '/_courses',
       {
-        course_ids: first_parse[4]
+        course_ids: first_parse[1]
       });
     const dest_request = $.getJSON($SCRIPT_ROOT + '/_courses',
       {
-        course_ids: first_parse[5]
+        course_ids: first_parse[2]
       });
 
     const source_suffix = source_course_ids.length !== 1 ? 's' : '';

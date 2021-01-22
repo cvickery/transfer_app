@@ -1,14 +1,18 @@
 #! /usr/bin/env python3
+
+import argparse
 from collections import namedtuple
 import json
+import os
 import re
-import argparse
+import sys
 
 from flask import session
 from pgconnection import PgConnection
 from reviews_status_utils import status_string
 from copy import copy
 
+DEBUG = os.getenv('DEVELOPMENT')
 DEBUG = False
 
 letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
@@ -59,13 +63,6 @@ conn = PgConnection()
 cursor = conn.cursor()
 cursor.execute("select code, prompt from cuny_institutions order by lower(name)")
 institution_names = {row.code: row.prompt for row in cursor}
-# cursor.execute('select * from transfer_rules')
-# rule_ids = dict()
-# for rule in cursor.fetchall():
-#   rule_ids['{}-{}-{}-{}'.format(rule.source_institution,
-#                                 rule.destination_institution,
-#                                 rule.subject_area,
-#                                 rule.group_number)] = rule.id
 conn.close()
 
 
@@ -177,6 +174,8 @@ def format_rules(rules, scrollable=False):
 def format_rule_by_key(rule_key):
   """ Generate a Transfer_Rule tuple given the key.
   """
+  if DEBUG:
+    print(f'format_rule_by_key({rule_key})', file=sys.stderr)
   conn = PgConnection()
   cursor = conn.cursor()
   cursor.execute("""
@@ -185,7 +184,8 @@ def format_rule_by_key(rule_key):
      and destination_institution = %s
      and subject_area = %s
      and group_number = %s
-  """, rule_key.split('-'))
+  """, rule_key.split(':'))
+  print(cursor.query)
   rule = cursor.fetchone()
 
   cursor.execute("""
@@ -248,7 +248,7 @@ def format_rule(rule, rule_key=None):
       paragraph.
   """
   if rule_key is None:
-    rule_key = '{}-{}-{}-{}'.format(rule.source_institution,
+    rule_key = '{}:{}:{}:{}'.format(rule.source_institution,
                                     rule.destination_institution,
                                     rule.subject_area,
                                     rule.group_number)
@@ -290,7 +290,7 @@ def format_rule(rule, rule_key=None):
   source_class = ''  # for the HTML credit-mismatch indicator
 
   # The course ids parts of the table row id
-  row_id = '{}-{}-{}'.format(rule_key, source_course_id_str, destination_course_id_str)
+  row_id = '{}|{}|{}'.format(rule_key, source_course_id_str, destination_course_id_str)
   min_source_credits = 0.0
   max_source_credits = 0.0
   source_course_list = ''

@@ -31,7 +31,7 @@ def process_pending(row):
 
   institutions = set()
   for review in reviews:
-    key = RuleKey._make(review['rule_key'].split('-'))
+    key = RuleKey._make(review['rule_key'].split(':'))
     institutions.add(key.source_institution)
     institutions.add(key.destination_institution)
     cursor.execute("""
