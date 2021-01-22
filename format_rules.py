@@ -15,7 +15,6 @@ from copy import copy
 DEBUG = os.getenv('DEVELOPMENT')
 DEBUG = False
 
-letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
 Work_Tuple = namedtuple('Work_Tuple', 'course_id offer_nbr discipline')
 
 # Named tuples for a transfer rule and its source and destination course lists.
@@ -92,43 +91,56 @@ def _grade(min_gpa, max_gpa):
       The issue is that gpa values are not represented uniformly across campuses, and the strings
       used have to be floating point values, which lead to imprecise boundaries between letter
       names.
-        “<letter> or above” when min is > 0.7 and max is 4.0+
-        “below <letter>” when min is 0.7 and max is < 4.0
-        “between <letter> and <letter>” when min is > 0.7 and max is < 4.0
-        “Pass” when none of the above
-
-        GPA Letter 3×GPA
-        4.3 A+      12.9
-        4.0 A       12.0
-        3.7 A-      11.1
-        3.3 B+       9.9
-        3.0 B        9.0
-        2.7 B-       8.1
-        2.3 C+       6.9
-        2.0 C        6.0
-        1.7 C-       5.1
-        1.3 D+       3.9
-        1.0 D        3.0
-        0.7 D-       2.1
   """
-  # Put gpa values into “canonical form”
+
+  # Convert GPA values to letter grades by table lookup.
+  # int(round(3×GPA)) gives the index into the letters table.
+  # Index positions 0 and 1 aren't actually used.
+  """
+          GPA  3×GPA  Index  Letter
+          4.3   12.9     13      A+
+          4.0   12.0     12      A
+          3.7   11.1     11      A-
+          3.3    9.9     10      B+
+          3.0    9.0      9      B
+          2.7    8.1      8      B-
+          2.3    6.9      7      C+
+          2.0    6.0      6      C
+          1.7    5.1      5      C-
+          1.3    3.9      4      D+
+          1.0    3.0      3      D
+          0.7    2.1      2      D-
+    """
+  letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
+
   assert min_gpa <= max_gpa, f'min_gpa {min_gpa} greater than {max_gpa}'
-  # Courses transfer only if the student passed the course, so force the min acceptable grade
+
+  # Put gpa values into “canonical form” to deal with creative values found in CUNYfirst.
+
+  # Courses transfer only if the student passed the course, so force the min BIeptable grade
   # to be a passing (D-) grade.
   if min_gpa < 1.0:
     min_gpa = 0.7
+  # Lots of values greater than 4.0 have been used to mean "no upper limit."
   if max_gpa > 4.0:
     max_gpa = 4.0
 
   # Generate the letter grade requirement string
-  if min_gpa > 0.7 and max_gpa > 3.9:
+
+  if min_gpa < 1.0 and max_gpa > 3.7:
+    return 'Pass'
+
+  if min_gpa >= 0.7 and max_gpa >= 3.7:
     letter = letters[int(round(min_gpa * 3))]
-    return f'{letter} or above in'
-  if min_gpa < 0.8 and max_gpa < 3.9:
+    return f'{letter} or above'
+
+  if min_gpa > 0.7 and max_gpa < 3.7:
+    return f'Between {letters[int(round(min_gpa * 3))]} and {letters[int(round(max_gpa * 3))]}'
+
+  if max_gpa < 3.7:
     letter = letters[int(round(max_gpa * 3))]
-    return 'Below ' + letter + ' in'
-  if min_gpa > 0.8 and max_gpa < 3.9:
-    return f'Between {letters[int(round(min_gpa * 3))]} and {letters[int(round(max_gpa * 3))]} in'
+    return 'Below ' + letter
+
   return 'Pass'
 
 
