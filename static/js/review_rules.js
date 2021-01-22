@@ -391,7 +391,7 @@ $(function ()
                                </tr>`;
     const review_rule_table = `<table>${review_row_html}</table>`;
 
-    const first_parse = row_id.split('-');
+    const first_parse = row_id.split('|');
     const rule_key = first_parse[0];
     const parts = rule_key.split(':');
     const source_institution = parts[0].replace(/_/g, ' ');
