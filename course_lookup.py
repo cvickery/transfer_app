@@ -211,9 +211,11 @@ def format_course(course, active_only=False):
   else:
     credits_str = f'{component_str}; {course.min_credits:0.1f}–{course.max_credits:0.1f} cr'
 
-  title_str = f"""
-                <strong>{course.discipline} {course.catalog_number}: {course.title}</strong>
-                <br/>Requisites: {course.requisites}"""
+  transfer_link = (f'https://explorer.lehman.cuny.edu/sending-course/{course.course_id:06}/'
+                   f'{course.offer_nbr}')
+  title_str = f"""<a href="{transfer_link}" style="text-decoration: none;">
+                  <strong>{course.discipline} {course.catalog_number}: {course.title}</strong></a>
+                  <br/>Requisites: {course.requisites}"""
   properties_str = f"""(<em>{course.career}; {course.cuny_subject}; {course.designation};
                    {', '.join(course.attributes.split(';'))}</em>)"""
   if course.course_id in cross_listed:
@@ -252,19 +254,15 @@ def format_course(course, active_only=False):
     if course.course_status != 'A':
       note = '<div class="warning"><strong>Note:</strong> Course is not active in CUNYfirst</div>'
 
-  html = """
-  <p class="catalog-entry" title="course id: {}">{}
-    <br/>{}
-    <br/>{}
-    <br/>{}
+  hover_text = f'course id: {course.course_id:06}.{course.offer_nbr}; click for transfer info'
+  html = f"""
+  <p class="catalog-entry" title="{hover_text}">{title_str}
+    <br/>{credits_str}
+    <br/>{course.description}
+    <br/>{properties_str}
   </p>
-  {}
-  """.format(course.course_id,
-             title_str,
-             credits_str,
-             course.description,
-             properties_str,
-             note)
+  {note}
+  """
   return html
 
 
