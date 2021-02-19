@@ -1031,6 +1031,7 @@ def courses():
         <summary>Legend and Details</summary>
         <hr>
         <p>{num_active_courses:,} active courses as of {date_updated}</p>
+        <p>Click on course name for transfer information.</p>
         <p>
           The following course properties are shown in parentheses at the bottom of each course’s
           catalog description. <em>Hover over items in this list for more information. </em> </p>
