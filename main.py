@@ -1387,7 +1387,7 @@ def rule_changes():
     conn = PgConnection()
     cursor = conn.cursor()
     for rule_key in sorted(diffs.keys()):
-
+      rule_key_str = rule_key.replace('-', ':')
       delta_type, first_rule_text, second_rule_text = expand_delta(first_date,
                                                                    second_date,
                                                                    diffs[rule_key],
@@ -1397,7 +1397,7 @@ def rule_changes():
           <th>{delta_type}</th>
           <td>{first_rule_text}</td>
           <td>{second_rule_text}</td>
-          <td>{rule_key}</td>
+          <td>{rule_key_str}</td>
         </tr>""")
     conn.close()
     nl = '\n'
