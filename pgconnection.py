@@ -33,7 +33,7 @@ class PgConnection():
 
   _pool = None
 
-  def __init__(self, conn_string='dbname=cuny_curriculum'):
+  def __init__(self, dbname='cuny_curriculum'):
     """ Get the connection string from the environment and connect to the db.
         Raises PoolError, disguised as a RuntimeError, if connection pool is exhausted.
     """
@@ -44,10 +44,10 @@ class PgConnection():
         pool_max = 95  # Value of max_connections in default postgresql.conf is 100
       else:
         pool_max = int(pool_max)
-      dsn = os.getenv('DATABASE_URL')
-      if dsn is None:
-        dsn = conn_string
-      PgConnection._pool = ThreadedConnectionPool(2, pool_max, dsn)
+      connection_string = os.getenv('DATABASE_URL')
+      if connection_string is None:
+        connection_string = f'dbname={dbname}'
+      PgConnection._pool = ThreadedConnectionPool(2, pool_max, connection_string)
     try:
       if DEBUG:
         print('connect:', self, file=sys.stderr)
