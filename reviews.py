@@ -26,7 +26,7 @@ def process_pending(row):
   when_entered = row.when_entered
   summaries = ''
 
-  conn = PgConnection('dbname=cuny_courses')
+  conn = PgConnection()
   cursor = conn.cursor()
 
   institutions = set()
