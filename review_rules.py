@@ -557,14 +557,17 @@ def do_form_2(request, session):
     # It’s possible some of the selected rules don’t have destination courses in any of the selected
     # disciplines, so that has to be checked first.
     cursor.execute(f"""
-      select  dc.course_id,
-              dc.offer_count,
-              dc.discipline,
-              dc.catalog_number,
-              dc.cat_num,
-              dc.cuny_subject,
-              dc.transfer_credits,
-              dn.discipline_name
+   select  dc.course_id,
+           dc.offer_count,
+           dc.discipline,
+           dc.catalog_number,
+           dn.discipline_name,
+           dc.cuny_subject,
+           dc.cat_num,
+           dc.transfer_credits,
+           dc.credit_source,
+           dc.is_mesg,
+           dc.is_bkcr
       from destination_courses dc, cuny_disciplines dn
       where dc.rule_id = %s
         and dn.institution = %s
@@ -575,18 +578,18 @@ def do_form_2(request, session):
     if cursor.rowcount > 0:
       destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
       cursor.execute("""
-        select  sc.course_id,
-                sc.offer_count,
-                sc.discipline,
-                sc.catalog_number,
-                sc.cat_num,
-                sc.cuny_subject,
-                sc.min_credits,
-                sc.max_credits,
-                sc.min_gpa,
-                sc.max_gpa,
-                dn.discipline_name
-        from source_courses sc, cuny_disciplines dn
+         select  sc.course_id,
+                 sc.offer_count,
+                 sc.discipline,
+                 sc.catalog_number,
+                 dn.discipline_name,
+                 sc.cuny_subject,
+                 sc.cat_num,
+                 sc.min_credits,
+                 sc.max_credits,
+                 sc.min_gpa,
+                 sc.max_gpa
+         from source_courses sc, cuny_disciplines dn
         where sc.rule_id = %s
           and dn.institution = %s
           and dn.discipline = sc.discipline
@@ -633,9 +636,13 @@ def do_form_2(request, session):
             'text': 'Change Subjects'
 
            }])}
-    <details>
-      <summary>{num_rules}</summary>
+    <details open>
+      <summary>Instructions (click to close)</summary>
       <hr>
+      {num_rules}
+      <p>
+      Blanket Credit courses are <span class="blanket">highlighted like this</span>.
+      </p>
       <p>
         Rules that are <span class="credit-mismatch">highlighted like this</span> have a different
         number of credits taken from the number of credits transferred.
@@ -649,8 +656,8 @@ def do_form_2(request, session):
         Rules that are <span class="evaluated">highlighted like this</span> are ones that you have
         reviewed but not yet submitted.
       </p>
-      <p>
-        Click on a rule to review it.
+      <p class="call-to-action">
+        Click on a rule to review it
       </p>
     </details>
     <fieldset id="verification-fieldset"><legend>Review Reviews</legend>

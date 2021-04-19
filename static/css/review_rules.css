@@ -44,6 +44,10 @@ td a:hover {
   background-color: #ccc;
 }
 
+details {
+
+}
+
 .institution-select {
   display: inline-block;
   width: 18rem;
@@ -273,8 +277,15 @@ tted {
 .credit-mismatch, .credit-mismatch td {
   background-color: #fcc;
   color: black;
+  padding:0.5em;
 }
 
+.blanket {
+  background-color:yellow;
+  foreground:green;
+  font-weight: bold;
+  padding:0.5em;
+}
 #send-email:enabled {
   border: 2px solid black;
 }
@@ -282,6 +293,17 @@ tted {
 .evaluated, .evaluated td {
   background-color: #eee;
   color: #000;
+  padding:0.5em;
+}
+
+.call-to-action {
+  text-align: center;
+  font-weight: bold;
+  font-variant: small-caps;
+  background-color:lightgreen;
+  padding: 1em;
+  border: 1px solid #ccc;
+  width:80%;
 }
 
 #verification-fieldset {

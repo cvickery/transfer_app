@@ -38,13 +38,13 @@ Source_Course = namedtuple('Source_Course', """
                            offer_count
                            discipline
                            catalog_number
-                           cat_num
+                           discipline_name
                            cuny_subject
+                           cat_num
                            min_credits
                            max_credits
                            min_gpa
                            max_gpa
-                           discipline_name
                            """)
 
 Destination_Course = namedtuple('Destination_Course', """
@@ -52,10 +52,13 @@ Destination_Course = namedtuple('Destination_Course', """
                                 offer_count
                                 discipline
                                 catalog_number
-                                cat_num
-                                cuny_subject
-                                transfer_credits
                                 discipline_name
+                                cuny_subject
+                                cat_num
+                                transfer_credits
+                                credit_source
+                                is_mesg
+                                is_bkcr
                                 """)
 
 conn = PgConnection()
@@ -199,19 +202,45 @@ def format_rule_by_key(rule_key):
   """, rule_key.split(':'))
   print(cursor.query)
   rule = cursor.fetchone()
+  """
+      Source_Course
+        course_id
+        offer_count
+        discipline
+        catalog_number
+        discipline_name
+        cuny_subject
+        cat_num
+        min_credits
+        max_credits
+        min_gpa
+        max_gpa
 
+      Destination_Course
+        course_id
+        offer_count
+        discipline
+        catalog_number
+        discipline_name
+        cuny_subject
+        cat_num
+        transfer_credits
+        credit_source
+        is_mesg
+        is_bkcr
+  """
   cursor.execute("""
     select  sc.course_id,
             sc.offer_count,
             sc.discipline,
             sc.catalog_number,
-            sc.cat_num,
+            dn.discipline_name
             sc.cuny_subject,
+            sc.cat_num,
             sc.min_credits,
             sc.max_credits,
             sc.min_gpa,
-            sc.max_gpa,
-            dn.discipline_name
+            sc.max_gpa
     from source_courses sc, cuny_disciplines dn
     where sc.rule_id = %s
       and dn.institution = %s
@@ -225,17 +254,20 @@ def format_rule_by_key(rule_key):
             dc.offer_count,
             dc.discipline,
             dc.catalog_number,
-            dc.cat_num,
+            dn.discipline_name,
             dc.cuny_subject,
+            dc.cat_num,
             dc.transfer_credits,
-            dn.discipline_name
+            dc.credit_source,
+            dc.is_mesg,
+            dc.is_bkcr
      from destination_courses dc, cuny_disciplines dn
     where dc.rule_id = %s
       and dn.institution = %s
       and dn.discipline = dc.discipline
     order by discipline, cat_num
     """, (rule.id, rule.destination_institution))
-  destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
+  destination_courses = [Destination_Course(c) for c in cursor.fetchall()]
 
   the_rule = Transfer_Rule._make(
       [rule.id,
@@ -307,16 +339,17 @@ def format_rule(rule, rule_key=None):
   max_source_credits = 0.0
   source_course_list = ''
 
-  # All source courses do not necessarily have the same discipline.
-  # Grade requirement can chage as the list of courses is traversed.
-  # If course has cross-listings, list cross-listed course(s) in parens following the
-  # catalog number. AND-list within a list of courses having the same grade requirement. OR-list
-  # for cross-listed courses.
+  # Assumptions and Presumptions:
+  # - All source courses do not necessarily have the same discipline.
+  # - Grade requirement can chage as the list of courses is traversed.
+  # - If course has cross-listings, list cross-listed course(s) in parens following the
+  #   catalog number. AND-list within a list of courses having the same grade requirement. OR-list
+  #   for cross-listed courses.
   # Examples:
   #   Passing grades in LCD 101 (=ANTH 101 or CMLIT 207) and LCD 102.
   #   Passing grades in LCD 101 (=ANTH 101) and LCD 102. C- or better in LCD 103.
 
-  # First group courses by grade requirement. Not sure there will ever be a mix for one rule, but
+  # First, group courses by grade requirement. Not sure there will ever be a mix for one rule, but
   # if it ever happens, we’ll be ready.
   courses_by_grade = dict()
   for course in source_courses:
@@ -326,12 +359,15 @@ def format_rule(rule, rule_key=None):
     if (course.min_gpa, course.max_gpa) not in courses_by_grade.keys():
       courses_by_grade[(course.min_gpa, course.max_gpa)] = []
     courses_by_grade[(course.min_gpa, course.max_gpa)].append(course)
+
   # For each grade requirement, sort by cat_num, and generate array of strings to AND-list together
   by_grade_keys = [key for key in courses_by_grade.keys()]
   by_grade_keys.sort()
 
   for key in by_grade_keys:
     grade_str = _grade(key[0], key[1])
+    if grade_str != 'Pass':
+      grade_str += ' in '
     courses = courses_by_grade[key]
     courses.sort(key=lambda c: c.cat_num)
     course_list = []
@@ -348,30 +384,38 @@ def format_rule(rule, rule_key=None):
     source_course_list += f'{grade_str} {andor_list(course_list, "and")}'
 
   # Build the destination part of the rule group
+  #   If any of the destination courses has the BKCR attribute, the credits for that course will be
+  #   whatever is needed to make the credits match the sum of the sending course credits.
   destination_credits = 0.0
+  has_bkcr = False
   discipline = ''
   destination_course_list = ''
   for course in destination_courses:
+    if course.is_bkcr:
+      has_bkcr = True   # Number of credits will be computed to match source credits
+      cat_num_class = ' class="blanket"'
+    else:
+      destination_credits += float(course.transfer_credits)
+      cat_num_class = ''
     course_catalog_number = course.catalog_number
     if discipline != course.discipline:
-      if discipline != '':
+      if destination_course_list != '':
         destination_course_list = destination_course_list.strip('/') + '; '
-      discipline = course.discipline
-      discipline_str = '<span title="{}">{}</span>'.format(course.discipline_name,
-                                                           course.discipline)
+      discipline_str = (f'<span title="{course.discipline_name}">'
+                        f'{course.discipline}</span>')
       destination_course_list = destination_course_list.strip('/ ') + discipline_str + '-'
 
-    # if abs(float(course.min_credits) - course.transfer_credits) > 0.09:
-    #   course_catalog_number += ' ({} cr.)'.format(course.transfer_credits)
-    destination_course_list += \
-        '<span title="course id: {}">{}</span>/'.format(course.course_id, course_catalog_number)
+    destination_course_list += (f'<span title="course id: {course.course_id}"{cat_num_class}>'
+                                f'{course_catalog_number}</span>/')
 
-    destination_credits += float(course.transfer_credits)
-
-  destination_course_list = destination_course_list.strip('/')
+  destination_course_list = destination_course_list.strip('/').replace(';', ' and ')
 
   row_class = 'rule'
-  if destination_credits < min_source_credits or destination_credits > max_source_credits:
+
+  # Credits match if there is BKCR, otherwise, check if in range.
+  if destination_credits < min_source_credits and has_bkcr:
+    destination_credits = min_source_credits
+  elif destination_credits < min_source_credits or destination_credits > max_source_credits:
     row_class += ' credit-mismatch'
 
   if min_source_credits != max_source_credits:

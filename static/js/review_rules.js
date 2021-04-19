@@ -361,7 +361,7 @@ $(function ()
    */
   $('.rule').click(function (event)
   {
-    // clicks in the prior reviews column do not select a rule.
+    // clicks in the prior reviews column do not select a rule for review.
     if (event.target.nodeName === 'A')
     {
       return;
@@ -377,19 +377,23 @@ $(function ()
     //              colon-separated list of destination course IDs.
     //
     const row_id = $(this).attr('id');
-    const review_row = document.getElementById(row_id);
-    let review_cells = [];
-    if (review_row)
-    {
-      review_cells = review_row.children;
-    }
-    const review_row_class = review_row.className
-      .replace(/selected-rule/, '')
-      .replace(/evaluated/, '');
-    const review_row_html = `<tr class="${review_row_class}">
-                                 ${review_cells}
-                               </tr>`;
-    const review_rule_table = `<table>${review_row_html}</table>`;
+    const review_row = document.getElementById(row_id).cloneNode(true); // document.getElementById(row_id);
+    // let review_cells = [];
+    // if (review_row)
+    // {
+    //   review_cells = review_row.children;
+    // }
+    // const review_row_class = review_row.className
+    //   .replace(/selected-rule/, '')
+    //   .replace(/evaluated/, '');
+    // const review_row_html = `<tr class="${review_row_class}">
+    //                              ${review_cells}
+    //                            </tr>`;
+    // const review_rule_table = `<table>${review_row_html}</table>`;
+    review_row.setAttribute('id', '');
+    review_row.setAttribute('class', '');
+    const review_rule_table = document.createElement('table');
+    review_rule_table.appendChild(review_row);
 
     const first_parse = row_id.split('|');
     const rule_key = first_parse[0];
@@ -473,8 +477,11 @@ $(function ()
 
     // Display the review form even if the catalog entries haven't loaded yet
     $('#review-form')
-      .html(
-        dismiss_bar + review_rule_table + source_catalog_div + destination_catalog_div + controls
+      .html(dismiss_bar +
+            review_rule_table.outerHTML +
+            source_catalog_div +
+            destination_catalog_div +
+            controls
       )
       .show()
       .draggable();
