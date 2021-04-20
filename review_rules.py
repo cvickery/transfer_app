@@ -412,12 +412,15 @@ def do_form_1(request, session):
           {'type': 'link',
            'href': '/review_rules',
            'text': 'Change Colleges'}])}
-  <details>
+  <details open>
   <summary>
-    There are {len(source_disciplines) + len(destination_disciplines):,} disciplines where
-    {criterion}.
+    Instructions (click to close)
   </summary>
   <hr>
+  <p>
+    There are {len(source_disciplines) + len(destination_disciplines):,} disciplines where
+    {criterion}.
+  </p>
   <p>
     Disciplines are grouped by CUNY subject area. Hover over abbreviations in the first and last
     columns for full names.
@@ -619,7 +622,7 @@ def do_form_2(request, session):
   if len(selected_rules) == 1:
     num_rules = 'There is one matching transfer rule.'
   if len(selected_rules) > 1:
-    num_rules = 'There are {:,} matching transfer rules.'.format(len(selected_rules))
+    num_rules = f'There are {len(selected_rules):,} matching transfer rules.'
 
   rules_table = format_rules(selected_rules, scrollable=True)
 
