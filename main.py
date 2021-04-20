@@ -39,6 +39,7 @@ from app_header import header
 from top_menu import top_menu
 
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
+from shortcut_to_rules import shortcut_to_rules
 from course_info import _course_info
 
 from flask import Flask, url_for, render_template, make_response,\
@@ -220,6 +221,21 @@ def review_rules():
     session.pop('source_disciplines', None)
     session.pop('destination_disciplines', None)
     return do_form_0(request, session)
+
+
+# QUICK RULES
+# -------------------------------------------------------------------------------------------------
+@app.route('/quick_rules/', methods=['GET', 'POST'])
+def quick_rules():
+  if app_unavailable():
+    return render_template('app_unavailable.html', result=Markup(get_reason()))
+
+  if DEBUG:
+    print(f'{request.method} review_rules')
+
+  return render_template('shortcut_to_rules.html',
+                         result=Markup(shortcut_to_rules(request, session)),
+                         title='Quick Reviews')
 
 
 # PENDING PAGE
