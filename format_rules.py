@@ -116,11 +116,11 @@ def _grade(min_gpa, max_gpa):
     """
   letters = ['F', 'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+']
 
-  assert min_gpa <= max_gpa, f'min_gpa {min_gpa} greater than {max_gpa}'
+  assert min_gpa <= max_gpa, f'{min_gpa=} greater than {max_gpa=}'
 
   # Put gpa values into “canonical form” to deal with creative values found in CUNYfirst.
 
-  # Courses transfer only if the student passed the course, so force the min BIeptable grade
+  # Courses transfer only if the student passed the course, so force the min acceptable grade
   # to be a passing (D-) grade.
   if min_gpa < 1.0:
     min_gpa = 0.7
