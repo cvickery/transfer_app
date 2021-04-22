@@ -414,7 +414,7 @@ def do_form_1(request, session):
            'text': 'Change Colleges'}])}
   <details open>
   <summary>
-    Instructions (click to close)
+    Instructions (click to open/close)
   </summary>
   <hr>
   <p>
@@ -640,7 +640,7 @@ def do_form_2(request, session):
 
            }])}
     <details open>
-      <summary>Instructions (click to close)</summary>
+      <summary>Instructions (click to open/close)</summary>
       <hr>
       {num_rules}
       <p>
