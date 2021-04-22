@@ -47,12 +47,9 @@ from flask import Flask, url_for, render_template, make_response,\
 from flask_session import Session
 import redis
 
-if os.getenv('HEROKU'):
-  redis_url = os.getenv('REDIS_URL')
-else:
-  redis_url = 'redis://localhost'
+redis_url = 'redis://localhost'
 
-# Uppercase variables in this module are treated as configuration keys by config.from_object()
+# Uppercase variables in this module are treated as configuration keys by app.config.from_object()
 SESSION_TYPE = 'redis'
 SESSION_REDIS = redis.from_url(redis_url)
 PERMANENT_SESSION_LIFETIME = timedelta(days=90)
