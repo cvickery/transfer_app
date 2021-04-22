@@ -1,8 +1,12 @@
 #! /usr/local/bin/python3
 """ Generate list of rules to evaluate without need to do so much navigation/selection.
 """
+
+from collections import namedtuple
+
 from app_header import header
 from top_menu import top_menu
+from pgconnection import PgConnection
 
 """
     The idea is to skip the "select disciplines" form by knowing the reviewer's email.
@@ -18,29 +22,104 @@ from top_menu import top_menu
 
     Heuristic: Look at rules where the sending/receiving course is person's discipline instead of
     searching by cuny_subject.
+    Heuristic: Look at rules for courses most-frequently transferred.
 """
+Role = namedtuple('Role', 'role institution organization')
 
 
 def shortcut_to_rules(request, session):
   """ Given a user's email address, see if they are in the person_roles table, and if so generate
       a quick list of rule keys based on some simple additional info.
   """
-  print(f'{session.keys()=}')
-  print(f'{request.form=}')
+  for key in session.keys():
+    print(f'{key}: {session[key]}')
+  print(f'{request.form.get("remember_me")=}')
 
-  # Determine user, other college(s) of interest, and parameters (if_bkcr, if_mesg). Known values
-  # from session pre-populate the form.
-  if 'email' in request.form:
-    email = request.form.get('email')
-    session['email'] = request.form.get('email')
-    session['remember_me'] = request.form.get('remember-me') == 'on'
-    session.permanent = session['remember_me']
+  # session.clear()
 
-  elif 'email' in session:
-    email = session['email']
+  conn = PgConnection()
+  cursor = conn.cursor()
 
-  else:
-    email = None
+  # Determine user
+  email = None
+  email_prompt = 'Your CUNY email address'
+  old_value = ''
+  while email is None:
+    if 'email' in request.form:
+      # Request Form overrides session
+      email = request.form.get('email')
+      if email.lower().endswith('@cuny.edu') or email.lower().endswith('.cuny.edu'):
+        session['email'] = request.form.get('email')
+        session['remember_me'] = request.form.get('remember_me') == 'on'
+        session.permanent = session['remember_me']
+      else:
+        old_value = email
+        email = None
+        email_prompt = 'CUNY email addresses end with “cuny.edu”'
+
+    elif 'email' in session:
+      email = session['email']
+
+    else:
+      old_value = ''
+      email = None
+      email_prompt = 'Your CUNY email address'
+
+    if email:
+      cursor.execute(f"""
+      select name, email from people where email ~* %s or alternate_emails ~* %s
+      """, (email, email))
+      if cursor.rowcount == 1:
+        row = cursor.fetchone()
+        name, email = row.name, row.email
+        # Get roles
+        cursor.execute(f"""
+        select role, institution, organization from person_roles where email ~ %s
+        """, (email, ))
+        if cursor.rowcount == 0:
+          old_value = email
+          email = None
+          email_prompt = (f'No roles available for your email address. Change, or '
+                          '<a href="/review_rules/">Use This Link</a>')
+        else:
+          roles = [Role(row.role, row.institution, row.organization) for row in cursor.fetchall()]
+          print(f'{roles=}')
+      elif cursor.rowcount == 0:
+        # Not a known person
+        old_value = email
+        email = None
+        email_prompt = ''
+      else:
+        # Ambiguous Email
+        email = None
+        email_prompt = 'Fix Ambiguous Email Address'
+
+    if email is None:
+      # Get user’s (fixed) email and come back here with it.
+      email_form = f"""
+        <h1>Your CUNY email address, please.</h1>
+        <fieldset><legend>{email_prompt}</legend>
+          <form method='POST', action='/quick_rules/'>
+            <label for="email">Email</label> <input type="text"
+                                                    id="email"
+                                                    name="email"
+                                                    value="{old_value}"
+                                                    size="30"/>
+            <button type="submit">Submit</button><br>
+            <label for="remember-me">Remember Me</label> <input type="checkbox"
+                                                                name="remember_me"
+                                                                value="{remember_me}"
+                                                                id="remember-me"/>
+          </form>
+        </fieldset
+    """
+      conn.close()
+      return email_form
+
+  roles_str = '<br>'.join([f'{r.role} ({r.institution}:{r.organization})' for r in roles])
+  debug = f'<h2>{name}</h2>{roles_str}'
+
+  # Got email, name, and non-empty list of roles. Get search parameters
 
   result = f"""
   {header(title='Review Rules: Review Selected Rules',
@@ -61,7 +140,10 @@ def shortcut_to_rules(request, session):
       <p>
         There will be instructions
       </p>
+      </details>
+    <p>{debug}</p>
 """
+
   return result
 
   # Generate list of rule_keys
