@@ -378,6 +378,18 @@ $(function ()
     //
     const row_id = $(this).attr('id');
     const review_row = document.getElementById(row_id).cloneNode(true);
+    // let review_cells = [];
+    // if (review_row)
+    // {
+    const review_cells = review_row.children;
+    // }
+    // const review_row_class = review_row.className
+    //   .replace(/selected-rule/, '')
+    //   .replace(/evaluated/, '');
+    // const review_row_html = `<tr class="${review_row_class}">
+    //                              ${review_cells}
+    //                            </tr>`;
+    // const review_rule_table = `<table>${review_row_html}</table>`;
     review_row.setAttribute('id', ''); // Avoid duplicate id attributes on the page
     review_row.setAttribute('class', '');
     const review_rule_table = document.createElement('table');

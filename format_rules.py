@@ -234,7 +234,7 @@ def format_rule_by_key(rule_key):
             sc.offer_count,
             sc.discipline,
             sc.catalog_number,
-            dn.discipline_name
+            dn.discipline_name,
             sc.cuny_subject,
             sc.cat_num,
             sc.min_credits,
@@ -247,7 +247,7 @@ def format_rule_by_key(rule_key):
       and dn.discipline = sc.discipline
     order by discipline, cat_num
     """, (rule.id, rule.source_institution))
-  source_courses = [Source_Course._make(c)for c in cursor.fetchall()]
+  source_courses = [Source_Course._make(c) for c in cursor.fetchall()]
 
   cursor.execute("""
     select  dc.course_id,
@@ -267,7 +267,8 @@ def format_rule_by_key(rule_key):
       and dn.discipline = dc.discipline
     order by discipline, cat_num
     """, (rule.id, rule.destination_institution))
-  destination_courses = [Destination_Course(c) for c in cursor.fetchall()]
+  # 'offer_count', 'discipline', 'catalog_number', 'discipline_name', 'cuny_subject', 'cat_num', 'transfer_credits', 'credit_source', 'is_mesg', and 'is_bkcr'
+  destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
 
   the_rule = Transfer_Rule._make(
       [rule.id,
