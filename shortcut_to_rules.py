@@ -2,10 +2,12 @@
 """ Generate list of rules to evaluate without need to do so much navigation/selection.
 """
 
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from app_header import header
 from top_menu import top_menu
+
+from format_rules import format_rule_by_key
 from pgconnection import PgConnection
 
 """
@@ -25,6 +27,7 @@ from pgconnection import PgConnection
     Heuristic: Look at rules for courses most-frequently transferred.
 """
 Role = namedtuple('Role', 'role institution organization')
+Course = namedtuple('Course', 'course_id offer_nbr discipline catalog_number title is_bkcr is_mesg')
 
 
 def shortcut_to_rules(request, session):
@@ -33,7 +36,7 @@ def shortcut_to_rules(request, session):
   """
   for key in session.keys():
     print(f'{key}: {session[key]}')
-  print(f'{request.form.get("remember_me")=}')
+  remember_me = session['remember_me']
 
   # session.clear()
 
@@ -51,7 +54,7 @@ def shortcut_to_rules(request, session):
       if email.lower().endswith('@cuny.edu') or email.lower().endswith('.cuny.edu'):
         session['email'] = request.form.get('email')
         session['remember_me'] = request.form.get('remember_me') == 'on'
-        session.permanent = session['remember_me']
+        remember_me = session['remember_me']
       else:
         old_value = email
         email = None
@@ -79,20 +82,14 @@ def shortcut_to_rules(request, session):
         if cursor.rowcount == 0:
           old_value = email
           email = None
-          email_prompt = (f'No roles available for your email address. Change, or '
-                          '<a href="/review_rules/">Use This Link</a>')
         else:
           roles = [Role(row.role, row.institution, row.organization) for row in cursor.fetchall()]
           print(f'{roles=}')
-      elif cursor.rowcount == 0:
-        # Not a known person
-        old_value = email
-        email = None
-        email_prompt = ''
       else:
-        # Ambiguous Email
+        # Unrecognized (rowcount = 0) or Ambiguous (rowcount > 1) Email
         email = None
-        email_prompt = 'Fix Ambiguous Email Address'
+        email_prompt = (f'Unrecognized email address. Change it, or '
+                        '<a href="/review_rules/">Use This Link</a>')
 
     if email is None:
       # Get user’s (fixed) email and come back here with it.
@@ -116,13 +113,117 @@ def shortcut_to_rules(request, session):
       conn.close()
       return email_form
 
-  roles_str = '<br>'.join([f'{r.role} ({r.institution}:{r.organization})' for r in roles])
-  debug = f'<h2>{name}</h2>{roles_str}'
+  debug = f'<h2>{name}</h2>'
 
-  # Got email, name, and non-empty list of roles. Get search parameters
+  # Got email, name, and non-empty list of roles. Which rules to review?
+  """ If provost and evaluator ask which role (not yet)
+      If user role includes evaluator
+        Community college: all active sending courses from organization's subjects, ordered by
+        frequency of transfer and BKCR-ness at receiving end. Note missing rules.
+        Senior college: all receiving courses from organization's subjects, ordered by frequency of
+        transfer.
+      If user role includes provost (not yet)
+      Else send to longcut interface
+  """
+  for role in roles:
+    if role.role == 'webmaster':
+      pass
+    elif role.role == 'evaluator':
+      debug += '<p>Hello Evaluator!</p>'
+      cursor.execute(f"""
+      select associates, bachelors from cuny_institutions
+      where code = '{role.institution}'
+      """)
+      assert cursor.rowcount == 1
+      row = cursor.fetchone()
+      is_receiving = row.bachelors
+      is_sending = row.associates
+      cursor.execute(f"""
+      select * from cuny_disciplines
+      where institution = '{role.institution}'
+        and department = '{role.organization}'
+        and status = 'A'
+      """)
+      assert cursor.rowcount > 0
+      disciplines = [row.discipline for row in cursor.fetchall()]
+      debug += f'<p>{is_sending=} {is_receiving=} {disciplines=}</p>'
 
+      # Get all course_ids for all disciplines so we can report missing rules
+      discipline_list = ', '.join(f"'{d}'" for d in disciplines)
+      cursor.execute(f"""
+      select course_id, offer_nbr, discipline, catalog_number, title,
+             designation in ('MLA', 'MNL') as is_mesg,
+             attributes ~ 'BKCR' as is_bkcr
+        from cuny_courses
+       where institution = '{role.institution}'
+         and discipline in ({discipline_list})
+         and course_status = 'A'
+       order by discipline, numeric_part(catalog_number)
+      """)
+      assert cursor.rowcount > 0
+      courses = {r.course_id: Course(r.course_id, r.offer_nbr, r.discipline, r.catalog_number,
+                                     r.title, r.is_bkcr, r.is_mesg)
+                 for r in cursor.fetchall() if is_sending or is_receiving and r.is_bkcr}
+      debug += f'<p>{courses=}</p>'
+
+      # Get counts of how many times each course_id transferred
+      trans_conn = PgConnection('cuny_transfers')
+      trans_cursor = trans_conn.cursor()
+      course_id_list = ','.join(f'{courses[k].course_id}' for k in courses.keys())
+      if is_receiving:
+        trans_cursor.execute(f"""
+        select count(*), dst_course_id as course_id
+          from transfers_applied
+         where dst_course_id in ({course_id_list})
+          group by dst_course_id
+          order by count desc
+        """)
+        cursor.execute(f"""
+        select rule_key(rule_id), array_agg(course_id) as course_ids
+          from transfer_rules r, destination_courses
+         where course_id in ({course_id_list})
+           group by rule_id
+        """)
+      if is_sending:
+        trans_cursor.execute(f"""
+        select count(*), src_course_id as course_id
+          from transfers_applied
+         where src_course_id in ({course_id_list})
+         group by src_course_id
+         order by count desc
+        """)
+        cursor.execute(f"""
+        select rule_key(rule_id), array_agg(course_id) as course_ids
+          from source_courses
+         where course_id in ({course_id_list})
+           group by rule_id
+        """)
+      xfer_course_counts = defaultdict(int)
+      for r in trans_cursor.fetchall():
+        xfer_course_counts[int(r.course_id)] = int(r.count)
+      rule_keys = defaultdict(int)
+      for rule in cursor.fetchall():
+        course_ids = set([int(id) for id in rule.course_ids])
+        for course_id in course_ids:
+          rule_keys[rule.rule_key] = course_id
+
+      debug += f'<p>{xfer_course_counts=}/</p>'
+      debug += f'<p>{rule_keys=}</p>'
+    else:
+      debug += f'<p>{role.role.title()} Role not implmented yet</p>'
+  eval_table = """
+  <table id="eval-table">
+    <tr>
+      <th>Sending<br>College</th><th>Sending<br>Courses</th><th>Credits<br>Transferred</th>
+      <th>Receiving<br>College</th><th>Receiving<br>Courses</th><th>Review<br>Status</th>
+    </tr>
+  """
+  for rule_key in rule_keys.keys():
+    row, text = format_rule_by_key(rule_key)
+    eval_table += row
+  eval_table += '</table>'
   result = f"""
-  {header(title='Review Rules: Review Selected Rules',
+  {header(title='Quick Access To Rules',
           nav_items=[{'type': 'link',
           'href': '/',
           'text': 'Main Menu'},
@@ -138,12 +239,14 @@ def shortcut_to_rules(request, session):
       <summary>Instructions (click to open/close)</summary>
       <hr>
       <p>
-        There will be instructions
+        Here are {len(rule_keys):,} rules where a course transfers as Blanket Credit.
       </p>
       </details>
-    <p>{debug}</p>
-"""
+    {eval_table}
 
+"""
+  cursor.close()
+  trans_cursor.close()
   return result
 
   # Generate list of rule_keys
