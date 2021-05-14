@@ -13,8 +13,8 @@ else:
   PORT = '5000' if os.getenv('DEBUG_PORT') is None else os.getenv('DEBUG_PORT')
   workers = multiprocessing.cpu_count() * 2 + 1
   bind = f'0.0.0.0:{PORT}'
-  accesslog = '/Users/vickery/Transfer_App/Logs/transfer_access.log'
-  errorlog = '/Users/vickery/Transfer_App/Logs/transfer_error.log'
+  accesslog = '/Users/vickery/Projects/transfer_app/Logs/transfer_access.log'
+  errorlog = '/Users/vickery/Projects/transfer_app/Logs/transfer_error.log'
   loglevel = 'DEBUG'
   timeout = 120
 
