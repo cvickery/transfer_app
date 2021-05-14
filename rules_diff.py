@@ -26,7 +26,7 @@ EffectiveDates = namedtuple('EffectiveDates', 'rule_key, effective_date')
 # =================================================================================================
 _archive_dir = os.getenv('ARCHIVE_DIR')
 if _archive_dir is None:
-  _archive_dir = '/Users/vickery/CUNY_Curriculum/rules_archive'
+  _archive_dir = '/Users/vickery/Projects/cuny_curriculum/rules_archive'
 
 # Get available archive sets.
 _archive_files = Path(_archive_dir).glob('*.bz2')
