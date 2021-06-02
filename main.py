@@ -1602,9 +1602,9 @@ def requirements(college=None, type=None, name=None, period=None):
   institution = request.args.get('college')
   b_type = request.args.get('requirement-type')
   b_value = request.args.get('requirement-name')
-  period = request.args.get('period')
-  if period is None:
-    period = 'current'
+  period_range = request.args.get('period-range')
+  if period_range is None:
+    period_range = 'current'
   if institution is None or b_type is None or b_value is None:
     conn = PgConnection()
     cursor = conn.cursor()
@@ -1714,13 +1714,13 @@ def requirements(college=None, type=None, name=None, period=None):
           chronological order), the most-recent catalog year (includes programs or degrees no longer
           being offered), or just the requirements currently in effect?
         </p>
-        <input type="radio" id="period-all" name="period" value="all"/>
+        <input type="radio" id="period-all" name="period-range" value="all"/>
         <label for="period-all">All</label>
 
-        <input type="radio" id="period-recent" name="period" value="latest" checked/>
-        <label for="period-recent">Most-Recent</label>
+        <input type="radio" id="period-latest" name="period-range" value="latest"/>
+        <label for="period-latest">Most-Recent</label>
 
-        <input type="radio" id="period-current" name="period" value="current"/>
+        <input type="radio" id="period-current" name="period-range" value="current" checked/>
         <label for="period-current">Current</label>
         </fieldset>
       <p>
@@ -1746,6 +1746,7 @@ select institution,
        block_type,
        block_value,
        title,
+       period_start,
        period_stop,
        requirement_html,
        header_list,
@@ -1761,16 +1762,16 @@ select institution,
                              result=Markup(f'<h1 class="error">No Requirements Found</h1>'
                                            f'<p>{institution} {b_type} {b_value}</p>'),
                              title='No Requirements')
-    if period == 'latest' or period == 'current':
+    if period_range == 'latest' or period_range == 'current':
       # In these cases, only the first result matters
         first_match = cursor.fetchone()
-        if period == 'current' and first_match.period_stop != '99999999':
+        if period_range == 'current' and first_match.period_stop != '99999999':
           requirements_html = (f'<h1 class="error">“{b_value}” is not a currently offered {b_type} '
                                f'at {institution}.</h1>')
         else:
-          requirements_html = scribe_block_to_html(first_match, period)
+          requirements_html = scribe_block_to_html(first_match, period_range)
     else:
-      requirements_html = '\n'.join([scribe_block_to_html(row, period)
+      requirements_html = '\n'.join([scribe_block_to_html(row, period_range)
                                     for row in cursor.fetchall()])
     conn.close()
 

@@ -3,7 +3,7 @@
 
 window.addEventListener('load', function()
 {
-
+  return;
   // Typing ESC while hovering over a closer toggles between open and closed.
   const details = document.getElementsByTagName('details');
   for (let i = 0; i < details.length; i++)

@@ -51,7 +51,7 @@ const update_values = function ()
 {
   const college = document.querySelector('input[name="college"]:checked').value;
   const block_type = document.getElementById('block-type').value;
-  const period = document.querySelector('[name=period]:checked').value;
+  const period = document.querySelector('[name=period-range]:checked').value;
   was_selected = document.querySelector('[name=requirement-name]').value;
   if (college !== '' && block_type !== '')
   {
