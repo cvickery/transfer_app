@@ -1,5 +1,3 @@
-Parse Degreeworks program descriptions.
-
 Reporting:  blanket credit transfers
             review process progress
 
@@ -17,5 +15,3 @@ When looking at the rules for a map cell:
 In format_rule()
   * Show RDs for cross-listed courses
   * Indicate rules with future effective date
-
-=================================================================================================

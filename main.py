@@ -1173,13 +1173,13 @@ def registered_programs(institution, default=None):
   except (KeyError, ValueError):
     nysed_update_date = 'Date of latest NYSED website access is not available.'
 
-  # See when DegreeWorks requirement_blocks were last updated.
+  # See when Degree Works requirement_blocks were last updated.
   try:
     cursor.execute("select update_date from updates where table_name='requirement_blocks'")
-    dgw_update_date = (f'Program requirements from DegreeWorks were last updated on  '
+    dgw_update_date = (f'Program requirements from Degree Works were last updated on  '
                        f'{date2str(cursor.fetchone().update_date)}.')
   except (KeyError, ValueError):
-    dgw_update_date = 'Date of latest DegreeWorks access is not available.'
+    dgw_update_date = 'Date of latest Degree Works access is not available.'
 
   # Find out what CUNY colleges are in the db
   cursor.execute("""
@@ -1324,7 +1324,7 @@ def registered_programs(institution, default=None):
           The CUNY Programs column shows matching programs from CUNYfirst with the department that
           offers the program in parentheses. (Some programs are shared by multiple departments.)
           “Requirements” links in that column show the program’s requirements as given in
-          DegreeWorks. {dgw_update_date}
+          Degree Works. {dgw_update_date}
         </p>
         <p>
           The rightmost three columns show financial aid eligibility. Hover over the headings for
@@ -1635,17 +1635,17 @@ def requirements(college=None, type=None, name=None, period=None):
   <div class="disclaimer">
     <h1 class="error">Research Project: Work in Progress</h1>
     <p class="error">
-      The DegreeWorks Scribe Blocks available here are not for any use other than research
+      The Degree Works Scribe Blocks available here are not for any use other than research
       into how they might be used outside of the scope of the services already offered by Ellucian.
     </p>
     <p>
-      When DegreeWorks uses these Scribe Blocks, they have to be combined with a student’s academic
-      record and other information maintained in the DegreeWorks system to produce reports such as
+      When Degree Works uses these Scribe Blocks, they have to be combined with a student’s academic
+      record and other information maintained in the Degree Works system to produce reports such as
       degree audits, transfer what-if analyses, and student program plans.
     </p>
     <p>
       The project that led to making these blocks available is an effort to extract program
-      requirements without reference to student academic records or other internal DegreeWorks
+      requirements without reference to student academic records or other internal Degree Works
       information. Open the “Information About This Project” section for more details.
     </p>
     <p>
@@ -1663,7 +1663,7 @@ def requirements(college=None, type=None, name=None, period=None):
     </p>
     <p>
       This page lets you look up the requirements for any degree, major, minor, or concentration at
-      any CUNY college. The information is taken from the DegreeWorks “Scribe Blocks” that are
+      any CUNY college. The information is taken from the Degree Works “Scribe Blocks” that are
       designed to provide information based on individual students’ coursework completed and
       declared or prospective majors, minors, or concentrations.
     </p>
@@ -1678,7 +1678,7 @@ def requirements(college=None, type=None, name=None, period=None):
       development.
     </p>
     <p>
-      Program requirements change over time. DegreeWorks keeps a record of previous program
+      Program requirements change over time. Degree Works keeps a record of previous program
       versions, arranged by “catalog year.” By default only the most recent requirements are shown,
       but you can choose to look at earlier ones as well.
     </p>
@@ -1730,7 +1730,7 @@ def requirements(college=None, type=None, name=None, period=None):
       <button type="submit" id="goforit">Go For It</button>
        </div>
     </form>
-    <p><em>DegreeWorks information used here was last updated on {dgw_date}.</em>
+    <p><em>Degree Works information used here was last updated on {dgw_date}.</em>
     </p>
     """
     return render_template('requirements_form.html',
