@@ -1,0 +1,10 @@
+.inline-discipline {
+  display: inline-block;
+  width: 20%;}
+.inline-college {
+  display: inline-block;
+  width: 10%;
+}
+.selected-course {
+  background-color: #ccc;
+}
