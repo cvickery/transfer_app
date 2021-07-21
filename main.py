@@ -21,26 +21,23 @@ from collections import Counter
 
 from pgconnection import PgConnection
 
+from app_header import header
+from course_info import _course_info
 from course_lookup import lookup_courses, lookup_course
-from sendemail import send_token, send_message
+from course_lookup import course_attribute_rows, course_search
+from course_mappings import course_mappings_impl
+from format_rules import format_rule, format_rules, format_rule_by_key
+from format_rules import Transfer_Rule, Source_Course, Destination_Course, andor_list
+from htmlificization import scribe_block_to_html
+from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from reviews import process_pending
 from rules_diff import diff_rules, archive_dates, available_archive_dates
 from rule_history import rule_history
-from format_rules import format_rule, format_rules, format_rule_by_key, \
-    Transfer_Rule, Source_Course, Destination_Course, andor_list
-from course_lookup import course_attribute_rows, course_search
-
-from htmlificization import scribe_block_to_html
-
+from sendemail import send_token, send_message
+from shortcut_to_rules import shortcut_to_rules
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
-
-from app_header import header
 from top_menu import top_menu
-
-from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
-from shortcut_to_rules import shortcut_to_rules
-from course_info import _course_info
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify, session
@@ -1588,6 +1585,20 @@ def _requirement_values():
       """
 
 
+# /course_mappings route()
+# -------------------------------------------------------------------------------------------------
+@app.route('/course_mappings/', methods=['GET'])
+def course_mappings():
+  """ Display the program(s) for which a course satisfies requirement(s).
+      If the instutition, discipline, or catalog_num is not known, display a form to get them
+      first.
+  """
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
+  return render_template('course_mappings.html', result=Markup(course_mappings_impl(request)))
+
+
 # /requirements route()
 # -------------------------------------------------------------------------------------------------
 @app.route('/requirements/', methods=['GET'])
@@ -1749,8 +1760,7 @@ select institution,
        period_start,
        period_stop,
        requirement_html,
-       header_list,
-       body_list
+       parse_tree
   from requirement_blocks
  where institution = '{institution}'
    and block_type = '{b_type}'
