@@ -25,34 +25,34 @@ conn.close()
 # _format_requirement()
 # -------------------------------------------------------------------------------------------------
 def _format_requirement(req) -> str:
-  """  institution         | text
-       requirement_id      | text
-       requirement_name    | text
-       courses_required    | text
-       course_alternatives | text
-       conjunction         | text
-       credits_required    | text
-       credit_alternatives | text
-       context             | jsonb
+  """  institution          | text
+       requirement_id       | text
+       requirement_name     | text
+       num_ourses_required  | text
+       course_alternatives  | text
+       conjunction          | text
+       num_credits_required | text
+       credit_alternatives  | text
+       context              | jsonb
   """
   req_str = ''
   block_value = block_values[(req.institution, req.requirement_id)]
 
-  if req.courses_required != '0':
+  if req.num_courses_required != '0':
     try:
-      n = int(req.courses_required)
+      n = int(req.num_courses_required)
       suffix = '' if n == 1 else 's'
       req_str = f'{n} course{suffix}'
     except ValueError as ve:
-      req_str = f'{req.courses_required} courses'
-  if req.credits_required != '0':
+      req_str = f'{req.num_courses_required} courses'
+  if req.num_credits_required != '0':
     and_or = f' {req.conjunction.lower()} ' if req_str else ''
     try:
-      n = float(req.credits_required)
+      n = float(req.num_credits_required)
       suffix = '' if n == 1 else 's'
       req_str += f'{and_or}{n:0.1f} credit{suffix}'
     except ValueError as ve:
-      req_str += f'{and_or}{req.credits_required} credits'
+      req_str += f'{and_or}{req.num_credits_required} credits'
 
   alt_str = ''
   if req.course_alternatives != '0':
@@ -91,16 +91,18 @@ def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
   if institution and discipline and course_dict:
     college = college_names[institution]
     catalog_number = course_dict['catalog_number']
+    course_id = int(course_dict['course_id'])
     title = course_dict['title']
     conn = PgConnection()
     cursor = conn.cursor()
-    cursor.execute("""
+    cursor.execute(f"""
     select * from program_requirements
-    where id in (select id from course_program_mappings where course_id = %s)
-    """, (course_dict['course_id'], ))
+     where id in (select program_requirement_id from course_requirement_mappings where course_id = {course_id})
+    """)
+    print(cursor.query)
     suffix = '' if cursor.rowcount == 1 else 's'
-    summary = (f'<summary>{discipline} {catalog_number} Satisfies {cursor.rowcount} '
-               f'requirement{suffix} at {college}</summary>')
+    summary = (f'<summary>{discipline} {catalog_number} ({course_id:06}) Satisfies '
+               f'{cursor.rowcount} requirement{suffix} at {college}</summary>')
     body = """<table>
     <tr>
       <th>Requirement ID</th>
@@ -114,7 +116,7 @@ def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
     body += '</table>'
     return f'<details>{summary}{body}</details>'
   else:
-    return '<p>Provide more information.</p>'
+    return '<p>Select a Course.</p>'
 
 
 # /course_mappings_impl()
@@ -218,7 +220,6 @@ def course_mappings_impl(request):
     course_dict = None
     for row in cursor.fetchall():
       if catalog_number and row.catalog_number == catalog_number:
-        checked_attr = ' checked="checked"'
         selected_course_attr = ' class="selected-course"'
         course_dict = {'course_id': row.course_id,
                        'catalog_number': row.catalog_number,
