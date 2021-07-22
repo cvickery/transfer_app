@@ -1,8 +1,86 @@
 #! /usr/local/bin/python3
 
 import sys
+
 from app_header import header
 from pgconnection import PgConnection
+
+# Dict of CUNY college names
+conn = PgConnection()
+cursor = conn.cursor()
+cursor.execute('select code, name from cuny_institutions')
+college_names = {row.code: row.name for row in cursor.fetchall()}
+
+# Dict of current block_types, keyed by (institution, requirement_id)
+cursor.execute("""
+select institution, requirement_id, block_type, block_value, title
+from requirement_blocks
+where period_stop = '99999999'
+""")
+block_values = {(row.institution, row.requirement_id): row.block_value for row in cursor.fetchall()}
+
+conn.close()
+
+
+# _format_requirement()
+# -------------------------------------------------------------------------------------------------
+def _format_requirement(req) -> str:
+  """  institution         | text
+       requirement_id      | text
+       requirement_name    | text
+       courses_required    | text
+       course_alternatives | text
+       conjunction         | text
+       credits_required    | text
+       credit_alternatives | text
+       context             | jsonb
+  """
+  req_str = ''
+  block_value = block_values[(req.institution, req.requirement_id)]
+
+  if req.courses_required != '0':
+    try:
+      n = int(req.courses_required)
+      suffix = '' if n == 1 else 's'
+      req_str = f'{n} course{suffix}'
+    except ValueError as ve:
+      req_str = f'{req.courses_required} courses'
+  if req.credits_required != '0':
+    and_or = f' {req.conjunction.lower()} ' if req_str else ''
+    try:
+      n = float(req.credits_required)
+      suffix = '' if n == 1 else 's'
+      req_str += f'{and_or}{n:0.1f} credit{suffix}'
+    except ValueError as ve:
+      req_str += f'{and_or}{req.credits_required} credits'
+
+  alt_str = ''
+  if req.course_alternatives != '0':
+    try:
+      n = int(req.course_alternatives)
+      suffix = '' if n == 1 else 's'
+      alt_str = f'{n} course{suffix}'
+    except ValueError as ve:
+      alt_str = f'{req.course_alternatives} courses'
+  if req.credit_alternatives != '0':
+    and_or = '' if alt_str == '' else '; '
+    try:
+      n = float(req.credit_alternatives)
+      suffix = '' if n == 1 else 's'
+      alt_str += f'{and_or}{n:0.1f} credit{suffix}'
+    except ValueError as ve:
+      alt_str += f'{and_or}{req.credit_alternatives} credits'
+  if alt_str == '':
+    alt_str = 'None'
+  return f"""
+<tr>
+  <td>{req.requirement_id}</td>
+  <td>{block_value}</td>
+  <td>{req.requirement_name}</td>
+  <td>{req_str}</td>
+  <td>{alt_str}</td>
+  <td>{req.context}</td>
+</tr>"""
 
 
 # _to_html()
@@ -11,27 +89,29 @@ def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
   """
   """
   if institution and discipline and course_dict:
+    college = college_names[institution]
     catalog_number = course_dict['catalog_number']
     title = course_dict['title']
-    summary = f'<summary>{institution} {discipline} {catalog_number} <em>{title}</em></summary>'
     conn = PgConnection()
-    course_cursor = conn.cursor()
-    requirement_cursor = conn.cursor()
-    course_cursor.execute("""
-    select * from course_program_mappings
-    where course_id = %s
+    cursor = conn.cursor()
+    cursor.execute("""
+    select * from program_requirements
+    where id in (select id from course_program_mappings where course_id = %s)
     """, (course_dict['course_id'], ))
-    print(course_cursor.query, file=sys.stderr)
-    body = ''
-    for row in course_cursor.fetchall():
-      print(row, file=sys.stderr)
-      program_requirement_id = int(row.program_requirement_id)
-      requirement_cursor.execute(f"""
-      select *
-        from program_requirements
-       where id = {program_requirement_id}
-      """)
-      body = '\n'.join([f'<p>{row}</p>' for row in requirement_cursor.fetchall()])
+    suffix = '' if cursor.rowcount == 1 else 's'
+    summary = (f'<summary>{discipline} {catalog_number} Satisfies {cursor.rowcount} '
+               f'requirement{suffix} at {college}</summary>')
+    body = """<table>
+    <tr>
+      <th>Requirement ID</th>
+      <th>Program</th>
+      <th>Requirement Name</th>
+      <th>Requirement</th>
+      <th>Alternatives</th>
+      <th>Context</th>
+    </tr>"""
+    body += '\n'.join([_format_requirement(row) for row in cursor.fetchall()])
+    body += '</table>'
     return f'<details>{summary}{body}</details>'
   else:
     return '<p>Provide more information.</p>'

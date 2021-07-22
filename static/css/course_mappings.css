@@ -8,3 +8,11 @@
 .selected-course {
   background-color: #ccc;
 }
+
+table {
+  border-collapse: collapse;
+}
+td, th {
+  border:  1px solid #ccc;
+  padding: 0.5em;
+}
