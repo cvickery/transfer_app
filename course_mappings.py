@@ -2,6 +2,8 @@
 
 import sys
 
+from collections import namedtuple
+
 from app_header import header
 from pgconnection import PgConnection
 
@@ -11,14 +13,19 @@ cursor = conn.cursor()
 cursor.execute('select code, name from cuny_institutions')
 college_names = {row.code: row.name for row in cursor.fetchall()}
 
-# Dict of current block_types, keyed by (institution, requirement_id)
+# Dict for identifying programs, keyed by (institution, requirement_id)
+ProgramInfo = namedtuple('ProgramInfo', 'block_type block_value query_string')
 cursor.execute("""
 select institution, requirement_id, block_type, block_value, title
 from requirement_blocks
 where period_stop = '99999999'
 """)
-block_values = {(row.institution, row.requirement_id): row.block_value for row in cursor.fetchall()}
-
+program_dict = {(row.institution, row.requirement_id):
+                ProgramInfo._make([row.block_type,
+                                   row.block_value,
+                                   f'college={row.institution}&requirement-type={row.block_type}&'
+                                   f'requirement-name={row.block_value}&period-range=current'])
+                for row in cursor.fetchall()}
 conn.close()
 
 
@@ -36,7 +43,7 @@ def _format_requirement(req) -> str:
        context              | jsonb
   """
   req_str = ''
-  block_value = block_values[(req.institution, req.requirement_id)]
+  program_info = program_dict[(req.institution, req.requirement_id)]
 
   if req.num_courses_required != '0':
     try:
@@ -75,7 +82,10 @@ def _format_requirement(req) -> str:
   return f"""
 <tr>
   <td>{req.requirement_id}</td>
-  <td>{block_value}</td>
+  <td>
+    <a href="/requirements/?{program_info.query_string}" target="_blank">
+      {program_info.block_type}: {program_info.block_value}</a>
+  </td>
   <td>{req.requirement_name}</td>
   <td>{req_str}</td>
   <td>{alt_str}</td>

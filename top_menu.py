@@ -76,7 +76,7 @@ def top_menu(msg=''):
     <dt><a href="/course_mappings">Course Mappings</a></dt>
     <dd>
       <p>
-        Still under development, but this feature will.does show what requirements a course
+        Still under development, but this feature will/does show what requirements a course
         satisfies. Includes Major, Minor, and Concentration requirements, but not GenEd or Degree
         requirements.
       </p>
