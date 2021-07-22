@@ -123,12 +123,13 @@ def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
 # -------------------------------------------------------------------------------------------------
 def course_mappings_impl(request):
   """ Return a view of the program requirements a course satisfies.
-      If the instutition, discipline, or catalog_num are not known, return a form to get them
+      If the instutition, discipline, or course_dict are not known, return a form to get them
       instead.
   """
   institution = request.args.get('college')
   discipline = request.args.get('discipline')
   catalog_number = request.args.get('catalog-number')
+  course_dict = None
   header_str = header(title='Requirements by Course',
                       nav_items=[{'type': 'link',
                                           'text': 'Main Menu',
@@ -217,7 +218,6 @@ def course_mappings_impl(request):
        and course_status = 'A'
      order by numeric_part(catalog_number)
     """, (institution, discipline))
-    course_dict = None
     for row in cursor.fetchall():
       if catalog_number and row.catalog_number == catalog_number:
         selected_course_attr = ' class="selected-course"'

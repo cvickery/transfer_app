@@ -73,6 +73,15 @@ def top_menu(msg=''):
   <h1>Menu</h1><hr>
   <dl id="menu-list">
 
+    <dt><a href="/course_mappings">Course Mappings</a></dt>
+    <dd>
+      <p>
+        Still under development, but this feature will.does show what requirements a course
+        satisfies. Includes Major, Minor, and Concentration requirements, but not GenEd or Degree
+        requirements.
+      </p>
+    </dd>
+
     <dt><a href="/map_courses">Course Transfer Maps</a></dt>
     <dd>
      <p>
