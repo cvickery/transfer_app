@@ -165,6 +165,22 @@ def course_mappings_impl(request):
                                   'href': '/registered_programs'
                                   }])
   result = f'{header_str}'
+  result += """
+  <h1>Explore the Course-to-Requirements Database</h1>
+  <div class="instructions">
+    <p>
+      Select a course, to see what program requirements it satisfies. Programs include all Majors,
+      Minors, and Concentrations currently offered at the selected college.
+    </p>
+    <p>
+      Requirements are extracted from Degree Works Scribe Blocks.
+    </p>
+    <p class="error">This project is still under development. Please report errors and feature
+      requests to <a href="mailto:cvickery@qc.cuny.edu?subject='Program Requirements'">Christopher
+      Vickery</a>
+    </p>
+  </div>
+  """
   conn = PgConnection()
   cursor = conn.cursor()
 
@@ -178,8 +194,9 @@ def course_mappings_impl(request):
   if len(colleges_indexed):
     college_choices += """
   <p>
-    The numbers tell how many majors / minors / concentrations have been indexed for each college.
-    Missing colleges are not currently indexed.
+    The numbers tell how many (majors / minors / concentrations) have been indexed for each college.
+    During development, not all colleges are being indexed. If a college is not listed here it means
+    it is not currently indexed.
   </p>
   """
   else:
