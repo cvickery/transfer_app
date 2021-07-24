@@ -2,7 +2,7 @@
 
 import sys
 
-from collections import namedtuple
+from collections import namedtuple,defaultdict
 
 from app_header import header
 from pgconnection import PgConnection
@@ -26,6 +26,21 @@ program_dict = {(row.institution, row.requirement_id):
                                    f'college={row.institution}&requirement-type={row.block_type}&'
                                    f'requirement-name={row.block_value}&period-range=current'])
                 for row in cursor.fetchall()}
+
+# Indexing Status
+colleges_indexed = defaultdict(dict)
+cursor.execute("""
+  select count(*), institution, block_type
+    from requirement_blocks
+  where (institution, requirement_id) in
+    (select institution, requirement_id
+       from program_requirements
+      group by institution, requirement_id)
+  group by institution, block_type;
+  """)
+for row in cursor.fetchall():
+  colleges_indexed[row.institution][row.block_type] = row.count
+
 conn.close()
 
 
@@ -159,20 +174,37 @@ def course_mappings_impl(request):
     college_choices = f'<details><summary>Select College ({institution})</summary>'
   else:
     college_choices = f'<details open="open"><summary>Select College</summary>'
-  for row in cursor.fetchall():
-    if row.code == institution:
-      checked_attr = ' checked="checked"'
-    else:
-      checked_attr = ''
-    college_choices += f"""
-    <div class="inline-college">
-      <input id="radio-{row.code}"
-             type="radio" {checked_attr}
-             name="college"
-             value="{row.code}" />
-      <label for="radio-{row.code}">{row.prompt}</label>
-    </div>
-    """
+
+  if len(colleges_indexed):
+    college_choices += """
+  <p>
+    The numbers tell how many majors / minors / concentrations have been indexed for each college.
+    Missing colleges are not currently indexed.
+  </p>
+  """
+  else:
+    college_choices += 'No colleges have been indexed right now.'
+
+  for college, counts in colleges_indexed.items():
+    print(counts)
+    num_majors = counts['MAJOR']
+    num_minors = counts['MINOR']
+    num_concs = counts['CONC']
+    if num_majors + num_minors + num_concs > 0:
+      if college == institution:
+        checked_attr = ' checked="checked"'
+      else:
+        checked_attr = ''
+      college_choices += f"""
+      <div class="inline-college">
+        <input id="radio-{college}"
+               type="radio" {checked_attr}
+               name="college"
+               value="{college}" />
+        <label for="radio-{college}">{college_names[college]}</label>
+        <span>({num_majors} / {num_minors} / {num_concs})</span>
+      </div>
+      """
   college_choices += '</details>'
 
   # If there is an institution, display all disciplines
