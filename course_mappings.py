@@ -64,7 +64,7 @@ def _format_requirement(req) -> str:
     try:
       n = int(req.num_courses_required)
       suffix = '' if n == 1 else 's'
-      req_str = f'{n} course{suffix}'
+      req_str = f'{n:,} course{suffix}'
     except ValueError as ve:
       req_str = f'{req.num_courses_required} courses'
   if req.num_credits_required != '0':
@@ -72,7 +72,7 @@ def _format_requirement(req) -> str:
     try:
       n = float(req.num_credits_required)
       suffix = '' if n == 1 else 's'
-      req_str += f'{and_or}{n:0.1f} credit{suffix}'
+      req_str += f'{and_or}{n:0.1f,} credit{suffix}'
     except ValueError as ve:
       req_str += f'{and_or}{req.num_credits_required} credits'
 
@@ -81,7 +81,7 @@ def _format_requirement(req) -> str:
     try:
       n = int(req.course_alternatives)
       suffix = '' if n == 1 else 's'
-      alt_str = f'{n} course{suffix}'
+      alt_str = f'{n:,} course{suffix}'
     except ValueError as ve:
       alt_str = f'{req.course_alternatives} courses'
   if req.credit_alternatives != '0':
@@ -89,11 +89,17 @@ def _format_requirement(req) -> str:
     try:
       n = float(req.credit_alternatives)
       suffix = '' if n == 1 else 's'
-      alt_str += f'{and_or}{n:0.1f} credit{suffix}'
+      alt_str += f'{and_or}{n:0.1f,} credit{suffix}'
     except ValueError as ve:
       alt_str += f'{and_or}{req.credit_alternatives} credits'
   if alt_str == '':
     alt_str = 'None'
+
+  if req.context:
+    ctx_str = ' => '.join(req.context)
+  else:
+    ctx_str = ''
+
   return f"""
 <tr>
   <td>{req.requirement_id}</td>
@@ -104,7 +110,7 @@ def _format_requirement(req) -> str:
   <td>{req.requirement_name}</td>
   <td>{req_str}</td>
   <td>{alt_str}</td>
-  <td>{req.context}</td>
+  <td>{ctx_str}</td>
 </tr>"""
 
 
@@ -124,7 +130,6 @@ def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
     select * from program_requirements
      where id in (select program_requirement_id from course_requirement_mappings where course_id = {course_id})
     """)
-    print(cursor.query)
     suffix = '' if cursor.rowcount == 1 else 's'
     summary = (f'<summary>{discipline} {catalog_number} ({course_id:06}) Satisfies '
                f'{cursor.rowcount} requirement{suffix} at {college}</summary>')
@@ -190,7 +195,6 @@ def course_mappings_impl(request):
     college_choices = f'<details><summary>Select College ({institution})</summary>'
   else:
     college_choices = f'<details open="open"><summary>Select College</summary>'
-
   if len(colleges_indexed):
     college_choices += """
   <p>
@@ -202,27 +206,28 @@ def course_mappings_impl(request):
   else:
     college_choices += 'No colleges have been indexed right now.'
 
+  college_choices += '<div class="selections">'
   for college, counts in colleges_indexed.items():
-    print(counts)
     num_majors = counts['MAJOR']
     num_minors = counts['MINOR']
     num_concs = counts['CONC']
     if num_majors + num_minors + num_concs > 0:
       if college == institution:
-        checked_attr = ' checked="checked"'
+        selected_item = ' class="selected-item"'
+        checked_attr = 'checked="checked"'
       else:
-        checked_attr = ''
+        selected_item = checked_attr = ''
       college_choices += f"""
-      <div class="inline-college">
-        <input id="radio-{college}"
-               type="radio" {checked_attr}
+      <div class="radio-container">
+        <input id="radio-{college}" {checked_attr}
+               type="radio"
                name="college"
                value="{college}" />
-        <label for="radio-{college}">{college_names[college]}</label>
-        <span>({num_majors} / {num_minors} / {num_concs})</span>
+        <label{selected_item} for="radio-{college}">{college_names[college]}<br/>
+        <span>({num_majors} / {num_minors} / {num_concs})</span></label>
       </div>
       """
-  college_choices += '</details>'
+  college_choices += '</div></details>'
 
   # If there is an institution, display all disciplines
   if institution:
@@ -231,6 +236,8 @@ def course_mappings_impl(request):
       discipline_choices = f'<details><summary>Select Discipline ({discipline})</summary>'
     else:
       discipline_choices = f'<details open="open"><summary>Select Discipline</summary>'
+    discipline_choices += '<div class="selections">'
+
     cursor.execute("""
     select discipline, discipline_name, department
       from cuny_disciplines
@@ -240,19 +247,22 @@ def course_mappings_impl(request):
      """, (institution,))
     for row in cursor.fetchall():
       if discipline and discipline.lower() == row.discipline.lower():
-        checked_attr = ' checked="checked"'
+        selected_item = ' class="selected-item"'
+        checked_attr = 'checked="checked"'
       else:
-        checked_attr = ''
+        selected_item = checked_attr = ''
       discipline_choices += f"""
-      <div class="inline-discipline">
-        <input id="radio-{row.discipline}"
-               type="radio" {checked_attr}
+      <div class="radio-container">
+        <input id="radio-{row.discipline}" {checked_attr}
+               type="radio"
                name="discipline"
                value="{row.discipline}" />
-        <label for="radio-{row.discipline}">{row.discipline} ({row.discipline_name})</label>
+        <label{selected_item} for="radio-{row.discipline}">
+          {row.discipline} ({row.discipline_name})
+        </label>
       </div>
     """
-    discipline_choices += '</details>'
+    discipline_choices += '</div></details>'
   else:
     submit_prompt = 'Select a College'
     discipline_choices = ''
@@ -299,6 +309,7 @@ def course_mappings_impl(request):
       </div>
       """
     catalog_choices += '</details>'
+
   else:
     submit_prompt = 'Select a discipline or a different college'
     catalog_choices = ''
@@ -322,8 +333,8 @@ def course_mappings_impl(request):
       {catalog_choices}
     </div>
 
-    <div id="goforit">
-      <button type="submit">{submit_prompt}</button>
+    <div>
+      <button type="submit" id="goforit">{submit_prompt}</button>
     </div>
 
     <div id="course-mapping">

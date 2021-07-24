@@ -1,11 +1,29 @@
-.inline-discipline {
-  display: inline-block;
-  width: 20%;}
-.inline-college {
-  display: inline-block;
-  width: 10%;
+.selections {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
 }
-.selected-course {
+
+.radio-container {
+  display: grid;
+  grid-template-rows: 2;
+  grid-template-columns: 1;
+}
+.radio-container input {
+ display: none;
+ }
+
+.radio-container label {
+  padding: 0.25em;
+  border:  1px solid #ccc;
+  border-radius:  0.15em;
+  grid-row: 1 / 3;
+}
+.radio-container  span {
+  font-size: 0.8em;
+}
+
+.selected-item {
+  font-weight: bold;
   background-color: #ccc;
 }
 

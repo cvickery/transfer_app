@@ -73,12 +73,16 @@ def top_menu(msg=''):
   <h1>Menu</h1><hr>
   <dl id="menu-list">
 
-    <dt><a href="/course_mappings">Course Mappings</a></dt>
+    <dt><a href="/course_mappings">What Requirements Can a Course Satisfy?</a></dt>
     <dd>
       <p>
-        Still under development, but this feature will/does show what requirements a course
-        satisfies. Includes Major, Minor, and Concentration requirements, but not GenEd or Degree
-        requirements.
+        <em>This feature is still under active development: please let me know what problems you see
+        or features you‘d like to see.</em>
+      </p>
+      <p>
+        Select a course to see what program requirements it satisfies. Programs include all
+        currently-active Majors, Minors, and Concentrations as defined in Degree Works “Scribe
+        Blocks.”
       </p>
     </dd>
 
