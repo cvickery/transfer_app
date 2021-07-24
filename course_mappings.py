@@ -287,6 +287,8 @@ def course_mappings_impl(request):
        and course_status = 'A'
      order by numeric_part(catalog_number)
     """, (institution, discipline))
+    if cursor.rowcount == 0:
+      catalog_choices += f'<p class="error">No Courses Found</p>'
     for row in cursor.fetchall():
       if catalog_number and row.catalog_number == catalog_number:
         selected_course_attr = ' class="selected-course"'
@@ -316,7 +318,10 @@ def course_mappings_impl(request):
 
   conn.close()
 
-  course_mapping_html = _to_html(institution, discipline, course_dict)
+  if course_dict:
+    course_mapping_html = _to_html(institution, discipline, course_dict)
+  else:
+    course_mapping_html = '<p class="error">No Requirements Found</p>'
 
   result += f"""
   <form method="GET" action="/course_mappings">
