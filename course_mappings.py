@@ -128,8 +128,11 @@ def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
     cursor = conn.cursor()
     cursor.execute(f"""
     select * from program_requirements
-     where id in (select program_requirement_id from course_requirement_mappings where course_id = {course_id})
+     where id in (select program_requirement_id
+                    from course_requirement_mappings
+                   where course_id = {course_id})
     """)
+
     suffix = '' if cursor.rowcount == 1 else 's'
     summary = (f'<summary>{discipline} {catalog_number} ({course_id:06}) Satisfies '
                f'{cursor.rowcount} requirement{suffix} at {college}</summary>')
@@ -141,6 +144,7 @@ def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
       <th>Requirement</th>
       <th>Alternatives</th>
       <th>Context</th>
+      <th>Qualifiers</th>
     </tr>"""
     body += '\n'.join([_format_requirement(row) for row in cursor.fetchall()])
     body += '</table>'
