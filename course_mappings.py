@@ -56,6 +56,7 @@ def _format_requirement(req) -> str:
        num_credits_required | text
        credit_alternatives  | text
        context              | jsonb
+       qualifiers           | jsonb
   """
   req_str = ''
   program_info = program_dict[(req.institution, req.requirement_id)]
@@ -96,9 +97,14 @@ def _format_requirement(req) -> str:
     alt_str = 'None'
 
   if req.context:
-    ctx_str = ' => '.join(req.context)
+    ctx_str = ' • ' + '<br> • '.join(req.context)
   else:
     ctx_str = ''
+
+  if req.qualifiers:
+    qual_str = ' • ' + '<br/>'.join(req.qualifiers)
+  else:
+    qual_str = ''
 
   return f"""
 <tr>
@@ -111,6 +117,7 @@ def _format_requirement(req) -> str:
   <td>{req_str}</td>
   <td>{alt_str}</td>
   <td>{ctx_str}</td>
+  <td>{qual_str}</td>
 </tr>"""
 
 
