@@ -171,6 +171,15 @@ def course_mappings_impl(request):
   discipline = request.args.get('discipline')
   catalog_number = request.args.get('catalog-number')
   course_dict = None
+  show_majors = request.args.get('show-majors')
+  show_minors = request.args.get('show-minors')
+  show_concs = request.args.get('show-concs')
+  if show_majors == 'majors':
+    show_majors = ' checked="checked'
+  if show_minors == 'minors':
+    show_minors = ' checked="checked'
+  if show_concs == 'concs':
+    show_concs = ' checked="checked'
   header_str = header(title='Requirements by Course',
                       nav_items=[{'type': 'link',
                                           'text': 'Main Menu',
@@ -336,6 +345,34 @@ def course_mappings_impl(request):
 
   result += f"""
   <form method="GET" action="/course_mappings">
+
+    <div class="instructions">
+      <p>
+        There can be a lot of “clutter” in what gets displayed here. You can use the checkboxes
+        below to limit which types of requirements you are interested in.
+      </p>
+      <div>
+        <div class="inline">
+          <input type="checkbox" id="show-majors" name="show-majors" value="majors"{show_majors}/>
+          <label for="show-majors">Majors</label>
+        </div>
+        <div class="inline">
+          <input type="checkbox" id="show-minors" name="show-minors" value="minors"{show_minors}/>
+          <label for="show-minors">Minors</label>
+        </div>
+        <div class="inline">
+          <input type="checkbox" id="show-concs" name="show-concs" value="concs"{show_concs}/>
+          <label for="show-concs">Concentrations</label>
+        </div>
+      </div>
+      <hr>
+      <p>
+        Another potential source of clutter is requirements that can be satisified by a large number
+        of courses. You an use the slider below to filter out requirements based on how many courses
+        can satisfy them.
+      </p>
+      <input id="slider" type="range" min="0" max="7" step="1.0"/> <span>all</span>
+    </div>
 
     <div id="select-institution">
       {college_choices}
