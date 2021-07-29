@@ -123,7 +123,8 @@ def _format_requirement(req) -> str:
 
 # _to_html()
 # -------------------------------------------------------------------------------------------------
-def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
+def _to_html(institution: str, discipline: str, course_dict: dict, program_types,
+             count_limit) -> str:
   """
   """
   if institution and discipline and course_dict:
@@ -134,12 +135,15 @@ def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
     conn = PgConnection()
     cursor = conn.cursor()
     cursor.execute(f"""
-    select * from program_requirements
-     where id in (select program_requirement_id
-                    from course_requirement_mappings
-                   where course_id = {course_id})
+    select r.*, b.block_type
+      from program_requirements r, requirement_blocks b
+     where r.id in (select program_requirement_id
+                      from course_requirement_mappings
+                     where course_id = {course_id})
+       and b.institution = '{institution}'
+       and b.requirement_id = r.requirement_id
     """)
-
+    print(cursor.query)
     suffix = '' if cursor.rowcount == 1 else 's'
     summary = (f'<summary>{discipline} {catalog_number} ({course_id:06}) Satisfies '
                f'{cursor.rowcount} requirement{suffix} at {college}</summary>')
@@ -153,9 +157,37 @@ def _to_html(institution: str, discipline: str, course_dict: dict) -> str:
       <th>Context</th>
       <th>Qualifiers</th>
     </tr>"""
-    body += '\n'.join([_format_requirement(row) for row in cursor.fetchall()])
+    skipped_majors = skipped_minors = skipped_concentrations = skipped_limit = 0
+    for row in cursor.fetchall():
+      if row.block_type in program_types and int(row.course_alternatives) <= count_limit:
+        body += _format_requirement(row)
+      else:
+        if row.block_type == 'MAJOR':
+          skipped_majors += 1
+        if row.block_type == 'MINOR':
+          skipped_minors += 1
+        if row.block_type == 'CONC':
+          skipped_concentrations += 1
+        if int(row.course_alternatives) > count_limit:
+          skipped_limit += 1
+
     body += '</table>'
+    if (skipped_majors + skipped_minors + skipped_concentrations + skipped_limit) > 0:
+      maj_sfx = '' if skipped_majors == 1 else 's'
+      min_sfx = '' if skipped_minors == 1 else 's'
+      conc_sfx = '' if skipped_concentrations == 1 else 's'
+      lim_sfx = '' if count_limit == 1 else 's'
+      body += f"""
+    <p>
+    Skipped {skipped_majors} major requirement{maj_sfx}; {skipped_minors} minor
+    requirement{min_sfx}; {skipped_concentrations} concentration requirement{conc_sfx}"""
+    if count_limit < 999999:
+      body += (f'; {skipped_limit} requirements with more than {count_limit} course '
+               f'alternative{lim_sfx}.')
+    body += '</p>'
+
     return f'<details>{summary}{body}</details>'
+
   else:
     return '<p>Select a Course.</p>'
 
@@ -174,12 +206,21 @@ def course_mappings_impl(request):
   show_majors = request.args.get('show-majors')
   show_minors = request.args.get('show-minors')
   show_concs = request.args.get('show-concs')
+  program_types = []
   if show_majors == 'majors':
+    program_types.append('MAJOR')
     show_majors = ' checked="checked'
   if show_minors == 'minors':
+    program_types.append('MINOR')
     show_minors = ' checked="checked'
   if show_concs == 'concs':
+    program_types.append('CONC')
     show_concs = ' checked="checked'
+  if len(program_types) == 0:
+    program_types = ['MAJOR', 'MINOR', 'CONC']
+
+  count_limit = [1, 2, 5, 10, 20, 50, 100, 999999][int(request.args.get('count-limit'))]
+
   header_str = header(title='Requirements by Course',
                       nav_items=[{'type': 'link',
                                           'text': 'Main Menu',
@@ -339,7 +380,7 @@ def course_mappings_impl(request):
   conn.close()
 
   if course_dict:
-    course_mapping_html = _to_html(institution, discipline, course_dict)
+    course_mapping_html = _to_html(institution, discipline, course_dict, program_types, count_limit)
   else:
     course_mapping_html = '<p class="error">No Requirements Found</p>'
 
@@ -349,7 +390,7 @@ def course_mappings_impl(request):
     <div class="instructions">
       <p>
         There can be a lot of “clutter” in what gets displayed here. You can use the checkboxes
-        below to limit which types of requirements you are interested in.
+        below to include only the types of requirements you are interested in.
       </p>
       <div>
         <div class="inline">
@@ -371,7 +412,8 @@ def course_mappings_impl(request):
         of courses. You an use the slider below to filter out requirements based on how many courses
         can satisfy them.
       </p>
-      <input id="slider" type="range" min="0" max="7" step="1.0"/> <span>all</span>
+      <input id="slider"
+             name="count-limit" type="range" min="0" max="7" step="1.0"/> <span>all</span>
     </div>
 
     <div id="select-institution">
