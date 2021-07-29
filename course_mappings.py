@@ -162,31 +162,32 @@ def _to_html(institution: str, discipline: str, course_dict: dict, program_types
       if row.block_type in program_types and int(row.course_alternatives) <= count_limit:
         body += _format_requirement(row)
       else:
-        if row.block_type == 'MAJOR':
-          skipped_majors += 1
-        if row.block_type == 'MINOR':
-          skipped_minors += 1
-        if row.block_type == 'CONC':
-          skipped_concentrations += 1
         if int(row.course_alternatives) > count_limit:
           skipped_limit += 1
+        else:
+          # Count others only if not already skipped by the alternatives limit
+          if row.block_type == 'MAJOR':
+            skipped_majors += 1
+          if row.block_type == 'MINOR':
+            skipped_minors += 1
+          if row.block_type == 'CONC':
+            skipped_concentrations += 1
 
     body += '</table>'
     if (skipped_majors + skipped_minors + skipped_concentrations + skipped_limit) > 0:
-      maj_sfx = '' if skipped_majors == 1 else 's'
-      min_sfx = '' if skipped_minors == 1 else 's'
-      conc_sfx = '' if skipped_concentrations == 1 else 's'
-      lim_sfx = '' if count_limit == 1 else 's'
-      body += f"""
-    <p>
-    Skipped {skipped_majors} major requirement{maj_sfx}; {skipped_minors} minor
-    requirement{min_sfx}; {skipped_concentrations} concentration requirement{conc_sfx}"""
-    if count_limit < 999999:
-      body += (f'; {skipped_limit} requirements with more than {count_limit} course '
-               f'alternative{lim_sfx}.')
-    body += '</p>'
+      if count_limit < 999999:
+        suffix = '' if count_limit == 1 else 's'
+        body += (f'<p>Skipped {skipped_limit} requirements with more than {count_limit} course '
+                 f'alternative{suffix}.</p>')
+      situations = {'major': (skipped_majors, '' if skipped_majors == 1 else 's'),
+                    'minor': (skipped_minors, '' if skipped_minors == 1 else 's'),
+                    'concentration': (skipped_concentrations,
+                                      '' if skipped_concentrations == 1 else 's')}
+      for situation in situations.keys():
+        if situations[situation][0]:  # number skipped
+          body += f'<p>Skipped {situations[situation][0]} {situation}{situations[situation][1]}</p>'
 
-    return f'<details>{summary}{body}</details>'
+    return f'<details open="open">{summary}{body}</details>'
 
   else:
     return '<p>Select a Course.</p>'
@@ -220,9 +221,15 @@ def course_mappings_impl(request):
     program_types = ['MAJOR', 'MINOR', 'CONC']
 
   try:
-    count_limit = [1, 2, 5, 10, 20, 50, 100, 999999][int(request.args.get('count-limit'))]
+    range_index = int(request.args.get('count-limit'))
+    count_limit = [1, 2, 5, 10, 20, 50, 100, 999999][range_index]
   except TypeError as te:
+    range_index = 7
     count_limit = 999999
+  if count_limit > 100:
+    range_string = 'all'
+  else:
+    range_string = f'{count_limit}'
 
   header_str = header(title='Requirements by Course',
                       nav_items=[{'type': 'link',
@@ -273,9 +280,9 @@ def course_mappings_impl(request):
   college_choices += '<div class="selections">'
   for college, counts in colleges_indexed.items():
     num_majors = num_minors = num_conc = 0
-    if 'MAJORS' in counts.keys():
+    if 'MAJOR' in counts.keys():
       num_majors = counts['MAJOR']
-    if 'MINORS' in counts.keys():
+    if 'MINOR' in counts.keys():
       num_minors = counts['MINOR']
     if 'CONC' in counts.keys():
       num_concs = counts['CONC']
@@ -420,7 +427,8 @@ def course_mappings_impl(request):
         can satisfy them.
       </p>
       <input id="slider"
-             name="count-limit" type="range" min="0" max="7" step="1.0"/> <span>all</span>
+             name="count-limit" type="range" min="0" max="7" step="1.0" value="{range_index}"/>
+             <span>{range_string}</span>
     </div>
 
     <div id="select-institution">
