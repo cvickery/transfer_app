@@ -187,10 +187,10 @@ def _to_html(institution: str, discipline: str, course_dict: dict, program_types
         if situations[situation][0]:  # number skipped
           body += f'<p>Skipped {situations[situation][0]} {situation}{situations[situation][1]}</p>'
 
-    return f'<details open="open">{summary}{body}</details>'
+    return f'<details open="open">{summary}<hr>{body}</details>'
 
   else:
-    return '<p>Select a Course.</p>'
+    return '<p>Select a course to continue.</p>'
 
 
 # /course_mappings_impl()
@@ -263,9 +263,9 @@ def course_mappings_impl(request):
   # Look up all colleges; preselect one if known.
   cursor.execute('select code, prompt from cuny_institutions')
   if institution:
-    college_choices = f'<details><summary>Select College ({institution})</summary>'
+    college_choices = f'<details><summary>Select College ({institution})</summary><hr>'
   else:
-    college_choices = f'<details open="open"><summary>Select College</summary>'
+    college_choices = f'<details open="open"><summary>Select College</summary><hr>'
   if len(colleges_indexed):
     college_choices += """
   <p>
@@ -308,9 +308,9 @@ def course_mappings_impl(request):
   if institution:
     submit_prompt = 'Select a discipline or a different college'
     if discipline:
-      discipline_choices = f'<details><summary>Select Discipline ({discipline})</summary>'
+      discipline_choices = f'<details><summary>Select Discipline ({discipline})</summary><hr>'
     else:
-      discipline_choices = f'<details open="open"><summary>Select Discipline</summary>'
+      discipline_choices = f'<details open="open"><summary>Select Discipline</summary><hr>'
     discipline_choices += '<div class="selections">'
 
     cursor.execute("""
@@ -345,12 +345,12 @@ def course_mappings_impl(request):
   # If there is a discipline, display all courses
   if discipline:
     if catalog_number:
-      submit_prompt = 'Select a different course, discipline, and/or college'
-      catalog_choices = f'<details><summary>Select Course ({discipline} {catalog_number})</summary>'
-      # catalog_choices += f'<input type="hidden" name="catalog-number" value="{catalog_number}"/>'
+      submit_prompt = 'Change course, discipline, and/or college'
+      catalog_choices = (f'<details><summary>Select Course ({discipline} {catalog_number})'
+                         f'</summary><hr>')
     else:
       submit_prompt = 'Select a course, or a different discipline and/or college'
-      catalog_choices = f'<details open="open"><summary>Select Course</summary>'
+      catalog_choices = f'<details open="open"><summary>Select Course</summary><hr>'
 
     cursor.execute("""
     select course_id, offer_nbr, discipline, catalog_number, title
@@ -366,22 +366,22 @@ def course_mappings_impl(request):
       catalog_choices += f'<p class="error">No Courses Found</p>'
     for row in cursor.fetchall():
       if catalog_number and row.catalog_number == catalog_number:
-        selected_course_attr = ' class="selected-course"'
+        selected_item = ' class="selected-item"'
+        checked_attr = 'checked="checked"'
         course_dict = {'course_id': row.course_id,
                        'catalog_number': row.catalog_number,
                        'title': row.title}
       else:
-        selected_course_attr = ''
-        checked_attr = ''
+        selected_item = checked_attr = ''
 
       catalog_choices += f"""
-      <div{selected_course_attr}>
-        <input type="radio"
+      <div class="radio-container">
+        <input type="radio" {checked_attr}
                name="catalog-number"
                id="catalog-number-{row.course_id}"{checked_attr}
                value="{row.catalog_number}"/>
-        <label for="catalog-number-{row.course_id}">
-          {row.discipline} {row.catalog_number}: {row.title}
+        <label{selected_item} for="catalog-number-{row.course_id}">
+        {row.discipline} {row.catalog_number}: <em>{row.title}</em>
         </label>
       </div>
       """
