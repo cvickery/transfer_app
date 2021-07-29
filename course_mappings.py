@@ -219,7 +219,10 @@ def course_mappings_impl(request):
   if len(program_types) == 0:
     program_types = ['MAJOR', 'MINOR', 'CONC']
 
-  count_limit = [1, 2, 5, 10, 20, 50, 100, 999999][int(request.args.get('count-limit'))]
+  try:
+    count_limit = [1, 2, 5, 10, 20, 50, 100, 999999][int(request.args.get('count-limit'))]
+  except TypeError as te:
+    count_limit = 999999
 
   header_str = header(title='Requirements by Course',
                       nav_items=[{'type': 'link',
