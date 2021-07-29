@@ -12,6 +12,8 @@ const submit_form = function()
 
 // slider_change()
 // ------------------------------------------------------------------------------------------------
+/* Non-linear mappping of values returned by the range element.
+ */
 const slider_change = function(event)
 {
   const values = [
@@ -35,12 +37,19 @@ const slider_change = function(event)
  */
 const main = function ()
 {
+  // Radio buttons
   document.querySelectorAll('[type=radio]')
     .forEach(radio => radio.addEventListener('change', submit_form));
 
+  // The range element
   const slider_element = document.getElementById('slider');
   slider_element.addEventListener('change', slider_change);
-  slider_change({target: slider_element})
+  slider_element.addEventListener('change', submit_form);
+  slider_change({target: slider_element});
+
+  // Checkboxes
+  document.querySelectorAll('[type=checkbox]')
+    .forEach(checkbox => checkbox.addEventListener('change', submit_form));
 };
 
 window.addEventListener('load', main);
