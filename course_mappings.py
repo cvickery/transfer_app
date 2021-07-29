@@ -272,9 +272,13 @@ def course_mappings_impl(request):
 
   college_choices += '<div class="selections">'
   for college, counts in colleges_indexed.items():
-    num_majors = counts['MAJOR']
-    num_minors = counts['MINOR']
-    num_concs = counts['CONC']
+    num_majors = num_minors = num_conc = 0
+    if 'MAJORS' in counts.keys():
+      num_majors = counts['MAJOR']
+    if 'MINORS' in counts.keys():
+      num_minors = counts['MINOR']
+    if 'CONC' in counts.keys():
+      num_concs = counts['CONC']
     if num_majors + num_minors + num_concs > 0:
       if college == institution:
         selected_item = ' class="selected-item"'
