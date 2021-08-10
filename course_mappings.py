@@ -2,7 +2,7 @@
 
 import sys
 
-from collections import namedtuple,defaultdict
+from collections import namedtuple, defaultdict
 
 from app_header import header
 from pgconnection import PgConnection
@@ -143,7 +143,6 @@ def _to_html(institution: str, discipline: str, course_dict: dict, program_types
        and b.institution = '{institution}'
        and b.requirement_id = r.requirement_id
     """)
-    print(cursor.query)
     suffix = '' if cursor.rowcount == 1 else 's'
     summary = (f'<summary>{discipline} {catalog_number} ({course_id:06}) Satisfies '
                f'{cursor.rowcount} requirement{suffix} at {college}</summary>')
@@ -207,6 +206,13 @@ def course_mappings_impl(request):
   show_majors = request.args.get('show-majors')
   show_minors = request.args.get('show-minors')
   show_concs = request.args.get('show-concs')
+
+  # if nothing selected, select all
+  if show_majors is None and show_minors is None and show_concs is None:
+    show_majors = 'majors'
+    show_minors = 'minors'
+    show_concs = 'concs'
+
   program_types = []
   if show_majors == 'majors':
     program_types.append('MAJOR')
@@ -367,7 +373,7 @@ def course_mappings_impl(request):
     for row in cursor.fetchall():
       if catalog_number and row.catalog_number == catalog_number:
         selected_item = ' class="selected-item"'
-        checked_attr = 'checked="checked"'
+        checked_attr = ' checked="checked"'
         course_dict = {'course_id': row.course_id,
                        'catalog_number': row.catalog_number,
                        'title': row.title}
@@ -396,15 +402,15 @@ def course_mappings_impl(request):
   if course_dict:
     course_mapping_html = _to_html(institution, discipline, course_dict, program_types, count_limit)
   else:
-    course_mapping_html = '<p class="error">No Requirements Found</p>'
+    course_mapping_html = '<p class="warning">No Course Selected Yet</p>'
 
   result += f"""
   <form method="GET" action="/course_mappings">
 
     <div class="instructions">
       <p>
-        There can be a lot of “clutter” in what gets displayed here. You can use the checkboxes
-        below to include only the types of requirements you are interested in.
+        There can be a lot of “clutter” in what gets displayed here. You can uncheck some of the
+        checkboxes below to exclude the types of requirements you are not interested in.
       </p>
       <div>
         <div class="inline">
