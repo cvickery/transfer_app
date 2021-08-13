@@ -281,11 +281,11 @@ def course_mappings_impl(request):
   </p>
   """
   else:
-    college_choices += 'No colleges have been indexed right now.'
+    college_choices += 'No colleges are currently indexed.'
 
   college_choices += '<div class="selections">'
   for college, counts in colleges_indexed.items():
-    num_majors = num_minors = num_conc = 0
+    num_majors = num_minors = num_concs = 0
     if 'MAJOR' in counts.keys():
       num_majors = counts['MAJOR']
     if 'MINOR' in counts.keys():
