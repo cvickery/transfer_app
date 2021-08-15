@@ -1608,7 +1608,7 @@ def download_requirements(which):
                      mimetype='text/csv',
                      as_attachment=True,
                      attachment_filename='course_requirement_mappings.csv')
-  elif which.lower().startswith('requirement'):
+  elif which.lower().startswith('program'):
     return send_file('static/csv/program_requirements.csv',
                      mimetype='text/csv',
                      as_attachment=True,
