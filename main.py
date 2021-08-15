@@ -1599,6 +1599,24 @@ def course_mappings():
   return render_template('course_mappings.html', result=Markup(course_mappings_impl(request)))
 
 
+# download mapping tables
+# -------------------------------------------------------------------------------------------------
+@app.route('/download/<which>')
+def download_requirements(which):
+  if which.lower().startswith('course'):
+    return send_file('static/csv/course_requirement_mappings.csv',
+                     mimetype='text/csv',
+                     as_attachment=True,
+                     attachment_filename='course_requirement_mappings.csv')
+  elif which.lower().startswith('requirement'):
+    return send_file('static/csv/program_requirements.csv',
+                     mimetype='text/csv',
+                     as_attachment=True,
+                     attachment_filename='program_requirements.csv')
+  else:
+    return make_response('<h1>Unrecognized Download Request</h1>')
+
+
 # /requirements route()
 # -------------------------------------------------------------------------------------------------
 @app.route('/requirements/', methods=['GET'])
