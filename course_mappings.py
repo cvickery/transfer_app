@@ -102,7 +102,7 @@ def _format_requirement(req) -> str:
     ctx_str = ''
 
   if req.qualifiers:
-    qual_str = ' • ' + '<br/>'.join(req.qualifiers)
+    qual_str = '<br/>'.join([f'• {q}' for q in req.qualifiers])
   else:
     qual_str = ''
 
