@@ -82,9 +82,42 @@ def top_menu(msg=''):
       <p>
         Select a course to see what program requirements it satisfies. Programs include all
         currently-active Majors, Minors, and Concentrations as defined in Degree Works “Scribe
-        Blocks.”
+        Blocks.” Each requirement is linked to a page that shows the entire Scribe code block (see
+        next item) where the requirement is defined.
       </p>
     </dd>
+
+    <dt><a href="/requirements">Degree and Program Requirements</a></dt>
+    <dd>
+      <p>
+        This feature lets you look at the Ellucian Degree Works Scribe language code for all the
+        Majors, Minors, Concentrations, and Degrees offered at CUNY. Each block of code is also
+        shown in an expanded form that shows exactly what courses satisfy each requirement specified
+        in the block. Courses are shown as listed in the Scribe code block, as well as their status
+        in CUNYfirst: active, inactive, or not present.
+      </p>
+    </dd>
+
+    <dt><a href="/registered_programs">Academic Programs</a></dt>
+    <dd>
+      <p>
+        Tabular information about all academic programs registered with the NYS Department of
+        Education for all CUNY colleges. Includes information about program “variants,” such as
+        programs that are shared across colleges and/or programs that can award multiple degrees
+        or certificates.
+      </p>
+      <p>
+        This information is obtained by code that “<a
+        href="https://en.wikipedia.org/wiki/Web_scraping">scrapes</a>” the NYS Department of
+        Education <a href="http://www.nysed.gov/heds/irpsl1.html">website</a> where all academic
+        programs in the state are listed. The NYSED site is very useful, but tedious to interact
+        with manually.
+      </p>
+      <p>
+        The tables include links to the previous item’s requirement pages for each program.
+      </p>
+    </dd>
+
 
     <dt><a href="/map_courses">Course Transfer Maps</a></dt>
     <dd>
@@ -93,38 +126,16 @@ def top_menu(msg=''):
       cells highlighted to identify possible problems with the transfer rules.
      </p>
     </dd>
+    <dt><a href="/review_rules">Review Transfer Rules</a></dt>
+    <dd>
+      Review details about, and optionally make suggestions for changing, existing transfer rules.
+    </dd>
 
     <dt><a href="/rule_changes">Rule Changes</a></dt>
     <dd>
       <p>
         See what transfer rules have changed between two dates.
       </p>
-    </dd>
-
-    <dt><a href="/registered_programs">Academic Programs</a></dt>
-    <dd>
-      <p>
-        Tabular information about all academic programs registered with the NYS Department of
-        Education for any CUNY college. Includes information about program “variants,” such as
-        programs that are shared across colleges and/or programs that can award multiple degrees
-        or certificates.
-      </p>
-      <p>
-        This information is obtained directly from a <a
-        href="http://www.nysed.gov/heds/irpsl1.html">NYS Department of Education website</a>,
-        which is a very nice site, but both awkward to interact with and verbose in its
-        output.
-      </p>
-      <p>
-        The tables include links to each program’s requirements, as defined in Degree Works.
-        Parsing the requirements from the internal form used by Degree Works into a readable form
-        is a work in progress.
-      </p>
-    </dd>
-
-    <dt><a href="/review_rules">Review Transfer Rules</a></dt>
-    <dd>
-      Review details about, and optionally make suggestions for changing, existing transfer rules.
     </dd>
 
     <dt><a href="/pending">Pending Reviews</a></dt>
@@ -140,38 +151,13 @@ def top_menu(msg=''):
       stream of information about thousands of courses. The flood of output has been known to drown
       some mobile browsers!
       <p>
-        When looking at transfer rules, you can look at these catalog descriptions for just those
+        When looking at transfer rules, you will see these catalog descriptions for just those
         courses involved in a rule.
       </p>
     </dd>
-    <dt><a href="/requirements">Degree and Program Requirements</a></dt>
-    <dd>
-      <p class="error">
-        This feature demonstrates that Degree Works can be used to produce definitive information
-        about degree and program requirements across CUNY campuses. At this point it is only
-        partly implemented, and is available here as a “proof of concept.”
-      </p>
-      <p>
-        All CUNY colleges use Degree Works to verify whether students have met their graduation
-        requirements. A Degree Works “audit” compares a student’s record with the requirements for
-        the degree, major, GenEd, and possibly other graduation requirements at a college.
-      </p>
-      <p>
-        What’s demonstrated here is based on an automated mechanism for processing all the
-        Degree Works “Scribe Blocks” across the University into searchable information about degree
-        and program requirements without that information being coupled to particular students’
-        degree audits. For now, the information displayed on the web is generated by analyzing each
-        Scribe Block as it is requested, and only certain summary information from each block is
-        presented.
-      </p>
-      <p>
-        The intention of the project is capture complete program and degree requirements in a
-        searchable database that will allow answers to questions such as how programs articulate
-        across campuses, or how Major requirements and GenEd requirements overlap at a particular
-        campus, for example.
-      </p>
-    </dd>
+
   </dl>
+
 </div>
   <h2>Problems?</h2>
   <em>
