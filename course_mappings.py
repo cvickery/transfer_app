@@ -47,16 +47,17 @@ conn.close()
 # _format_requirement()
 # -------------------------------------------------------------------------------------------------
 def _format_requirement(req) -> str:
-  """  institution          | text
-       requirement_id       | text
-       requirement_name     | text
-       num_ourses_required  | text
-       course_alternatives  | text
-       conjunction          | text
-       num_credits_required | text
-       credit_alternatives  | text
-       context              | jsonb
-       qualifiers           | jsonb
+  """  institution            | text
+       requirement_id         | text
+       requirement_name       | text
+       num_ourses_required    | text
+       course_alternatives    | text
+       conjunction            | text
+       num_credits_required   | text
+       credit_alternatives    | text
+       program_qualifiers     | jsonb
+       requirement_qualifiers | jsonb
+       context                | jsonb
   """
   req_str = ''
   program_info = program_dict[(req.institution, req.requirement_id)]
@@ -101,10 +102,15 @@ def _format_requirement(req) -> str:
   else:
     ctx_str = ''
 
-  if req.qualifiers:
-    qual_str = '<br/>'.join([f'• {q}' for q in req.qualifiers])
+  if req.program_qualifiers:
+    prog_qual_str = '<br/>'.join([f'• {q}' for q in req.program_qualifiers])
   else:
-    qual_str = ''
+    prog_qual_str = ''
+
+  if req.requirement_qualifiers:
+    rqmt_qual_str = '<br/>'.join([f'• {q}' for q in req.requirement_qualifiers])
+  else:
+    rqmt_qual_str = ''
 
   return f"""
 <tr>
@@ -116,8 +122,9 @@ def _format_requirement(req) -> str:
   <td>{req.requirement_name}</td>
   <td>{req_str}</td>
   <td>{alt_str}</td>
+  <td>{prog_qual_str}</td>
+  <td>{rqmt_qual_str}</td>
   <td>{ctx_str}</td>
-  <td>{qual_str}</td>
 </tr>"""
 
 
@@ -154,7 +161,8 @@ def _to_html(institution: str, discipline: str, course_dict: dict, program_types
       <th>Requirement</th>
       <th>Alternatives</th>
       <th>Context</th>
-      <th>Qualifiers</th>
+      <th>Program Qualifiers</th>
+      <th>Requirement Qualifiers</th>
     </tr>"""
     skipped_majors = skipped_minors = skipped_concentrations = skipped_limit = 0
     for row in cursor.fetchall():
