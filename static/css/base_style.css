@@ -231,7 +231,7 @@ fieldset hr {
 
 @font-face {
   font-family:  fixed-sans;
-  src:  url(/static/fonts/Monaco.dfont);
+  src:  url(/static/fonts/Inconsolata.otf);
 }
 
 .fixed-sans {
