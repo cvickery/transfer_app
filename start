@@ -10,7 +10,7 @@ then kill `cat gunicorn.pid`
 fi
 rm -f gunicorn.pid
 
-/usr/local/bin/gunicorn --config ./gunicorn.conf.py main:app >> ./Logs/transfer-app.log 2>&1 &
+python3 -m gunicorn --config ./gunicorn.conf.py main:app >> ./Logs/transfer-app.log 2>&1 &
 echo $! > gunicorn.pid
 echo gunicorn ${prefix}started with pid $!
 )
