@@ -228,3 +228,12 @@ fieldset hr {
 .signature:hover {
   color:#09f;
 }
+
+@font-face {
+  font-family:  fixed-sans;
+  src:  url(/static/fonts/Inconsolata.otf);
+}
+
+.fixed-sans {
+  font-family:  fixed-sans;
+}
