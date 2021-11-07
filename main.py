@@ -1860,7 +1860,7 @@ def not_found_error(e):
 
 
 if __name__ == '__main__':
-    # This is used when running locally. Gunicorn is used to run the
-    # application as Transfer Explorer.
-    PORT = 5000 if os.getenv('DEBUG_PORT') is None else int(os.getenv('DEBUG_PORT'))
+    # This is used when running locally. Gunicorn is used to run the application online.
+    # 2021-11-05: changed port from 5000 to 5001 to deal with MacOS 12's use of 5000.
+    PORT = 5001 if os.getenv('DEBUG_PORT') is None else int(os.getenv('DEBUG_PORT'))
     app.run(host='0.0.0.0', port=PORT, debug=True)
