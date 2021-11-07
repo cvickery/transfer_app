@@ -1,5 +1,6 @@
-import os
 import multiprocessing
+import os
+import socket
 
 # On Heroku, there were 8 cpus, each of which was trying to create a PgConnection pool.
 # But hobby-basic only allows 20 connections total.
@@ -10,7 +11,13 @@ if os.getenv('HEROKU') is not None:
   accesslog = '-'
   errorlog = '-'
 else:
-  PORT = '5000' if os.getenv('DEBUG_PORT') is None else os.getenv('DEBUG_PORT')
+  test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  port_num = 5000
+  while (test_socket.connect_ex(('0.0.0.0', port_num))) == 0:
+    port_num += 1
+  test_socket.close()
+  print(f'Using port {port_num}')
+  PORT = f'{port_num}'
   workers = multiprocessing.cpu_count() * 2 + 1
   bind = f'0.0.0.0:{PORT}'
   accesslog = '/Users/vickery/Projects/transfer_app/Logs/transfer_access.log'
