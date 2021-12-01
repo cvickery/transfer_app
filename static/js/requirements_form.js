@@ -8,10 +8,10 @@ const check_status = function ()
 {
   // console.log(document.getElementById('institution').value);
   // console.log(document.getElementById('block-type').value);
-  // console.log(document.getElementById('block-value').value);
+  // console.log(document.getElementById('requirement-id').value);
   if (document.getElementById('institution').value === '' ||
       document.getElementById('block-type').value === '' ||
-      document.getElementById('block-value').value === '')
+      document.getElementById('requirement-id').value === '')
   {
     document.getElementById('goforit').disabled = true;
   }
@@ -29,8 +29,8 @@ const check_status = function ()
 const values_listener = function ()
 {
   document.getElementById('value-div').innerHTML = this.response;
-  document.getElementById('block-value').addEventListener('change', update_values);
-  const options = document.getElementById('block-value').options;
+  document.getElementById('requirement-id').addEventListener('change', update_values);
+  const options = document.getElementById('requirement-id').options;
   for (let i = 0; i < options.length; i++)
   {
     if (options.item(i).value === was_selected)
@@ -51,8 +51,9 @@ const update_values = function ()
 {
   const college = document.querySelector('input[name="college"]:checked').value;
   const block_type = document.getElementById('block-type').value;
-  const period = document.querySelector('[name=period-range]:checked').value;
-  was_selected = document.querySelector('[name=requirement-name]').value;
+  // const period = document.querySelector('[name=period-range]:checked').value;
+  const period = 'current';
+  was_selected = document.getElementById('requirement-id').value;
   if (college !== '' && block_type !== '')
   {
     const request = new XMLHttpRequest();
@@ -61,7 +62,7 @@ const update_values = function ()
       `/_requirement_values/?institution=${college}&block_type=${block_type}&period=${period}`);
     request.send();
   }
-  // Hide block-value and disable submit button until choices return
+  // Hide requirement-id options and disable submit button until choices return
   document.getElementById('value-div').style.display = 'none';
   document.getElementById('institution').value = college;
 };
@@ -75,7 +76,7 @@ const main = function ()
   document.getElementById('block-type').addEventListener('change', update_values);
   document.querySelectorAll('[type=radio]')
     .forEach(radio => radio.addEventListener('change', update_values));
-  document.getElementById('block-value').addEventListener('change', check_status);
+  document.getElementById('requirement-id').addEventListener('change', check_status);
 
   // Initial UI state
   document.getElementById('value-div').style.display = 'none';

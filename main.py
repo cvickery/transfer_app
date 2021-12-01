@@ -1514,25 +1514,19 @@ def _archive_dates():
 @app.route('/_requirement_values/')
 def _requirement_values():
   """ Return a select element with the options filled in.
-      If the period is 'current' include only values where the period is '999999'.
-      If the period is 'latest' include latest of all values.
-      Otherwise, include all values found.
+      # If the period is 'current' include only values where the period is '999999'.
+      # If the period is 'latest' include latest of all values.
+      # Otherwise, include all values found.
+      Generate options for all, and only, current blocks of the specified block_type. The option
+      values are the requirement_id, but the option strings are block_type, title (requirement_id)
   """
   institution = request.args.get('institution', 0)
   block_type = request.args.get('block_type', 0)
   period = request.args.get('period', 0)
 
-  # Durning development, filter out all-numeric values
+  # Filter out all-numeric block_values; they are left over from "conversion"
   value_clause = r"and block_value !~ '^[\d ]+$'"
-  period_clause = ''
-  if period == 'current':
-    period_clause = "and period_stop = '99999999'"
-
-  option_type = f'a {block_type.title()}'
-  if block_type == 'CONC':
-    option_type = 'a Concentration'
-  if block_type == 'OTHER':
-    option_type = 'a Requirement'
+  period_clause = "and period_stop ~* '^9'"
 
   conn = PgConnection()
   cursor = conn.cursor()
@@ -1541,9 +1535,15 @@ def _requirement_values():
     from requirement_blocks
    where institution = %s
      and block_type = %s
-    {value_clause}
-    {period_clause}
-    order by block_value, period_stop desc""", (institution, block_type))
+     {value_clause}
+     {period_clause}
+    order by title, requirement_id""", (institution, block_type))
+
+  option_type = f'a {block_type.title()}'
+  if block_type == 'CONC':
+    option_type = 'a Concentration'
+  if block_type == 'OTHER':
+    option_type = 'a Requirement'
 
   options = ''
   previous_value = ''
@@ -1567,18 +1567,18 @@ def _requirement_values():
           period_start = row.period_start.strip('UG')
           period_start = f'{period_start[:4]}-{period_start[-4:]}'
           period_stop = row.period_stop.strip('UG')
-          if period_stop == '99999999':
+          if period_stop.startswith('9'):
             period_stop = 'now'
           else:
             period_stop = f'{period_stop[:4]}-{period_stop[-4:]}'
           period_str = f'{period_start} to {period_stop} '
 
-      options += (f'<option value="{row.block_value}">{row.block_value}: {row.title} '
+      options += (f'<option value="{row.requirement_id}">{row.block_value}: {row.title} '
                   f'{period_str}{requirement_id}</option>\n')
   conn.close()
   return f"""
-    <label for="block-value"><strong>Requirement:</strong></label>
-    <select id="block-value" name="requirement-name">
+    <label for="requirement-id"><strong>Requirement:</strong></label>
+    <select id="requirement-id" name="requirement-id">
     {selected_option}
     {options}
     </select>
@@ -1630,11 +1630,11 @@ def requirements(college=None, type=None, name=None, period=None):
 
   institution = request.args.get('college')
   b_type = request.args.get('requirement-type')
-  b_value = request.args.get('requirement-name')
+  requirement_id = request.args.get('requirement-id')
   period_range = request.args.get('period-range')
   if period_range is None:
     period_range = 'current'
-  if institution is None or b_type is None or b_value is None:
+  if institution is None or b_type is None or requirement_id is None:
     conn = PgConnection()
     cursor = conn.cursor()
     cursor.execute("select update_date from updates where table_name = 'requirement_blocks'")
@@ -1684,32 +1684,24 @@ def requirements(college=None, type=None, name=None, period=None):
   </div>
     <details><summary>Information About This Project</summary><hr>
     <p>
-      This project is supported in part by a grant from the <a
-      href="https://www.heckscherfoundation.org/">Heckscher Foundation for Children</a> to improve
-      the transfer process at CUNY. See <a
-      href="https://sr.ithaka.org/blog/streamlining-transfer-for-cuny-students-in-the-bronx/">Streamlining
-      Transfer for CUNY Students in the Bronx</a> for more information about the grant.
+      This project is supported in part by grants from The Heckscher Foundation for Children and The
+      Petrie Foundation to improve the transfer process at CUNY.
     </p>
     <p>
-      This page lets you look up the requirements for any degree, major, minor, or concentration at
-      any CUNY college. The information is taken from the Degree Works “Scribe Blocks” that are
-      designed to provide information based on individual students’ coursework completed and
-      declared or prospective majors, minors, or concentrations.
+      This page lets you look up the current requirements for any degree, major, minor, or
+      concentration at any CUNY college. The information is taken from the Degree Works “Scribe
+      Blocks” that are designed to provide information based on individual students’ coursework
+      completed and declared or prospective majors, minors, or concentrations.
     </p>
     <p>
-      Here, we extract the program requirements from the scribe blocks in order to develop a
+      Here, we extract the program requirements from the Scribe blocks in order to develop a
       database that can be used in various ways: to search and compare programs within and across
       campuses, to provide degree maps for publication, etc.
     <p>
     <p>
-      This is a work in progress. For each program, a complete scribe block is shown in its raw
-      form, sometimes followed by information extracted from it in a format useful during project
-      development.
-    </p>
-    <p>
       Program requirements change over time. Degree Works keeps a record of previous program
-      versions, arranged by “catalog year.” By default only the most recent requirements are shown,
-      but you can choose to look at earlier ones as well.
+      versions, arranged by “catalog year.” Here, we show only  Scribe blocks for the current
+      catalog year.
     </p>
     </details>
     <fieldset><legend>Options</legend>
@@ -1731,11 +1723,12 @@ def requirements(college=None, type=None, name=None, period=None):
       </div>
 
       <div id="value-div">
-        <label for="block-value"><strong>Requirement Name:</strong></label>
-        <select id="block-value" name="requirement-name">
+        <label for="block-value"><strong>Requirement:</strong></label>
+        <select id="requirement-id" name="requirement-id">
         </select>
       </div>
 
+      <!--
       <fieldset>
         <legend>Catalog Year(s)</legend>
         <p>
@@ -1752,10 +1745,13 @@ def requirements(college=None, type=None, name=None, period=None):
         <input type="radio" id="period-current" name="period-range" value="current" checked/>
         <label for="period-current">Current</label>
         </fieldset>
+      -->
+      <!--
       <p>
         <strong>NOTE:</strong> It takes a few seconds to interpret each block the first time it is
         viewed. If you have checked the All option, the delay can be annoyingly long.
       </p>
+      -->
       <button type="submit" id="goforit">Go For It</button>
        </div>
     </form>
@@ -1781,21 +1777,19 @@ select institution,
        parse_tree
   from requirement_blocks
  where institution = '{institution}'
-   and block_type = '{b_type}'
-   and block_value = '{b_value}'
- order by period_stop desc
+   and requirement_id = '{requirement_id}'
                     """)
     if cursor.rowcount < 1:
       return render_template('requirements_form.html',
                              result=Markup(f'<h1 class="error">No Requirements Found</h1>'
-                                           f'<p>{institution} {b_type} {b_value}</p>'),
+                                           f'<p>{institution} {b_type} {requirement_id}</p>'),
                              title='No Requirements')
     if period_range == 'latest' or period_range == 'current':
       # In these cases, only the first result matters
         first_match = cursor.fetchone()
         if period_range == 'current' and not first_match.period_stop.startswith('9'):
           b_type = 'concentration' if b_type == 'CONC' else b_type.lower()
-          requirements_html = (f'<h1 class="error">“{b_value}” is not a current {b_type} '
+          requirements_html = (f'<h1 class="error">“{requirement_id}” is not a current {b_type} '
                                f'at {institution}.</h1>')
         else:
           requirements_html = scribe_block_to_html(first_match, period_range)
