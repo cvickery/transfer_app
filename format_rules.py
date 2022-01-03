@@ -4,13 +4,14 @@ import argparse
 from collections import namedtuple
 import json
 import os
+import psycopg2
 import re
 import sys
 
-from flask import session
-from pgconnection import PgConnection
-from reviews_status_utils import status_string
 from copy import copy
+from psycopg2.extras import NamedTupleCursor
+from flask import session
+from reviews_status_utils import status_string
 
 DEBUG = os.getenv('DEVELOPMENT')
 DEBUG = False
@@ -61,11 +62,11 @@ Destination_Course = namedtuple('Destination_Course', """
                                 is_bkcr
                                 """)
 
-conn = PgConnection()
-cursor = conn.cursor()
+conn = psycopg2.connect('dbname=cuny_curriculum')
+cursor = conn.cursor(cursor_factory=NamedTupleCursor)
 cursor.execute("select code, prompt from cuny_institutions order by lower(name)")
 institution_names = {row.code: row.prompt for row in cursor}
-conn.close()
+cursor.close
 
 
 # andor_list()
@@ -191,8 +192,10 @@ def format_rule_by_key(rule_key):
   """
   if DEBUG:
     print(f'format_rule_by_key({rule_key})', file=sys.stderr)
-  conn = PgConnection()
-  cursor = conn.cursor()
+
+  conn = psycopg2.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+
   cursor.execute("""
   select * from transfer_rules
    where source_institution = %s
@@ -200,7 +203,7 @@ def format_rule_by_key(rule_key):
      and subject_area = %s
      and group_number = %s
   """, rule_key.split(':'))
-  print(cursor.query)
+
   rule = cursor.fetchone()
   """
       Source_Course
@@ -281,7 +284,7 @@ def format_rule_by_key(rule_key):
        rule.review_status,
        source_courses,
        destination_courses])
-  cursor.close()
+
   conn.close()
   return format_rule(the_rule, rule_key)
 
@@ -299,8 +302,8 @@ def format_rule(rule, rule_key=None):
                                     rule.group_number)
 
   # In case there are cross-listed courses to look up
-  conn = PgConnection()
-  cursor = conn.cursor()
+  conn = psycopg2.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
 
   # Extract disciplines and courses from the rule
   source_disciplines = rule.source_disciplines.strip(':').split(':')
@@ -330,7 +333,7 @@ def format_rule(rule, rule_key=None):
       assert cursor.rowcount == course.offer_count, \
           f'cross-listed source course counts do not match'
       cross_listed_with[course.course_id] = cursor.fetchall()
-  conn.close()
+  cursor.close()
 
   source_class = ''  # for the HTML credit-mismatch indicator
 
@@ -452,6 +455,7 @@ def format_rule(rule, rule_key=None):
         {institution_names[rule.destination_institution]}
         as {destination_course_list}, {destination_credits} credits.</span>"""
   description = description.replace('Pass', 'Passing grade in')
+
   return row, description
 
 
