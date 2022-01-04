@@ -4,12 +4,12 @@ import argparse
 from collections import namedtuple
 import json
 import os
-import psycopg2
+import psycopg
 import re
 import sys
 
 from copy import copy
-from psycopg2.extras import NamedTupleCursor
+from psycopg.rows import namedtuple_row
 from flask import session
 from reviews_status_utils import status_string
 
@@ -62,8 +62,8 @@ Destination_Course = namedtuple('Destination_Course', """
                                 is_bkcr
                                 """)
 
-conn = psycopg2.connect('dbname=cuny_curriculum')
-cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+conn = psycopg.connect('dbname=cuny_curriculum')
+cursor = conn.cursor(row_factory=namedtuple_row)
 cursor.execute("select code, prompt from cuny_institutions order by lower(name)")
 institution_names = {row.code: row.prompt for row in cursor}
 cursor.close
@@ -193,8 +193,8 @@ def format_rule_by_key(rule_key):
   if DEBUG:
     print(f'format_rule_by_key({rule_key})', file=sys.stderr)
 
-  conn = psycopg2.connect('dbname=cuny_curriculum')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = psycopg.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(row_factory=namedtuple_row)
 
   cursor.execute("""
   select * from transfer_rules
@@ -302,8 +302,8 @@ def format_rule(rule, rule_key=None):
                                     rule.group_number)
 
   # In case there are cross-listed courses to look up
-  conn = psycopg2.connect('dbname=cuny_curriculum')
-  cursor = conn.cursor(cursor_factory=NamedTupleCursor)
+  conn = psycopg.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(row_factory=namedtuple_row)
 
   # Extract disciplines and courses from the rule
   source_disciplines = rule.source_disciplines.strip(':').split(':')
