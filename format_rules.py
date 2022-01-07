@@ -36,6 +36,7 @@ Transfer_Rule = namedtuple('Transfer_Rule', """
 # many offer_nbr values there are for the course_id.
 Source_Course = namedtuple('Source_Course', """
                            course_id
+                           offer_nbr
                            offer_count
                            discipline
                            catalog_number
@@ -50,6 +51,7 @@ Source_Course = namedtuple('Source_Course', """
 
 Destination_Course = namedtuple('Destination_Course', """
                                 course_id
+                                offer_nbr
                                 offer_count
                                 discipline
                                 catalog_number
@@ -234,6 +236,7 @@ def format_rule_by_key(rule_key):
   """
   cursor.execute("""
     select  sc.course_id,
+            sc.offer_nbr,
             sc.offer_count,
             sc.discipline,
             sc.catalog_number,
@@ -254,6 +257,7 @@ def format_rule_by_key(rule_key):
 
   cursor.execute("""
     select  dc.course_id,
+            dc.offer_nbr,
             dc.offer_count,
             dc.discipline,
             dc.catalog_number,
@@ -292,7 +296,7 @@ def format_rule_by_key(rule_key):
 # format_rule()
 # -------------------------------------------------------------------------------------------------
 def format_rule(rule, rule_key=None):
-  """ Return two strings, one that represents the rule as a table row and one that is a descriptive
+  """ Return two strings, one that represents the rule as a table row and one that is a HTML
       paragraph.
   """
   if rule_key is None:
