@@ -211,7 +211,7 @@ def format_course(course, active_only=False):
   else:
     credits_str = f'{component_str}; {course.min_credits:0.1f}–{course.max_credits:0.1f} cr'
 
-  transfer_link = (f'https://explorer.lehman.edu/sending-course/{course.course_id:06}/'
+  transfer_link = (f'https://explorer.cuny.edu/course-transfer/{course.course_id:06}/'
                    f'{course.offer_nbr}')
   title_str = f"""<a href="{transfer_link}" style="text-decoration: none;">
                   <strong>{course.discipline} {course.catalog_number}: {course.title}</strong></a>
