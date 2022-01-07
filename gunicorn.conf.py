@@ -2,32 +2,22 @@ import multiprocessing
 import os
 import socket
 
-# On Heroku, there were 8 cpus, each of which was trying to create a PgConnection pool.
-# But hobby-basic only allows 20 connections total.
-# And the port number is an environment variable
-if os.getenv('HEROKU') is not None:
-  workers = 2
-  bind = f'0.0.0.0:{os.getenv("PORT")}'
-  accesslog = '-'
-  errorlog = '-'
-else:
-  test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  port_num = 5000
-  while (test_socket.connect_ex(('0.0.0.0', port_num))) == 0:
-    port_num += 1
-  test_socket.close()
-  print(f'Using port {port_num}')
-  PORT = f'{port_num}'
-  workers = multiprocessing.cpu_count() * 2 + 1
-  bind = f'0.0.0.0:{PORT}'
-  accesslog = '/Users/vickery/Projects/transfer_app/Logs/transfer_access.log'
-  errorlog = '/Users/vickery/Projects/transfer_app/Logs/transfer_error.log'
-  loglevel = 'DEBUG'
-  timeout = 120
+test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+port_num = 5000
+while (test_socket.connect_ex(('0.0.0.0', port_num))) == 0:
+  port_num += 1
+test_socket.close()
+print(f'Using port {port_num}')
+PORT = f'{port_num}'
+workers = multiprocessing.cpu_count() * 2 + 1
+bind = f'0.0.0.0:{PORT}'
+accesslog = '/Users/vickery/Projects/transfer_app/Logs/transfer_access.log'
+errorlog = '/Users/vickery/Projects/transfer_app/Logs/transfer_error.log'
+loglevel = 'DEBUG'
+timeout = 120
 
 access_log_format = '%(h)s %({x-forwarded-for}i)s %(t)s %(r)s %(s)s %(b)s %(f)s'
 reload = True
-
 
 """
   App Engine terminates the HTTPS connection at the load balancer and forwards the request to your
