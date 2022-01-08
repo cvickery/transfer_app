@@ -561,6 +561,7 @@ def do_form_2(request, session):
     # disciplines, so that has to be checked first.
     cursor.execute(f"""
    select  dc.course_id,
+           dc.offer_nbr,
            dc.offer_count,
            dc.discipline,
            dc.catalog_number,
@@ -582,6 +583,7 @@ def do_form_2(request, session):
       destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
       cursor.execute("""
          select  sc.course_id,
+                 sc.offer_nbr,
                  sc.offer_count,
                  sc.discipline,
                  sc.catalog_number,
