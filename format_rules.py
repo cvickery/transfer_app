@@ -317,8 +317,8 @@ def format_rule(rule, rule_key=None):
   # Check validity of Source and Destination course_ids
   source_course_ids = [course.course_id for course in rule.source_courses]
   # There should be no duplicates in source_course_ids for the rule
-  assert len(set(source_course_ids)) == len(source_course_ids), \
-      f'Duplcated source course id(s) for rule {rule_key}'
+  # assert len(set(source_course_ids)) == len(source_course_ids), \
+  #     f'Duplcated source course id(s) for rule {rule_key}'
   source_course_id_str = ':'.join([f'{id}' for id in source_course_ids])
 
   destination_course_ids = [course.course_id for course in rule.destination_courses]
