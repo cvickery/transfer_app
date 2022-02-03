@@ -1580,7 +1580,7 @@ def _requirement_values():
     <label for="block-value" class="select" id="block-value-label">
       <strong>Requirement:</strong>
     </label>
-    <select id="block-value" name="block_value">
+    <select id="block-value">
     {selected_option}
     {options}
     </select>
@@ -1600,11 +1600,6 @@ def requirements(college=None, type=None, name=None, period=None):
 
   institution = request.args.get('institution')
   requirement_id = request.args.get('requirement_id')
-
-  # The following form inputs are processed by JavaScript and may be ignored here.
-  block_type = request.args.get('block_type')
-  block_value = request.args.get('block_value')
-  requirement_num = request.args.get('requirement_num')
 
   # If there is an institution and either a block_value or a requirement_num, JavaScript has
   # submitted the form.
@@ -1696,7 +1691,6 @@ def requirements(college=None, type=None, name=None, period=None):
             </p>
             <label for="requirement-num" class="select">RA-</label>
             <input type="number" id="requirement-num"
-                   name="requirement_num"
                    min="1"
                    max="999999"/>
              <hr>
@@ -1705,7 +1699,7 @@ def requirements(college=None, type=None, name=None, period=None):
                 Alternatively, select a requirement type and specific requirement here.
               </p>
               <label for="block-type" class="select"><strong>Requirement Type:</strong></label>
-              <select id="block-type" name="block_type">
+              <select id="block-type">
               <option value="MAJOR">Major</option>
               <option value="MINOR">Minor</option>
               <option value="CONC">Concentration</option>
