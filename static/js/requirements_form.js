@@ -1,26 +1,13 @@
 
-let was_selected = '';
-//  check_status()
-//  -----------------------------------------------------------------------------------------------
-/*  Disable the submit button unless all controls have non-empty values.
+// value_change()
+// ------------------------------------------------------------------------------------------------
+/* Submit the form when the block-value changes.
  */
-const check_status = function ()
+const value_change = function()
 {
-  // console.log(document.getElementById('institution').value);
-  // console.log(document.getElementById('block-type').value);
-  // console.log(document.getElementById('requirement-id').value);
-  if (document.getElementById('institution').value === '' ||
-      document.getElementById('block-type').value === '' ||
-      document.getElementById('requirement-id').value === '')
-  {
-    document.getElementById('goforit').disabled = true;
-  }
-  else
-  {
-    document.getElementById('goforit').disabled = false;
-  }
-
-};
+  document.getElementById('requirement-id').value = document.getElementById('block-value').value;
+  document.getElementById('block-select-form').requestSubmit();
+}
 
 //  values_listener()
 //  -----------------------------------------------------------------------------------------------
@@ -28,19 +15,9 @@ const check_status = function ()
  */
 const values_listener = function ()
 {
-  document.getElementById('value-div').innerHTML = this.response;
-  document.getElementById('requirement-id').addEventListener('change', update_values);
-  const options = document.getElementById('requirement-id').options;
-  for (let i = 0; i < options.length; i++)
-  {
-    if (options.item(i).value === was_selected)
-    {
-      options.item(i).selected = true;
-      break;
-    }
-  }
-  document.getElementById('value-div').style.display = 'block';
-  check_status();
+  document.getElementById('block-value-div').innerHTML = this.response;
+  document.getElementById('block-value-label').style.color = '#000000';
+  document.getElementById('block-value').addEventListener('change', value_change);
 };
 
 //  update_values()
@@ -49,23 +26,66 @@ const values_listener = function ()
  */
 const update_values = function ()
 {
-  const college = document.querySelector('input[name="college"]:checked').value;
+  const institution = document.querySelector('input[name="institution"]:checked').value;
   const block_type = document.getElementById('block-type').value;
-  // const period = document.querySelector('[name=period-range]:checked').value;
-  const period = 'current';
-  was_selected = document.getElementById('requirement-id').value;
-  if (college !== '' && block_type !== '')
+  if (institution !== '' && block_type !== '')
   {
+    const bv_label = document.getElementById('block-value-label');
+    if (bv_label)
+    {
+      bv_label.style.color = '#ff0099';
+    }
     const request = new XMLHttpRequest();
     request.addEventListener('load', values_listener);
     request.open('GET',
-      `/_requirement_values/?institution=${college}&block_type=${block_type}&period=${period}`);
+      `/_requirement_values/?institution=${institution}&block-type=${block_type}`);
     request.send();
   }
-  // Hide requirement-id options and disable submit button until choices return
-  document.getElementById('value-div').style.display = 'none';
-  document.getElementById('institution').value = college;
 };
+
+// requirement_num_change()
+// ------------------------------------------------------------------------------------------------
+/* Convert num to requirement_id, set it, and submit form.
+ */
+const requirement_num_change = function()
+{
+  try
+  {
+    let requirement_num = document.getElementById('requirement-num').value.match(/\d{1,6}/)[0];
+    while (requirement_num.length < 6)
+    {
+      requirement_num = '0' + requirement_num;
+    }
+    const requirement_id = 'RA' + requirement_num;
+    document.getElementById('requirement-id').value = requirement_id;
+    document.getElementById('select-block-form').requestSubmit();
+  }
+  catch (error)
+  {
+    console.log(`Line 83: ${error}`);
+  }
+
+}
+
+// block_type_change()
+// ------------------------------------------------------------------------------------------------
+/* Populate and display block-value-div
+ */
+const block_type_change = function()
+{
+  update_values();
+}
+
+//  college_change()
+//  -----------------------------------------------------------------------------------------------
+/* Display id-or-type-div, but not value-div
+ */
+const college_change = function()
+{
+  document.getElementById('id-or-type-div').style.display = 'block';
+  document.getElementById('requirement-num').value = '';
+  update_values();
+}
 
 //  main()
 //  -----------------------------------------------------------------------------------------------
@@ -73,14 +93,14 @@ const update_values = function ()
  */
 const main = function ()
 {
-  document.getElementById('block-type').addEventListener('change', update_values);
+  document.getElementById('block-type').addEventListener('change', block_type_change);
   document.querySelectorAll('[type=radio]')
-    .forEach(radio => radio.addEventListener('change', update_values));
-  document.getElementById('requirement-id').addEventListener('change', check_status);
+    .forEach(radio => radio.addEventListener('change', college_change));
+
+  document.getElementById('requirement-num').addEventListener('change', requirement_num_change);
 
   // Initial UI state
-  document.getElementById('value-div').style.display = 'none';
-  document.getElementById('goforit').disabled = true;
+  document.getElementById('id-or-type-div').style.display = 'none';
 };
 
 window.addEventListener('load', main);

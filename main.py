@@ -5,6 +5,7 @@
 import os
 import sys
 import io
+import psycopg
 import re
 import socket
 
@@ -15,11 +16,9 @@ from urllib import parse
 from datetime import datetime, timedelta, date
 from pathlib import Path
 
-from collections import namedtuple
-from collections import defaultdict
-from collections import Counter
+from collections import namedtuple, defaultdict, Counter
 
-from pgconnection import PgConnection
+from psycopg.rows import namedtuple_row
 
 from app_header import header
 from course_info import _course_info
@@ -146,21 +145,20 @@ def index_page():
 
   """ Display menu of available features.
   """
-  conn = PgConnection()
-  cursor = conn.cursor()
-  cursor.execute("select count(*) from transfer_rules")
-  num_rules = cursor.fetchone()[0]
-  cursor.execute("select * from updates")
-  updates = cursor.fetchall()
-  catalog_date = 'unknown'
-  rules_date = 'unknown'
-  for update in updates:
-    if update.table_name == 'cuny_courses':
-      catalog_date = date2str(update.update_date)
-    if update.table_name == 'transfer_rules':
-      rules_date = date2str(update.update_date)
-  cursor.close()
-  conn.close()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute("select count(*) from transfer_rules")
+      num_rules = cursor.fetchone()[0]
+      cursor.execute("select * from updates")
+      updates = cursor.fetchall()
+      catalog_date = 'unknown'
+      rules_date = 'unknown'
+      for update in updates:
+        if update.table_name == 'cuny_courses':
+          catalog_date = date2str(update.update_date)
+        if update.table_name == 'transfer_rules':
+          rules_date = date2str(update.update_date)
+
   # You can put messages for below the menu here:
   msg = f"""
   <footer id="update-info">
@@ -249,46 +247,46 @@ def pending():
                                                        {'type': 'link',
                                                         'href': '/review_rules',
                                                         'text': 'Review Rules'}])
-  conn = PgConnection()
-  cursor = conn.cursor()
-  cursor.execute("""
-    select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
-      from pending_reviews""")
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute("""
+        select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
+          from pending_reviews""")
 
-  if cursor.rowcount == 0:
-    return render_template('review_rules.html', result=Markup(f"""
-        {heading}
-        <p class="instructions">There are no pending reviews.</p>
-        """))
-
-  result = f"""
+      if cursor.rowcount == 0:
+        return render_template('review_rules.html', result=Markup(f"""
             {heading}
-            <p class="instructions">
-              The following reviews have been submitted within the past 48 hours, but the submitter
-              has not yet responded to an “activation” email message. Reviews not activated within
-              48 hours of submission are ignored.
-            </p>
-            """
-  for pending in cursor.fetchall():
-    reviews = json.loads(pending.reviews)
-    suffix = 's'
-    if len(reviews) == 1:
-      suffix = ''
-    result += f"""
-    <details>
-      <summary>{len(reviews)} review{suffix} by {pending.email} on {pending.when_entered}</summary>
-      <table>
-        <tr><th>Rule</th><th>Type</th><th>Comment</th></tr>"""
-    for review in reviews:
-      result += f"""
-                    <tr>
-                      <td>{review['rule_key']}</td>
-                      <td>{review['event_type']}</td>
-                      <td>{review['comment_text']}</td>
-                    </tr>"""
-    result += '</table></details>'
-  cursor.close()
-  conn.close()
+            <p class="instructions">There are no pending reviews.</p>
+            """))
+
+      result = f"""
+                {heading}
+                <p class="instructions">
+                  The following reviews have been submitted within the past 48 hours, but the
+                  submitter has not yet responded to an “activation” email message. Reviews not
+                  activated within 48 hours of submission are ignored.
+                </p>
+                """
+      for pending in cursor.fetchall():
+        reviews = json.loads(pending.reviews)
+        suffix = 's'
+        if len(reviews) == 1:
+          suffix = ''
+        result += f"""
+        <details>
+          <summary>
+            {len(reviews)} review{suffix} by {pending.email} on {pending.when_entered}
+          </summary>
+          <table>
+            <tr><th>Rule</th><th>Type</th><th>Comment</th></tr>"""
+        for review in reviews:
+          result += f"""
+                        <tr>
+                          <td>{review['rule_key']}</td>
+                          <td>{review['event_type']}</td>
+                          <td>{review['comment_text']}</td>
+                        </tr>"""
+        result += '</table></details>'
 
   return render_template('review_rules.html', result=Markup(result), title='Pending Reviews')
 
@@ -303,68 +301,65 @@ def confirmation(token):
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  conn = PgConnection()
-  cursor = conn.cursor()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      # Make sure the token is received and is in the pending table.
+      heading = header(title='Review Confirmation', nav_items=[{'type': 'link',
+                                                                'href': '/',
+                                                                'text': 'Main Menu'},
+                                                               {'type': 'link',
+                                                                'href': '/review_rules',
+                                                                'text': 'Review Rules'}])
 
-  # Make sure the token is received and is in the pending table.
-  heading = header(title='Review Confirmation', nav_items=[{'type': 'link',
-                                                            'href': '/',
-                                                            'text': 'Main Menu'},
-                                                           {'type': 'link',
-                                                            'href': '/review_rules',
-                                                            'text': 'Review Rules'}])
-
-  q = 'select * from pending_reviews where token = %s'
-  cursor.execute(q, (token,))
-  if cursor.rowcount == 0:
-    msg = '<p class="error">This report has either expired or already been recorded.</p>'
-  elif cursor.rowcount != 1:
-    msg = f'<p class="error">Program Error: {cursor.rowcount} pending_reviews.</p>'
-  else:
-    msg, colleges = process_pending(cursor.fetchone())
-
-    # Get list of people to notify
-    q = """ select * from person_roles
-            where role in ('cuny_registrar', 'webmaster')
-               or institution in ({})""".format(', '.join([f"'{c}'" for c in colleges]))
-    cursor.execute(q)
-    to_people = set()
-    cc_people = set()
-    bc_people = set()
-    for person_role in cursor.fetchall():
-      if person_role.role == 'cuny_registrar':
-        cc_people.add(person_role)
-      elif person_role.role == 'webmaster':
-        bc_people.add(person_role)
+      q = 'select * from pending_reviews where token = %s'
+      cursor.execute(q, (token,))
+      if cursor.rowcount == 0:
+        msg = '<p class="error">This report has either expired or already been recorded.</p>'
+      elif cursor.rowcount != 1:
+        msg = f'<p class="error">Program Error: {cursor.rowcount} pending_reviews.</p>'
       else:
-        to_people.add(person_role)
-    to_list = [{'email': p.email, 'name': p.name} for p in to_people]
-    cc_list = [{'email': p.email, 'name': p.name} for p in cc_people]
-    bcc_list = [{'email': p.email, 'name': p.name} for p in bc_people]
-    try:
-     from_person = bc_people.pop()
-     from_addr = {'email': from_person.email, 'name': 'CUNY Transfer App'}
-    except KeyError:
-      from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'}
-    # Embed the html table in a complete web page
-    html_body = """ <html><head><style>
-                      table {border-collapse: collapse;}
-                      td, th {
-                        border: 1px solid blue;
-                        padding:0.25em;
-                      }
-                    </style></head><body>
-                """ + msg.replace('/history', request.url_root + 'history') + '</body></html>'
-    response = send_message(to_list,
-                            from_addr,
-                            subject='Transfer Rule Evaluation Received',
-                            html_msg=html_body,
-                            cc_list=cc_list,
-                            bcc_list=bcc_list)
-    if response.status_code != 202:
-      msg += f'<p>Error sending notifications: {response.body}</p>'
-  cursor.close()
-  conn.close()
+        msg, colleges = process_pending(cursor.fetchone())
+
+        # Get list of people to notify
+        q = """ select * from person_roles
+                where role in ('cuny_registrar', 'webmaster')
+                   or institution in ({})""".format(', '.join([f"'{c}'" for c in colleges]))
+        cursor.execute(q)
+        to_people = set()
+        cc_people = set()
+        bc_people = set()
+        for person_role in cursor.fetchall():
+          if person_role.role == 'cuny_registrar':
+            cc_people.add(person_role)
+          elif person_role.role == 'webmaster':
+            bc_people.add(person_role)
+          else:
+            to_people.add(person_role)
+        to_list = [{'email': p.email, 'name': p.name} for p in to_people]
+        cc_list = [{'email': p.email, 'name': p.name} for p in cc_people]
+        bcc_list = [{'email': p.email, 'name': p.name} for p in bc_people]
+        try:
+         from_person = bc_people.pop()
+         from_addr = {'email': from_person.email, 'name': 'CUNY Transfer App'}
+        except KeyError:
+          from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'}
+        # Embed the html table in a complete web page
+        html_body = """ <html><head><style>
+                          table {border-collapse: collapse;}
+                          td, th {
+                            border: 1px solid blue;
+                            padding:0.25em;
+                          }
+                        </style></head><body>
+                    """ + msg.replace('/history', request.url_root + 'history') + '</body></html>'
+        response = send_message(to_list,
+                                from_addr,
+                                subject='Transfer Rule Evaluation Received',
+                                html_msg=html_body,
+                                cc_list=cc_list,
+                                bcc_list=bcc_list)
+        if response.status_code != 202:
+          msg += f'<p>Error sending notifications: {response.body}</p>'
 
   result = f"""
   {heading}
@@ -409,20 +404,19 @@ def map_courses():
   if app_unavailable():
     return render_template('app_unavailable.html', result=Markup(get_reason()))
 
-  conn = PgConnection()
-  cursor = conn.cursor()
-  cursor.execute('select code, prompt from cuny_institutions order by prompt')
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute('select code, prompt from cuny_institutions order by prompt')
 
-  options = [f"""
-    <div class="institution-option">
-      <input id="radio-{i.code}"
-             type="radio"
-             name="institution"
-             value="{i.code}" />
-      <label for="radio-{i.code}">{i.prompt}</label>
-    </div>
-      """ for i in cursor.fetchall()]
-  conn.close()
+      options = [f"""
+        <div class="institution-option">
+          <input id="radio-{i.code}"
+                 type="radio"
+                 name="institution"
+                 value="{i.code}" />
+          <label for="radio-{i.code}">{i.prompt}</label>
+        </div>
+          """ for i in cursor.fetchall()]
 
   institution_select = '<div id="institutions">' + '\r'.join(options) + '</div>'
   # Supply colleges from db now, but use ajax to get a college's disciplines
@@ -596,14 +590,13 @@ def map_courses():
 @app.route('/_institutions')
 def _institutions():
   Institution = namedtuple('Institution', 'code, prompt, name, associates, bachelors')
-  conn = PgConnection()
-  cursor = conn.cursor()
-  cursor.execute("""select code, prompt, name, associates, bachelors
-                      from cuny_institutions order by code
-                 """)
-  institutions = [Institution._make(x)._asdict() for x in cursor.fetchall()]
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute("""select code, prompt, name, associates, bachelors
+                          from cuny_institutions order by code
+                     """)
+      institutions = [Institution._make(x)._asdict() for x in cursor.fetchall()]
 
-  conn.close()
   return jsonify(institutions)
 
 
@@ -615,15 +608,15 @@ def _institutions():
 @app.route('/_disciplines')
 def _disciplines():
   institution = request.args.get('institution', 0)
-  conn = PgConnection()
-  cursor = conn.cursor()
-  cursor.execute("""select discipline
-                      from cuny_disciplines
-                      where cuny_subject != 'MESG'
-                        and institution = %s
-                      order by discipline""", (institution,))
-  disciplines = ['<option value="{}">{}</option>'.format(x[0], x[0]) for x in cursor.fetchall()]
-  conn.close()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute("""select discipline
+                          from cuny_disciplines
+                          where cuny_subject != 'MESG'
+                            and institution = %s
+                          order by discipline""", (institution,))
+      disciplines = ['<option value="{}">{}</option>'.format(x[0], x[0]) for x in cursor.fetchall()]
+
   return jsonify("""<select name="discipline" id="discipline">
     <option value="none" selected="selected">Select a Discipline</option>
     {}
@@ -643,14 +636,13 @@ def _find_course_ids():
   institution = request.args.get('institution')
   discipline = request.args.get('discipline')
   ranges_str = request.args.get('ranges_str')
-  conn = PgConnection()
-  cursor = conn.cursor()
-  cursor.execute("""select course_id, numeric_part(catalog_number) as cat_num
-                    from cuny_courses
-                    where institution = %s and discipline = %s
-                 """, (institution, discipline))
-  courses = [[c.course_id, c.cat_num] for c in cursor.fetchall()]
-  conn.close()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute("""select course_id, numeric_part(catalog_number) as cat_num
+                        from cuny_courses
+                        where institution = %s and discipline = %s
+                     """, (institution, discipline))
+      courses = [[c.course_id, c.cat_num] for c in cursor.fetchall()]
 
   # Filter out the deplorables
   # Range string syntax: all | min:max [;...]
@@ -694,104 +686,106 @@ def _map_course():
   request_type = request.args.get('request_type', default='show-sending')
 
   table_rows = []
-  conn = PgConnection()
-  cursor = conn.cursor()
-  for course_id in course_ids:
-    cursor.execute("""select  course_id,
-                              institution,
-                              discipline,
-                              catalog_number,
-                              title,
-                              course_status,
-                              designation
-                      from cuny_courses
-                      where course_id = %s
-                      and discipline = %s
-                   """, (course_id, discipline))
-    if cursor.rowcount == 0:
-      continue
-    course_info = cursor.fetchone()
-    class_info = 'selected-course'
-    if course_info.course_status != 'A':
-      class_info = 'selected-course inactive-course'
-    course_info_cell = """
-                         <th class="clickable {}"
-                             title="course_id {}: “{}”"
-                             headers="target-course-col"
-                             id="{}-row"
-                             >{} {} {}</th>
-                       """.format(class_info,
-                                  course_info.course_id,
-                                  course_info.title,
-                                  course_info.course_id,
-                                  course_info.institution.rstrip('0123456789'),
-                                  course_info.discipline,
-                                  course_info.catalog_number)
-    # Collect rules where the selected course is a sending course
-    if request_type == 'show-sending':
-      row_template = '<tr>' + course_info_cell + '{}</tr>'
-      cursor.execute("""select distinct *
-                        from transfer_rules r
-                        where r.id in (select rule_id from source_courses where course_id = %s)
-                        order by source_institution, subject_area, destination_institution
-                    """, (course_info.course_id, ))
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      for course_id in course_ids:
+        cursor.execute("""select  course_id,
+                                  institution,
+                                  discipline,
+                                  catalog_number,
+                                  title,
+                                  course_status,
+                                  designation
+                          from cuny_courses
+                          where course_id = %s
+                          and discipline = %s
+                       """, (course_id, discipline))
+        if cursor.rowcount == 0:
+          continue
+        course_info = cursor.fetchone()
+        class_info = 'selected-course'
+        if course_info.course_status != 'A':
+          class_info = 'selected-course inactive-course'
+        course_info_cell = """
+                             <th class="clickable {}"
+                                 title="course_id {}: “{}”"
+                                 headers="target-course-col"
+                                 id="{}-row"
+                                 >{} {} {}</th>
+                           """.format(class_info,
+                                      course_info.course_id,
+                                      course_info.title,
+                                      course_info.course_id,
+                                      course_info.institution.rstrip('0123456789'),
+                                      course_info.discipline,
+                                      course_info.catalog_number)
+        # Collect rules where the selected course is a sending course
+        if request_type == 'show-sending':
+          row_template = '<tr>' + course_info_cell + '{}</tr>'
+          cursor.execute("""select distinct *
+                            from transfer_rules r
+                            where r.id in (select rule_id from source_courses where course_id = %s)
+                            order by source_institution, subject_area, destination_institution
+                        """, (course_info.course_id, ))
 
-    else:
-      # Collect rules where the selected course is a destination course
-      row_template = '<tr>{}' + course_info_cell + '</tr>'
-      cursor.execute("""select distinct *
-                        from transfer_rules r
-                        where r.id in (select rule_id from destination_courses where course_id = %s)
-                        order by source_institution, subject_area, destination_institution
-                    """, (course_info.course_id, ))
-    all_rules = cursor.fetchall()
+        else:
+          # Collect rules where the selected course is a destination course
+          row_template = '<tr>{}' + course_info_cell + '</tr>'
+          cursor.execute("""select distinct *
+                            from transfer_rules r
+                            where r.id in (select rule_id from destination_courses where course_id = %s)
+                            order by source_institution, subject_area, destination_institution
+                        """, (course_info.course_id, ))
+        all_rules = cursor.fetchall()
 
-    # For each destination/source institution, need the count of number of rules and a list of the
-    # rules.
-    rule_counts = Counter()
-    rules = defaultdict(list)
-    for rule in all_rules:
-      rule_key = '{}:{}:{}:{}'.format(rule.source_institution,
-                                      rule.destination_institution,
-                                      rule.subject_area,
-                                      rule.group_number)
-      if request_type == 'show-sending':
-        rule_counts[rule.destination_institution] += 1
-        rules[rule.destination_institution].append(rule_key)
-      else:
-        rule_counts[rule.source_institution] += 1
-        rules[rule.source_institution].append(rule_key)
+        # For each destination/source institution, need the count of number of rules and a list of the
+        # rules.
+        rule_counts = Counter()
+        rules = defaultdict(list)
+        for rule in all_rules:
+          rule_key = '{}:{}:{}:{}'.format(rule.source_institution,
+                                          rule.destination_institution,
+                                          rule.subject_area,
+                                          rule.group_number)
+          if request_type == 'show-sending':
+            rule_counts[rule.destination_institution] += 1
+            rules[rule.destination_institution].append(rule_key)
+          else:
+            rule_counts[rule.source_institution] += 1
+            rules[rule.source_institution].append(rule_key)
 
-    # Ignore inactive courses for which there are no rules
-    if sum(rule_counts.values()) == 0 and course_info.course_status != 'A':
-      continue
+        # Ignore inactive courses for which there are no rules
+        if sum(rule_counts.values()) == 0 and course_info.course_status != 'A':
+          continue
 
-    # Fill in the data cells for each college
-    data_cells = ''
-    for college in colleges:
-      coll = college.strip('0123456789 ').lower()
-      class_info = ''
-      num_rules = rule_counts[college]
-      if num_rules > 0:
-        class_info = 'clickable '
-      rules_str = '|'.join(rules[college])
-      if course_info.course_status == 'A' and num_rules == 0 and college != course_info.institution:
-        class_info += 'missing-rule'
-      if num_rules == 1 and (course_info.designation == 'MLA' or course_info.designation == 'MNL'):
-        class_info += 'blanket-credit'
-      if course_info.course_status != 'A' and num_rules > 0 and college != course_info.institution:
-        class_info += 'bogus-rule'
-      if num_rules > 0 and college == course_info.institution:
-        class_info += 'self-rule'
-      class_info = class_info.strip()
-      if class_info != '':
-        class_info = f' class="{class_info}"'
-      data_cells += f"""<td title="{rules_str}"
-                            headers="{coll}-col {course_info.course_id}-row"
-                            {class_info}>{num_rules}</td>"""
-    table_rows.append(row_template.format(data_cells))
+        # Fill in the data cells for each college
+        data_cells = ''
+        for college in colleges:
+          coll = college.strip('0123456789 ').lower()
+          class_info = ''
+          num_rules = rule_counts[college]
+          if num_rules > 0:
+            class_info = 'clickable '
+          rules_str = '|'.join(rules[college])
+          if (course_info.course_status == 'A'
+             and num_rules == 0 and college != course_info.institution):
+            class_info += 'missing-rule'
+          if (num_rules == 1
+             and (course_info.designation == 'MLA' or course_info.designation == 'MNL')):
+            class_info += 'blanket-credit'
+          if (course_info.course_status != 'A'
+             and num_rules > 0 and college != course_info.institution):
+            class_info += 'bogus-rule'
+          if num_rules > 0 and college == course_info.institution:
+            class_info += 'self-rule'
+          class_info = class_info.strip()
+          if class_info != '':
+            class_info = f' class="{class_info}"'
+          data_cells += f"""<td title="{rules_str}"
+                                headers="{coll}-col {course_info.course_id}-row"
+                                {class_info}>{num_rules}</td>"""
+        table_rows.append(row_template.format(data_cells))
 
-  conn.close()
   return jsonify('\n'.join(table_rows))
 
 
@@ -819,56 +813,55 @@ def lookup_rules():
                    Unable to use "{}" as a catalog number.</p>""".format(original_catalog_number))
   type = request.args.get('type')
   # Get the course_ids
-  conn = PgConnection()
-  cursor = conn.cursor()
-  query = """
-  select distinct course_id
-    from cuny_courses
-   where institution = %s
-     and discipline = %s
-     and catalog_number ~* %s
-     and course_status = 'A'
-     and discipline_status = 'A'
-     and can_schedule = 'Y'
-     and cuny_subject != 'MESG'
-     """
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      query = """
+      select distinct course_id
+        from cuny_courses
+       where institution = %s
+         and discipline = %s
+         and catalog_number ~* %s
+         and course_status = 'A'
+         and discipline_status = 'A'
+         and can_schedule = 'Y'
+         and cuny_subject != 'MESG'
+         """
 
-  rules = ''
-  cursor.execute(query, (institution, discipline, catalog_number))
-  if cursor.rowcount > 0:
-    course_ids = ', '.join(['{}'.format(x[0]) for x in cursor.fetchall()])
+      rules = ''
+      cursor.execute(query, (institution, discipline, catalog_number))
+      if cursor.rowcount > 0:
+        course_ids = ', '.join(['{}'.format(x[0]) for x in cursor.fetchall()])
 
-    # Get the rules
-    if type == 'sending':
-      source_dest = 'source'
-    else:
-      source_dest = 'destination'
+        # Get the rules
+        if type == 'sending':
+          source_dest = 'source'
+        else:
+          source_dest = 'destination'
 
-    query = """
-    select distinct
-        source_institution||'-'||source_discipline||'-'||group_number||'-'||destination_institution
-      from {}_courses
-     where course_id in ({})
-     order by source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
-    """.format(source_dest, course_ids)
-    cursor.execute(query)
-    rules = ['<div>{}</div>'.format(format_rule(x[0])) for x in cursor.fetchall()]
-    credit_mismatch = False
-    for rule in rules:
-      if 'credit-mismatch' in rule:
-        credit_mismatch = True
-        break
-    if credit_mismatch:
-      rules.insert(0, """<p class="credit-mismatch">Rules higlighted like this have different
-                   numbers of credits at the sending and receiving colleges.</p>""")
-    rules.insert(0, '<p><em>Hover over catalog numbers for course details.</em></p>')
-  if len(rules) == 0:
-    if type == 'sending':
-      rules = '<p>No sending rules</p>'
-    else:
-      rules = '<p>No receiving rules</p>'
+        query = """
+        select distinct
+            source_institution||'-'||source_discipline||'-'||group_number||'-'||destination_institution
+          from {}_courses
+         where course_id in ({})
+         order by source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
+        """.format(source_dest, course_ids)
+        cursor.execute(query)
+        rules = ['<div>{}</div>'.format(format_rule(x[0])) for x in cursor.fetchall()]
+        credit_mismatch = False
+        for rule in rules:
+          if 'credit-mismatch' in rule:
+            credit_mismatch = True
+            break
+        if credit_mismatch:
+          rules.insert(0, """<p class="credit-mismatch">Rules higlighted like this have different
+                       numbers of credits at the sending and receiving colleges.</p>""")
+        rules.insert(0, '<p><em>Hover over catalog numbers for course details.</em></p>')
+      if len(rules) == 0:
+        if type == 'sending':
+          rules = '<p>No sending rules</p>'
+        else:
+          rules = '<p>No receiving rules</p>'
 
-  conn.close()
   return jsonify(rules)
 
 
@@ -926,34 +919,35 @@ def _course_search():
 # then, it's just here in case it's needed.
 @app.route('/_sessions')
 def _sessions():
-  conn = PgConnection()
-  cursor = conn.cursor()
-  q = 'select session_key, expiration_time from sessions order by expiration_time'
-  cursor.execute(q)
-  result = '<table>'
-  now = datetime.now()
-  num_expired = 0
-  for row in cursor.fetchall():
-    ts = datetime.fromtimestamp(row['expiration_time'])
-    ts_str = ts.strftime('%Y-%m-%d %H:%M:%S')
-    status = 'active'
-    if ts < now:
-      status = 'expired'
-      num_expired += 1
-    result += '<tr><td>{}</td><td>{}</td><td>{}</td></tr>'.format(row['session_key'],
-                                                                  ts_str,
-                                                                  status)
-  msg = '<p>There were no expired sessions to delete.</p>'
-  if num_expired > 0:
-    cursor.execute("delete from sessions where expiration_time < {}".format(now.timestamp()))
-    conn.commit()
-    cursor.close()
-    conn.close()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      q = 'select session_key, expiration_time from sessions order by expiration_time'
+      cursor.execute(q)
+      result = '<table>'
+      now = datetime.now()
+      num_expired = 0
+      for row in cursor.fetchall():
+        ts = datetime.fromtimestamp(row['expiration_time'])
+        ts_str = ts.strftime('%Y-%m-%d %H:%M:%S')
+        status = 'active'
+        if ts < now:
+          status = 'expired'
+          num_expired += 1
+        result += '<tr><td>{}</td><td>{}</td><td>{}</td></tr>'.format(row['session_key'],
+                                                                      ts_str,
+                                                                      status)
+      msg = '<p>There were no expired sessions to delete.</p>'
+      if num_expired > 0:
+        cursor.execute("delete from sessions where expiration_time < {}".format(now.timestamp()))
+        conn.commit()
+        cursor.close()
+        conn.close()
 
-    if num_expired == 1:
-      msg = '<p>Deleted one expired session.</p>'
-    else:
-      msg = '<p>Deleted {} expired sessions.</p>'.format(num_expired)
+        if num_expired == 1:
+          msg = '<p>Deleted one expired session.</p>'
+        else:
+          msg = '<p>Deleted {} expired sessions.</p>'.format(num_expired)
+
   return result + '</table>' + msg
 
 
@@ -966,175 +960,174 @@ def courses():
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
-  conn = PgConnection()
-  cursor = conn.cursor()
-  institution_code = None
-  discipline_code = None
-  department_code = None
-  institution_name = 'Unknown'
-  date_updated = 'Unknown'
-  num_active_courses = 0
-  discipline_clause = ''
-  discipline_name = ''
-  department_clause = ''
-  department_str = ''
-  if request.method == 'POST':
-    institution_code = request.form['inst']
-  else:
-    institution_code = request.args.get('college', None)
-    discipline_code = request.args.get('discipline', None)
-    department_code = request.args.get('department', None)
-    if institution_code is not None:
-      if not re.search(r'\d\d$', institution_code):
-        institution_code += '01'
-      institution_code = institution_code.upper()
-      if discipline_code is not None:
-        discipline_code = discipline_code.upper()
-        discipline_clause = f"and discipline = '{discipline_code}'"
-        cursor.execute(f"""select discipline_name
-                            from cuny_disciplines
-                           where institution = '{institution_code}'
-                             and discipline = '{discipline_code}'
-                        """)
-        if cursor.rowcount == 1:
-          discipline_name = cursor.fetchone().discipline_name
-      if department_code is not None:
-        department_code = department_code.upper()
-        department_clause = f"and department = '{department_code}'"
-        cursor.execute(f"""select department_name
-                             from cuny_departments
-                            where institution = '{institution_code}'
-                              and department = '{department_code}'
-                        """)
-        if cursor.rowcount == 1:
-          department_str = f'Offered By the {cursor.fetchone().department_name} Department'
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      institution_code = None
+      discipline_code = None
+      department_code = None
+      institution_name = 'Unknown'
+      date_updated = 'Unknown'
+      num_active_courses = 0
+      discipline_clause = ''
+      discipline_name = ''
+      department_clause = ''
+      department_str = ''
+      if request.method == 'POST':
+        institution_code = request.form['inst']
+      else:
+        institution_code = request.args.get('college', None)
+        discipline_code = request.args.get('discipline', None)
+        department_code = request.args.get('department', None)
+        if institution_code is not None:
+          institution_code = f'{institution_code[0:3].upper()}01'
+          if discipline_code is not None:
+            discipline_code = discipline_code.upper()
+            discipline_clause = f"and discipline = '{discipline_code}'"
+            cursor.execute(f"""select discipline_name
+                                from cuny_disciplines
+                               where institution = '{institution_code}'
+                                 and discipline = '{discipline_code}'
+                            """)
+            if cursor.rowcount == 1:
+              discipline_name = cursor.fetchone().discipline_name
+          if department_code is not None:
+            department_code = department_code.upper()
+            department_clause = f"and department = '{department_code}'"
+            cursor.execute(f"""select department_name
+                                 from cuny_departments
+                                where institution = '{institution_code}'
+                                  and department = '{department_code}'
+                            """)
+            if cursor.rowcount == 1:
+              department_str = f'Offered By the {cursor.fetchone().department_name} Department'
 
-  if institution_code is not None:
-    cursor.execute("select update_date from updates where table_name = 'cuny_courses'")
-    date_updated = date2str(cursor.fetchone().update_date)
-    cursor.execute('select name from cuny_institutions where code = %s', (institution_code, ))
-    institution_name = cursor.fetchone().name
-    cursor.execute(f"""
-        select count(*) from cuny_courses
-         where institution ~* %s {discipline_clause} {department_clause}
-           and course_status = 'A'
-           and can_schedule = 'Y'
-           and discipline_status = 'A'
-        """, (institution_code, ))
-    num_active_courses = cursor.fetchone()[0]
+      if institution_code is not None:
+        cursor.execute("select update_date from updates where table_name = 'cuny_courses'")
+        date_updated = date2str(cursor.fetchone().update_date)
+        cursor.execute('select name from cuny_institutions where code = %s', (institution_code, ))
+        institution_name = cursor.fetchone().name
+        cursor.execute(f"""
+            select count(*) from cuny_courses
+             where institution ~* %s {discipline_clause} {department_clause}
+               and course_status = 'A'
+               and can_schedule = 'Y'
+               and discipline_status = 'A'
+            """, (institution_code, ))
+        num_active_courses = cursor.fetchone()[0]
 
-    if discipline_name == '' and department_str == '':
-      quantifier = 'All'
-    else:
-      quantifier = ''
-    header_str = header(title=f'{institution_name}: {quantifier} Active Courses',
-                        nav_items=[{'type': 'link',
-                                    'href': '/',
-                                    'text': 'Main Menu'},
-                                   {'type': 'link',
-                                    'href': '/courses',
-                                    'text': 'Change College'}])
-    result = f"""
-      {header_str}
-      <h1>{discipline_name} {department_str}</h1>
-      <details class="instructions">
-        <summary>Legend and Details</summary>
-        <hr>
-        <p>{num_active_courses:,} active courses as of {date_updated}</p>
-        <p>Click on course name for transfer information.</p>
-        <p>
-          The following course properties are shown in parentheses at the bottom of each course’s
-          catalog description. <em>Hover over items in this list for more information. </em> </p>
-        <ul>
-          <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
-          <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
-          <li title="Each course has exactly one Requirement Designation (RD). Among other values,
-          Pathways requirements appear here.">
-            Requirement Designation;</li>
-          <li id="show-attributes"
-              title="A course can have any number of attributes. Click here to see the names,
-              values, and descriptions for all attributes used at CUNY.">
-              Course Attributes (<em>None</em>, or a comma-separated list of name:value attribute
-              pairs).
-          </li>
-        </ul>
-        <div id="pop-up-div">
-          <div id="pop-up-inner">
-            <div id="dismiss-bar">x</div>
-            <table>
-              <tr><th>Name</th><th>Value</th><th>Description</th></tr>
-              {course_attribute_rows}
-            </table>
+        if discipline_name == '' and department_str == '':
+          quantifier = 'All'
+        else:
+          quantifier = ''
+        header_str = header(title=f'{institution_name}: {quantifier} Active Courses',
+                            nav_items=[{'type': 'link',
+                                        'href': '/',
+                                        'text': 'Main Menu'},
+                                       {'type': 'link',
+                                        'href': '/courses',
+                                        'text': 'Change College'}])
+        result = f"""
+          {header_str}
+          <h1>{discipline_name} {department_str}</h1>
+          <details class="instructions">
+            <summary>Legend and Details</summary>
+            <hr>
+            <p>{num_active_courses:,} active courses as of {date_updated}</p>
+            <p>Click on course name for transfer information.</p>
+            <p>
+              The following course properties are shown in parentheses at the bottom of each course’s
+              catalog description. <em>Hover over items in this list for more information. </em> </p>
+            <ul>
+              <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
+              <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
+              <li title="Each course has exactly one Requirement Designation (RD). Among other values,
+              Pathways requirements appear here.">
+                Requirement Designation;</li>
+              <li id="show-attributes"
+                  title="A course can have any number of attributes. Click here to see the names,
+                  values, and descriptions for all attributes used at CUNY.">
+                  Course Attributes (<em>None</em>, or a comma-separated list of name:value attribute
+                  pairs).
+              </li>
+            </ul>
+            <div id="pop-up-div">
+              <div id="pop-up-inner">
+                <div id="dismiss-bar">x</div>
+                <table>
+                  <tr><th>Name</th><th>Value</th><th>Description</th></tr>
+                  {course_attribute_rows}
+                </table>
+              </div>
+            </div>
+          </details>
+          <p id="loading" class="error">Loading catalog information <span class="dot-1>.</span>
+            <span class="dot-2">.</span class="dot-3"> <span>.</span>
+          </p>
+          """
+        result += lookup_courses(institution_code,
+                                 department=department_code,
+                                 discipline=discipline_code)
+
+      if num_active_courses == 0:
+        # No courses yet (bogus or missing institution): prompt user to select an institution
+        if (institution_code is not None
+           or discipline_code is not None
+           or department_code is not None):
+          msg = '<p class="error">No Courses Found</p>'
+        else:
+          msg = ''
+        result = f"""
+        {header(title='CUNY Transfer App',
+                nav_items=[{'type':'link', 'text': 'Main Menu', 'href': '/'}])}
+        <h1>List Active Courses</h1>{msg}
+        <p class="instructions">Pick a college and say “Please”.</p>
+        <form method="post" action="#">
+        <fieldset><legend>Select a College</legend>"""
+        cursor.execute("select * from cuny_institutions order by code")
+        n = 0
+        college_list = ''
+        for row in cursor:
+          n += 1
+          college_list += """
+          <div class='institution-select'>
+            <input type="radio" name="inst" id="inst-{}" value="{}"/>
+            <label for="inst-{}">{}</label>
           </div>
-        </div>
-      </details>
-      <p id="loading" class="error">Loading catalog information <span class="dot-1>.</span>
-        <span class="dot-2">.</span class="dot-3"> <span>.</span>
-      </p>
-      """
-    result = result + lookup_courses(institution_code,
-                                     department=department_code,
-                                     discipline=discipline_code)
+          """.format(n, row.code, n, row.name)
 
-  if num_active_courses == 0:
-    # No courses yet (bogus or missing institution): prompt user to select an institution
-    if (institution_code is not None or discipline_code is not None or department_code is not None):
-      msg = '<p class="error">No Courses Found</p>'
-    else:
-      msg = ''
-    result = f"""
-    {header(title='CUNY Transfer App',
-            nav_items=[{'type':'link', 'text': 'Main Menu', 'href': '/'}])}
-    <h1>List Active Courses</h1>{msg}
-    <p class="instructions">Pick a college and say “Please”.</p>
-    <form method="post" action="#">
-    <fieldset><legend>Select a College</legend>"""
-    cursor.execute("select * from cuny_institutions order by code")
-    n = 0
-    college_list = ''
-    for row in cursor:
-      n += 1
-      college_list += """
-      <div class='institution-select'>
-        <input type="radio" name="inst" id="inst-{}" value="{}"/>
-        <label for="inst-{}">{}</label>
-      </div>
-      """.format(n, row.code, n, row.name)
-    cursor.close()
-    conn.close()
-    result += f"""
-      {college_list}
-      <div>
-        <button type="submit">Please</button>
-      </div>
-    </fieldset></form>
-    <fieldset id="course-filters">
-    <h2>Firehose Control</h2>
-    <p>
-      You can filter the courses at <span id="college-name">None</span> by department, discipline,
-      CUNY subject, requirement designation, and/or course attribute.
-    </p>
-      <label for="department-select">Department:</label>
-      <select id="department-select"name="department">
-      </select>
-      <br>
-      <label for="discipline-select">Discipline:</label>
-      <select id="discipline-select"name="discipline">
-      </select>
-      <br>
-      <label for="subject-select">CUNY Subject:</label>
-      <select id="subject-select"name="subject">
-      </select>
-      <br>
-      <label for="designation-select">Designation:</label>
-      <select id="designation-select"name="designation">
-      </select>
-      <br>
-      <label for="attribute-select">Course Attribute:</label>
-      <select id="attribute-select"name="attribute">
-      </select>
-    </fieldset>
-    """
+        result += f"""
+          {college_list}
+          <div>
+            <button type="submit">Please</button>
+          </div>
+        </fieldset></form>
+        <fieldset id="course-filters">
+        <h2>Firehose Control</h2>
+        <p>
+          You can filter the courses at <span id="college-name">None</span> by department, discipline,
+          CUNY subject, requirement designation, and/or course attribute.
+        </p>
+          <label for="department-select">Department:</label>
+          <select id="department-select"name="department">
+          </select>
+          <br>
+          <label for="discipline-select">Discipline:</label>
+          <select id="discipline-select"name="discipline">
+          </select>
+          <br>
+          <label for="subject-select">CUNY Subject:</label>
+          <select id="subject-select"name="subject">
+          </select>
+          <br>
+          <label for="designation-select">Designation:</label>
+          <select id="designation-select"name="designation">
+          </select>
+          <br>
+          <label for="attribute-select">Course Attribute:</label>
+          <select id="attribute-select"name="attribute">
+          </select>
+        </fieldset>
+        """
   return render_template('courses.html',
                          result=Markup(result),
                          title="Course Lists")
@@ -1158,184 +1151,185 @@ def registered_programs(institution, default=None):
   else:
     institution = 'none'
 
-  conn = PgConnection()
-  cursor = conn.cursor()
-  plan_cursor = conn.cursor()  # For looking up individual plans in CUNYfirst
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      # For looking up individual plans in CUNYfirst
+      with conn.cursor(row_factory=namedtuple_row) as plan_cursor:
 
-  # See when NYSED was last accessed
-  try:
-    cursor.execute("select update_date from updates where table_name='registered_programs'")
-    nysed_update_date = (f'Latest NYSED website acess was on '
-                         f'{date2str(cursor.fetchone().update_date)}.')
-  except (KeyError, ValueError):
-    nysed_update_date = 'Date of latest NYSED website access is not available.'
+        # See when NYSED was last accessed
+        try:
+          cursor.execute("select update_date from updates where table_name='registered_programs'")
+          nysed_update_date = (f'Latest NYSED website acess was on '
+                               f'{date2str(cursor.fetchone().update_date)}.')
+        except (KeyError, ValueError):
+          nysed_update_date = 'Date of latest NYSED website access is not available.'
 
-  # See when Degree Works requirement_blocks were last updated.
-  try:
-    cursor.execute("select update_date from updates where table_name='requirement_blocks'")
-    dgw_update_date = (f'Program requirements from Degree Works were last updated on  '
-                       f'{date2str(cursor.fetchone().update_date)}.')
-  except (KeyError, ValueError):
-    dgw_update_date = 'Date of latest Degree Works access is not available.'
+        # See when Degree Works requirement_blocks were last updated.
+        try:
+          cursor.execute("select update_date from updates where table_name='requirement_blocks'")
+          dgw_update_date = (f'Program requirements from Degree Works were last updated on  '
+                             f'{date2str(cursor.fetchone().update_date)}.')
+        except (KeyError, ValueError):
+          dgw_update_date = 'Date of latest Degree Works access is not available.'
 
-  # Find out what CUNY colleges are in the db
-  cursor.execute("""
-                 select distinct r.target_institution as inst, i.name
-                 from registered_programs r, cuny_institutions i
-                 where i.code = upper(r.target_institution||'01')
-                 order by i.name
-                 """)
+        # Find out what CUNY colleges are in the db
+        cursor.execute("""
+                       select distinct r.target_institution as inst, i.name
+                       from registered_programs r, cuny_institutions i
+                       where i.code = upper(r.target_institution||'01')
+                       order by i.name
+                       """)
 
-  if cursor.rowcount < 1:
-    result = """
-    <h1>There is no registered-program information for CUNY colleges available at this time.</h1>
-    """
-    conn.close()
-    return render_template('registered_programs.html', result=Markup(result))
+        if cursor.rowcount < 1:
+          result = """
+          <h1>There is no registered-program information for CUNY colleges available at this time.</h1>
+          """
+          conn.close()
+          return render_template('registered_programs.html', result=Markup(result))
 
-  cuny_institutions = dict([(row.inst, {'name': row.name})
-                           for row in cursor.fetchall()])
-  cuny_institutions['all'] = {'name': 'All CUNY Colleges'}
-  options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]["name"]}</option>'
-                      for inst in cuny_institutions])
-  if institution is None or institution not in cuny_institutions.keys():
-    h1 = '<h1>Select a CUNY College</h1>'
-    html_table = ''
-    template = ''
-  else:
-    # Complete the page heading with name of institution and link for downloading CSV
-    csv_headings = ['Program Code',
-                    'Registration Office',
-                    'Institution',
-                    'Program Title',
-                    'Formats',
-                    'HEGIS',
-                    'Award',
-                    'CIP Code',
-                    'CUNY Program(s)',
-                    'Certificate or License',
-                    'Accreditation',
-                    'First Reg. Date',
-                    'Latest Reg. Action',
-                    'TAP',
-                    'APTS',
-                    'VVTA']
-    cursor.execute("select update_date from updates where table_name='registered_programs'")
-    if cursor.rowcount == 1:
-      filename = f'{institution.upper()}_{cursor.fetchone().update_date}.csv'
-      if institution == 'all':
-        cursor.execute('select csv from registered_programs order by target_institution, title')
-      else:
-        cursor.execute("""select csv
-                            from registered_programs
-                            where target_institution = %s
-                            order by title
-                       """, (institution, ))
-      # Try to (re-)create the csv file. If anything goes wrong, that's too bad.
-      try:
-        csv_dir = Path(app.root_path + '/static/csv')
-        csv_dir.mkdir(exist_ok=True)
-        with open(f'{csv_dir}/{filename}', 'w') as outfile:
-          writer = csv.writer(outfile)
-          writer.writerow(csv_headings)
-          for row in cursor.fetchall():
-            line = json.loads(row.csv)
-            writer.writerow(line)
-        link = (f' <a href="/static/csv/{filename}" download="{filename}"'
-                f'class="button">Download {filename}</a>')
-      except (OSError, RuntimeError) as e:
-        link = f'<br><span class="error">No CSV available: {e}</span>'
-    else:
-      link = ' (No CSV Available)'
+        cuny_institutions = dict([(row.inst, {'name': row.name})
+                                 for row in cursor.fetchall()])
+        cuny_institutions['all'] = {'name': 'All CUNY Colleges'}
+        options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]["name"]}</option>'
+                            for inst in cuny_institutions])
+        if institution is None or institution not in cuny_institutions.keys():
+          h1 = '<h1>Select a CUNY College</h1>'
+          html_table = ''
+          template = ''
+        else:
+          # Complete the page heading with name of institution and link for downloading CSV
+          csv_headings = ['Program Code',
+                          'Registration Office',
+                          'Institution',
+                          'Program Title',
+                          'Formats',
+                          'HEGIS',
+                          'Award',
+                          'CIP Code',
+                          'CUNY Program(s)',
+                          'Certificate or License',
+                          'Accreditation',
+                          'First Reg. Date',
+                          'Latest Reg. Action',
+                          'TAP',
+                          'APTS',
+                          'VVTA']
+          cursor.execute("select update_date from updates where table_name='registered_programs'")
+          if cursor.rowcount == 1:
+            filename = f'{institution.upper()}_{cursor.fetchone().update_date}.csv'
+            if institution == 'all':
+              cursor.execute('select csv from registered_programs order by target_institution, title')
+            else:
+              cursor.execute("""select csv
+                                  from registered_programs
+                                  where target_institution = %s
+                                  order by title
+                             """, (institution, ))
+            # Try to (re-)create the csv file. If anything goes wrong, that's too bad.
+            try:
+              csv_dir = Path(app.root_path + '/static/csv')
+              csv_dir.mkdir(exist_ok=True)
+              with open(f'{csv_dir}/{filename}', 'w') as outfile:
+                writer = csv.writer(outfile)
+                writer.writerow(csv_headings)
+                for row in cursor.fetchall():
+                  line = json.loads(row.csv)
+                  writer.writerow(line)
+              link = (f' <a href="/static/csv/{filename}" download="{filename}"'
+                      f'class="button">Download {filename}</a>')
+            except (OSError, RuntimeError) as e:
+              link = f'<br><span class="error">No CSV available: {e}</span>'
+          else:
+            link = ' (No CSV Available)'
 
-    institution_name = cuny_institutions[institution]['name'] + link
+          institution_name = cuny_institutions[institution]['name'] + link
 
-    h1 = f'<h1>{institution_name}</h1>'
+          h1 = f'<h1>{institution_name}</h1>'
 
-    # Generate the HTML table
-    html_headings = ['Program Code',
-                     'Registration Office',
-                     'Institution <span class="sed-note">(Hover for NYSED Institution ID)</span>',
-                     'Program Title',
-                     """<a
-                      href="http://www.nysed.gov/college-university-evaluation/format-definitions">
-                      Formats</a>""",
-                     'HEGIS',
-                     'Award',
-                     'CIP Code',
-                     'CUNY Program(s)',
-                     'Certificate or License',
-                     'Accreditation',
-                     'First Reg. Date',
-                     'Latest Reg. Action',
-                     '<span title="Tuition Assistance Program">TAP</span>',
-                     '<span title="Aid for Part-Time Study">APTS</span>',
-                     '<span title="Veteran’s Tuition Assistance">VVTA</span>']
-    html_heading_row = '<thead><tr>' + ''.join([f'<th>{head}</th>' for head in html_headings])
-    html_heading_row += '</tr></thead>\n'
+          # Generate the HTML table
+          nysed_url = 'http://www.nysed.gov/college-university-evaluation/format-definitions'
+          html_headings = ['Program Code',
+                           'Registration Office',
+                           """Institution
+                              <span class="sed-note">(Hover for NYSED Institution ID)</span>""",
+                           'Program Title',
+                           f'<a href="{nysed_url}"> Formats</a>',
+                           'HEGIS',
+                           'Award',
+                           'CIP Code',
+                           'CUNY Program(s)',
+                           'Certificate or License',
+                           'Accreditation',
+                           'First Reg. Date',
+                           'Latest Reg. Action',
+                           '<span title="Tuition Assistance Program">TAP</span>',
+                           '<span title="Aid for Part-Time Study">APTS</span>',
+                           '<span title="Veteran’s Tuition Assistance">VVTA</span>']
+          html_heading_row = '<thead><tr>' + ''.join([f'<th>{head}</th>' for head in html_headings])
+          html_heading_row += '</tr></thead>\n'
 
-    if institution == 'all':
-      cursor.execute('select html from registered_programs order by target_institution, title')
-    else:
-      cursor.execute("""select html
-                          from registered_programs
-                          where target_institution = %s
-                          order by title
-                     """, (institution, ))
-    html_data_rows = [f'{row.html}' for row in cursor.fetchall()]
-    html_table_rows = html_heading_row + '<tbody>' + '\n'.join(html_data_rows) + '</tbody>'
-    html_table = (f'<div class="table-height"><table class="scrollable">{html_table_rows}'
-                  f'</table></div>')
+          if institution == 'all':
+            cursor.execute("""
+            select html from registered_programs order by target_institution, title""")
+          else:
+            cursor.execute("""select html
+                                from registered_programs
+                                where target_institution = %s
+                                order by title
+                           """, (institution, ))
+          html_data_rows = [f'{row.html}' for row in cursor.fetchall()]
+          html_table_rows = html_heading_row + '<tbody>' + '\n'.join(html_data_rows) + '</tbody>'
+          html_table = (f'<div class="table-height"><table class="scrollable">{html_table_rows}'
+                        f'</table></div>')
 
-  result = f"""
-      {header(title='Registered Programs', nav_items=[{'type': 'link',
-                                                       'text': 'Main Menu',
-                                                       'href': '/'
-                                                      }])}
-      {h1}
-        <form action="/registered_programs/" method="GET" id="select-institution">
-          <select name="institution">
-          <option value="none" style="font-size:3m; color:red;">Select a College</option>
-          {options}
-          </select>
-      </form>
-      <details>
-        <summary>Instructions and Options</summary>
-        <hr>
-        <p>
-          <span class="variant">Highlighted rows</span> are for programs with more than one variant,
-          such as multiple institutions and/or multiple awards. For multiple institutions, the
-          rows with matching Program Code numbers may not be next to each other because the table
-          is ordered by Program Title, and the titles typically differ across institutions.
-        </p>
-        <p>
-          The Registration Office is either the Department of Education’s Office of the Professions
-          (OP) or its Office of College and University Evaluation (OCUE).
-        </p>
-        <p>
-          Hover over HEGIS and CIP codes to see what they mean.<br>HEGIS is a NYS taxonomy of
-          program areas. The values shown here come from the NYSED website. CIP is a Federal
-          taxonomy, with the values shown here coming from CUNYfirst.
-        </p>
-        <p>
-          The CUNY Programs column shows matching programs from CUNYfirst with the department that
-          offers the program in parentheses. (Some programs are shared by multiple departments.)
-          “Requirements” links in that column show the program’s requirements as given in
-          Degree Works. {dgw_update_date}
-        </p>
-        <p>
-          The rightmost three columns show financial aid eligibility. Hover over the headings for
-          full names.
-        </p>
-        <p>
-          {nysed_update_date}
-        </p>
-      </details>
-      {html_table}
-"""
-  cursor.close()
-  plan_cursor.close()
-  conn.close()
+        result = f"""
+            {header(title='Registered Programs', nav_items=[{'type': 'link',
+                                                             'text': 'Main Menu',
+                                                             'href': '/'
+                                                            }])}
+            {h1}
+              <form action="/registered_programs/" method="GET" id="select-institution">
+                <select name="institution">
+                <option value="none" style="font-size:3m; color:red;">Select a College</option>
+                {options}
+                </select>
+            </form>
+            <details>
+              <summary>Instructions and Options</summary>
+              <hr>
+              <p>
+                <span class="variant">Highlighted rows</span> are for programs with more than one
+                variant, such as multiple institutions and/or multiple awards. For multiple
+                institutions, the rows with matching Program Code numbers may not be next to each
+                other because the table is ordered by Program Title, and the titles typically differ
+                across institutions.
+              </p>
+              <p>
+                The Registration Office is either the Department of Education’s Office of the
+                Professions (OP) or its Office of College and University Evaluation (OCUE).
+              </p>
+              <p>
+                Hover over HEGIS and CIP codes to see what they mean.<br>HEGIS is a NYS taxonomy of
+                program areas. The values shown here come from the NYSED website. CIP is a Federal
+                taxonomy, with the values shown here coming from CUNYfirst.
+              </p>
+              <p>
+                The CUNY Programs column shows matching programs from CUNYfirst with the department
+                that offers the program in parentheses. (Some programs are shared by multiple
+                departments.) “Requirements” links in that column show the program’s requirements as
+                given in Degree Works. {dgw_update_date}
+              </p>
+              <p>
+                The rightmost three columns show financial aid eligibility. Hover over the headings
+                for full names.
+              </p>
+              <p>
+                {nysed_update_date}
+              </p>
+            </details>
+            {html_table}
+      """
+
   return render_template('registered_programs.html',
                          result=Markup(result),
                          title='Registered Programs')
@@ -1395,22 +1389,22 @@ def rule_changes():
     """
     # Format table rows based on the diffs.
     table_rows = []
-    conn = PgConnection()
-    cursor = conn.cursor()
-    for rule_key in sorted(diffs.keys()):
-      rule_key_str = rule_key.replace('-', ':')
-      delta_type, first_rule_text, second_rule_text = expand_delta(first_date,
-                                                                   second_date,
-                                                                   diffs[rule_key],
-                                                                   cursor)
-      table_rows.append(f"""
-        <tr>
-          <th>{delta_type}</th>
-          <td>{first_rule_text}</td>
-          <td>{second_rule_text}</td>
-          <td>{rule_key_str}</td>
-        </tr>""")
-    conn.close()
+    with psycopg.connect('dbname=cuny_curriculum') as conn:
+      with conn.cursor(row_factory=namedtuple_row) as cursor:
+        for rule_key in sorted(diffs.keys()):
+          rule_key_str = rule_key.replace('-', ':')
+          delta_type, first_rule_text, second_rule_text = expand_delta(first_date,
+                                                                       second_date,
+                                                                       diffs[rule_key],
+                                                                       cursor)
+          table_rows.append(f"""
+            <tr>
+              <th>{delta_type}</th>
+              <td>{first_rule_text}</td>
+              <td>{second_rule_text}</td>
+              <td>{rule_key_str}</td>
+            </tr>""")
+
     nl = '\n'
     result += f"""
       {nl.join(table_rows)}
@@ -1506,85 +1500,6 @@ def _archive_dates():
   return json.dumps(available_archive_dates)
 
 
-# REQUIREMENTS PAGE
-# =================================================================================================
-
-# /_requirement_values() -- AJAX support
-# -------------------------------------------------------------------------------------------------
-@app.route('/_requirement_values/')
-def _requirement_values():
-  """ Return a select element with the options filled in.
-      # If the period is 'current' include only values where the period is '999999'.
-      # If the period is 'latest' include latest of all values.
-      # Otherwise, include all values found.
-      Generate options for all, and only, current blocks of the specified block_type. The option
-      values are the requirement_id, but the option strings are block_type, title (requirement_id)
-  """
-  institution = request.args.get('institution', 0)
-  block_type = request.args.get('block_type', 0)
-  period = request.args.get('period', 0)
-
-  # Filter out all-numeric block_values; they are left over from "conversion"
-  value_clause = r"and block_value !~ '^[\d ]+$'"
-  period_clause = "and period_stop ~* '^9'"
-
-  conn = PgConnection()
-  cursor = conn.cursor()
-  cursor.execute(f"""
-  select requirement_id, block_value, title, period_start, period_stop
-    from requirement_blocks
-   where institution = %s
-     and block_type = %s
-     {value_clause}
-     {period_clause}
-    order by title, requirement_id""", (institution, block_type))
-
-  option_type = f'a {block_type.title()}'
-  if block_type == 'CONC':
-    option_type = 'a Concentration'
-  if block_type == 'OTHER':
-    option_type = 'a Requirement'
-
-  options = ''
-  previous_value = ''
-  if cursor.rowcount == 0:
-    selected_option = (f'<option value="" selected="selected">No {block_type.title()} blocks found '
-                       f'for {institution}</option>\n')
-  else:
-    selected_option = (f'<option value="" selected="selected">Select {option_type}</option>\n')
-    for row in cursor.fetchall():
-      requirement_id = f'({row.requirement_id})'
-      if period == 'current':
-        period_str = ' '
-      elif row.block_value == previous_value:
-          continue
-      else:
-        previous_value = row.block_value
-        if period == 'all':
-          period_str = ' '
-          requirement_id = ''
-        else:
-          period_start = row.period_start.strip('UG')
-          period_start = f'{period_start[:4]}-{period_start[-4:]}'
-          period_stop = row.period_stop.strip('UG')
-          if period_stop.startswith('9'):
-            period_stop = 'now'
-          else:
-            period_stop = f'{period_stop[:4]}-{period_stop[-4:]}'
-          period_str = f'{period_start} to {period_stop} '
-
-      options += (f'<option value="{row.requirement_id}">{row.block_value}: {row.title} '
-                  f'{period_str}{requirement_id}</option>\n')
-  conn.close()
-  return f"""
-    <label for="requirement-id"><strong>Requirement:</strong></label>
-    <select id="requirement-id" name="requirement-id">
-    {selected_option}
-    {options}
-    </select>
-      """
-
-
 # /course_mappings route()
 # -------------------------------------------------------------------------------------------------
 @app.route('/course_mappings/', methods=['GET'])
@@ -1617,6 +1532,61 @@ def download_requirements(which):
     return make_response('<h1>Unrecognized Download Request</h1>')
 
 
+# REQUIREMENTS PAGE
+# =================================================================================================
+
+# /_requirement_values() -- AJAX support
+# -------------------------------------------------------------------------------------------------
+@app.route('/_requirement_values/')
+def _requirement_values():
+  """ Return a select element with the options filled in.
+      # If the period is 'latest' include latest of all values.
+      # Otherwise, include all values found.
+      Generate options for all, and only, current blocks of the specified block_type. The option
+      values are the requirement_id, but the option strings are block_type, title (requirement_id)
+  """
+  institution = request.args.get('institution', None)
+  block_type = request.args.get('block-type', None)
+
+  # Filter out all-numeric block_values; they are left over from "conversion"
+  value_clause = r"and block_value !~ '^[\d ]+$'"
+
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute(f"""
+      select requirement_id, block_value, title
+        from requirement_blocks
+       where institution = %s
+         and period_stop ~* '^9'
+         and block_type = %s
+         {value_clause}
+        order by block_value""", (institution, block_type))
+
+      option_type = 'Concentration' if block_type == 'CONC' else block_type.title()
+
+      options = ''
+      if cursor.rowcount == 0:
+        selected_option = (f'<option value="" selected="selected">No {block_type.title()} blocks '
+                           f'found for {institution}</option>\n')
+      else:
+        selected_option = (f'<option value="" selected="selected">Select {option_type}</option>\n')
+        for row in cursor.fetchall():
+          requirement_id = f'({row.requirement_id})'
+
+          options += (f'<option value="{row.requirement_id}">{row.block_value}: {row.title} '
+                      f'{requirement_id}</option>\n')
+
+  return f"""
+    <label for="block-value" class="select" id="block-value-label">
+      <strong>Requirement:</strong>
+    </label>
+    <select id="block-value" name="block_value">
+    {selected_option}
+    {options}
+    </select>
+      """
+
+
 # /requirements route()
 # -------------------------------------------------------------------------------------------------
 @app.route('/requirements/', methods=['GET'])
@@ -1628,30 +1598,35 @@ def requirements(college=None, type=None, name=None, period=None):
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
-  institution = request.args.get('college')
-  b_type = request.args.get('requirement-type')
-  requirement_id = request.args.get('requirement-id')
-  period_range = request.args.get('period-range')
-  if period_range is None:
-    period_range = 'current'
-  if institution is None or b_type is None or requirement_id is None:
-    conn = PgConnection()
-    cursor = conn.cursor()
-    cursor.execute("select update_date from updates where table_name = 'requirement_blocks'")
-    dgw_date = datetime.strptime(cursor.fetchone().update_date, '%Y-%m-%d')
-    dgw_date = dgw_date.strftime('%B %d, %Y')
-    cursor.execute('select code, prompt from cuny_institutions')
-    college_choices = '<p><strong>College:</strong></p>\n'
-    for row in cursor.fetchall():
-      college_choices += f"""<div class="institution-option">
-                               <input id="radio-{row.code}"
-                                      type="radio"
-                                      name="college"
-                                      value="{row.code}" />
-                               <label for="radio-{row.code}">{row.prompt}</label>
-                             </div>\n
-                          """
-    conn.close()
+  institution = request.args.get('institution')
+  requirement_id = request.args.get('requirement_id')
+
+  # The following form inputs are processed by JavaScript and may be ignored here.
+  block_type = request.args.get('block_type')
+  block_value = request.args.get('block_value')
+  requirement_num = request.args.get('requirement_num')
+
+  # If there is an institution and either a block_value or a requirement_num, JavaScript has
+  # submitted the form.
+  if institution is None or requirement_id is None:
+    with psycopg.connect('dbname=cuny_curriculum') as conn:
+      with conn.cursor(row_factory=namedtuple_row) as cursor:
+        cursor.execute("select update_date from updates where table_name = 'requirement_blocks'")
+        dgw_date = datetime.strptime(cursor.fetchone().update_date, '%Y-%m-%d')
+        dgw_date = dgw_date.strftime('%B %d, %Y')
+
+        cursor.execute('select code, prompt from cuny_institutions')
+        college_choices = '<p><strong>Select a College:</strong></p>\n'
+        for row in cursor.fetchall():
+          college_choices += f"""<div class="institution-option">
+                                   <input id="radio-{row.code}"
+                                          type="radio"
+                                          name="institution"
+                                          value="{row.code}" />
+                                   <label for="radio-{row.code}">{row.prompt}</label>
+                                 </div>\n
+                              """
+
     result = f"""
     {header(title='Requirements Search', nav_items=[{'type': 'link',
                                                       'text': 'Main Menu',
@@ -1661,142 +1636,124 @@ def requirements(college=None, type=None, name=None, period=None):
                                                        'text': 'Programs',
                                                        'href': '/registered_programs'
                                                       }])}
-  <div class="disclaimer">
-    <h1 class="error">Research Project: Work in Progress</h1>
-    <p class="error">
-      The Degree Works Scribe Blocks available here are not for any use other than research
-      into how they might be used outside of the scope of the services already offered by Ellucian.
-    </p>
-    <p>
-      When Degree Works uses these Scribe Blocks, they have to be combined with a student’s academic
-      record and other information maintained in the Degree Works system to produce reports such as
-      degree audits, transfer what-if analyses, and student program plans.
-    </p>
-    <p>
-      The project that led to making these blocks available is an effort to extract program
-      requirements without reference to student academic records or other internal Degree Works
-      information. Open the “Information About This Project” section for more details.
-    </p>
-    <p>
-      Do not use this information for anything other than to explore how degree requirements are
-      represented.
-    </p>
-  </div>
-    <details><summary>Information About This Project</summary><hr>
-    <p>
-      This project is supported in part by grants from The Heckscher Foundation for Children and The
-      Petrie Foundation to improve the transfer process at CUNY.
-    </p>
-    <p>
-      This page lets you look up the current requirements for any degree, major, minor, or
-      concentration at any CUNY college. The information is taken from the Degree Works “Scribe
-      Blocks” that are designed to provide information based on individual students’ coursework
-      completed and declared or prospective majors, minors, or concentrations.
-    </p>
-    <p>
-      Here, we extract the program requirements from the Scribe blocks in order to develop a
-      database that can be used in various ways: to search and compare programs within and across
-      campuses, to provide degree maps for publication, etc.
-    <p>
-    <p>
-      Program requirements change over time. Degree Works keeps a record of previous program
-      versions, arranged by “catalog year.” Here, we show only  Scribe blocks for the current
-      catalog year.
-    </p>
-    </details>
-    <fieldset><legend>Options</legend>
-    <form method="GET" action="/requirements">
-      <input type="hidden" name="institution" id="institution" value="" />
-      <div>
-        {college_choices}
-      </div>
-
-      <div>
-        <label for="block-type"><strong>Requirement Type:</strong></label>
-        <select id="block-type" name="requirement-type">
-        <option value="DEGREE">Degree</option>
-        <option value="MAJOR">Major</option>
-        <option value="MINOR">Minor</option>
-        <option value="CONC">Concentration</option>
-        <option value="OTHER">Other</option>
-        </select>
-      </div>
-
-      <div id="value-div">
-        <label for="block-value"><strong>Requirement:</strong></label>
-        <select id="requirement-id" name="requirement-id">
-        </select>
-      </div>
-
-      <!--
-      <fieldset>
-        <legend>Catalog Year(s)</legend>
-        <p>
-          Do you want to see the requirements for all catalog years (will be shown in reverse
-          chronological order), the most-recent catalog year (includes programs or degrees no longer
-          being offered), or just the requirements currently in effect?
-        </p>
-        <input type="radio" id="period-all" name="period-range" value="all"/>
-        <label for="period-all">All</label>
-
-        <input type="radio" id="period-latest" name="period-range" value="latest"/>
-        <label for="period-latest">Most-Recent</label>
-
-        <input type="radio" id="period-current" name="period-range" value="current" checked/>
-        <label for="period-current">Current</label>
-        </fieldset>
-      -->
-      <!--
-      <p>
-        <strong>NOTE:</strong> It takes a few seconds to interpret each block the first time it is
-        viewed. If you have checked the All option, the delay can be annoyingly long.
+    <div class="disclaimer">
+      <h1 class="error">Research Project: Work in Progress</h1>
+      <p class="error">
+        The Degree Works Scribe Blocks available here are not intended for any use other than
+        research into how they might be used outside of the scope of the services already offered by
+        Ellucian.
       </p>
-      -->
-      <button type="submit" id="goforit">Go For It</button>
-       </div>
-    </form>
-    <p><em>Degree Works information used here was last updated on {dgw_date}.</em>
-    </p>
-    """
+      <p>
+        When Degree Works uses these Scribe Blocks, they have to be combined with a student’s
+        academic record and other information maintained in the Degree Works system to produce
+        reports such as degree audits, transfer what-if analyses, and student program plans.
+      </p>
+      <p>
+        This site presents “pure” program requirement information without connecting it to
+        information about individual students.
+      </p>
+    </div>
+    <div class="instructions">
+      <h2>About This Project</h2>
+      <p>
+        This project is supported in part by grants from The Heckscher Foundation for Children and
+        The Carroll and Milton Petrie Foundation to improve the transfer process at CUNY.
+      </p>
+      <p>
+        This page lets you look up the current requirements for any degree, major, minor, or
+        concentration at any CUNY college. The information is taken from the Degree Works “Scribe
+        Blocks” that are designed to provide information based on individual students’ coursework
+        completed and declared or prospective majors, minors, or concentrations.
+      </p>
+      <p>
+        Once you select a degree or program on this page, the next page will show the code for the
+        corresponding Scribe Block. We have parsed this code into a form that lets us discard the
+        parts that only make sense in conjunction with individual a student’s academic record, and
+        to present just the program requirements as they would apply to any student. This
+        information becomes the basis for program-related featurs of CUNY’s Transfer Explorer
+        website, <a href="https://explorer.cuny.edu">“T-Rex”</a>.
+      <p>
+      <p>
+        Lists of courses in the Scribe language can use wildcards and ranges to make them more
+        compact. We expand those lists to show all currently-active courses that match.
+      </p>
+      <p>
+        Program requirements change over time. Here, we show only Scribe blocks for the current
+        academic year. These blocks are subject to editorial changes from time to time, so the data
+        are updated once a week to incorporate those changes.
+      </p>
+    </div>
+      <fieldset>
+        <form id="block-select-form" method="GET" action="/requirements">
+          <input type="hidden" id="requirement-id" name="requirement_id" value='' />
+          <div>
+            {college_choices}
+          </div>
+          <div id="id-or-type-div">
+            <hr>
+            <p>
+              If you know the ID number of the Scribe block you are interested in, enter it here.
+            </p>
+            <label for="requirement-num" class="select">RA-</label>
+            <input type="number" id="requirement-num"
+                   name="requirement_num"
+                   min="1"
+                   max="999999"/>
+             <hr>
+            <div>
+              <p>
+                Alternatively, select a requirement type and specific requirement here.
+              </p>
+              <label for="block-type" class="select"><strong>Requirement Type:</strong></label>
+              <select id="block-type" name="block_type">
+              <option value="MAJOR">Major</option>
+              <option value="MINOR">Minor</option>
+              <option value="CONC">Concentration</option>
+              <option value="OTHER">Other</option>
+              <option value="DEGREE">Degree</option>
+              </select>
+            </div>
+
+            <div id="block-value-div">
+              <!-- Will come from AJAX -->
+            </div>
+          </div>
+          <hr>
+        </fieldset>
+      </form>
+      <p>
+        <em>Degree Works information shown here was last updated on {dgw_date}.</em>
+      </p>
+      """
     return render_template('requirements_form.html',
                            result=Markup(result),
                            title='Select A Program')
   else:
+    print(f'**** {institution=} {requirement_id=}')
     # Get the information about the block from the db
-    conn = PgConnection()
-    cursor = conn.cursor()
-    cursor.execute(f"""
-select institution,
-       requirement_id,
-       block_type,
-       block_value,
-       title,
-       period_start,
-       period_stop,
-       requirement_html,
-       parse_tree
-  from requirement_blocks
- where institution = '{institution}'
-   and requirement_id = '{requirement_id}'
-                    """)
-    if cursor.rowcount < 1:
-      return render_template('requirements_form.html',
-                             result=Markup(f'<h1 class="error">No Requirements Found</h1>'
-                                           f'<p>{institution} {b_type} {requirement_id}</p>'),
-                             title='No Requirements')
-    if period_range == 'latest' or period_range == 'current':
-      # In these cases, only the first result matters
-        first_match = cursor.fetchone()
-        if period_range == 'current' and not first_match.period_stop.startswith('9'):
-          b_type = 'concentration' if b_type == 'CONC' else b_type.lower()
-          requirements_html = (f'<h1 class="error">“{requirement_id}” is not a current {b_type} '
-                               f'at {institution}.</h1>')
-        else:
-          requirements_html = scribe_block_to_html(first_match, period_range)
-    else:
-      requirements_html = '\n'.join([scribe_block_to_html(row, period_range)
-                                    for row in cursor.fetchall()])
-    conn.close()
+    with psycopg.connect('dbname=cuny_curriculum') as conn:
+      with conn.cursor(row_factory=namedtuple_row) as cursor:
+        cursor.execute(f"""
+        select institution,
+               requirement_id,
+               block_type,
+               block_value,
+               title,
+               period_start,
+               period_stop,
+               requirement_html,
+               parse_tree
+          from requirement_blocks
+         where institution = '{institution}'
+           and requirement_id = '{requirement_id}'
+                            """)
+        if cursor.rowcount < 1:
+          return render_template('requirements_form.html',
+                                 result=Markup(f'<h1 class="error">No Requirements Found</h1>'
+                                               f'<p>{institution} {requirement_id}</p>'),
+                                 title='No Requirements')
+        requirements_html = '\n'.join([scribe_block_to_html(row)
+                                      for row in cursor.fetchall()])
 
     result = f"""
     {header(title='Requirements Detail',

@@ -7,6 +7,12 @@ label:first-child {
   display: inline-block;
 }
 
+label.select {
+  width: 11em;
+  display: inline-block;
+  text-align: right;
+}
+
 details {
   margin:1.5em;
 }
@@ -17,4 +23,8 @@ fieldset {
 
 form>div {
   margin-top: 1em;
+}
+
+input:invalid {
+  border-color: #cc3366;
 }
