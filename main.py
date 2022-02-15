@@ -1723,7 +1723,6 @@ def requirements(college=None, type=None, name=None, period=None):
                            result=Markup(result),
                            title='Select A Program')
   else:
-    print(f'**** {institution=} {requirement_id=}')
     # Get the information about the block from the db
     with psycopg.connect('dbname=cuny_curriculum') as conn:
       with conn.cursor(row_factory=namedtuple_row) as cursor:
