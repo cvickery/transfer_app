@@ -6,7 +6,14 @@
 const value_change = function()
 {
   document.getElementById('requirement-id').value = document.getElementById('block-value').value;
-  document.getElementById('block-select-form').requestSubmit();
+  if (document.getElementById('block-select-form').requestSubmit)
+  {
+    document.getElementById('block-select-form').requestSubmit();
+  }
+  else
+  {
+    document.getElementById('block-select-form').submit();
+  }
 }
 
 //  values_listener()
