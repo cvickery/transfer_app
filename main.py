@@ -1529,17 +1529,17 @@ def download_requests(which):
         return send_file(path_stem + 'course_mappings.csv',
                          mimetype='text/csv',
                          as_attachment=True,
-                         attachment_filename='course_mappings.csv')
+                         download_name='course_mappings.csv')
       case 'requirement':
         return send_file(path_stem + 'requirements.csv',
                          mimetype='text/csv',
                          as_attachment=True,
-                         attachment_filename='requirements.csv')
+                         download_name='requirements.csv')
       case 'program':
         return send_file(path_stem + 'programs.csv',
                          mimetype='text/csv',
                          as_attachment=True,
-                         attachment_filename='programs.csv')
+                         download_name='programs.csv')
       case _:
         raise AttributeError
 
