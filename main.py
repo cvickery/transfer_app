@@ -1647,25 +1647,25 @@ def requirements(college=None, type=None, name=None, period=None):
                                                        'text': 'Programs',
                                                        'href': '/registered_programs'
                                                       }])}
-    <div class="disclaimer">
-      <h1 class="error">Research Project: Work in Progress</h1>
+    <details class="disclaimer">
+      <summary class="error">Research Project: Work in Progress</summary>
       <p class="error">
-        The Degree Works Scribe Blocks available here are not intended for any use other than
-        research into how they might be used outside of the scope of the services already offered by
-        Ellucian.
+        The Scribe Blocks shown here, and their interpretations, are part of a research project to
+        see if they can be used outside of the scope of the services already offered by the Ellucian
+        Degree Works product.
       </p>
       <p>
         When Degree Works uses these Scribe Blocks, they have to be combined with a student’s
         academic record and other information maintained in the Degree Works system to produce
-        reports such as degree audits, transfer what-if analyses, and student program plans.
+        reports such as degree audits, Transfer What-if analyses, and student program plans.
       </p>
       <p>
         This site presents “pure” program requirement information without connecting it to
         information about individual students.
       </p>
-    </div>
-    <div class="instructions">
-      <h2>About This Project</h2>
+    </details>
+    <details class="instructions">
+      <summary>About This Project</summary>
       <p>
         This project is supported in part by grants from The Heckscher Foundation for Children and
         The Carroll and Milton Petrie Foundation to improve the transfer process at CUNY.
@@ -1693,7 +1693,7 @@ def requirements(college=None, type=None, name=None, period=None):
         academic year. These blocks are subject to editorial changes from time to time, so the data
         are updated once a week to incorporate those changes.
       </p>
-    </div>
+    </details>
       <fieldset>
         <form id="block-select-form" method="GET" action="/requirements">
           <input type="hidden" id="requirement-id" name="requirement_id" value='' />
