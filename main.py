@@ -1215,38 +1215,69 @@ def registered_programs(institution, default=None):
                           'APTS',
                           'VVTA']
           cursor.execute("select update_date from updates where table_name='registered_programs'")
-          if cursor.rowcount == 1:
-            filename = f'{institution.upper()}_{cursor.fetchone().update_date}.csv'
-            if institution == 'all':
-              cursor.execute('select csv from registered_programs order by target_institution, title')
+          try:
+            if cursor.rowcount != 1:
+              raise RuntimeError('No CSV Available')
             else:
-              cursor.execute("""select csv
-                                  from registered_programs
-                                  where target_institution = %s
-                                  order by title
-                             """, (institution, ))
-            # Try to (re-)create the csv file. If anything goes wrong, that's too bad.
-            try:
-              csv_dir = Path(app.root_path + '/static/csv')
-              csv_dir.mkdir(exist_ok=True)
-              with open(f'{csv_dir}/{filename}', 'w') as outfile:
-                writer = csv.writer(outfile)
-                writer.writerow(csv_headings)
-                for row in cursor.fetchall():
-                  line = json.loads(row.csv)
-                  writer.writerow(line)
-              link = (f' <a href="/static/csv/{filename}" download="{filename}"'
-                      f'class="button">Download {filename}</a>')
-            except (OSError, RuntimeError) as e:
-              link = f'<br><span class="error">No CSV available: {e}</span>'
-          else:
-            link = ' (No CSV Available)'
+              filename = f'{institution.upper()}_{cursor.fetchone().update_date}.csv'
+              if institution == 'all':
+                cursor.execute("""
+                select csv
+                  from registered_programs
+              order by target_institution, title
+              """)
+              else:
+                cursor.execute("""
+                select csv
+                     from registered_programs
+                     where target_institution = %s
+                     order by title
+                """, (institution, ))
+              if cursor.rowcount == 0:
+                raise RuntimError('No csv')
 
+              # Try to (re-)create the csv file. If anything goes wrong, let me know.
+              for row in cursor:
+                csv_dir = Path(app.root_path + '/static/csv')
+                csv_dir.mkdir(exist_ok=True)
+                with open(f'{csv_dir}/{filename}', 'w') as outfile:
+                  writer = csv.writer(outfile)
+                  writer.writerow(csv_headings)
+                  for row in cursor.fetchall():
+                    line = json.loads(row.csv)
+                    writer.writerow(line)
+                link = (f' <a href="/static/csv/{filename}" download="{filename}"'
+                        f'class="button">Download {filename}</a>')
+          except (OSError, RuntimeError, json.JSONDecodeError) as e:
+            hostname = socket.gethostname()
+            response = send_message(to_list=[{'email': 'Christopher.Vickery@qc.cuny.edu',
+                                              'name': 'Christopher Vickery'}],
+                                    from_addr={'email': 'Christopher.Vickery@qc.cuny.edu',
+                                               'name': 'Christopher Vickery'},
+                                    subject='Missing CSVs for registered programs',
+                                    html_msg=f"""
+                                    <p>You need to run <em>generate_html.py</em> on {hostname}</p>
+                                    """)
+            if response.status_code == 202:
+              link = """
+              <br>
+              <span class="error">Information not available. I notified the webmaster.</span>
+              """
+            else:
+              href_str = (f"mailto:Christopher.Vickery@qc.cuny.edu?"
+                          f"subject='Transfer App: missing program information on {hostname}'")
+              link = """
+              <br>
+              <span class="error">Information not available. Please report this to
+                <a href="{href_str}"> Christopher Vickery</a>
+              </span>'
+              """
+
+          # Generate the HTML table
           institution_name = cuny_institutions[institution]['name'] + link
 
           h1 = f'<h1>{institution_name}</h1>'
 
-          # Generate the HTML table
           nysed_url = 'http://www.nysed.gov/college-university-evaluation/format-definitions'
           html_headings = ['Program Code',
                            'Registration Office',
