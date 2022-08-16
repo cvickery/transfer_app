@@ -72,7 +72,7 @@ def top_menu(msg=''):
 <div id="menu">
   <h1>Menu</h1><hr>
   <dl id="menu-list">
-
+    <!--
     <dt><a href="/course_mappings">What Requirements Can a Course Satisfy?</a></dt>
     <dd>
       <p>
@@ -86,6 +86,7 @@ def top_menu(msg=''):
         next item) where the requirement is defined.
       </p>
     </dd>
+    -->
 
     <dt><a href="/requirements">Degree and Program Requirements</a></dt>
     <dd>
