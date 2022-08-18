@@ -13,7 +13,7 @@ workers = multiprocessing.cpu_count() * 2 + 1
 bind = f'0.0.0.0:{PORT}'
 accesslog = '/Users/vickery/Projects/transfer_app/Logs/transfer_access.log'
 errorlog = '/Users/vickery/Projects/transfer_app/Logs/transfer_error.log'
-loglevel = 'DEBUG'
+loglevel = 'info'
 timeout = 120
 
 access_log_format = '%(h)s %({x-forwarded-for}i)s %(t)s %(r)s %(s)s %(b)s %(f)s'
