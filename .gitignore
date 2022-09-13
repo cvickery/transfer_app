@@ -15,3 +15,5 @@ __pycache__/
 /.node_modules/
 
 *.csv
+/transfer_app.log
+/relop_expressions.txt
