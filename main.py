@@ -25,6 +25,7 @@ from course_info import _course_info
 from course_lookup import lookup_courses, lookup_course
 from course_lookup import course_attribute_rows, course_search
 from course_mappings import course_mappings_impl
+from find_programs import find_programs
 from format_rules import format_rule, format_rules, format_rule_by_key
 from format_rules import Transfer_Rule, Source_Course, Destination_Course, andor_list
 from htmlificization import scribe_block_to_html
@@ -1578,7 +1579,6 @@ def download_requests(which):
     return make_response('<h1>Unrecognized Download Request</h1>')
 
 
-
 # REQUIREMENTS PAGE
 # =================================================================================================
 
@@ -1813,6 +1813,55 @@ def requirements(college=None, type=None, name=None, period=None):
     {requirements_html}
     """
     return render_template('requirements.html', result=Markup(result))
+
+
+@app.route('/_search_programs/', methods=['POST'])
+def _search_programs():
+  """ Ajax handler for search_programs.
+      Given a text string and a list of colleges, return an object
+      with the following keys:
+        cip_codes: All the matching cip_codes found
+        coarse: Matches by 2 cip digits
+        medium: Matches by 4 cip digits
+        fine: Matches by 6 cip digits
+          plans: (institution, plan, enrollment) tuples
+          subplans (institution, subplan, enrollent) tuples
+  """
+  if app_unavailable():
+    return 'app_unavailable.html'
+
+  search_request = request.get_json()
+  search_result = find_programs(search_request)
+  return search_result
+
+
+@app.route('/search_programs/', methods=['GET'])
+def search_programs():
+  """ Use cip_codes to find academic plans and subplans at CUNY.
+      Generate the web page that will be updated dynamically by AJAX callbacks as the user interacts
+      with the form
+  """
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+  print('/search_programs/')
+  # The web page includes input elements for search_text, colleges, plan, subplan options,
+  # a count and list of matching cip_codes, and later on, the plans/subplans. There is no form to
+  # submit: it's all AJAX
+  result = f"""
+      {header(title='Find Programs',
+              nav_items=[{'type': 'link',
+                          'text': 'Main Menu',
+                          'href': '/'
+                        }])}
+  <h1>This is your H1</h1>
+  <fieldset>
+    <input type="text" id="search_text" width="30" />
+    <p>
+      <span id="num-cip"></span> Matching CIP-SOC Items
+    </p>
+  </fieldset>
+  """
+  return render_template('search_programs.html', result=Markup(result))
 
 
 @app.errorhandler(500)
