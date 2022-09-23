@@ -1877,40 +1877,40 @@ def search_programs():
 
   </p>
 
-  <fieldset><legend>2-digit</legend
-    <p>
-      <span id="num-coarse-cip">None yet</span>
-    </p>
-    <div id="coarse-cip-codes"></div>
+  <fieldset><legend>2-digit</legend>
+    <details>
+      <summary><span id="num-coarse-cip">None yet</span></summary>
+      <div id="coarse-cip-codes"></div>
+    </details>
     <hr>
-    <p>
-      <span id="num-coarse-plan">Zero</span> Academic Plans
-    </p>
-    <div id="coarse-plans"></div>
+    <details>
+      <summary><span id="num-coarse-plan">Zero</span> Academic Plans</summary>
+      <div id="coarse-plans"></div>
+    </details>
   </fieldset>
 
-  <fieldset><legend>4-digit</legend
-    <p>
-      <span id="num-medium-cip">None yet</span>
-    </p>
-    <div id="medium-cip-codes"></div>
+  <fieldset><legend>4-digit</legend>
+    <details>
+      <summary><span id="num-medium-cip">None yet</span></summary>
+      <div id="medium-cip-codes"></div>
+    </details>
     <hr>
-    <p>
-      <span id="num-medium-plan">Zero</span> Academic Plans
-    </p>
-    <div id="medium-plans"></div>
+    <details>
+      <summary><span id="num-medium-plan">Zero</span> Academic Plans</summary>
+      <div id="medium-plans"></div>
+    </details>
   </fieldset>
 
-  <fieldset><legend>6-digit</legend
-    <p>
-      <span id="num-fine-cip">None yet</span>
-    </p>
-    <div id="fine-cip-codes"></div>
+  <fieldset><legend>6-digit</legend>
+    <details>
+      <summary><span id="num-fine-cip">None yet</span></summary>
+      <div id="fine-cip-codes"></div>
+    </details>
     <hr>
-    <p>
-      <span id="num-fine-plan">Zero</span> Academic Plans
-    </p>
-    <div id="fine-plans"></div>
+    <details>
+      <summary><span id="num-fine-plan">Zero</span> Academic Plans</summary>
+      <div id="fine-plans"></div>
+    </details>
   </fieldset>
   """
   return render_template('search_programs.html', result=Markup(result))

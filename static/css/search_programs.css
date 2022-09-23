@@ -15,7 +15,7 @@ input[type="text"] {
   display: inline-block;
   width: 30em;
 }
-.list-item {
+.list-item, details {
   font-size: 0.7em;
 }
 
