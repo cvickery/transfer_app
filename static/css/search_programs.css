@@ -1,0 +1,28 @@
+fieldset {
+  float: left;
+  width: 28vw;
+  margin: 0.5vw;
+}
+
+label {
+  display: inline-block;
+  width: 15em;
+  text-align:  right;
+  margin-right: 1em;
+}
+
+input[type="text"] {
+  display: inline-block;
+  width: 30em;
+}
+.list-item {
+  font-size: 0.7em;
+}
+
+.enroll {
+  display: inline-block;
+  float: right;
+}
+.enroll + * {
+  float: clear;
+}

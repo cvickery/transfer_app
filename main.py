@@ -1853,12 +1853,64 @@ def search_programs():
                           'text': 'Main Menu',
                           'href': '/'
                         }])}
-  <h1>This is your H1</h1>
-  <fieldset>
-    <input type="text" id="search_text" width="30" />
+  <h1>Search For Programs</h1>
+
+  <h3>Use 2, 4, or 6 digit CIP codes to get lists of matching CUNY programs</h3>
+  <p>
+    What you type in the “What are you interested in?” box is compared to words in the titles of CIP
+    codes and the CIP 2020 to SOC 2018 crosswalk.
+  </p>
+  <p>
+    The “heuristic” slider tells what percentage of the words you type have to match the CIP/SOC
+    words for a CIP code in order to include that CIP code. A heuristic value of zero ignores your
+    words and shows all CUNY programs. 100% means that every word you type has to appear in the
+    descriptions of the CIP and/or CIP-SOC titles.
+  </p>
+  <p>
+    The numbers to the right of each program listed are the current enrollments in those programs.
+  </p>
+  <p>
+    <label for="search-text">What are you interested in?</label>
+      <input type="text" id="search_text"/>
+    <br><label for="heuristic">Heuristic<span id="heuristic-value"></span>:</label>
+      <input type="range" id="heuristic">
+
+  </p>
+
+  <fieldset><legend>2-digit</legend
     <p>
-      <span id="num-cip"></span> Matching CIP-SOC Items
+      <span id="num-coarse-cip">None yet</span>
     </p>
+    <div id="coarse-cip-codes"></div>
+    <hr>
+    <p>
+      <span id="num-coarse-plan">Zero</span> Academic Plans
+    </p>
+    <div id="coarse-plans"></div>
+  </fieldset>
+
+  <fieldset><legend>4-digit</legend
+    <p>
+      <span id="num-medium-cip">None yet</span>
+    </p>
+    <div id="medium-cip-codes"></div>
+    <hr>
+    <p>
+      <span id="num-medium-plan">Zero</span> Academic Plans
+    </p>
+    <div id="medium-plans"></div>
+  </fieldset>
+
+  <fieldset><legend>6-digit</legend
+    <p>
+      <span id="num-fine-cip">None yet</span>
+    </p>
+    <div id="fine-cip-codes"></div>
+    <hr>
+    <p>
+      <span id="num-fine-plan">Zero</span> Academic Plans
+    </p>
+    <div id="fine-plans"></div>
   </fieldset>
   """
   return render_template('search_programs.html', result=Markup(result))
