@@ -1,6 +1,8 @@
-/* Monitor the search-by-cip form events.
+/* Manage the search-for-programs events.
  */
 
+// Module-level variables initialized by load event handler, used by other event handlers and by
+// search_programs()
 let search_text_element = null;
 let heuristic_element = null;
 let heuristic_value_span = null;
@@ -15,22 +17,32 @@ let medium_plan_count = null;
 let fine_plan_count = null;
 let plans_list = null;
 
+/*  search_programs()
+ *  -----------------------------------------------------------------------------------------------
+ *
+ *  When an input event occurs, this function is used to send the current set of input values in the
+ *  DOM to the server for processing, and to receive a response providing information for updating
+ *  the view.
+ */
 async function search_programs(search_request)
 {
+  // Create the search object and send it to the server's "AJAX" view for processing
   const request_obj = {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(search_request),
     };
   const response = await fetch('/_search_programs/', request_obj)
+      // Wait for the response
       .then((response) => {
         if (!response.ok) {
-          return JSON.stringify({error: 'Response not ok'}); // Ignore errors
+          return JSON.stringify({error: 'Response not ok'}); // Awkward error handler
         }
         else {
           return response.json();
         }
       })
+      // Use the JSON-ified response to update the DOM
       .then((search_result) => {
         try
         {
@@ -89,6 +101,7 @@ async function search_programs(search_request)
         }
         catch (error)
         {
+          // Debugging: errors should not occur!
           console.log(error);
           coarse_cip_count.innerHTML = `No CIP Codes`;
           medium_cip_count.innerHTML = `No CIP Codes`;
@@ -104,8 +117,13 @@ async function search_programs(search_request)
       });
 }
 
+//  Load event handler
+//  -----------------------------------------------------------------------------------------------
 window.addEventListener('load', function() {
 
+/* Locate DOM Elements
+ *  -----------------------------------------------------------------------------------------------
+ */
   search_text_element = document.getElementById('search_text');
   heuristic_element = document.getElementById('heuristic');
   heuristic_value_span = document.getElementById('heuristic-value');
@@ -128,6 +146,9 @@ window.addEventListener('load', function() {
     'fine': document.getElementById('fine-plans'),
   }
 
+  /*  Heuristic slider management
+   *  ---------------------------------------------------------------------------------------------
+   */
   let enough = (heuristic_element.value / 100.0);
   heuristic_value_span.innerHTML = ` (${heuristic_element.value}%)`
 
@@ -145,8 +166,15 @@ window.addEventListener('load', function() {
     search_programs(search_request);
   });
 
+  /*  Text input management
+   *  ---------------------------------------------------------------------------------------------
+   */
   search_text_element.focus();
-  search_text_element.addEventListener('change', function(e)
+  // TODO: provide a mechanism to pick whether to respond to keyup or change events when the page
+  // first loads.
+//  const event_type = 'change';
+  const event_type = 'keyup';
+  search_text_element.addEventListener(event_type, function(e)
   {
     // Create the query string based on element settings
     let search_request = {search_text: search_text_element.value,
