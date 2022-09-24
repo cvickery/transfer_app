@@ -4,12 +4,13 @@
 
 import argparse
 import psycopg
+import re
 import sys
 
 from collections import defaultdict
 from psycopg.rows import namedtuple_row
 
-ignore_words = set(('all', 'and', 'general', 'general.', 'or', 'other', 'other.', 'other,'))
+ignore_words = set(('a', 'all', 'and', 'general', 'or', 'other'))
 
 with psycopg.connect('dbname=cuny_curriculum') as conn:
   with conn.cursor(row_factory=namedtuple_row) as cursor:
@@ -46,18 +47,17 @@ with psycopg.connect('dbname=cuny_curriculum') as conn:
     """)
     for row in cursor.fetchall():
       cip_code = row.cip2020code
-      cip_words = tuple(row.cip2020title
-                        .lower()
-                        .replace('program.', '')
-                        .replace('program,', '')
-                        .replace('programs', '')
-                        .replace(',', '')
-                        .split())
+      cip_string = re.sub('[,.:;/]', ' ', row.cip2020title)
+      cip_words = tuple(cip_string.lower().split())
       cip_set = set(cip_words)
-      soc_words = tuple(row.soc2018title.lower().split())
+      soc_string = re.sub('[,.:;/]', ' ', row.soc2018title)
+      soc_words = tuple(soc_string.lower().split())
       soc_set = set(soc_words)
       words_set = cip_set.union(soc_set).difference(ignore_words)
       cip_soc_strings[cip_code] = ' '.join(words_set)
+    # with open('cip_soc_strings.txt', 'w') as cip_soc_file:
+    #   for k, v in cip_soc_strings.items():
+    #     print(f'{k:7}: {v}', file=cip_soc_file)
 
     # Cache the names of the coarse, medium, and fine CIP codes (i.e., all of them: the cip2020codes
     # table is already organized with separate 2, 4, and 6 digit codes)
@@ -96,8 +96,8 @@ def find_programs(search_request: dict):
   num_search_words = len(search_words)
   for cip_code, cip_soc_str in cip_soc_strings.items():
     num_matches = 0
-    for keyword in search_words:
-      if keyword in cip_soc_str:
+    for search_word in search_words:
+      if search_word in cip_soc_str:
         num_matches += 1
 
     if (large_enough == 0.0
