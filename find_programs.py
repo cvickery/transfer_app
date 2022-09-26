@@ -10,8 +10,22 @@ import sys
 from collections import defaultdict
 from psycopg.rows import namedtuple_row
 
-ignore_words = set(('a', 'all', 'and', 'general', 'or', 'other'))
+# Ignore “short” words and longer words that appear in CIP/SOC titles but don't add meaning.
+min_word_length = 4   # characters
+ignore_words = set(('general', 'match', 'other'))
 
+# Replace punctuation from CIP/SOC titles and search_text strings with spaces to make word
+# extraction better.
+punctuation = ['.', ',', ';', ':', '/', '&']
+punctuation_re = f"[{' '.join(punctuation)}]"
+
+# Drop hyphens for better matches (Pre-Med == premed, etc.)
+elide_re = r'[\-]'
+
+# Build the dictionaries used by find_programs()
+# =================================================================================================
+
+# Plans and their enrollments
 with psycopg.connect('dbname=cuny_curriculum') as conn:
   with conn.cursor(row_factory=namedtuple_row) as cursor:
     # Cache plan and subplan tables w/ enrollments by CIP code
@@ -30,7 +44,7 @@ with psycopg.connect('dbname=cuny_curriculum') as conn:
       where p.plan !~* '^mhc'
     """)
     plans = defaultdict(set)
-    cip_soc_strings = defaultdict(str)
+
     for row in cursor.fetchall():
       if row.title is None:
         # DGW lookup failed
@@ -39,25 +53,32 @@ with psycopg.connect('dbname=cuny_curriculum') as conn:
       else:
         plans[row.cip_code].add((row.institution, row.plan, row.enrollment, row.title))
 
-    # Create string of search words from cip-soc for each cip code
+    # Every "meaningful" word that appears in a CIP or SOC title.
+    all_cip_soc_words = set()
+
+    # String of search words from cip-soc for each cip code
+    cip_soc_strings = defaultdict(str)
     cursor.execute("""
     select cip2020code, cip2020title, soc2018title
       from cip_soc
-     where cip2020code !~* '^9' -- 99.9999, etc were used for "no match"
+     where cip2020code !~* '^9' -- 99.9999, etc mean "no match"
     """)
     for row in cursor.fetchall():
       cip_code = row.cip2020code
-      cip_string = re.sub('[,.:;/]', ' ', row.cip2020title)
-      cip_words = tuple(cip_string.lower().split())
+      cip_string = re.sub(elide_re, '', re.sub(punctuation_re, ' ', row.cip2020title))
+      cip_words = tuple(word for word in cip_string.lower().split() if len(word) >= min_word_length)
       cip_set = set(cip_words)
-      soc_string = re.sub('[,.:;/]', ' ', row.soc2018title)
-      soc_words = tuple(soc_string.lower().split())
+      soc_string = re.sub(elide_re, '', re.sub(punctuation_re, ' ', row.soc2018title))
+      soc_words = tuple(word for word in soc_string.lower().split() if len(word) >= min_word_length)
       soc_set = set(soc_words)
       words_set = cip_set.union(soc_set).difference(ignore_words)
       cip_soc_strings[cip_code] = ' '.join(words_set)
-    # with open('cip_soc_strings.txt', 'w') as cip_soc_file:
-    #   for k, v in cip_soc_strings.items():
-    #     print(f'{k:7}: {v}', file=cip_soc_file)
+
+      all_cip_soc_words = all_cip_soc_words.union(words_set)
+
+    print(f'There are {len(all_cip_soc_words):,} CIP/Soc words.')
+    # Convert to a string so that search word prefixes will find matches
+    all_cip_soc_words = ' '.join(all_cip_soc_words)
 
     # Cache the names of the coarse, medium, and fine CIP codes (i.e., all of them: the cip2020codes
     # table is already organized with separate 2, 4, and 6 digit codes)
@@ -86,22 +107,24 @@ def find_programs(search_request: dict):
 
   # Extract search_words from the search string
   search_words = set()
-  for word in search_text.lower().replace('.', '').replace(',', '').replace(';', '').split():
-    if word not in ignore_words:
+  for word in re.sub(elide_re, '', re.sub(punctuation_re, ' ', search_text.lower())).split():
+    if len(word) >= min_word_length and word in all_cip_soc_words:  # This is a substring match
       search_words.add(word)
+  num_search_words = len(search_words)
 
   # Select cip_codes where the portion of search_words appearing in cip_soc_words is “large enough.”
   # These are full six-digit CIP codes
   cip_codes = set()
-  num_search_words = len(search_words)
+
   for cip_code, cip_soc_str in cip_soc_strings.items():
+
     num_matches = 0
     for search_word in search_words:
       if search_word in cip_soc_str:
         num_matches += 1
 
     if (large_enough == 0.0
-       or (num_search_words > 0 and (num_matches / num_search_words) >= large_enough)):
+       or (num_search_words > 0 and ((num_matches / num_search_words) >= large_enough))):
       cip_codes.add(cip_code)
 
   # Now get the tripartite CIP and plan info for each cip_code.
@@ -137,6 +160,7 @@ def find_programs(search_request: dict):
     coarse_plan_set = sorted(coarse_plan_set, key=lambda item: item[2], reverse=True)
     medium_plan_set = sorted(medium_plan_set, key=lambda item: item[2], reverse=True)
     fine_plan_set = sorted(fine_plan_set, key=lambda item: item[2], reverse=True)
+
   return_dict = {'coarse': {'cip_codes': list(sorted(coarse_cip_set)),
                             'plans': list(coarse_plan_set)},
                  'medium': {'cip_codes': list(sorted(medium_cip_set)),
