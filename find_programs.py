@@ -8,7 +8,10 @@ import re
 import sys
 
 from collections import defaultdict
+from nltk.stem import SnowballStemmer
 from psycopg.rows import namedtuple_row
+
+stemmer = SnowballStemmer('english')
 
 # Ignore “short” words and longer words that appear in CIP/SOC titles but don't add meaning.
 min_word_length = 4   # characters
@@ -66,10 +69,12 @@ with psycopg.connect('dbname=cuny_curriculum') as conn:
     for row in cursor.fetchall():
       cip_code = row.cip2020code
       cip_string = re.sub(elide_re, '', re.sub(punctuation_re, ' ', row.cip2020title))
-      cip_words = tuple(word for word in cip_string.lower().split() if len(word) >= min_word_length)
+      cip_words = tuple(stemmer.stem(word) for word in cip_string.lower().split()
+                        if len(word) >= min_word_length)
       cip_set = set(cip_words)
       soc_string = re.sub(elide_re, '', re.sub(punctuation_re, ' ', row.soc2018title))
-      soc_words = tuple(word for word in soc_string.lower().split() if len(word) >= min_word_length)
+      soc_words = tuple(stemmer.stem(word) for word in soc_string.lower().split()
+                        if len(word) >= min_word_length)
       soc_set = set(soc_words)
       words_set = cip_set.union(soc_set).difference(ignore_words)
       cip_soc_strings[cip_code] = ' '.join(words_set)
@@ -108,8 +113,8 @@ def find_programs(search_request: dict):
   # Extract search_words from the search string
   search_words = set()
   for word in re.sub(elide_re, '', re.sub(punctuation_re, ' ', search_text.lower())).split():
-    if len(word) >= min_word_length and word in all_cip_soc_words:  # This is a substring match
-      search_words.add(word)
+    if len(word) >= min_word_length and stemmer.stem(word) in all_cip_soc_words:
+      search_words.add(stemmer.stem(word))
   num_search_words = len(search_words)
 
   # Select cip_codes where the portion of search_words appearing in cip_soc_words is “large enough.”
