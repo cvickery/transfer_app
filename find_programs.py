@@ -81,7 +81,6 @@ with psycopg.connect('dbname=cuny_curriculum') as conn:
 
       all_cip_soc_words = all_cip_soc_words.union(words_set)
 
-    print(f'There are {len(all_cip_soc_words):,} CIP/Soc words.')
     # Convert to a string so that search word prefixes will find matches
     all_cip_soc_words = ' '.join(all_cip_soc_words)
 
