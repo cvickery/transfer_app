@@ -1596,7 +1596,7 @@ def _requirement_values():
   block_type = request.args.get('block-type', None)
 
   # Filter out all-numeric block_values; they are left over from "conversion"
-  value_clause = r"and block_value !~ '^[\d ]+$'"
+  value_clause = r"and block_value !~ '^[\d ]+$' and block_value !~* '^mhc'"
 
   with psycopg.connect('dbname=cuny_curriculum') as conn:
     with conn.cursor(row_factory=namedtuple_row) as cursor:
