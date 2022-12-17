@@ -72,21 +72,24 @@ def top_menu(msg=''):
 <div id="menu">
   <h1>Menu</h1><hr>
   <dl id="menu-list">
-    <!--
-    <dt><a href="/course_mappings">What Requirements Can a Course Satisfy?</a></dt>
+    <dt><a href="/what_requirements">What Requirements Can a Course Satisfy?</a></dt>
     <dd>
       <p>
-        <em>This feature is still under active development: please let me know what problems you see
-        or features you‘d like to see.</em>
+        <em>Enter a course_id or a tuple &ltinstitution discipline catalog_number&gt; and see
+        information about what requirements the course satisfies at the college that offers it.
+        Information includes the IDs of the Scribe blocks as well as the names of the requirements,
+        and certain conditions that might affect the course’s applicability.</em>
       </p>
+      <p>Sample input:</p>
+      <ul>
+        <li>qns csci 111</li>
+        <li>12345</li>
+      </ul>
       <p>
-        Select a course to see what program requirements it satisfies. Programs include all
-        currently-active Majors, Minors, and Concentrations as defined in Degree Works “Scribe
-        Blocks.” Each requirement is linked to a page that shows the entire Scribe code block (see
-        next item) where the requirement is defined.
+        This is a development tool, used to use to verify that T-Rex and this site both “understand”
+        program requirements the same way.
       </p>
     </dd>
-    -->
 
     <dt><a href="/requirements">Degree and Program Requirements</a></dt>
     <dd>

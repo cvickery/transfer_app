@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>{% block title %}{{title}}{% endblock %}</title>
+    <link rel='stylesheet' href='/static/css/base_style.css' />
+    {% block sheets %}{% endblock %}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+
+  </head>
+  <body>
+    {{result}}
+  </body>
+</html>

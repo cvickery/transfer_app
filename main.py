@@ -38,6 +38,7 @@ from shortcut_to_rules import shortcut_to_rules
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
 from top_menu import top_menu
+from what_requirements import what_requirements
 
 from flask import Flask, url_for, render_template, make_response,\
     redirect, send_file, Markup, request, jsonify, session
@@ -1577,6 +1578,108 @@ def download_requests(which):
 
   except (IndexError, AttributeError):
     return make_response('<h1>Unrecognized Download Request</h1>')
+
+
+# WHAT REQUIREMENTS PAGE
+# -------------------------------------------------------------------------------------------------
+@app.route('/what_requirements/')
+def what_requirements_does_this_course_satisfy():
+  """
+  """
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
+  course_query_str = request.args.get('course_query')
+  if course_query_str is None:
+    course_query_str = ''
+
+  full_context = request.args.get('full_context') == 'on'
+  full_context_checked = 'checked="checked"' if full_context else ''
+
+  result = f"""
+  {header(title='What Requirements?', nav_items=[{'type': 'link',
+                                                  'text': 'Main Menu',
+                                                  'href': '/'
+                                                 },
+                                                 {'type': 'link',
+                                                  'text': 'Programs',
+                                                  'href': '/registered_programs'
+                                                 }])}
+  <h1>What Requirements Does This Course Satisfy?</h1>
+  <div class="instructions">
+    <p>
+      Enter a course_id or &lt;institution discipline catalog_number&gt; tuple to see what
+      requirements the course satisfies at the college that offers it.
+    </p>
+  </div>
+  <fieldset><form method="GET" action="/what_requirements/">
+  <label for="full_context">Full Context</label> <input type="checkbox"
+                                                        name="full_context"
+                                                        {full_context_checked}
+                                                        id="full_context" />
+  <br>
+  <label for="course_query_str">Course: </label><input type="text"
+                                                      name="course_query"
+                                                      id="course_query"
+                                                      value="{course_query_str}"/>
+  </form></fieldset>
+  """
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as course_cursor:
+      if course_query := course_query_str.lower().split():
+        valid_input = False
+        match len(course_query):
+          case 1:
+            try:
+              course_id = f'{int(course_query[0]):06}'
+              course_cursor.execute("""
+              select course_id, offer_nbr, institution, discipline, catalog_number,
+                     designation, attributes
+                from cuny_courses
+               where course_id = %s
+                 and course_status = 'A'
+              """, (course_id, ))
+              valid_input = True
+            except ValueError:
+              pass
+
+          case 3:
+            institution, discipline, catalog_number = course_query
+            course_cursor.execute("""
+            select course_id, offer_nbr, institution, discipline, catalog_number,
+                   designation, attributes
+              from cuny_courses
+             where institution ~* %s
+               and discipline ~* %s
+               and catalog_number ~* %s
+               and course_status = 'A'
+            """, course_query)
+            valid_input = True
+
+          case _:
+            pass
+
+        if not valid_input:
+          result += f'<h2>Invalid input: “{course_query_str}”</h2>'
+        elif course_cursor.rowcount == 0:
+          result += f'<h2>“{course_query_str}” not found</h2>'
+        else:
+          # Cross-listed courses will return multiple rows.
+          for row in course_cursor:
+            course_id = str(row.course_id)
+            course_id_str = f'{row.course_id:06}:{row.offer_nbr}'
+            if row.attributes != 'None':
+              attributes = row.attributes.split(';')
+              attributes = ', '.join([a.split(':')[1] for a in attributes])
+            else:
+              attributes = 'None'
+            result += (f'<h2>{course_id_str} {row.institution[0:3]} {row.discipline:>6} '
+                       f'{row.catalog_number:6} {row.designation:5} {attributes}</h2>')
+            result += '<pre>' + ('\n'.join(what_requirements(course_id_str, full_context))) + '</pre>'
+
+  return render_template('what_requirements.html',
+                         result=Markup(result),
+                         title='What Requirements?')
 
 
 # REQUIREMENTS PAGE
