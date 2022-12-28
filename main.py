@@ -115,24 +115,6 @@ def date2str(date_str):
   return datetime.fromisoformat(date_str).strftime('%B %e, %Y').replace('  ', ' ')
 
 
-# fix_title()
-# -------------------------------------------------------------------------------------------------
-def fix_title(str):
-  """ Create a better titlecase string, taking specifics of the registered_programs dataset into
-      account.
-  """
-  return (str.strip(' *')
-             .title()
-             .replace('Cuny', 'CUNY')
-             .replace('Mhc', 'MHC')
-             .replace('Suny', 'SUNY')
-             .replace('\'S', '’s')
-             .replace('1St', '1st')
-             .replace('6Th', '6th')
-             .replace(' And ', ' and ')
-             .replace(' Of ', ' of '))
-
-
 # INDEX PAGE: Top-level Menu
 # =================================================================================================
 # This is the entry point for the transfer application
@@ -1161,7 +1143,7 @@ def registered_programs(institution, default=None):
         # See when NYSED was last accessed
         try:
           cursor.execute("select update_date from updates where table_name='registered_programs'")
-          nysed_update_date = (f'Latest NYSED website acess was on '
+          nysed_update_date = (f'Latest NYSED website access was on '
                                f'{date2str(cursor.fetchone().update_date)}.')
         except (KeyError, ValueError):
           nysed_update_date = 'Date of latest NYSED website access is not available.'
@@ -1184,7 +1166,9 @@ def registered_programs(institution, default=None):
 
         if cursor.rowcount < 1:
           result = """
-          <h1>There is no registered-program information for CUNY colleges available at this time.</h1>
+          <h1>
+            There is no registered-program information for CUNY colleges available at this time.
+          </h1>
           """
           conn.close()
           return render_template('registered_programs.html', result=Markup(result))
