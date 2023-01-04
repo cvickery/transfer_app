@@ -1583,9 +1583,9 @@ def program_description():
   if institution is None:
     institution = ''
   else:
-    institution = institution.upper().strip('01') + '01'
+    institution = institution.upper().strip('01')
     for plan in active_plans():
-      if plan['requirement_block']['institution'] == institution:
+      if plan['requirement_block']['institution'][0:3] == institution:
         code = plan['requirement_block']['block_value']
         program_title = plan['requirement_block']['block_title']
         requirement_id = plan['requirement_block']['requirement_id']
@@ -1595,7 +1595,7 @@ def program_description():
   if institution and program_code:
     description = to_html(describe(institution[0:3], program_code))
   else:
-    description = 'Please select an institution and program.'
+    description = 'Please select a program.' if institution else 'Please select a college'
   result = f"""
   {header(title='Program Description', nav_items=[{'type': 'link',
                                                   'text': 'Main Menu',
@@ -1620,7 +1620,7 @@ def program_description():
   <fieldset><form id="lookup-program" method="GET" action="/describe_program/">
   <label for="institution">College:</label> <input type="text"
                                                         name="institution"
-                                                        value={institution}
+                                                        value="{institution}"
                                                         id="institution"
                                                         placeholder="Which College?" />
   <br>
@@ -1629,7 +1629,7 @@ def program_description():
                                                      {options}
                                              </select>
   </form></fieldset>
-  <div>
+  <div id="description">
     {description}
   </div>
   """
