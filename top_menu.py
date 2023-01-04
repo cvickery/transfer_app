@@ -72,7 +72,7 @@ def top_menu(msg=''):
 <div id="menu">
   <h1>Menu</h1><hr>
   <dl id="menu-list">
-    <dt><a href="/program_description">Program Description</a></dt>
+    <dt><a href="/describe_program">Program Description</a></dt>
     <dd>
       Development tool for cross-checking T-Rex: Describes Majors and Minors, based on Degree Works
       information about them.
