@@ -1568,8 +1568,8 @@ def download_requests(which):
 
 # PROGRAM DESCRIPTIONS PAGE
 # -------------------------------------------------------------------------------------------------
-@app.route('/describe_program/')
-def program_description():
+@app.route('/describe_programs/')
+def program_descriptions():
   """ Prompt for institution/program, and display a description of (some of) the things known about
       the program.
   """
@@ -1597,7 +1597,7 @@ def program_description():
   else:
     description = 'Please select a program.' if institution else 'Please select a college'
   result = f"""
-  {header(title='Program Description', nav_items=[{'type': 'link',
+  {header(title='Program Descriptions', nav_items=[{'type': 'link',
                                                   'text': 'Main Menu',
                                                   'href': '/'
                                                  },
@@ -1605,7 +1605,6 @@ def program_description():
                                                   'text': 'Programs',
                                                   'href': '/registered_programs'
                                                  }])}
-  <h1>Program Description</h1>
   <div class="instructions">
     <p>
       Select a college and a Major or Minor offered there to view a description of the program and
@@ -1613,11 +1612,11 @@ def program_description():
       program’s Degree Works Scribe block(s).
     </p>
     <p>
-      This is a development utility for cross-checking how programs are displayed by the CUNY
+      This is a development utility for cross-checking how programs are displayed by CUNY’s
       Transfer Explorer (T-Rex).
     </p>
   </div>
-  <fieldset><form id="lookup-program" method="GET" action="/describe_program/">
+  <fieldset><form id="lookup-program" method="GET" action="/describe_programs/">
   <label for="institution">College:</label> <input type="text"
                                                         name="institution"
                                                         value="{institution}"
@@ -1634,9 +1633,9 @@ def program_description():
   </div>
   """
 
-  return render_template('describe_program.html',
+  return render_template('describe_programs.html',
                          result=Markup(result),
-                         title='Describe Program')
+                         title='Describe Programs')
 
 
 # WHAT REQUIREMENTS PAGE
