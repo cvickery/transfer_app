@@ -2004,7 +2004,7 @@ def search_programs():
   """
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
-  print('/search_programs/')
+
   # The web page includes input elements for search_text, colleges, plan, subplan options,
   # a count and list of matching cip_codes, and later on, the plans/subplans. There is no form to
   # submit: it's all AJAX
