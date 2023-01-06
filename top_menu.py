@@ -75,8 +75,7 @@ def top_menu(msg=''):
 
     <dt><a href="/search_programs">Search Programs</a></dt>
     <dd>
-      Development tool for looking up academic programs based on CIP Codes, CIP-SOC mappings, and
-      program titles.
+      Development tool for looking up academic programs based on CIP Codes and CIP-SOC mappings.
     </dd>
 
     <dt><a href="/describe_programs">Program Descriptions</a></dt>
