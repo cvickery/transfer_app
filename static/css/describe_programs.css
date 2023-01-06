@@ -1,7 +1,11 @@
 
 .label {
-  font-weight:bold;
-  display:inline-block;
-  width:12em;
-  text-align:right;
+  font-weight: bold;
+  display: inline-block;
+  width: 12em;
+  text-align: right;
+}
+
+.indent {
+  margin-left: 1em;
 }

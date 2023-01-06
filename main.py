@@ -1594,8 +1594,9 @@ def program_descriptions():
 
   if institution and program_code:
     description = to_html(describe(institution[0:3], program_code))
+
   else:
-    description = 'Please select a program.' if institution else 'Please select a college'
+    description = 'Please select a program.' if institution else 'Please select a college.'
   result = f"""
   {header(title='Program Descriptions', nav_items=[{'type': 'link',
                                                   'text': 'Main Menu',
