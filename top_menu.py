@@ -73,6 +73,12 @@ def top_menu(msg=''):
   <h1>Menu</h1><hr>
   <dl id="menu-list">
 
+    <dt><a href="/search_programs">Search Programs</a></dt>
+    <dd>
+      Development tool for looking up academic programs based on CIP Codes, CIP-SOC mappings, and
+      program titles.
+    </dd>
+
     <dt><a href="/describe_programs">Program Descriptions</a></dt>
     <dd>
       Development tool for cross-checking T-Rex: Describes Majors and Minors, based on Degree Works
