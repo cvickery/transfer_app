@@ -1572,6 +1572,7 @@ def download_requests(which):
 def program_descriptions():
   """ Prompt for institution/program, and display a description of (some of) the things known about
       the program.
+      If the institution field includes a requirement_id, display that one automatically
   """
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
@@ -1583,14 +1584,22 @@ def program_descriptions():
   if institution is None:
     institution = ''
   else:
+    try:
+      institution, requirement_id_from_form = institution.split()
+      requirement_id_from_form = f"RA{int(requirement_id_from_form.strip('RA')):06}"
+    except ValueError:
+      requirement_id_from_form = None
     institution = institution.upper().strip('01')
+
     for plan in active_plans():
       if plan['requirement_block']['institution'][0:3] == institution:
         code = plan['requirement_block']['block_value']
         program_title = plan['requirement_block']['block_title']
         requirement_id = plan['requirement_block']['requirement_id']
+        if requirement_id == requirement_id_from_form:
+          program_code = code
         selected = ' selected' if program_code == code else ''
-        options += f'<option value="{code}{selected}">{program_title} {requirement_id}</option>\n'
+        options += f'<option value="{code}">{program_title} {requirement_id}</option>\n'
 
   if institution and program_code:
     description = to_html(describe(institution[0:3], program_code))
@@ -1615,6 +1624,10 @@ def program_descriptions():
     <p>
       This is a development utility for cross-checking how programs are displayed by CUNY’s
       Transfer Explorer (T-Rex).
+    </p>
+    <p>
+      You can add an RA# to the College box instead of selecting a Program, for example:
+      <span class="code">qns 1343</span>
     </p>
   </div>
   <fieldset><form id="lookup-program" method="GET" action="/describe_programs/">
