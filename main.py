@@ -20,7 +20,6 @@ from collections import namedtuple, defaultdict, Counter
 
 from psycopg.rows import namedtuple_row
 
-from activeplans import active_plans
 from app_header import header
 from course_info import _course_info
 from course_lookup import lookup_courses, lookup_course
@@ -30,6 +29,7 @@ from find_programs import find_programs
 from format_rules import format_rule, format_rules, format_rule_by_key
 from format_rules import Transfer_Rule, Source_Course, Destination_Course, andor_list
 from htmlificization import scribe_block_to_html
+from plan_subplan_options import options_dict
 from program_descriptions import describe, to_html
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from reviews import process_pending
@@ -1583,29 +1583,23 @@ def program_descriptions():
   options = '<option value="">--select program--</option>'
   if institution is None:
     institution = ''
+  try:
+    institution, requirement_id_from_form = institution.split()
+    requirement_id_from_form = f"RA{int(requirement_id_from_form.strip('RA')):06}"
+  except ValueError:
+    requirement_id_from_form = None
+  institution = institution.upper().strip('01')
+
+  if institution:
+    options += options_dict[institution]['options_html']
+    if program_code or requirement_id_from_form:
+      code = program_code if program_code else requirement_id_from_form
+      description = to_html(describe(institution[0:3], code))
+    else:
+      description = 'Please select a program.'
   else:
-    try:
-      institution, requirement_id_from_form = institution.split()
-      requirement_id_from_form = f"RA{int(requirement_id_from_form.strip('RA')):06}"
-    except ValueError:
-      requirement_id_from_form = None
-    institution = institution.upper().strip('01')
+    description = 'Please select a college.'
 
-    for plan in active_plans():
-      if plan['requirement_block']['institution'][0:3] == institution:
-        code = plan['requirement_block']['block_value']
-        program_title = plan['requirement_block']['block_title']
-        requirement_id = plan['requirement_block']['requirement_id']
-        if requirement_id == requirement_id_from_form:
-          program_code = code
-        selected = ' selected' if program_code == code else ''
-        options += f'<option value="{code}">{program_title} {requirement_id}</option>\n'
-
-  if institution and program_code:
-    description = to_html(describe(institution[0:3], program_code))
-
-  else:
-    description = 'Please select a program.' if institution else 'Please select a college.'
   result = f"""
   {header(title='Program Descriptions', nav_items=[{'type': 'link',
                                                   'text': 'Main Menu',
@@ -1629,6 +1623,11 @@ def program_descriptions():
       You can add an RA# to the College box instead of selecting a Program, for example:
       <span class="code">qns 1343</span>
     </p>
+    <h2 class="error">
+    Updated: Majors, Minors, and Concentrations all work, and there’s a link from Major/Minors to
+    their subprogram descriptions.<br>
+    Selecting a Degree or Other block doesn’t work yet.
+    </h2>
   </div>
   <fieldset><form id="lookup-program" method="GET" action="/describe_programs/">
   <label for="institution">College:</label> <input type="text"
