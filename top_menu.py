@@ -6,10 +6,11 @@ from app_header import header
 def top_menu(msg=''):
   """ This is the "landing page" for the app.
   """
-  header_str = header(title='CUNY Transfer Explorer')
+  header_str = header(title='CUNY Transfer Explorer Lab')
 
   return f"""
 {header_str}
+<!--
 <details>
   <summary>Introduction</summary>
   <hr>
@@ -69,6 +70,24 @@ def top_menu(msg=''):
     degree, but are unlikely to satisfy any other requirements, such as part of a major.
   </p>
 </details>
+-->
+<div class="instructions">
+<h1>Welcome to “T-Rex Labs”</h1>
+<p>
+  This is a development and prototyping site for the CUNY Transfer Explorer (T-Rex) project. While
+  everything here works (<a href="mailto:cvickery@qc.cuny.edu?subject='Transfer App issue'">let me
+  know</a> if not), not everything here is actually implemented in T-Rex, and T-Rex has many
+  transfer-related features that are not available here.
+</p>
+<p>
+  Feel free to browse what’s available here. Most, but not all, of the code behind this site is
+  publicly available on <a href="https://github.com/cvickery">GitHub</a> if you are interested.
+</p>
+<p>
+  But for a more polished experience, and for the many features not available here, head over to the
+  <a href="https://explorer.cuny.edu">CUNY Transfer Explorer</a> site.
+</div>
+
 <div id="menu">
   <h1>Menu</h1><hr>
   <dl id="menu-list">
