@@ -64,7 +64,7 @@ details {
 
 #update-info p {
   line-height: 0.5;
-  font-style: italic;
+  font-style: Legible-Italic, italic;
   font-size: 0.9em;
 }
 
@@ -92,7 +92,7 @@ details {
 #subject-table td:nth-child(3) {
   background-color: #eee;
   color: #600;
-  font-style: italic;
+  font-style: Legible-Italic, italic;
 }
 
 #subject-table label {
@@ -211,7 +211,7 @@ tted {
 .eval-rule table, .eval-rule table td {
   margin: 0;
   border: none;
-  font-style: italic;
+  font-style: Legible-Italic, italic;
 }
 
 #dismiss-bar {
@@ -266,7 +266,7 @@ tted {
 
 #rules-table td:nth-child(3) {
   text-align: center;
-  font-weight: bold;
+  font-weight: Legible-Bold, bold;
 }
 
 #rules-table tr.selected-rule td {
@@ -283,7 +283,7 @@ tted {
 .blanket {
   background-color:yellow;
   foreground:green;
-  font-weight: bold;
+  font-weight: Legible-Bold, bold;
   padding:0.5em;
 }
 #send-email:enabled {
@@ -298,7 +298,7 @@ tted {
 
 .call-to-action {
   text-align: center;
-  font-weight: bold;
+  font-weight: Legible-Bold, bold;
   font-variant: small-caps;
   background-color:lightgreen;
   padding: 1em;

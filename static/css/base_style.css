@@ -1,9 +1,47 @@
+@font-face{
+font-family: Legible;
+src: url('/static/fonts/Atkinson-Hyperlegible-Regular-102a.woff2');
+}
+@font-face{
+font-family: Legible-Italic;
+src: url('/static/fonts/Atkinson-Hyperlegible-Italic-102a.woff2');
+font-style: italic;
+}
+@font-face{
+font-family: Legible-Bold;
+src: url('/static/fonts/Atkinson-Hyperlegible-Bold-102a.woff2');
+font-weight: bold;}
+@font-face{
+font-family: Legible-BoldItalic;
+src: url('/static/fonts/Atkinson-Hyperlegible-BoldItalic-102a.woff2');
+font-weight: bold;
+font-style: italic;
+}
+
+@font-face {
+  font-family:  fixed-sans;
+  src:  url(/static/fonts/Inconsolata.otf);
+}
+
+/*
+    static/fonts/Atkinson-Hyperlegible-Bold-102.woff
+    static/fonts/Atkinson-Hyperlegible-Bold-102a.woff2
+    static/fonts/Atkinson-Hyperlegible-BoldItalic-102.woff
+    static/fonts/Atkinson-Hyperlegible-BoldItalic-102a.woff2
+    static/fonts/Atkinson-Hyperlegible-Italic-102.woff
+    static/fonts/Atkinson-Hyperlegible-Italic-102a.woff2
+    static/fonts/Atkinson-Hyperlegible-Regular-102.woff
+    static/fonts/Atkinson-Hyperlegible-Regular-102a.woff2
+*/
+h1 {
+  font-family: Legible-Bold, sans-serif;
+}
 
 body {
   padding: 0.5rem;
   background-color: #ccf;
   color:#222;
-  font-family:sans-serif;
+  font-family: Legible, sans-serif;
   font-size: 16px;
 }
 
@@ -226,11 +264,6 @@ fieldset hr {
 }
 .signature:hover {
   color:#09f;
-}
-
-@font-face {
-  font-family:  fixed-sans;
-  src:  url(/static/fonts/Inconsolata.otf);
 }
 
 .fixed-sans {

@@ -18,7 +18,7 @@ td, th {
 th {
   background-color:#ccc;
   color:#333;
-  font-weight: bold;
+  font-weight: Legible-Bold, bold;
   text-align: center;
 }
 
@@ -58,6 +58,6 @@ details p {
 
 .sed-note {
   font-weight:normal;
-  font-style:italic;
+  font-style: Legible-Italic, italic;
   font-size:0.8em;
 }

@@ -1,7 +1,7 @@
 body {
   background-color: #eff;
   padding: 1em;
-  font-family:sans-serif;
+  font-family: Legible, sans-serif;
 }
 label {
   display:inline-block;
@@ -60,7 +60,7 @@ hr {
 }
 
 .credit-mismatch {
-  font-weight: bold;
-  font-style: italic;
+  font-weight: Legible-Bold, bold;
+  font-style: Legible-Italic, italic;
   color:#600;
 }

@@ -10,7 +10,7 @@ details {
 
 summary {
   font-size: 1.2rem;
-  font-weight: bold;
+  font-weight: Legible-Bold, bold;
 }
 
 #introduction h2 {
@@ -29,7 +29,7 @@ summary {
 
 #menu-list dt {
   font-size:1.1rem;
-  font-weight:bold;
+  font-weight:Legible-Bold, bold;
 }
 
 #menu-list dd {
@@ -39,10 +39,12 @@ summary {
 
 a {
   text-decoration: none;
+  font-family: Legible-Italic, italic;
 }
 
 a:hover {
   background-color: #333;
   color:#eff;
   padding:0.25rem;
+  font-family: Legible-Italic, italic;
 }
