@@ -6,7 +6,7 @@ from app_header import header
 def top_menu(msg=''):
   """ This is the "landing page" for the app.
   """
-  header_str = header(title='CUNY Transfer Explorer Lab')
+  header_str = header(title='CUNY T-Rex Laboratory')
 
   return f"""
 {header_str}
@@ -72,16 +72,16 @@ def top_menu(msg=''):
 </details>
 -->
 <div class="instructions">
-<h1>Welcome to “T-Rex Labs”</h1>
+<h1>Welcome to T-Rex Labs!</h1>
 <p>
-  This is a development and prototyping site for the CUNY Transfer Explorer (T-Rex) project. While
+  This is a development and prototyping site for the CUNY Transfer Explorer (T-Rex) tool. While
   everything here works (<a href="mailto:cvickery@qc.cuny.edu?subject='Transfer App issue'">let me
   know</a> if not), not everything here is actually implemented in T-Rex, and T-Rex has many
-  transfer-related features that are not available here.
+  transfer-related features that were not developed here.
 </p>
 <p>
-  Feel free to browse what’s available here. Most, but not all, of the code behind this site is
-  publicly available on <a href="https://github.com/cvickery">GitHub</a> if you are interested.
+  Feel free to browse what’s available here. Most of the code behind this site is publicly available
+  on <a href="https://github.com/cvickery">GitHub</a> if you are interested.
 </p>
 <p>
   But for a more polished experience, and for the many features not available here, head over to the
@@ -111,11 +111,6 @@ def top_menu(msg=''):
         Information includes the IDs of the Scribe blocks as well as the names of the requirements,
         and certain conditions that might affect the course’s applicability.</em>
       </p>
-      <p>Sample input:</p>
-      <ul>
-        <li>qns csci 111</li>
-        <li>12345</li>
-      </ul>
       <p>
         This is a development tool, used to use to verify that T-Rex and this site both “understand”
         program requirements the same way.
