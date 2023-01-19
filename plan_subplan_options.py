@@ -22,6 +22,7 @@ with psycopg.connect('dbname=cuny_curriculum') as conn:
     cursor.execute("""
     select institution, requirement_id, block_type, block_value, title as block_title
       from requirement_blocks
+           -- This join with ordinality is postgres-talk for controlling the order of results
            join unnest(array['MAJOR','CONC','MINOR', 'DEGREE', 'OTHER']::text[])
             with ordinality t(block_type, ord) using (block_type)
      where term_info is not null
