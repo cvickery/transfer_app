@@ -1601,7 +1601,7 @@ def program_descriptions():
     description = 'Please select a college.'
 
   result = f"""
-  {header(title='Program Descriptions', nav_items=[{'type': 'link',
+  {header(title='Describe Programs', nav_items=[{'type': 'link',
                                                   'text': 'Main Menu',
                                                   'href': '/'
                                                  },
