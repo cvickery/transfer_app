@@ -97,10 +97,11 @@ def top_menu(msg=''):
       Development tool for looking up academic programs based on CIP Codes and CIP-SOC mappings.
     </dd>
 
-    <dt><a href="/describe_programs">Program Descriptions</a></dt>
+    <dt><a href="/describe_programs">Describe Programs</a></dt>
     <dd>
       Development tool for cross-checking T-Rex: Describes Majors and Minors, based on Degree Works
-      information about them.
+      information about them. Does not include course requirements. (For that, see <a
+      href="/requirements">Degree and Program Requirements</a>)
     </dd>
 
     <dt><a href="/what_requirements">What Requirements Can a Course Satisfy?</a></dt>
