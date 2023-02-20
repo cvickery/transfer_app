@@ -17,3 +17,4 @@ __pycache__/
 *.csv
 /transfer_app.log
 /relop_expressions.txt
+/.aliases

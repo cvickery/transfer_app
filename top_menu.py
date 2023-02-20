@@ -83,9 +83,9 @@ def top_menu(msg=''):
   Feel free to browse what’s available here. Most of the code behind this site is publicly available
   on <a href="https://github.com/cvickery">GitHub</a> if you are interested.
 </p>
-<p>
-  But for a more polished experience, and for the many features not available here, head over to the
-  <a href="https://explorer.cuny.edu">CUNY Transfer Explorer</a> site.
+<h1 style="text-align:center;">
+  For the real T-Rex experience, which includes many features not developed here, head over to
+  the <a href="https://explorer.cuny.edu">CUNY Transfer Explorer</a> site.</h1>
 </div>
 
 <div id="menu">
@@ -157,10 +157,6 @@ def top_menu(msg=''):
       cells highlighted to identify possible problems with the transfer rules.
      </p>
     </dd>
-    <dt><a href="/review_rules">Review Transfer Rules</a></dt>
-    <dd>
-      Review details about, and optionally make suggestions for changing, existing transfer rules.
-    </dd>
 
     <dt><a href="/rule_changes">Rule Changes</a></dt>
     <dd>
@@ -169,10 +165,18 @@ def top_menu(msg=''):
       </p>
     </dd>
 
+    <dt><a href="/review_rules">Review Transfer Rules</a></dt>
+    <dd>
+      <p class="warning">This is a prototype for the “Transfer Equivalency Review” feature available
+      to authorized users on the T-Rex site. You can do anything you want here, but nothing will
+      actually happen!</p>
+    </dd>
+
     <dt><a href="/pending">Pending Reviews</a></dt>
     <dd>
-      This is a maintenance utility that shows transfer rule suggestions that have been submitted
-      but for which the user has not yet responded to an “activation” email message.
+      This is a maintenance utility that was used in the Review Transfer Rules prototype to show
+      transfer rule suggestions that had been submitted but for which the user has not yet
+      responded to an “activation” email message.
     </dd>
 
     <dt><a href="/courses">College Course Catalogs</a></dt>
