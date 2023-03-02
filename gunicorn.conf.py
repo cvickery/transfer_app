@@ -1,6 +1,8 @@
+"""Configuration module for gunicorn."""
 import multiprocessing
-import os
 import socket
+
+from pathlib import Path
 
 test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 port_num = 5000
@@ -11,8 +13,9 @@ print(f'Using port {port_num}')
 PORT = f'{port_num}'
 workers = multiprocessing.cpu_count() * 2 + 1
 bind = f'0.0.0.0:{PORT}'
-accesslog = '/Users/vickery/Projects/transfer_app/Logs/transfer_access.log'
-errorlog = '/Users/vickery/Projects/transfer_app/Logs/transfer_error.log'
+home_dir = Path.home()
+accesslog = Path(home_dir, 'Projects/transfer_app/Logs/transfer_access.log').name
+errorlog = Path(home_dir, 'Projects/transfer_app/Logs/transfer_error.log').name
 loglevel = 'info'
 timeout = 120
 

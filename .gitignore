@@ -18,3 +18,5 @@ __pycache__/
 /transfer_app.log
 /relop_expressions.txt
 /.aliases
+/transfer_access.log
+/transfer_error.log

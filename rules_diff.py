@@ -26,10 +26,11 @@ EffectiveDates = namedtuple('EffectiveDates', 'rule_key, effective_date')
 # =================================================================================================
 _archive_dir = os.getenv('ARCHIVE_DIR')
 if _archive_dir is None:
-  _archive_dir = '/Users/vickery/Projects/cuny_curriculum/rules_archive'
+  home_dir = Path.home()
+  _archive_dir = Path(home_dir, 'Projects/cuny_curriculum/rules_archive')
 
 # Get available archive sets.
-_archive_files = Path(_archive_dir).glob('*.bz2')
+_archive_files = _archive_dir.glob('*.bz2')
 _all_archives = defaultdict(list)
 for archive_file in _archive_files:
   archive_date = archive_file.name[0:10]
@@ -50,8 +51,7 @@ for key in _all_archive_keys:
 # is_bkcr()
 # -------------------------------------------------------------------------------------------------
 def is_bkcr(course_id):
-  """ Look up the course to see if it has the BKCR attribute
-  """
+  """Look up the course to see if it has the BKCR attribute."""
   course_id = int(course_id)
   conn = PgConnection()
   cursor = conn.cursor()
@@ -70,8 +70,7 @@ select * from cuny_courses
 # archive_dates()
 # -------------------------------------------------------------------------------------------------
 def archive_dates():
-  """ Return dates of earliest and latest archives available.
-  """
+  """Return dates of earliest and latest archives available."""
   first_date = date.fromisoformat(_all_archive_keys[0])
   last_date = date.fromisoformat(_all_archive_keys[-1])
   return (first_date.strftime('%b %d, %Y'), last_date.strftime('%B %-d, %Y'))
@@ -80,13 +79,14 @@ def archive_dates():
 # diff_rules()
 # -------------------------------------------------------------------------------------------------
 def diff_rules(first, second, debug=False, rogues=False):
-  """ Diff rules from the archive. Default is the most recent two. Otherwise, use the last
-      available archive before first and the most recent one since second.
+  """Diff rules from the archive.
 
-      Return a dict keyed by rule with tuple of from-to course_id lists for the two archive dates
-      used. Tuple is None for added/deleted rules.
+  Default is the most recent two. Otherwise, use the last available archive before first and the
+  most recent one since second.
+
+  Return a dict keyed by rule with tuple of from-to course_id lists for the two archive dates used.
+  Tuple is None for added/deleted rules.
   """
-
   # Missing dates default to two most recent ones
   if first is None or first == 'latest':
     first_date = _all_archive_keys[-2]

@@ -3,7 +3,7 @@
 # Start the transfer-app with log file in Logs dir.
 (
 # Must be run from transfer-app dir.
-cd /Users/vickery/Projects/transfer_app
+cd ~/Projects/transfer_app
 if [[ -r gunicorn.pid ]]
 then kill `cat gunicorn.pid`
      prefix='re'
