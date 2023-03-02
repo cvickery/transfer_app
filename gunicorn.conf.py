@@ -2,8 +2,6 @@
 import multiprocessing
 import socket
 
-from pathlib import Path
-
 test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 port_num = 5000
 while (test_socket.connect_ex(('0.0.0.0', port_num))) == 0:
@@ -13,13 +11,13 @@ print(f'Using port {port_num}')
 PORT = f'{port_num}'
 workers = multiprocessing.cpu_count() * 2 + 1
 bind = f'0.0.0.0:{PORT}'
-home_dir = Path.home()
-accesslog = Path(home_dir, 'Projects/transfer_app/Logs/transfer_access.log').name
-errorlog = Path(home_dir, 'Projects/transfer_app/Logs/transfer_error.log').name
-loglevel = 'info'
 timeout = 120
 
+accesslog = './Logs/transfer_access.log'
+errorlog = './Logs/transfer_error.log'
+loglevel = 'info'
 access_log_format = '%(h)s %({x-forwarded-for}i)s %(t)s %(r)s %(s)s %(b)s %(f)s'
+
 reload = True
 
 """
