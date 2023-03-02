@@ -20,3 +20,4 @@ __pycache__/
 /.aliases
 /transfer_access.log
 /transfer_error.log
+/Logs/logrotate.status
