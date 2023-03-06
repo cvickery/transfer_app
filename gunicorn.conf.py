@@ -1,16 +1,18 @@
 """Configuration module for gunicorn."""
 import multiprocessing
+import os
 import socket
 
+
 test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-port_num = 5000
+port_num = 5000 if os.getenv('TREX_PORT') is None else int(os.getenv('TREX_PORT'))
+
 while (test_socket.connect_ex(('0.0.0.0', port_num))) == 0:
   port_num += 1
 test_socket.close()
 print(f'Using port {port_num}')
-PORT = f'{port_num}'
 workers = multiprocessing.cpu_count() * 2 + 1
-bind = f'0.0.0.0:{PORT}'
+bind = f'0.0.0.0:{port_num}'
 timeout = 120
 
 accesslog = './Logs/transfer_access.log'

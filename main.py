@@ -2093,42 +2093,45 @@ def search_programs():
 
 @app.errorhandler(500)
 def server_error(e):
-    return """
-    An internal error occurred: <pre>{}</pre>
-    See logs for full stacktrace.
-    """.format(e), 500
+  """Handle server errors."""
+  return """
+  An internal error occurred: <pre>{}</pre>
+  See logs for full stacktrace.
+  """.format(e), 500
 
 
 @app.errorhandler(404)
 def not_found_error(e):
-    result = f"""
-    {header(title='CDIV', nav_items=[{'type': 'link',
-                                             'text': 'Main Menu',
-                                              'href': '/'
-                                              }])}
-    <h1 class="error">Not Found!</h1>
-    <ul>
-      <li>
-        The app is being updated often. so you may need to refresh your browser to get the current
-        versions of internal links.
-      </li>
-      <li>
-        If you are coming from a saved URL, you may need to go back to the Main Menu to access
-        current links.
-      </li>
-      <li>
-        If this is a broken link in the app (or any other problem with it), please let me know.<br>
-        <em><a href="mailto:cvickery@qc.cuny.edu?subject='Transfer App issue'">Christopher
-        Vickery</a></em>.
-      </li>
-    </ul>
-    """
-    return render_template('404.html', result=Markup(result), )
+  """Handle 404 errors."""
+  result = f"""
+  {header(title='CDIV', nav_items=[{'type': 'link',
+                                           'text': 'Main Menu',
+                                            'href': '/'
+                                            }])}
+  <h1 class="error">Not Found!</h1>
+  <ul>
+    <li>
+      The app is being updated often. so you may need to refresh your browser to get the current
+      versions of internal links.
+    </li>
+    <li>
+      If you are coming from a saved URL, you may need to go back to the Main Menu to access
+      current links.
+    </li>
+    <li>
+      If this is a broken link in the app (or any other problem with it), please let me know.<br>
+      <em><a href="mailto:cvickery@qc.cuny.edu?subject='Transfer App issue'">Christopher
+      Vickery</a></em>.
+    </li>
+  </ul>
+  """
+  return render_template('404.html', result=Markup(result), )
 
 
 if __name__ == '__main__':
-    # This is used when running locally. Gunicorn is used to run the application online.
-    # 2021-11-05: changed port from 5000 to 5001 to deal with MacOS 12's use of 5000.
-    # 2021-11-06: reverted to 5000. Decided to turn off AirPlay receiver instead.
-    PORT = 5000 if os.getenv('DEBUG_PORT') is None else int(os.getenv('DEBUG_PORT'))
-    app.run(host='0.0.0.0', port=PORT, debug=True)
+  # This is used when running locally. Gunicorn is used to run the application online.
+  # 2021-11-05: changed port from 5000 to 5001 to deal with MacOS 12's use of 5000.
+  # 2021-11-06: reverted to 5000. Decided to turn off AirPlay receiver instead.
+
+  PORT = 5000 if os.getenv('TREX_PORT') is None else int(os.getenv('TREX_PORT'))
+  app.run(host='0.0.0.0', port=PORT, debug=True)
