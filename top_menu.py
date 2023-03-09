@@ -1,12 +1,11 @@
 #! /usr/local/bin/python3
-
+"""Top-level manu for T-Rex Labs."""
 from app_header import header
 
 
 def top_menu(msg=''):
-  """ This is the "landing page" for the app.
-  """
-  header_str = header(title='CUNY T-Rex Laboratory')
+  """Generate the "landing page" for the app."""
+  header_str = header(title='T-Rex Laboratories')
 
   return f"""
 {header_str}
@@ -83,7 +82,7 @@ def top_menu(msg=''):
   Feel free to browse what’s available here. Most of the code behind this site is publicly available
   on <a href="https://github.com/cvickery">GitHub</a> if you are interested.
 </p>
-<h1 style="text-align:center;">
+<h1 style="text-align:center; color:#909">
   For the real T-Rex experience, which includes many features not developed here, head over to
   the <a href="https://explorer.cuny.edu">CUNY Transfer Explorer</a> site.</h1>
 </div>

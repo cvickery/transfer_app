@@ -1992,15 +1992,16 @@ def requirements(college=None, type=None, name=None, period=None):
 
 @app.route('/_search_programs/', methods=['POST'])
 def _search_programs():
-  """ Ajax handler for search_programs.
-      Given a text string and a list of colleges, return an object
-      with the following keys:
-        cip_codes: All the matching cip_codes found
-        coarse: Matches by 2 cip digits
-        medium: Matches by 4 cip digits
-        fine: Matches by 6 cip digits
-          plans: (institution, plan, enrollment) tuples
-          subplans (institution, subplan, enrollent) tuples
+  """Handle AJAX requests for search_programs.
+
+  Given a text string and a list of colleges, return an object
+  with the following keys:
+    cip_codes: All the matching cip_codes found
+    coarse: Matches by 2 cip digits
+    medium: Matches by 4 cip digits
+    fine: Matches by 6 cip digits
+      plans: (institution, plan, enrollment) tuples
+      subplans (institution, subplan, enrollent) tuples
   """
   if app_unavailable():
     return 'app_unavailable.html'
@@ -2012,9 +2013,10 @@ def _search_programs():
 
 @app.route('/search_programs/', methods=['GET'])
 def search_programs():
-  """ Use cip_codes to find academic plans and subplans at CUNY.
-      Generate the web page that will be updated dynamically by AJAX callbacks as the user interacts
-      with the form
+  """Use cip_codes to find academic plans and subplans at CUNY.
+
+  Generate the web page that will be updated dynamically by AJAX callbacks as the user interacts
+  with the form
   """
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
