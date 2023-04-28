@@ -17,7 +17,7 @@ window.addEventListener('load', function()
         params += `&${entry[0]}=${entry[1]}`;
       }
       const request = new XMLHttpRequest();
-      request.open('POST', '/_log_submits/', true);
+      request.open('POST', '/_log_submits/', false);
       request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
       request.send(params);
     });
