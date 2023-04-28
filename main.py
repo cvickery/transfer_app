@@ -19,6 +19,7 @@ from pathlib import Path
 from collections import namedtuple, defaultdict, Counter
 
 from psycopg.rows import namedtuple_row
+from psycopg.types.json import Json
 
 from app_header import header
 from course_info import _course_info
@@ -1988,6 +1989,23 @@ def requirements(college=None, type=None, name=None, period=None):
     {requirements_html}
     """
     return render_template('requirements.html', result=Markup(result))
+
+
+@app.route('/_log_submits/', methods=['POST'])
+def _log_submits():
+  """Handle AJAX requests to log form submissions."""
+  form_data = dict()
+  for key, value in request.form.items():
+    form_data[key] = value
+  form_data['timestamp'] = str(datetime.now())
+
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute("""
+      insert into submit_logs values (%s)
+      """, (Json(form_data), ))
+
+  return {'rowcount': cursor.rowcount}
 
 
 @app.route('/_search_programs/', methods=['POST'])
