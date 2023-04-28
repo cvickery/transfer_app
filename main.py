@@ -1998,6 +1998,7 @@ def _log_submits():
   for key, value in request.form.items():
     form_data[key] = value
   form_data['timestamp'] = str(datetime.now())
+  print(f'{form_data}')
 
   with psycopg.connect('dbname=cuny_curriculum') as conn:
     with conn.cursor(row_factory=namedtuple_row) as cursor:
