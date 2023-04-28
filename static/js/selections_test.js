@@ -41,8 +41,6 @@ window.addEventListener('load', function()
       request.open('POST', '/_log_submits/', true);
       request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
       request.send(params);
-      console.log(params);
-      event.preventDefault();
     });
   }
 });
