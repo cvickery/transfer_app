@@ -1,24 +1,8 @@
 // Log form submission events
-
-async function record_form_data(formObject)
-{
-  const request_obj = {
-  method: 'POST',
-  headers: {'Content-Type': 'application/json'},
-  body: JSON.stringify(formObject),
-  };
-
-  const request = new Request('/_log_submits/', request_obj);
-  fetch(request).then((response) =>
-  {
-    if (!response.ok)
-    {
-      console.log('Oh no!', response.status);
-    }
-  })
-}
-
-
+/*  Find all form elements on this web page.
+ *  Whenever a form is submitted, send the name of this web page, plus all the form’s name-value
+ *  pairs to the server, where they can be logged to a db table.
+ */
 window.addEventListener('load', function()
 {
   const forms_list = document.getElementsByTagName('form');
@@ -26,18 +10,13 @@ window.addEventListener('load', function()
   {
     form.addEventListener('submit', function(event)
     {
-      formData = new FormData(form);
-      formObject = {'pathname': window.location.pathname};
-      var key = encodeURIComponent('pathname');
-      var value = encodeURIComponent(window.location.pathname);
-      var params = [key+'='+value];
+      let params = `pathname=${window.location.pathname}`;
+      let formData = new FormData(form);
       for (entry of formData.entries())
       {
-        key = encodeURIComponent(entry[0]);
-        value = encodeURIComponent(entry[1])
-        params.push('&'+key+'='+value);
+        params += `&${entry[0]}=${entry[1]}`;
       }
-      var request = new XMLHttpRequest();
+      const request = new XMLHttpRequest();
       request.open('POST', '/_log_submits/', true);
       request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
       request.send(params);
