@@ -1,13 +1,12 @@
 #! /usr/local/bin/python3
-import os
-import sys
-import re
 import argparse
+import os
+import re
+import sys
 
 from html2text import html2text
 from sendgrid import SendGridAPIClient
-
-from pprint import pprint
+from socket import gethostname
 
 """ This module sends email!
 
@@ -173,7 +172,7 @@ if __name__ == '__main__':
   parser.add_argument('-t', '--text_file', type=argparse.FileType('r'))
   parser.add_argument('-d', '--debug', type=int, default=0)
   parser.add_argument('-f', '--from_addr',
-                      default=f"<{os.getenv('USER')}> {os.getenv('USER')}@{os.getenv('HOSTNAME')}")
+                      default=f"<{os.getenv('USER')}> {os.getenv('USER')}@{gethostname()}")
   parser.add_argument('to_addr', nargs='+')
   args = parser.parse_args()
 
@@ -182,22 +181,27 @@ if __name__ == '__main__':
 
   # Be sure sender and all recipients are valid
   try:
+
     from_addr = parse_addr_str(args.from_addr, strict=True)
     if from_addr is None:
       exit(f'{whoami} “{args.from_addr}” is not a valid return address')
+
     if args.reply_addr is not None:
       reply_addr = parse_addr_str(args.reply_addr, strict=True)
     else:
       reply_addr = None
     to_list = [parse_addr_str(person, strict=True) for person in args.to_addr]
+
     if args.cc_addr is None:
       cc_list = None
     else:
       cc_list = [parse_addr_str(person) for person in args.cc_addr]
+
     if args.bcc_addr is None:
       bcc_list = None
     else:
       bcc_list = [parse_addr_str(person) for person in args.bcc_addr]
+
   except ParseError as err:
     print(err)
     exit(1)
