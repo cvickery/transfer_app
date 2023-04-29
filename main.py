@@ -1994,13 +1994,10 @@ def requirements(college=None, type=None, name=None, period=None):
 @app.route('/_log_submits/', methods=['POST'])
 def _log_submits():
   """Handle AJAX requests to log form submissions."""
-  print('_log_submits()')
   form_data = dict()
   for key, value in request.form.items():
     form_data[key] = value
   form_data['timestamp'] = str(datetime.now())[0:19]
-  for k, v in form_data.items():
-    print(f'{k} = {v}')
 
   with psycopg.connect('dbname=cuny_curriculum') as conn:
     with conn.cursor(row_factory=namedtuple_row) as cursor:
