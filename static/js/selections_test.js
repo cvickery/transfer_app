@@ -1,4 +1,4 @@
-// Log form submission events
+// Log forms’ submit events
 /*  Find all form elements on this web page.
  *  Whenever a form is submitted, send the name of this web page, plus all the form’s name-value
  *  pairs to the server, where they can be logged to a db table.
