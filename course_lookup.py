@@ -1,36 +1,37 @@
+#! /usr/local/bin/python3
 
-import math
-import re
 import json
+import math
+import psycopg
+import re
+
+from psycopg.rows import namedtuple_row
 from time import time
 
-from pgconnection import PgConnection
 
 """ Globals
     ----------------------------------------------------------------
 """
-conn = PgConnection()
-cursor = conn.cursor()
+with psycopg.connect('dbname=cuny_curriculum') as conn:
+  with conn.cursor(row_factory=namedtuple_row) as cursor:
 
-# Public list of all cross-listed courses’s course_ids CUNY-wide
-query = """
-  select course_id from cuny_courses
-  where offer_nbr > 1 and offer_nbr < 5
-  group by course_id
-  order by course_id
-        """
-cursor.execute(query)
-cross_listed = [id.course_id for id in cursor.fetchall()]
+    # Public list of all cross-listed courses’s course_ids CUNY-wide
+    query = """
+      select course_id from cuny_courses
+      where offer_nbr > 1 and offer_nbr < 5
+      group by course_id
+      order by course_id
+            """
+    cursor.execute(query)
+    cross_listed = [id.course_id for id in cursor.fetchall()]
 
-# Public copy of the course_attributes table, formatted as table rows
-cursor.execute('select * from course_attributes order by name, value')
-course_attribute_rows = '\n    '.join([f"""
-    <tr>
-      <td>{r.name}</td><td>{r.value}</td><td>{r.description}</td>
-    </tr>
-    """ for r in cursor.fetchall()])
-cursor.close()
-conn.close()
+    # Public copy of the course_attributes table, formatted as table rows
+    cursor.execute('select * from course_attributes order by name, value')
+    course_attribute_rows = '\n    '.join([f"""
+        <tr>
+          <td>{r.name}</td><td>{r.value}</td><td>{r.description}</td>
+        </tr>
+        """ for r in cursor.fetchall()])
 
 # Course info for a single course_id
 course_query = """
@@ -81,28 +82,27 @@ def lookup_course(course_id, active_only=False, offer_nbr=1):
   """ Get HTML for one course_id. In the case of cross-listed courses, give the one with offer_nbr
       equal to 1 unless overridden.
   """
-  conn = PgConnection()
-  cursor = conn.cursor()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
 
-  # Active courses require both the course and the discipline to be active
-  if active_only:
-    which_courses = """
-    and  c.course_status = 'A'
-    and  c.discipline_status = 'A'
-    """
-  else:
-    which_courses = ''
+      # Active courses require both the course and the discipline to be active
+      if active_only:
+        which_courses = """
+        and  c.course_status = 'A'
+        and  c.discipline_status = 'A'
+        """
+      else:
+        which_courses = ''
 
-  cursor.execute(course_query.format(which_courses), (course_id, offer_nbr))
-  if cursor.rowcount == 0:
-    print('COURSE LOOKUP FAILED', cursor.query)
-    return None
+      cursor.execute(course_query.format(which_courses), (course_id, offer_nbr))
+      if cursor.rowcount == 0:
+        print('COURSE LOOKUP FAILED', cursor.query)
+        return None
 
-  if cursor.rowcount > 1:
-    raise Exception(f'lookup_course() found {cursor.rowcount} courses for {course_id}:{offer_nbr}')
+      if cursor.rowcount > 1:
+        raise Exception(f'lookup_course() found {cursor.rowcount} courses for {course_id}:{offer_nbr}')
 
-  course = cursor.fetchone()
-  conn.close()
+      course = cursor.fetchone()
 
   html = format_course(course)
   return [course, html]
@@ -114,78 +114,76 @@ def lookup_courses(institution, active_only=True, department=None, discipline=No
   """ Lookup all the active courses for an institution. Return giant html string.
       Can restrict to courses offered by a particular department and/or in a particular discipline.
   """
-  conn = PgConnection()
-  cursor = conn.cursor()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
 
-  # Active courses require both the course and the discipline to be active
-  if active_only:
-    which_courses = """
-    and  c.course_status = 'A'
-    and  c.can_schedule = 'Y'
-    and  c.discipline_status = 'A'
-    """
-  else:
-    # Always suppress courses that cannot be scheduled
-    which_courses = """
-    and c.can_schecule = 'Y'
-    """
-  if department is None:
-    department_clause = ''
-  else:
-    department_clause = f"and c.department = '{department}'"
-  if discipline is None:
-    discipline_clause = ''
-  else:
-    discipline_clause = f"and c.discipline = '{discipline}'"
-    # Course info for all courses at an institution
-  institution_query = f"""
-  select  c.course_id                       as course_id,
-          c.offer_nbr                       as offer_nbr,
-          i.name                            as institution,
-          s.subject_name                    as cuny_subject,
-          d.department_name                 as department,
-          c.discipline                      as discipline,
-          trim(both from c.catalog_number)  as catalog_number,
-          c.title                           as title,
-          c.primary_component               as primary_component,
-          c.components                      as components,
-          c.min_credits                     as min_credits,
-          c.max_credits                     as max_credits,
-          c.requisites                      as requisites,
-          c.description                     as description,
-         cc.description                     as career,
-          c.designation                     as rd,
-         rd.description                     as designation,
-          c.course_status                   as course_status,
-          c.attributes                      as attributes
+      # Active courses require both the course and the discipline to be active
+      if active_only:
+        which_courses = """
+        and  c.course_status = 'A'
+        and  c.can_schedule = 'Y'
+        and  c.discipline_status = 'A'
+        """
+      else:
+        # Always suppress courses that cannot be scheduled
+        which_courses = """
+        and c.can_schecule = 'Y'
+        """
+      if department is None:
+        department_clause = ''
+      else:
+        department_clause = f"and c.department = '{department}'"
+      if discipline is None:
+        discipline_clause = ''
+      else:
+        discipline_clause = f"and c.discipline = '{discipline}'"
+        # Course info for all courses at an institution
+      institution_query = f"""
+      select  c.course_id                       as course_id,
+              c.offer_nbr                       as offer_nbr,
+              i.name                            as institution,
+              s.subject_name                    as cuny_subject,
+              d.department_name                 as department,
+              c.discipline                      as discipline,
+              trim(both from c.catalog_number)  as catalog_number,
+              c.title                           as title,
+              c.primary_component               as primary_component,
+              c.components                      as components,
+              c.min_credits                     as min_credits,
+              c.max_credits                     as max_credits,
+              c.requisites                      as requisites,
+              c.description                     as description,
+             cc.description                     as career,
+              c.designation                     as rd,
+             rd.description                     as designation,
+              c.course_status                   as course_status,
+              c.attributes                      as attributes
 
-    from  cuny_courses      c,
-          cuny_institutions i,
-          cuny_departments  d,
-          cuny_subjects     s,
-          cuny_careers      cc,
-          designations      rd
+        from  cuny_courses      c,
+              cuny_institutions i,
+              cuny_departments  d,
+              cuny_subjects     s,
+              cuny_careers      cc,
+              designations      rd
 
-   where  c.institution = %s
-     {which_courses}
-     and  i.code = c.institution
-     and  d.institution = c.institution
-     and  d.department = c.department
-     and  s.subject = c.cuny_subject
-     and  cc.institution = c.institution
-     and  cc.career = c.career
-     and  rd.designation = c.designation
-     {department_clause} {discipline_clause}
-   order by discipline, numeric_part(catalog_number)
-  """
-  cursor.execute(institution_query, (institution,))
+       where  c.institution = %s
+         {which_courses}
+         and  i.code = c.institution
+         and  d.institution = c.institution
+         and  d.department = c.department
+         and  s.subject = c.cuny_subject
+         and  cc.institution = c.institution
+         and  cc.career = c.career
+         and  rd.designation = c.designation
+         {department_clause} {discipline_clause}
+       order by discipline, numeric_part(catalog_number)
+      """
+      cursor.execute(institution_query, (institution,))
 
-  html = ''
-  for course in cursor.fetchall():
-    html += format_course(course)
+      html = ''
+      for course in cursor.fetchall():
+        html += format_course(course)
 
-  cursor.close()
-  conn.close()
   return html
 
 
@@ -226,28 +224,26 @@ def format_course(course, active_only=False):
     # as we speak. There are no observed  errors of the other types.)
     # There is no way to get a different attributes list, because those depend only on course_id.
     title_str += '<br/>Cross-listed with:'
-    conn = PgConnection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        select c.discipline, c.catalog_number, c.title,
-          cc. description as career, s.subject_name as cuny_subject,
-          c.designation, c.requisites, c.attributes
-        from cuny_courses c, cuny_subjects s, cuny_careers cc
-        where course_id = %s
-        and offer_nbr != %s
-        and cc.career = c.career
-        and  cc.institution = c.institution
-        and s.subject = c.cuny_subject
-        order by discipline, catalog_number
-        """, (course.course_id, course.offer_nbr))
-    for cross_list in cursor.fetchall():
-      title_str += f"""<br/>
-      <strong>{cross_list.discipline} {cross_list.catalog_number}: {cross_list.title}</strong>
-      (<em>{cross_list.career}, {cross_list.cuny_subject}, {cross_list.attributes}</em>)
-      <br/>Requisites: {cross_list.requisites}
-      """
-    cursor.close()
-    conn.close()
+    with psycopg.connect('dbname=cuny_curriculum') as conn:
+      with conn.cursor(row_factory=namedtuple_row) as cursor:
+        cursor.execute("""
+            select c.discipline, c.catalog_number, c.title,
+              cc. description as career, s.subject_name as cuny_subject,
+              c.designation, c.requisites, c.attributes
+            from cuny_courses c, cuny_subjects s, cuny_careers cc
+            where course_id = %s
+            and offer_nbr != %s
+            and cc.career = c.career
+            and  cc.institution = c.institution
+            and s.subject = c.cuny_subject
+            order by discipline, catalog_number
+            """, (course.course_id, course.offer_nbr))
+        for cross_list in cursor.fetchall():
+          title_str += f"""<br/>
+          <strong>{cross_list.discipline} {cross_list.catalog_number}: {cross_list.title}</strong>
+          (<em>{cross_list.career}, {cross_list.cuny_subject}, {cross_list.attributes}</em>)
+          <br/>Requisites: {cross_list.requisites}
+          """
 
   note = ''
   if not active_only:
@@ -314,13 +310,12 @@ def course_search(search_str, include_inactive=False, debug=False):
     and discipline ~* %s
     {cat_num_str}
     """
-  conn = PgConnection()
-  cursor = conn.cursor()
-  cursor.execute(query, (discipline, ))
-  return_list = []
-  for row in cursor.fetchall():
-    return_list.append(lookup_course(row.course_id, offer_nbr=row.offer_nbr)[1])
-  conn.close()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute(query, (discipline, ))
+      return_list = []
+      for row in cursor.fetchall():
+        return_list.append(lookup_course(row.course_id, offer_nbr=row.offer_nbr)[1])
   return json.dumps(return_list)
 
 
