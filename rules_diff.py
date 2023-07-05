@@ -1,6 +1,7 @@
 #! /usr/local/bin/python3
-""" Compare two rule archives at report changes
-    The default is to compare the two latest archive sets.
+"""Compare two rule archives and report changes.
+
+The default is to compare the two latest archive sets.
 """
 
 import os

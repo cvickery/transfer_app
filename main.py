@@ -1,7 +1,8 @@
 #! /usr/bin/env python3
-# CUNY Transfer Explorer
-# C. Vickery
+"""CUNY Transfer Explorer.
 
+C. Vickery
+"""
 import os
 import sys
 import io
