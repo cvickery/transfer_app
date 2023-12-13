@@ -44,9 +44,10 @@ from system_status import app_available, app_unavailable, get_reason, \
 from top_menu import top_menu
 from what_requirements import what_requirements
 
-from flask import Flask, url_for, render_template, make_response,\
-    redirect, send_file, Markup, request, jsonify, session
+from flask import Flask, url_for, render_template, make_response, \
+    redirect, send_file, request, jsonify, session
 from flask_session import Session
+from markupsafe import Markup
 import redis
 
 redis_url = 'redis://localhost'
