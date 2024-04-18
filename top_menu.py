@@ -83,7 +83,7 @@ def top_menu(msg=''):
   on <a href="https://github.com/cvickery">GitHub</a> if you are interested.
 </p>
 <h1 style="text-align:center; color:#909">
-  For the real T-Rex experience, which includes many features not developed here, head over to
+  For the real T-Rex experience, which includes many features not developed here, use
   the <a href="https://explorer.cuny.edu">CUNY Transfer Explorer</a> site.</h1>
 </div>
 
@@ -123,6 +123,9 @@ def top_menu(msg=''):
 
     <dt><a href="/registered_programs">Academic Programs</a></dt>
     <dd>
+      <p class="error">The NYSED information is out of date. There was a change to their website
+        that “broke” some of the scraping code, and I haven’t had a chance to fix the problem.
+      </p>
       <p>
         Tabular information about all academic programs registered with the NYS Department of
         Education for all CUNY colleges. Includes information about program “variants,” such as
@@ -144,7 +147,7 @@ def top_menu(msg=''):
 
     <dt><a href="/review_rules">Review Transfer Rules</a></dt>
     <dd>
-      <p class="warning">This is a prototype for the “Transfer Equivalency Review” feature available
+      <p>This is the original prototype for the “Transfer Equivalency Review” feature available
       to authorized users on the T-Rex site. You can do anything you want here, but nothing will
       actually happen!</p>
     </dd>
@@ -160,6 +163,10 @@ def top_menu(msg=''):
       information about them. Does not include course requirements. (For that, see <a
       href="/requirements">Degree and Program Requirements</a>)
     </dd>
+
+    <br/>
+    <h2 class="error">The following items are in various states of disrepair!</h2>
+    <hr/><br/>
 
     <dt><a href="/what_requirements">What Requirements Can a Course Satisfy?</a></dt>
     <dd>
