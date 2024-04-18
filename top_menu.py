@@ -91,6 +91,64 @@ def top_menu(msg=''):
   <h1>Menu</h1><hr>
   <dl id="menu-list">
 
+    <dt><a href="/requirements">Degree and Program Requirements</a></dt>
+    <dd>
+      <p>
+        This feature lets you look at the Ellucian Degree Works Scribe language code for all the
+        Majors, Minors, Concentrations, and Degrees offered at CUNY. Each block of code is also
+        shown in an expanded form that shows exactly what courses satisfy each requirement specified
+        in the block. Courses are shown as listed in the Scribe code block, as well as their status
+        in CUNYfirst: active, inactive, or not present.
+      </p>
+    </dd>
+
+    <dt><a href="/rule_changes">Rule Changes</a></dt>
+    <dd>
+      <p>
+        See what transfer rules have changed between two dates.
+      </p>
+    </dd>
+
+    <dt><a href="/courses">College Course Catalogs</a></dt>
+    <dd>
+      Display a complete list of all the active courses for any CUNY College in standard
+      college-bulletin format. But you have to say “Please,” and then be prepared for a “firehose”
+      stream of information about thousands of courses. The flood of output has been known to drown
+      some mobile browsers!
+      <p>
+        When looking at transfer rules, you will see these catalog descriptions for just those
+        courses involved in a rule.
+      </p>
+    </dd>
+
+    <dt><a href="/registered_programs">Academic Programs</a></dt>
+    <dd>
+      <p>
+        Tabular information about all academic programs registered with the NYS Department of
+        Education for all CUNY colleges. Includes information about program “variants,” such as
+        programs that are shared across colleges and/or programs that can award multiple degrees
+        or certificates.
+      </p>
+      <p>
+        This information is obtained by code that “<a
+        href="https://en.wikipedia.org/wiki/Web_scraping">scrapes</a>” the NYS Department of
+        Education <a href="http://www.nysed.gov/heds/irpsl1.html">website</a> where all academic
+        programs in the state are listed. The NYSED site is very useful, but tedious to interact
+        with manually.
+      </p>
+      <p>
+        The tables include links to the previous item’s requirement pages for each program.
+      </p>
+    </dd>
+
+
+    <dt><a href="/review_rules">Review Transfer Rules</a></dt>
+    <dd>
+      <p class="warning">This is a prototype for the “Transfer Equivalency Review” feature available
+      to authorized users on the T-Rex site. You can do anything you want here, but nothing will
+      actually happen!</p>
+    </dd>
+
     <dt><a href="/search_programs">Search Programs</a></dt>
     <dd>
       Development tool for looking up academic programs based on CIP Codes and CIP-SOC mappings.
@@ -117,38 +175,6 @@ def top_menu(msg=''):
       </p>
     </dd>
 
-    <dt><a href="/requirements">Degree and Program Requirements</a></dt>
-    <dd>
-      <p>
-        This feature lets you look at the Ellucian Degree Works Scribe language code for all the
-        Majors, Minors, Concentrations, and Degrees offered at CUNY. Each block of code is also
-        shown in an expanded form that shows exactly what courses satisfy each requirement specified
-        in the block. Courses are shown as listed in the Scribe code block, as well as their status
-        in CUNYfirst: active, inactive, or not present.
-      </p>
-    </dd>
-
-    <dt><a href="/registered_programs">Academic Programs</a></dt>
-    <dd>
-      <p>
-        Tabular information about all academic programs registered with the NYS Department of
-        Education for all CUNY colleges. Includes information about program “variants,” such as
-        programs that are shared across colleges and/or programs that can award multiple degrees
-        or certificates.
-      </p>
-      <p>
-        This information is obtained by code that “<a
-        href="https://en.wikipedia.org/wiki/Web_scraping">scrapes</a>” the NYS Department of
-        Education <a href="http://www.nysed.gov/heds/irpsl1.html">website</a> where all academic
-        programs in the state are listed. The NYSED site is very useful, but tedious to interact
-        with manually.
-      </p>
-      <p>
-        The tables include links to the previous item’s requirement pages for each program.
-      </p>
-    </dd>
-
-
     <dt><a href="/map_courses">Course Transfer Maps</a></dt>
     <dd>
      <p>
@@ -157,37 +183,11 @@ def top_menu(msg=''):
      </p>
     </dd>
 
-    <dt><a href="/rule_changes">Rule Changes</a></dt>
-    <dd>
-      <p>
-        See what transfer rules have changed between two dates.
-      </p>
-    </dd>
-
-    <dt><a href="/review_rules">Review Transfer Rules</a></dt>
-    <dd>
-      <p class="warning">This is a prototype for the “Transfer Equivalency Review” feature available
-      to authorized users on the T-Rex site. You can do anything you want here, but nothing will
-      actually happen!</p>
-    </dd>
-
     <dt><a href="/pending">Pending Reviews</a></dt>
     <dd>
       This is a maintenance utility that was used in the Review Transfer Rules prototype to show
       transfer rule suggestions that had been submitted but for which the user has not yet
       responded to an “activation” email message.
-    </dd>
-
-    <dt><a href="/courses">College Course Catalogs</a></dt>
-    <dd>
-      Display a complete list of all the active courses for any CUNY College in standard
-      college-bulletin format. But you have to say “Please,” and then be prepared for a “firehose”
-      stream of information about thousands of courses. The flood of output has been known to drown
-      some mobile browsers!
-      <p>
-        When looking at transfer rules, you will see these catalog descriptions for just those
-        courses involved in a rule.
-      </p>
     </dd>
 
   </dl>
