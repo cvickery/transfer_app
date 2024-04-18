@@ -13,7 +13,7 @@ __pycache__/
 /.eslintrc.js
 
 /.node_modules/
-
+.nova
 *.csv
 /transfer_app.log
 /relop_expressions.txt
