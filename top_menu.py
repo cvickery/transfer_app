@@ -123,9 +123,6 @@ def top_menu(msg=''):
 
     <dt><a href="/registered_programs">Academic Programs</a></dt>
     <dd>
-      <p class="error">The NYSED information is out of date. There was a change to their website
-        that “broke” some of the scraping code, and I haven’t had a chance to fix the problem.
-      </p>
       <p>
         Tabular information about all academic programs registered with the NYS Department of
         Education for all CUNY colleges. Includes information about program “variants,” such as
