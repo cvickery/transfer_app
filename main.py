@@ -1960,7 +1960,7 @@ def requirements(college=None, type=None, name=None, period=None):
                period_start,
                period_stop,
                requirement_html,
-               parse_tree
+               dgw_parse_tree
           from requirement_blocks
          where institution = '{institution}'
            and requirement_id = '{requirement_id}'
