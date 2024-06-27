@@ -96,18 +96,27 @@ const college_change = function()
 
 //  main()
 //  -----------------------------------------------------------------------------------------------
-/*  Set up listeners
+/*  Set up listeners and initialize display
+ *    The institution-option div is always shown.
+ *    The id-or-type div is shown whenever an institution has been selected, but not otherwise.
  */
 const main = function ()
 {
   document.getElementById('block-type').addEventListener('change', block_type_change);
-  document.querySelectorAll('[type=radio]')
-    .forEach(radio => radio.addEventListener('change', college_change));
+  var college_radios = document.querySelectorAll('[type=radio]');
+  var college_selected = [...college_radios].some(radio => radio.checked);
+  [...college_radios].forEach(radio => radio.addEventListener('change', college_change));
 
   document.getElementById('requirement-num').addEventListener('change', requirement_num_change);
 
-  // Initial UI state
-  document.getElementById('id-or-type-div').style.display = 'none';
+  // Initial UI state: depends on whether an institution is selected or not.
+  if (college_selected) {
+    document.getElementById('id-or-type-div').style.display = 'block';
+    college_change();
+  }
+  else {
+    document.getElementById('id-or-type-div').style.display = 'none';
+  }
 };
 
 window.addEventListener('load', main);
