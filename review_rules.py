@@ -491,6 +491,7 @@ def do_form_2(request, session):
     source_institution_params = ', '.join('%s' for i in session['source_institutions'])
     destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
   except KeyError:
+    print(session.keys())
     # the session is expired or invalid. Go back to Step 1.
     return render_template('review_rules.html', result=Markup("""
                                                            <h1>Session Expired</h1>
