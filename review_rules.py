@@ -2,11 +2,9 @@
 """ Manage the sequence of forms used for reviewing transfer rules.
 """
 import os
-import sys
 
 import json
 import uuid
-import re
 
 from datetime import datetime
 
@@ -16,7 +14,7 @@ from markupsafe import Markup
 from pgconnection import PgConnection
 
 from app_header import header
-from sendemail import send_token, send_message
+from sendemail import send_token
 from format_rules import institution_names, Source_Course, Destination_Course, Transfer_Rule, \
     format_rules
 
@@ -104,8 +102,8 @@ def do_form_0(request, session):
   result = f"""
     {header(title='Review Rules: Select Colleges',
             nav_items=[{'type': 'link',
-            'href': '/',
-            'text': 'Main Menu'}])}
+                        'href': '/',
+                        'text': 'Main Menu'}])}
     <DETAILS>
       <summary>
         Instructions
@@ -180,7 +178,7 @@ def do_form_1(request, session):
       2. Generate Form 2 to select discipline(s)
   """
   if DEBUG:
-     print(f'*** do_form_1({session})')
+    print(f'*** do_form_1({session})')
 
   #  do_form_1: put form 1 info (source/destination colleges; users email) into the session
   #  dictionary.
@@ -218,7 +216,7 @@ def do_form_1(request, session):
     if sending_is_singleton:
       criterion += ' and '
     criterion += 'the receiving college is ' + \
-        institution_names[session['destination_institutions'][0]]
+      institution_names[session['destination_institutions'][0]]
 
   # Look up all {source_institution, source_discipline, cuny_subject}
   #         and {destination_institution, destination_discipline, cuny_subject}
@@ -270,7 +268,7 @@ def do_form_1(request, session):
     #   Both the college and discipline names will be displayed for each cuny_subject, unless there
     #   is only one college involved ("singleton"), in which case only the discipline name is shown.
     source_disciplines_str = ''
-    source_disciplines_val = ''
+    # source_disciplines_val = ''
     source_disciplines_set = set()
     for discipline in source_disciplines:
       if discipline.cuny_subject == cuny_subject:
@@ -408,11 +406,10 @@ def do_form_1(request, session):
   result = f"""
   {header(title='Review Rules: Select Disciplines',
           nav_items=[{'type': 'link',
-          'href': '/',
-          'text': 'Main Menu'},
-          {'type': 'link',
-           'href': '/review_rules',
-           'text': 'Change Colleges'}])}
+                      'href': '/',
+                      'text': 'Main Menu'}, {'type': 'link',
+                                             'href': '/review_rules',
+                                             'text': 'Change Colleges'}])}
   <details open>
   <summary>
     Instructions (click to open/close)
@@ -632,16 +629,14 @@ def do_form_2(request, session):
   result = f"""
   {header(title='Review Rules: Review Selected Rules',
           nav_items=[{'type': 'link',
-          'href': '/',
-          'text': 'Main Menu'},
-          {'type': 'link',
-           'href': '/review_rules',
-           'text': 'Change Colleges'},
-           {'type': 'button',
-            'class': 'back-button',
-            'text': 'Change Subjects'
-
-           }])}
+                      'href': '/',
+                      'text': 'Main Menu'}, {'type': 'link',
+                                             'href': '/review_rules',
+                                             'text': 'Change Colleges'},
+                                            {'type': 'button',
+                                             'class': 'back-button',
+                                             'text': 'Change Subjects'}
+                     ])}
     <details open>
       <summary>Instructions (click to open/close)</summary>
       <hr>
@@ -743,13 +738,13 @@ def do_form_3(request, session):
     else:
       result = f"""
       {header(title='Review Rules: Respond to Email',
-              nav_items = [
-              {'type': 'link',
-               'href': '/',
-               'text': 'Main Menu'},
-              {'type': 'link',
-               'href': '/review_rules',
-               'text':'Review More Rules'}])}
+              nav_items=[{'type': 'link',
+                          'href': '/',
+                          'text': 'Main Menu'},
+                         {'type': 'link',
+                          'href': '/review_rules',
+                          'text': 'Review More Rules'}
+                         ])}
       <details>
         <summary>Check your email at {email}</summary>
         <hr>
