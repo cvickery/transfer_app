@@ -4,8 +4,6 @@
 C. Vickery
 """
 import os
-import sys
-import io
 import psycopg
 import re
 import socket
@@ -13,7 +11,6 @@ import socket
 import json
 import csv
 
-from urllib import parse
 from datetime import datetime, timedelta, date
 from pathlib import Path
 
@@ -28,8 +25,7 @@ from course_lookup import lookup_courses, lookup_course
 from course_lookup import course_attribute_rows, course_search
 # from course_mappings import course_mappings_impl
 from find_programs import find_programs
-from format_rules import format_rule, format_rules, format_rule_by_key
-from format_rules import Transfer_Rule, Source_Course, Destination_Course, andor_list
+from format_rules import format_rule, format_rule_by_key
 from htmlificization import scribe_block_to_html
 from plan_subplan_options import options_dict
 from program_descriptions import describe, to_html
@@ -37,15 +33,15 @@ from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
 from reviews import process_pending
 from rules_diff import diff_rules, archive_dates, available_archive_dates
 from rule_history import rule_history
-from sendemail import send_token, send_message
+from sendemail import send_message
 from shortcut_to_rules import shortcut_to_rules
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
 from top_menu import top_menu
 from what_requirements import what_requirements
 
-from flask import Flask, url_for, render_template, make_response, \
-    redirect, send_file, request, jsonify, session
+from flask import Flask, render_template, make_response, \
+    send_file, request, jsonify, session
 from flask_session import Session
 from markupsafe import Markup
 import redis
@@ -140,11 +136,8 @@ def index_page():
       num_rules = cursor.fetchone()[0]
       cursor.execute("select * from updates")
       updates = cursor.fetchall()
-      catalog_date = 'unknown'
       rules_date = 'unknown'
       for update in updates:
-        if update.table_name == 'cuny_courses':
-          catalog_date = date2str(update.update_date)
         if update.table_name == 'transfer_rules':
           rules_date = date2str(update.update_date)
 
@@ -169,7 +162,7 @@ def course_info():
   try:
     title, result = _course_info(request.args['course'])
     return render_template('course_info.html', result=Markup(result), title=Markup(title))
-  except KeyError as ke:
+  except KeyError:
     return render_template('404.html', result=Markup('<p class="error">No course specified</p>'), )
 
 
@@ -192,7 +185,7 @@ def review_rules():
 
   if request.method == 'POST':
     # User has submitted a form.
-    return dispatcher.get(request.form['next-function'], lambda: error)(request, session)
+    return dispatcher.get(request.form['next-function'])(request, session)
 
   # Form not submitted yet, so call do_form_0 to generate form_1
   else:
@@ -328,8 +321,8 @@ def confirmation(token):
         cc_list = [{'email': p.email, 'name': p.name} for p in cc_people]
         bcc_list = [{'email': p.email, 'name': p.name} for p in bc_people]
         try:
-         from_person = bc_people.pop()
-         from_addr = {'email': from_person.email, 'name': 'CUNY Transfer App'}
+          from_person = bc_people.pop()
+          from_addr = {'email': from_person.email, 'name': 'CUNY Transfer App'}
         except KeyError:
           from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'}
         # Embed the html table in a complete web page
@@ -508,12 +501,12 @@ def map_courses():
     </form>
   </div>
   <div id="transfers-map-div">
-    {header(title='Transfer Rule Map',
-            nav_items=[{'type': 'link', 'href': '/', 'text': 'Main Menu'},
-                       {'type': 'button',
-                        'id': 'show-setup',
-                        'text': 'Change Options'}
-                      ])}
+    {header(title='Transfer Rule Map', nav_items=[{'type': 'link',
+                                                   'href': '/',
+                                                   'text': 'Main Menu'}, {'type': 'button',
+                                                                          'id': 'show-setup',
+                                                                          'text': 'Change Options'}
+                                                  ])}
     <details class="instructions">
       <summary>
         The number of rules for transferring courses on the <span class="left-right">left</span>
@@ -721,14 +714,14 @@ def _map_course():
           # Collect rules where the selected course is a destination course
           row_template = '<tr>{}' + course_info_cell + '</tr>'
           cursor.execute("""select distinct *
-                            from transfer_rules r
-                            where r.id in (select rule_id from destination_courses where course_id = %s)
-                            order by source_institution, subject_area, destination_institution
+                        from transfer_rules r
+                        where r.id in (select rule_id from destination_courses where course_id = %s)
+                        order by source_institution, subject_area, destination_institution
                         """, (course_info.course_id, ))
         all_rules = cursor.fetchall()
 
-        # For each destination/source institution, need the count of number of rules and a list of the
-        # rules.
+        # For each destination/source institution, need the count of number of rules and a list of
+        # the rules.
         rule_counts = Counter()
         rules = defaultdict(list)
         for rule in all_rules:
@@ -792,7 +785,7 @@ def lookup_rules():
   # Munge the catalog_number so it makes a good regex and doesn't get tripped up by whitespace in
   # the CF catalog numbers.
   catalog_number = r'^\s*' + \
-      original_catalog_number.strip(' ^').replace(r'\.', r'\\\.').replace(r'\\\\', r'\\')
+    original_catalog_number.strip(' ^').replace(r'\.', r'\\\.').replace(r'\\\\', r'\\')
   # Make sure it will compile when it gets to the db
   try:
     re.compile(catalog_number)
@@ -827,13 +820,13 @@ def lookup_rules():
         else:
           source_dest = 'destination'
 
-        query = """
-        select distinct
-            source_institution||'-'||source_discipline||'-'||group_number||'-'||destination_institution
-          from {}_courses
-         where course_id in ({})
-         order by source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
-        """.format(source_dest, course_ids)
+        query = f"""select distinct
+        source_institution||'-'||source_discipline||'-'||group_number||'-'||destination_institution
+        from {source_dest}_courses
+        where course_id in ({course_ids})
+        order by
+          source_institution||'-'||discipline||'-'||group_number||'-'||destination_institution
+        """
         cursor.execute(query)
         rules = ['<div>{}</div>'.format(format_rule(x[0])) for x in cursor.fetchall()]
         credit_mismatch = False
@@ -1024,19 +1017,17 @@ def courses():
             <p>{num_active_courses:,} active courses as of {date_updated}</p>
             <p>Click on course name for transfer information.</p>
             <p>
-              The following course properties are shown in parentheses at the bottom of each course’s
-              catalog description. <em>Hover over items in this list for more information. </em> </p>
+              The following course properties are shown in parentheses at the bottom of each
+              course’s catalog description. <em>Hover over items in this list for more information.
+              </em>
+            </p>
             <ul>
               <li title="CUNYfirst uses “career” to mean undergraduate, graduate, etc.">Career;</li>
               <li title="CUNY-standard name for the academic discipline">CUNY Subject;</li>
-              <li title="Each course has exactly one Requirement Designation (RD). Among other values,
-              Pathways requirements appear here.">
-                Requirement Designation;</li>
               <li id="show-attributes"
                   title="A course can have any number of attributes. Click here to see the names,
-                  values, and descriptions for all attributes used at CUNY.">
-                  Course Attributes (<em>None</em>, or a comma-separated list of name:value attribute
-                  pairs).
+                  values, and descriptions for all attributes used at CUNY."> Course Attributes
+                  (<em>None</em>, or a comma-separated list of name:value attribute pairs).
               </li>
             </ul>
             <div id="pop-up-div">
@@ -1067,7 +1058,7 @@ def courses():
           msg = ''
         result = f"""
         {header(title='CUNY Transfer App',
-                nav_items=[{'type':'link', 'text': 'Main Menu', 'href': '/'}])}
+                nav_items=[{'type': 'link', 'text': 'Main Menu', 'href': '/'}])}
         <h1>List Active Courses</h1>{msg}
         <p class="instructions">Pick a college and say “Please”.</p>
         <form method="post" action="#">
@@ -1093,8 +1084,8 @@ def courses():
         <fieldset id="course-filters">
         <h2>Firehose Control</h2>
         <p>
-          You can filter the courses at <span id="college-name">None</span> by department, discipline,
-          CUNY subject, requirement designation, and/or course attribute.
+          You can filter the courses at <span id="college-name">None</span> by department,
+          discipline, CUNY subject, requirement designation, and/or course attribute.
         </p>
           <label for="department-select">Department:</label>
           <select id="department-select"name="department">
@@ -1143,214 +1134,212 @@ def registered_programs(institution, default=None):
   with psycopg.connect('dbname=cuny_curriculum') as conn:
     with conn.cursor(row_factory=namedtuple_row) as cursor:
       # For looking up individual plans in CUNYfirst
-      with conn.cursor(row_factory=namedtuple_row) as plan_cursor:
 
-        # See when NYSED was last accessed
-        try:
-          cursor.execute("select update_date from updates where table_name='registered_programs'")
-          nysed_update_date = (f'Latest NYSED website access was on '
-                               f'{date2str(cursor.fetchone().update_date)}.')
-        except (KeyError, ValueError):
-          nysed_update_date = 'Date of latest NYSED website access is not available.'
-
-        # See when Degree Works requirement_blocks were last updated.
-        try:
-          cursor.execute("select update_date from updates where table_name='requirement_blocks'")
-          dgw_update_date = (f'Program requirements from Degree Works were last updated on  '
+      # See when NYSED was last accessed
+      try:
+        cursor.execute("select update_date from updates where table_name='registered_programs'")
+        nysed_update_date = (f'Latest NYSED website access was on '
                              f'{date2str(cursor.fetchone().update_date)}.')
-        except (KeyError, ValueError):
-          dgw_update_date = 'Date of latest Degree Works access is not available.'
+      except (KeyError, ValueError):
+        nysed_update_date = 'Date of latest NYSED website access is not available.'
 
-        # Find out what CUNY colleges are in the db
-        cursor.execute("""
-                       select distinct r.target_institution as inst, i.name
-                       from registered_programs r, cuny_institutions i
-                       where i.code = upper(r.target_institution||'01')
-                       order by i.name
-                       """)
+      # See when Degree Works requirement_blocks were last updated.
+      try:
+        cursor.execute("select update_date from updates where table_name='requirement_blocks'")
+        dgw_update_date = (f'Program requirements from Degree Works were last updated on  '
+                           f'{date2str(cursor.fetchone().update_date)}.')
+      except (KeyError, ValueError):
+        dgw_update_date = 'Date of latest Degree Works access is not available.'
 
-        if cursor.rowcount < 1:
-          result = """
-          <h1>
-            There is no registered-program information for CUNY colleges available at this time.
-          </h1>
-          """
-          conn.close()
-          return render_template('registered_programs.html', result=Markup(result))
+      # Find out what CUNY colleges are in the db
+      cursor.execute("""
+                     select distinct r.target_institution as inst, i.name
+                     from registered_programs r, cuny_institutions i
+                     where i.code = upper(r.target_institution||'01')
+                     order by i.name
+                     """)
 
-        cuny_institutions = dict([(row.inst, {'name': row.name})
-                                 for row in cursor.fetchall()])
-        cuny_institutions['all'] = {'name': 'All CUNY Colleges'}
-        options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]["name"]}</option>'
-                            for inst in cuny_institutions])
-        if institution is None or institution not in cuny_institutions.keys():
-          h1 = '<h1>Select a CUNY College</h1>'
-          html_table = ''
-          template = ''
-        else:
-          # Complete the page heading with name of institution and link for downloading CSV
-          csv_headings = ['Program Code',
-                          'Registration Office',
-                          'Institution',
-                          'Program Title',
-                          'Formats',
-                          'HEGIS',
-                          'Award',
-                          'CIP Code',
-                          'CUNY Program(s)',
-                          'Certificate or License',
-                          'Accreditation',
-                          'First Reg. Date',
-                          'Latest Reg. Action',
-                          'TAP',
-                          'APTS',
-                          'VVTA']
-          cursor.execute("select update_date from updates where table_name='registered_programs'")
-          try:
-            if cursor.rowcount != 1:
-              raise RuntimeError('No CSV Available')
-            else:
-              filename = f'{institution.upper()}_{cursor.fetchone().update_date}.csv'
-              if institution == 'all':
-                cursor.execute("""
-                select csv
-                  from registered_programs
-              order by target_institution, title
-              """)
-              else:
-                cursor.execute("""
-                select csv
-                     from registered_programs
-                     where target_institution = %s
-                     order by title
-                """, (institution, ))
-              if cursor.rowcount == 0:
-                raise RuntimError('No csv')
+      if cursor.rowcount < 1:
+        result = """
+        <h1>
+          There is no registered-program information for CUNY colleges available at this time.
+        </h1>
+        """
+        conn.close()
+        return render_template('registered_programs.html', result=Markup(result))
 
-              # Try to (re-)create the csv file. If anything goes wrong, let me know.
-              for row in cursor:
-                csv_dir = Path(app.root_path + '/static/csv')
-                csv_dir.mkdir(exist_ok=True)
-                with open(f'{csv_dir}/{filename}', 'w') as outfile:
-                  writer = csv.writer(outfile)
-                  writer.writerow(csv_headings)
-                  for row in cursor.fetchall():
-                    line = json.loads(row.csv)
-                    writer.writerow(line)
-                link = (f' <a href="/static/csv/{filename}" download="{filename}"'
-                        f'class="button">Download {filename}</a>')
-          except (OSError, RuntimeError, json.JSONDecodeError) as e:
-            hostname = socket.gethostname()
-            response = send_message(to_list=[{'email': 'Christopher.Vickery@qc.cuny.edu',
-                                              'name': 'Christopher Vickery'}],
-                                    from_addr={'email': 'Christopher.Vickery@qc.cuny.edu',
-                                               'name': 'Christopher Vickery'},
-                                    subject='Missing CSVs for registered programs',
-                                    html_msg=f"""
-                                    <p>You need to run <em>generate_html.py</em> on {hostname}</p>
-                                    """)
-            if response.status_code == 202:
-              link = """
-              <br>
-              <span class="error">Information not available. I notified the webmaster.</span>
-              """
-            else:
-              href_str = (f"mailto:Christopher.Vickery@qc.cuny.edu?"
-                          f"subject='Transfer App: missing program information on {hostname}'")
-              link = """
-              <br>
-              <span class="error">Information not available. Please report this to
-                <a href="{href_str}"> Christopher Vickery</a>
-              </span>'
-              """
-
-          # Generate the HTML table
-          institution_name = cuny_institutions[institution]['name'] + link
-
-          h1 = f'<h1>{institution_name}</h1>'
-
-          nysed_url = 'http://www.nysed.gov/college-university-evaluation/format-definitions'
-          html_headings = ['Program Code',
-                           'Registration Office',
-                           """Institution
-                              <span class="sed-note">(Hover for NYSED Institution ID)</span>""",
-                           'Program Title',
-                           f'<a href="{nysed_url}"> Formats</a>',
-                           'HEGIS',
-                           'Award',
-                           'CIP Code',
-                           'CUNY Program(s)',
-                           'Certificate or License',
-                           'Accreditation',
-                           'First Reg. Date',
-                           'Latest Reg. Action',
-                           '<span title="Tuition Assistance Program">TAP</span>',
-                           '<span title="Aid for Part-Time Study">APTS</span>',
-                           '<span title="Veteran’s Tuition Assistance">VVTA</span>']
-          html_heading_row = '<thead><tr>' + ''.join([f'<th>{head}</th>' for head in html_headings])
-          html_heading_row += '</tr></thead>\n'
-
-          if institution == 'all':
-            cursor.execute("""
-            select html from registered_programs order by target_institution, title""")
+      cuny_institutions = dict([(row.inst, {'name': row.name})
+                               for row in cursor.fetchall()])
+      cuny_institutions['all'] = {'name': 'All CUNY Colleges'}
+      options = '\n'.join([f'<option value="{inst}">{cuny_institutions[inst]["name"]}</option>'
+                          for inst in cuny_institutions])
+      if institution is None or institution not in cuny_institutions.keys():
+        h1 = '<h1>Select a CUNY College</h1>'
+        html_table = ''
+      else:
+        # Complete the page heading with name of institution and link for downloading CSV
+        csv_headings = ['Program Code',
+                        'Registration Office',
+                        'Institution',
+                        'Program Title',
+                        'Formats',
+                        'HEGIS',
+                        'Award',
+                        'CIP Code',
+                        'CUNY Program(s)',
+                        'Certificate or License',
+                        'Accreditation',
+                        'First Reg. Date',
+                        'Latest Reg. Action',
+                        'TAP',
+                        'APTS',
+                        'VVTA']
+        cursor.execute("select update_date from updates where table_name='registered_programs'")
+        try:
+          if cursor.rowcount != 1:
+            raise RuntimeError('No CSV Available')
           else:
-            cursor.execute("""select html
-                                from registered_programs
-                                where target_institution = %s
-                                order by title
-                           """, (institution, ))
-          html_data_rows = [f'{row.html}' for row in cursor.fetchall()]
-          html_table_rows = html_heading_row + '<tbody>' + '\n'.join(html_data_rows) + '</tbody>'
-          html_table = (f'<div class="table-height"><table class="scrollable">{html_table_rows}'
-                        f'</table></div>')
+            filename = f'{institution.upper()}_{cursor.fetchone().update_date}.csv'
+            if institution == 'all':
+              cursor.execute("""
+              select csv
+                from registered_programs
+            order by target_institution, title
+            """)
+            else:
+              cursor.execute("""
+              select csv
+                   from registered_programs
+                   where target_institution = %s
+                   order by title
+              """, (institution, ))
+            if cursor.rowcount == 0:
+              raise RuntimeError('No csv')
 
-        result = f"""
-            {header(title='Registered Programs', nav_items=[{'type': 'link',
-                                                             'text': 'Main Menu',
-                                                             'href': '/'
-                                                            }])}
-            {h1}
-              <form action="/registered_programs/" method="GET" id="select-institution">
-                <select name="institution">
-                <option value="none" style="font-size:3m; color:red;">Select a College</option>
-                {options}
-                </select>
-            </form>
-            <details>
-              <summary>Instructions and Options</summary>
-              <hr>
-              <p>
-                <span class="variant">Highlighted rows</span> are for programs with more than one
-                variant, such as multiple institutions and/or multiple awards. For multiple
-                institutions, the rows with matching Program Code numbers may not be next to each
-                other because the table is ordered by Program Title, and the titles typically differ
-                across institutions.
-              </p>
-              <p>
-                The Registration Office is either the Department of Education’s Office of the
-                Professions (OP) or its Office of College and University Evaluation (OCUE).
-              </p>
-              <p>
-                Hover over HEGIS and CIP codes to see what they mean.<br>HEGIS is a NYS taxonomy of
-                program areas. The values shown here come from the NYSED website. CIP is a Federal
-                taxonomy, with the values shown here coming from CUNYfirst.
-              </p>
-              <p>
-                The CUNY Programs column shows matching programs from CUNYfirst with the department
-                that offers the program in parentheses. (Some programs are shared by multiple
-                departments.) “Requirements” links in that column show the program’s requirements as
-                given in Degree Works. {dgw_update_date}
-              </p>
-              <p>
-                The rightmost three columns show financial aid eligibility. Hover over the headings
-                for full names.
-              </p>
-              <p>
-                {nysed_update_date}
-              </p>
-            </details>
-            {html_table}
-      """
+            # Try to (re-)create the csv file. If anything goes wrong, let me know.
+            for row in cursor:
+              csv_dir = Path(app.root_path + '/static/csv')
+              csv_dir.mkdir(exist_ok=True)
+              with open(f'{csv_dir}/{filename}', 'w') as outfile:
+                writer = csv.writer(outfile)
+                writer.writerow(csv_headings)
+                for row in cursor.fetchall():
+                  line = json.loads(row.csv)
+                  writer.writerow(line)
+              link = (f' <a href="/static/csv/{filename}" download="{filename}"'
+                      f'class="button">Download {filename}</a>')
+        except (OSError, RuntimeError, json.JSONDecodeError):
+          hostname = socket.gethostname()
+          response = send_message(to_list=[{'email': 'Christopher.Vickery@qc.cuny.edu',
+                                            'name': 'Christopher Vickery'}],
+                                  from_addr={'email': 'Christopher.Vickery@qc.cuny.edu',
+                                             'name': 'Christopher Vickery'},
+                                  subject='Missing CSVs for registered programs',
+                                  html_msg=f"""
+                                  <p>You need to run <em>generate_html.py</em> on {hostname}</p>
+                                  """)
+          if response.status_code == 202:
+            link = """
+            <br>
+            <span class="error">Information not available. I notified the webmaster.</span>
+            """
+          else:
+            href_str = (f"mailto:Christopher.Vickery@qc.cuny.edu?"
+                        f"subject='Transfer App: missing program information on {hostname}'")
+            link = f"""
+            <br>
+            <span class="error">Information not available. Please report this to
+              <a href="{href_str}"> Christopher Vickery</a>
+            </span>'
+            """
+
+        # Generate the HTML table
+        institution_name = cuny_institutions[institution]['name'] + link
+
+        h1 = f'<h1>{institution_name}</h1>'
+
+        nysed_url = 'http://www.nysed.gov/college-university-evaluation/format-definitions'
+        html_headings = ['Program Code',
+                         'Registration Office',
+                         """Institution
+                            <span class="sed-note">(Hover for NYSED Institution ID)</span>""",
+                         'Program Title',
+                         f'<a href="{nysed_url}"> Formats</a>',
+                         'HEGIS',
+                         'Award',
+                         'CIP Code',
+                         'CUNY Program(s)',
+                         'Certificate or License',
+                         'Accreditation',
+                         'First Reg. Date',
+                         'Latest Reg. Action',
+                         '<span title="Tuition Assistance Program">TAP</span>',
+                         '<span title="Aid for Part-Time Study">APTS</span>',
+                         '<span title="Veteran’s Tuition Assistance">VVTA</span>']
+        html_heading_row = '<thead><tr>' + ''.join([f'<th>{head}</th>' for head in html_headings])
+        html_heading_row += '</tr></thead>\n'
+
+        if institution == 'all':
+          cursor.execute("""
+          select html from registered_programs order by target_institution, title""")
+        else:
+          cursor.execute("""select html
+                              from registered_programs
+                              where target_institution = %s
+                              order by title
+                         """, (institution, ))
+        html_data_rows = [f'{row.html}' for row in cursor.fetchall()]
+        html_table_rows = html_heading_row + '<tbody>' + '\n'.join(html_data_rows) + '</tbody>'
+        html_table = (f'<div class="table-height"><table class="scrollable">{html_table_rows}'
+                      f'</table></div>')
+
+      result = f"""
+          {header(title='Registered Programs', nav_items=[{'type': 'link',
+                                                           'text': 'Main Menu',
+                                                           'href': '/'
+                                                           }])}
+          {h1}
+            <form action="/registered_programs/" method="GET" id="select-institution">
+              <select name="institution">
+              <option value="none" style="font-size:3m; color:red;">Select a College</option>
+              {options}
+              </select>
+          </form>
+          <details>
+            <summary>Instructions and Options</summary>
+            <hr>
+            <p>
+              <span class="variant">Highlighted rows</span> are for programs with more than one
+              variant, such as multiple institutions and/or multiple awards. For multiple
+              institutions, the rows with matching Program Code numbers may not be next to each
+              other because the table is ordered by Program Title, and the titles typically differ
+              across institutions.
+            </p>
+            <p>
+              The Registration Office is either the Department of Education’s Office of the
+              Professions (OP) or its Office of College and University Evaluation (OCUE).
+            </p>
+            <p>
+              Hover over HEGIS and CIP codes to see what they mean.<br>HEGIS is a NYS taxonomy of
+              program areas. The values shown here come from the NYSED website. CIP is a Federal
+              taxonomy, with the values shown here coming from CUNYfirst.
+            </p>
+            <p>
+              The CUNY Programs column shows matching programs from CUNYfirst with the department
+              that offers the program in parentheses. (Some programs are shared by multiple
+              departments.) “Requirements” links in that column show the program’s requirements as
+              given in Degree Works. {dgw_update_date}
+            </p>
+            <p>
+              The rightmost three columns show financial aid eligibility. Hover over the headings
+              for full names.
+            </p>
+            <p>
+              {nysed_update_date}
+            </p>
+          </details>
+          {html_table}
+    """
 
   return render_template('registered_programs.html',
                          result=Markup(result),
