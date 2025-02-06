@@ -199,6 +199,13 @@ def diff_rules(first, second, debug=False, rogues=False):
     try:
       first_rules_source[key].sort()
       second_rules_source[key].sort()
+      if debug:
+        if first_rules_source[key] != second_rules_source[key]:
+          print(f'SSSD {key}: {first_rules_source[key]} :: {second_rules_source[key]}',
+                file=sys.stderr)
+        elif (ssl := len(first_rules_source[key])) > 1:
+          print(f'SSL{ssl} {key}: {first_rules_source[key]}', file=sys.stderr)
+
       first_rules_destination[key].sort()
       second_rules_destination[key].sort()
       if (first_rules_source[key] == second_rules_source[key]
@@ -214,9 +221,9 @@ def diff_rules(first, second, debug=False, rogues=False):
              len(second_rules_destination[key]) == 1 and \
              not is_bkcr(first_rules_destination[key][0]) and\
              is_bkcr(second_rules_destination[key][0]):
-            print(f'{key} has gone rogue')
+            print(f'{key} has gone rogue', file=sys.stderr)
 
-    except KeyError as e:
+    except KeyError as err:
       if key not in first_keys:
         result[key] = {first_date: None,
                        second_date: (second_rules_source[key], second_rules_destination[key])}
@@ -224,7 +231,7 @@ def diff_rules(first, second, debug=False, rogues=False):
         result[key] = {first_date: (first_rules_source[key], first_rules_destination[key]),
                        second_date: None}
       else:
-        raise KeyError(f'{key:<20}\t Unexpected KeyError')
+        raise KeyError(f'{key:<20}\t Unexpected KeyError: {err}')
   return first_date, second_date, result
 
 
