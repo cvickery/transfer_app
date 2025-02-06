@@ -34,7 +34,6 @@ from reviews import process_pending
 from rules_diff import diff_rules, archive_dates, available_archive_dates
 from rule_history import rule_history
 from sendemail import send_message
-from shortcut_to_rules import shortcut_to_rules
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
 from top_menu import top_menu
@@ -195,21 +194,6 @@ def review_rules():
     session.pop('source_disciplines', None)
     session.pop('destination_disciplines', None)
     return do_form_0(request, session)
-
-
-# QUICK RULES
-# -------------------------------------------------------------------------------------------------
-@app.route('/quick_rules/', methods=['GET', 'POST'])
-def quick_rules():
-  if app_unavailable():
-    return render_template('app_unavailable.html', result=Markup(get_reason()))
-
-  if DEBUG:
-    print(f'{request.method} review_rules')
-
-  return render_template('shortcut_to_rules.html',
-                         result=Markup(shortcut_to_rules(request, session)),
-                         title='Quick Reviews')
 
 
 # PENDING PAGE
