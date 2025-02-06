@@ -1,6 +1,5 @@
 #! /usr/local/bin/python3
 
-import sys
 
 from collections import namedtuple, defaultdict
 
@@ -67,7 +66,7 @@ def _format_requirement(req) -> str:
       n = int(req.num_courses_required)
       suffix = '' if n == 1 else 's'
       req_str = f'{n:,} course{suffix}'
-    except ValueError as ve:
+    except ValueError:
       req_str = f'{req.num_courses_required} courses'
   if req.num_credits_required != '0':
     and_or = f' {req.conjunction.lower()} ' if req_str else ''
@@ -75,7 +74,7 @@ def _format_requirement(req) -> str:
       n = float(req.num_credits_required)
       suffix = '' if n == 1 else 's'
       req_str += f'{and_or}{n:0.1f,} credit{suffix}'
-    except ValueError as ve:
+    except ValueError:
       req_str += f'{and_or}{req.num_credits_required} credits'
 
   alt_str = ''
@@ -84,7 +83,7 @@ def _format_requirement(req) -> str:
       n = int(req.course_alternatives)
       suffix = '' if n == 1 else 's'
       alt_str = f'{n:,} course{suffix}'
-    except ValueError as ve:
+    except ValueError:
       alt_str = f'{req.course_alternatives} courses'
   if req.credit_alternatives != '0':
     and_or = '' if alt_str == '' else '; '
@@ -92,7 +91,7 @@ def _format_requirement(req) -> str:
       n = float(req.credit_alternatives)
       suffix = '' if n == 1 else 's'
       alt_str += f'{and_or}{n:0.1f,} credit{suffix}'
-    except ValueError as ve:
+    except ValueError:
       alt_str += f'{and_or}{req.credit_alternatives} credits'
   if alt_str == '':
     alt_str = 'None'
@@ -237,7 +236,7 @@ def course_mappings_impl(request):
   try:
     range_index = int(request.args.get('count-limit'))
     count_limit = [1, 2, 5, 10, 20, 50, 100, 999999][range_index]
-  except TypeError as te:
+  except TypeError:
     range_index = 7
     count_limit = 999999
   if count_limit > 100:
@@ -279,7 +278,7 @@ def course_mappings_impl(request):
   if institution:
     college_choices = f'<details><summary>Select College ({institution})</summary><hr>'
   else:
-    college_choices = f'<details open="open"><summary>Select College</summary><hr>'
+    college_choices = '<details open="open"><summary>Select College</summary><hr>'
   if len(colleges_indexed):
     college_choices += """
   <p>
@@ -324,7 +323,7 @@ def course_mappings_impl(request):
     if discipline:
       discipline_choices = f'<details><summary>Select Discipline ({discipline})</summary><hr>'
     else:
-      discipline_choices = f'<details open="open"><summary>Select Discipline</summary><hr>'
+      discipline_choices = '<details open="open"><summary>Select Discipline</summary><hr>'
     discipline_choices += '<div class="selections">'
 
     cursor.execute("""
@@ -364,7 +363,7 @@ def course_mappings_impl(request):
                          f'</summary><hr>')
     else:
       submit_prompt = 'Select a course, or a different discipline and/or college'
-      catalog_choices = f'<details open="open"><summary>Select Course</summary><hr>'
+      catalog_choices = '<details open="open"><summary>Select Course</summary><hr>'
 
     cursor.execute("""
     select course_id, offer_nbr, discipline, catalog_number, title
@@ -377,7 +376,7 @@ def course_mappings_impl(request):
      order by numeric_part(catalog_number)
     """, (institution, discipline))
     if cursor.rowcount == 0:
-      catalog_choices += f'<p class="error">No Courses Found</p>'
+      catalog_choices += '<p class="error">No Courses Found</p>'
     for row in cursor.fetchall():
       if catalog_number and row.catalog_number == catalog_number:
         selected_item = ' class="selected-item"'

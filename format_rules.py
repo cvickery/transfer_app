@@ -2,13 +2,11 @@
 
 import argparse
 from collections import namedtuple
-import json
 import os
 import psycopg
 import re
 import sys
 
-from copy import copy
 from psycopg.rows import namedtuple_row
 from flask import session
 from reviews_status_utils import status_string
@@ -335,7 +333,7 @@ def format_rule(rule, rule_key=None):
                          where course_id = %s""",
                      (course.course_id,))
       assert cursor.rowcount == course.offer_count, \
-          f'cross-listed source course counts do not match'
+          'cross-listed source course counts do not match'
       cross_listed_with[course.course_id] = cursor.fetchall()
   cursor.close()
 

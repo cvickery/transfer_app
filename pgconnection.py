@@ -5,7 +5,6 @@ import psycopg
 from psycopg.rows import namedtuple_row
 
 import os
-import sys
 
 DEBUG = os.getenv('DEBUG')
 

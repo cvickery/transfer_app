@@ -5,9 +5,7 @@
     f'<option value="{block_value}">{block_title} {requirement_id}</option>'
 """
 import psycopg
-import sys
 
-from collections import defaultdict
 from psycopg.rows import namedtuple_row
 
 options_dict = dict()

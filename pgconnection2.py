@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 """ Provide postgres db connections from a pool of limited size.
 """
-import psycopg2
 from psycopg2.pool import ThreadedConnectionPool, PoolError
 from psycopg2.extras import NamedTupleCursor
 

@@ -1,4 +1,3 @@
-from collections import namedtuple
 from pgconnection import PgConnection
 from format_rules import format_rule_by_key
 

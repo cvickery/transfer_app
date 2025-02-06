@@ -3,10 +3,8 @@
   reports. Or maybe just for converting pending reviews to events and statuses.
 """
 import json
-from datetime import datetime
 
 from pgconnection import PgConnection
-from format_rules import format_rule
 from reviews_status_utils import abbr_to_bitmask, status_string
 from collections import namedtuple
 

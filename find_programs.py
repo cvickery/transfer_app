@@ -5,7 +5,6 @@
 import argparse
 import psycopg
 import re
-import sys
 
 from collections import defaultdict
 from nltk.stem import SnowballStemmer

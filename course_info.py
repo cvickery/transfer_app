@@ -12,8 +12,8 @@ def expand_rd(rd):
     return 'This is not a Liberal Arts course.'
   try:
     return f'{designations[rd]}'
-  except KeyError as ke:
-    return f'Unknown Designation!'
+  except KeyError:
+    return 'Unknown Designation!'
 
 
 def _course_info(course_id_str: str):
@@ -23,7 +23,7 @@ def _course_info(course_id_str: str):
   try:
     course_id, offer_nbr = course_id_str.split(':')
     offer_nbr = int(offer_nbr)
-  except ValueError as ve:
+  except ValueError:
     course_id = course_id_str.strip()
     offer_nbr = 1
 
@@ -31,7 +31,7 @@ def _course_info(course_id_str: str):
   cursor = conn.cursor()
   cursor.execute('select * from cuny_institutions')
   colleges = {i.code: i.name for i in cursor.fetchall()}
-  cursor.execute(f'select * from cuny_courses where course_id = %s',
+  cursor.execute('select * from cuny_courses where course_id = %s',
                  (course_id, ))
   if cursor.rowcount < 1:
     title = '<h1 class="error">Course not found</h1>'
@@ -59,8 +59,8 @@ def _course_info(course_id_str: str):
       result += f'<tr><th>Description</th><td> {course.description} </td></tr>\n'
       gened_text = expand_rd(course.designation)
       result += f'<tr><th>General Education</th><td> {gened_text} </td></tr>\n'
-      result += f'<tr><th>Transfers To</th><td> ... </td></tr>\n'
-      result += f'<tr><th>Transfers From</th><td> ... </td></tr>\n'
+      result += '<tr><th>Transfers To</th><td> ... </td></tr>\n'
+      result += '<tr><th>Transfers From</th><td> ... </td></tr>\n'
       wric = 'Yes' if 'WRIC' in course.attributes else 'No'
       result += f'<tr><th>Writing Intensive</th><td>{wric}</td></tr>\n'
       result += '</table>'

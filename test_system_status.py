@@ -1,5 +1,4 @@
 from time import sleep
-import system_status
 from system_status import get_status, get_reason, app_unavailable, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
 

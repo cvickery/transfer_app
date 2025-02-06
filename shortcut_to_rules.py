@@ -5,7 +5,6 @@
 from collections import namedtuple, defaultdict
 
 from app_header import header
-from top_menu import top_menu
 
 from format_rules import format_rule_by_key
 from pgconnection import PgConnection
@@ -69,14 +68,14 @@ def shortcut_to_rules(request, session):
       email_prompt = 'Your CUNY email address'
 
     if email:
-      cursor.execute(f"""
+      cursor.execute("""
       select name, email from people where email ~* %s or alternate_emails ~* %s
       """, (email, email))
       if cursor.rowcount == 1:
         row = cursor.fetchone()
         name, email = row.name, row.email
         # Get roles
-        cursor.execute(f"""
+        cursor.execute("""
         select role, institution, organization from person_roles where email ~ %s
         """, (email, ))
         if cursor.rowcount == 0:
@@ -88,7 +87,7 @@ def shortcut_to_rules(request, session):
       else:
         # Unrecognized (rowcount = 0) or Ambiguous (rowcount > 1) Email
         email = None
-        email_prompt = (f'Unrecognized email address. Change it, or '
+        email_prompt = ('Unrecognized email address. Change it, or '
                         '<a href="/review_rules/">Use This Link</a>')
 
     if email is None:

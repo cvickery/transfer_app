@@ -6,7 +6,6 @@ import psycopg
 import re
 
 from psycopg.rows import namedtuple_row
-from time import time
 
 
 """ Globals
@@ -100,7 +99,8 @@ def lookup_course(course_id, active_only=False, offer_nbr=1):
         return None
 
       if cursor.rowcount > 1:
-        raise Exception(f'lookup_course() found {cursor.rowcount} courses for {course_id}:{offer_nbr}')
+        raise Exception(f'lookup_course() found {cursor.rowcount} courses for '
+                        f'{course_id}:{offer_nbr}')
 
       course = cursor.fetchone()
 
@@ -266,8 +266,8 @@ def course_search(search_str, include_inactive=False, debug=False):
   """ Parse search string to get institution, discipline, and catalog_number, then find all matching
       courses and return an array of catalog entries.
       Search strings by example
-        qns csci *  All CSCI courses at QC
-        * csci 101 CSCI-101 at any college
+        qns csci *    All CSCI courses at QC
+        * csci 101    CSCI-101 at any college
         QNS01 CSCI101 CSCI 101 at QC
         QNS csci-101  CSCI 100 at QC
   """

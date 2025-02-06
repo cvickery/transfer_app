@@ -1,8 +1,5 @@
 #! /usr/local/bin/python3
 """Filter the access log to get rid of health checks and to columnificizate fields of interest."""
-import os
-import re
-import sys
 
 lookups = dict()
 with open('./access.csv', 'w') as csv_file:

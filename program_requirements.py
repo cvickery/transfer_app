@@ -1,5 +1,4 @@
 import json
-from json import JSONEncoder
 import re
 
 from datetime import datetime
