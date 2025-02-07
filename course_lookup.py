@@ -1,4 +1,7 @@
 #! /usr/local/bin/python3
+"""Code for the course_info route.
+   Never fully implemented; does not appear in top-level menu.
+"""
 
 import json
 import math
@@ -127,7 +130,7 @@ def lookup_courses(institution, active_only=True, department=None, discipline=No
       else:
         # Always suppress courses that cannot be scheduled
         which_courses = """
-        and c.can_schecule = 'Y'
+        and c.can_schedule = 'Y'
         """
       if department is None:
         department_clause = ''

@@ -91,6 +91,11 @@ def top_menu(msg=''):
   <h1>Menu</h1><hr>
   <dl id="menu-list">
 
+    <dt><a href="/course_requirements">What Requirements Do Courses Satisfy?</a></dt
+    <dd>
+      <p>See what requirements courses can satisfy.</p>
+    </dd>
+
     <dt><a href="/requirements">Degree and Program Requirements</a></dt>
     <dd>
       <p>

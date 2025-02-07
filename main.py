@@ -917,6 +917,30 @@ def _sessions():
   return result + '</table>' + msg
 
 
+# COURSE REQUIREMENTS
+# =================================================================================================
+@app.route('/course_requirements/', methods=['POST', 'GET'])
+def course_requirements():
+  if app_unavailable():
+    return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
+
+  if course_id_str := request.args.get('course_id_str', ''):
+    course_dict = course_requirements(course_id_str)
+    title_str = (f'{course_dict['institution']} {course_dict['discipline']} '
+                 f'{course_dict['catalog_number']}')
+  else:
+    title_str = 'Not Yet'
+  header_str = header(title=title_str,
+                      nav_items=[{'type': 'link',
+                                  'href': '/',
+                                  'text': 'Main Menu'}])
+  result = header_str
+  result += '<h1>WIP</h1>'
+  return render_template('course_requirements.html',
+                         result=Markup(result),
+                         title="Course Requirements")
+
+
 # COURSES PAGE
 # =================================================================================================
 # Pick a college, and see catalog descriptions of all courses currently active there.

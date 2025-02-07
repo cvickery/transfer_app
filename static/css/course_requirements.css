@@ -1,0 +1,78 @@
+#course-filters {
+  display: none;
+}
+
+p+ul {
+  margin-top: -0.5rem;
+}
+
+fieldset, .catalog-entry, .instructions {
+  padding: 0.25rem;
+  border: 1px solid #300;
+  border-radius:0.25rem;
+  max-width: 40rem;
+}
+
+.institution-select {
+  display:inline-block;
+  width:18em;
+}
+
+.instructions {
+  background-color: #fff;
+}
+
+#course-filters label, #course-filters select {
+  display: inline-block;
+  width: 10rem;
+}
+
+#course-filters label {
+  text-align:right;
+  padding-right:0.5rem;
+}
+
+#pop-up-div { /* is draggable */
+  display: none;
+  border: 1px solid #333;
+  border-radius: 0.25em;
+  background-color: #eee;
+  color: #111;
+  position: fixed !important;
+  width:auto;
+  height:50vh;
+  top: 100px;
+  left: 50%;
+  margin-left: -15em;
+  padding: 0.5em;
+  overflow-y: scroll;
+}
+
+#pop-up-div th {
+  text-align: left;
+}
+
+#dismiss-bar {
+  width: 100%;
+  text-align:right;
+  background-color:#999;
+  color: #333;
+  padding: 0 0.5em;
+  font-size: 1.1em;
+  cursor:default;
+  position: relative;
+  top: -0.5em;
+  left: -0.5em;
+  border-top: 1px solid #111;
+  border-bottom: 1px solid #111;
+  border-radius: 0.25em 0.25em 0 0;
+}
+
+#dismiss-bar:hover {
+  background-color:#bbb;
+  color: #e00;
+}
+
+#show-attributes:hover {
+  cursor: pointer;
+}
