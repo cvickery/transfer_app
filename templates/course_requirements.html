@@ -6,12 +6,9 @@
     <title>CUNY Transfer App</title>
     <link rel='stylesheet' href='/static/css/base_style.css' />
     <link rel='stylesheet' href='/static/css/course_info.css' />
-    <script type=text/javascript>
-    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-    </script>
+    <script defer src="/static/js/course_requirements.js"></script>
   </head>
   <body>
-    {{ title }}
     <div id="need-js">
       <p>Waiting for JavaScript to initialize &hellip;</p>
       <p>
@@ -20,6 +17,5 @@
       </p>
     </div>
     {{ result }}
-    <script>document.getElementById('need-js').style.display = 'none';</script>
   </body>
 </html>

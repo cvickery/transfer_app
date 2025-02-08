@@ -66,6 +66,34 @@ if os.getenv('DEVELOPMENT') is not None:
 else:
   DEBUG = False
 
+# Cache db tables
+with psycopg.connect('dbname=cuny_curriculum') as conn:
+  with conn.cursor(row_factory=namedtuple_row) as cursor:
+
+    # Colleges
+    cursor.execute("""
+    select code, prompt from cuny_institutions
+    """)
+    college_names = {c.code: c.prompt for c in cursor}
+
+    # Disciplines
+    cursor.execute("""
+    select institution, discipline, discipline_name from cuny_disciplines where status = 'A'
+    """)
+    disciplines = defaultdict(dict)
+    for row in cursor:
+      disciplines[row.institution][row.discipline] = row.discipline_name
+
+select_cuny_colleges = [f'<option value="{k}">{v}</option>' for k, v in college_names.items()]
+select_cuny_colleges = '\n'.join(sorted(select_cuny_colleges))
+select_college_disciplines = dict()
+for college in disciplines.keys():
+  select_disciplines = []
+  for discipline in disciplines[college]:
+    select_disciplines.append(f'<option value="{discipline}">{disciplines[college][discipline]}'
+                              f'</option>')
+  select_college_disciplines[college] = '\n'.join(sorted(select_disciplines))
+
 
 # Overhead URIs
 # =================================================================================================
@@ -924,21 +952,58 @@ def course_requirements():
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
-  if course_id_str := request.args.get('course_id_str', ''):
-    course_dict = course_requirements(course_id_str)
+  institution = request.args.get('institution', '')
+  discipline = request.args.get('discipline', '')
+  catalog_nbr = request.args.get('catalog_nbr', '')
+  discipline_options = '<option value="">--Select a Discipline--</option>'
+
+  college_options = f'{select_cuny_colleges}'
+  if not institution:
+    college_options = '<option value="">--Select a College--</option>\n' + college_options
+
+  if institution:
+    discipline_options = (f'<option value="{discipline}">'
+                          f'{select_disciplines[institution][discipline]}</option>')
+
+  if institution and discipline and catalog_nbr:
+    course_dict = course_requirements(institution, discipline, catalog_nbr)
     title_str = (f'{course_dict['institution']} {course_dict['discipline']} '
                  f'{course_dict['catalog_number']}')
   else:
-    title_str = 'Not Yet'
+    title_str = 'Work in Progress'
   header_str = header(title=title_str,
                       nav_items=[{'type': 'link',
                                   'href': '/',
                                   'text': 'Main Menu'}])
   result = header_str
   result += '<h1>WIP</h1>'
-  return render_template('course_requirements.html',
-                         result=Markup(result),
-                         title="Course Requirements")
+
+  # The form for selecting a course or courses.
+
+  result += f"""
+  <section>
+    <h2>Select Course(s)</h2>
+    <form method="post" action="/course_requirements">
+
+      <label for="institution-select">College: </label>
+      <select name="institution" id="institution-select">
+        {college_options}
+      </select>
+      <br/>
+      <label for="discipline-select">Discipline: </label>
+      <select name="discipline" id="discipline-select">
+        {discipline_options}
+      </select>
+      <br/>
+      <label for="course-select">Catalog Number: </label>
+      <input type="text" name="catalog_nbr" id="course-select" value="{catalog_nbr}"/>
+      <br/>
+      <button type="submit">Go</button>
+    </form>
+  </section>
+  """
+
+  return render_template('course_requirements.html', result=Markup(result))
 
 
 # COURSES PAGE
