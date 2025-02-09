@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
-"""CUNY Transfer Explorer.
-
-C. Vickery
+"""CUNY Transfer Explorer: “Laboratory” app.
+   Christopher Vickery
 """
 import os
 import psycopg
@@ -24,6 +23,7 @@ from course_info import _course_info
 from course_lookup import lookup_courses, lookup_course
 from course_lookup import course_attribute_rows, course_search
 # from course_mappings import course_mappings_impl
+import course_requirements
 from find_programs import find_programs
 from format_rules import format_rule, format_rule_by_key
 from htmlificization import scribe_block_to_html
@@ -43,6 +43,7 @@ from flask import Flask, render_template, make_response, \
     send_file, request, jsonify, session
 from flask_session import Session
 from markupsafe import Markup
+
 import redis
 
 redis_url = 'redis://localhost'
@@ -78,7 +79,10 @@ with psycopg.connect('dbname=cuny_curriculum') as conn:
 
     # Disciplines
     cursor.execute("""
-    select institution, discipline, discipline_name from cuny_disciplines where status = 'A'
+    select institution, discipline, discipline_name
+      from cuny_disciplines
+     where status = 'A'
+       and cuny_subject != 'MESG'
     """)
     disciplines = defaultdict(dict)
     for row in cursor:
@@ -948,7 +952,7 @@ def _sessions():
 # COURSE REQUIREMENTS
 # =================================================================================================
 @app.route('/course_requirements/', methods=['POST', 'GET'])
-def course_requirements():
+def _course_requirements():
   if app_unavailable():
     return make_response(render_template('app_unavailable.html', result=Markup(get_reason())))
 
@@ -957,33 +961,35 @@ def course_requirements():
   catalog_nbr = request.args.get('catalog_nbr', '')
   discipline_options = '<option value="">--Select a Discipline--</option>'
 
-  college_options = f'{select_cuny_colleges}'
-  if not institution:
-    college_options = '<option value="">--Select a College--</option>\n' + college_options
-
   if institution:
-    discipline_options = (f'<option value="{discipline}">'
-                          f'{select_disciplines[institution][discipline]}</option>')
+    if discipline:
+      discipline_name = disciplines[institution][discipline]
+      discipline_options = (f'<option value="{discipline}">{discipline_name} '
+                            f'({discipline})</option>\n'
+                            f'{select_college_disciplines[institution]}</option>')
+    else:
+      discipline_options = ('<option value="">--Select a Discipline--</option>\n'
+                            f'{select_college_disciplines[institution]}')
 
-  if institution and discipline and catalog_nbr:
-    course_dict = course_requirements(institution, discipline, catalog_nbr)
-    title_str = (f'{course_dict['institution']} {course_dict['discipline']} '
-                 f'{course_dict['catalog_number']}')
+    college_options = (f'<option value="{institution}">{college_names[institution]}</option>\n'
+                       f'{select_cuny_colleges}')
   else:
-    title_str = 'Work in Progress'
-  header_str = header(title=title_str,
+    college_options = '<option value="">--Select a College--</option>\n' + select_cuny_colleges
+    discipline_options = '<option value="">--Select a College First--</option>'
+
+  header_str = header(title='What Requirements Can Courses Satisfy',
                       nav_items=[{'type': 'link',
                                   'href': '/',
                                   'text': 'Main Menu'}])
+
+  # Page starts with nav bar
   result = header_str
-  result += '<h1>WIP</h1>'
 
-  # The form for selecting a course or courses.
-
+  # The form for selecting a course or courses. Always at top of page.
   result += f"""
   <section>
     <h2>Select Course(s)</h2>
-    <form method="post" action="/course_requirements">
+    <form method="GET" action="/course_requirements">
 
       <label for="institution-select">College: </label>
       <select name="institution" id="institution-select">
@@ -998,10 +1004,18 @@ def course_requirements():
       <label for="course-select">Catalog Number: </label>
       <input type="text" name="catalog_nbr" id="course-select" value="{catalog_nbr}"/>
       <br/>
-      <button type="submit">Go</button>
+      <button type="submit">Please</button>
     </form>
   </section>
   """
+
+  # Info for course(s) selected
+  if institution and discipline and catalog_nbr:
+    try:
+      for course_dict in course_requirements.lookup_course(institution, discipline, catalog_nbr):
+        result += course_requirements.format_course(course_dict)
+    except ValueError as err:
+      result += f'<h1>{err}</h1>'
 
   return render_template('course_requirements.html', result=Markup(result))
 
