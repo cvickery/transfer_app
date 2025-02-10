@@ -1003,6 +1003,19 @@ def _course_requirements():
       <br/>
       <label for="course-select">Catalog Number: </label>
       <input type="text" name="catalog_nbr" id="course-select" value="{catalog_nbr}"/>
+      <div id="catalog-help">
+        To select multiple courses within a discipline, you can use any of the following as
+        the catalog number:
+        <ul>
+          <li>100-level, 200-level, 300-level, <em>or</em> 400-level</li>
+          <li>1000-level, 2000-level, 3000-level, or 4000-level</li>
+          <li>lower-division (<em>i.e., catalog number starts with 0, 1, or 2</em>)</li>
+          <li>upper-division (<em>i.e., catalog number starts with 3, 4, 5, or 6</em>)</li>
+          <li>any <em>or</em> all
+
+        </ul>
+
+      </div>
       <br/>
       <button type="submit">Please</button>
     </form>
@@ -1012,10 +1025,27 @@ def _course_requirements():
   # Info for course(s) selected
   if institution and discipline and catalog_nbr:
     try:
-      for course_dict in course_requirements.lookup_course(institution, discipline, catalog_nbr):
-        result += course_requirements.format_course(course_dict)
+      course_dicts = course_requirements.lookup_course(institution, discipline, catalog_nbr)
+      if len(course_dicts) > 1:
+        result += f'<h2>{len(course_dicts)} Matching Courses</h2>'
+        for course_dict in course_dicts:
+          result += f"""
+  <details>
+    <summary>
+      {course_dict['discipline']} {course_dict['catalog_number']}:
+      <em>{course_dict['course_title']}</em>
+    </summary>
+    {course_requirements.format_course(course_dict)}
+  </details>
+          """
+      else:
+        result += f"""
+      <div class="course-info">
+        {course_requirements.format_course(course_dicts[0])}
+      </div>
+      """
     except ValueError as err:
-      result += f'<h1>{err}</h1>'
+      result += f'<h2>{err}</h2>'
 
   return render_template('course_requirements.html', result=Markup(result))
 

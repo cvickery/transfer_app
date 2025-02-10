@@ -23,3 +23,20 @@ section.catalog_entry > div {
   max-width: 40em;
   text-align: justify;
 }
+#catalog-help {
+  max-width: 45em;
+  margin: 0.5em 0;
+  border: 1px solid black;
+  border-radius: 0.25em;
+  padding: 0.25em;
+  font-size: 0.9em;
+  font-style: italic;
+}
+#catalog-help ul {
+  margin-top: 0.5em;
+}
+.course-info {
+  border: 1px solid black;
+  border-radius: 0.25em;
+  background-color: white;
+}
