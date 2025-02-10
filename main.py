@@ -1009,9 +1009,9 @@ def _course_requirements():
         <ul>
           <li>100-level, 200-level, 300-level, <em>or</em> 400-level</li>
           <li>1000-level, 2000-level, 3000-level, or 4000-level</li>
-          <li>lower-division (<em>i.e., catalog number starts with 0, 1, or 2</em>)</li>
-          <li>upper-division (<em>i.e., catalog number starts with 3, 4, 5, or 6</em>)</li>
-          <li>any <em>or</em> all
+          <li>lower-division (<em>Catalog number starts with 0, 1, or 2</em>)</li>
+          <li>upper-division (<em>Catalog number starts with 3, 4, 5, or 6</em>)</li>
+          <li>any, all, <em>or</em> * (<em>All courses in the discipline</em>)
 
         </ul>
 
@@ -1023,8 +1023,10 @@ def _course_requirements():
   """
 
   # Info for course(s) selected
-  if institution and discipline and catalog_nbr:
+  if institution and discipline:
     try:
+      if not catalog_nbr:
+        raise ValueError('Enter Catalog Number')
       course_dicts = course_requirements.lookup_course(institution, discipline, catalog_nbr)
       if len(course_dicts) > 1:
         result += f'<h2>{len(course_dicts)} Matching Courses</h2>'

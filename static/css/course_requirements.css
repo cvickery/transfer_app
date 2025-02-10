@@ -33,7 +33,7 @@ section.catalog_entry > div {
   font-style: italic;
 }
 #catalog-help ul {
-  margin-top: 0.5em;
+  margin: 0.5em;
 }
 .course-info {
   border: 1px solid black;
