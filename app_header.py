@@ -27,12 +27,12 @@ def header(title, nav_items=[]):
   nav_element += f'{"".join(nav_elements)}</nav>'
 
   return (f"""<header>
-               <a href="https://cuny.edu">
-                 <img src="/static/images/cuny_logo.png" alt="CUNY Logo">
+               <a href="https://trexlabs.org">
+                 <img src="/static/images/labs_logo.png" alt="Labs Logo">
                </a>
                <span class="header-title">{title}</span>
                {nav_element}
-             </header>
+              </header>
           """)
 
 

@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""CUNY Transfer Explorer: “Laboratory” app.
+"""Transfer Explorer: “Laboratory” app.
    Christopher Vickery
 """
 import os
@@ -78,15 +78,17 @@ with psycopg.connect('dbname=cuny_curriculum') as conn:
     college_names = {c.code: c.prompt for c in cursor}
 
     # Disciplines
-    cursor.execute("""
+    cursor.execute(r"""
     select institution, discipline, discipline_name
       from cuny_disciplines
      where status = 'A'
        and cuny_subject != 'MESG'
+       and discipline !~ '^\d*$'
+       order by discipline
     """)
     disciplines = defaultdict(dict)
     for row in cursor:
-      disciplines[row.institution][row.discipline] = row.discipline_name
+      disciplines[row.institution][row.discipline] = f'{row.discipline_name} ({row.discipline})'
 
 select_cuny_colleges = [f'<option value="{k}">{v}</option>' for k, v in college_names.items()]
 select_cuny_colleges = '\n'.join(sorted(select_cuny_colleges))
@@ -338,9 +340,9 @@ def confirmation(token):
         bcc_list = [{'email': p.email, 'name': p.name} for p in bc_people]
         try:
           from_person = bc_people.pop()
-          from_addr = {'email': from_person.email, 'name': 'CUNY Transfer App'}
+          from_addr = {'email': from_person.email, 'name': '  T-Rex Labs'}
         except KeyError:
-          from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'}
+          from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': '  T-Rex Labs'}
         # Embed the html table in a complete web page
         html_body = """ <html><head><style>
                           table {border-collapse: collapse;}
@@ -964,8 +966,7 @@ def _course_requirements():
   if institution:
     if discipline:
       discipline_name = disciplines[institution][discipline]
-      discipline_options = (f'<option value="{discipline}">{discipline_name} '
-                            f'({discipline})</option>\n'
+      discipline_options = (f'<option value="{discipline}">{discipline_name}</option>\n'
                             f'{select_college_disciplines[institution]}</option>')
     else:
       discipline_options = ('<option value="">--Select a Discipline--</option>\n'
@@ -1176,7 +1177,7 @@ def courses():
         else:
           msg = ''
         result = f"""
-        {header(title='CUNY Transfer App',
+        {header(title='  T-Rex Labs',
                 nav_items=[{'type': 'link', 'text': 'Main Menu', 'href': '/'}])}
         <h1>List Active Courses</h1>{msg}
         <p class="instructions">Pick a college and say “Please”.</p>
