@@ -23,6 +23,12 @@ section.catalog_entry > div {
   max-width: 40em;
   text-align: justify;
 }
+
+button {
+  margin: 0;
+  padding: 0.5em;
+}
+
 #catalog-help {
   max-width: 45em;
   margin: 0.5em 0;

@@ -1005,19 +1005,17 @@ def _course_requirements():
       <label for="course-select">Catalog Number: </label>
       <input type="text" name="catalog_nbr" id="course-select" value="{catalog_nbr}"/>
       <div id="catalog-help">
-        To select multiple courses within a discipline, you can use any of the following as
-        the catalog number:
+        You can enter the catalog number for a single course, or you can select multiple courses
+        within a discipline by using any of the following as the catalog number:
         <ul>
           <li>100-level, 200-level, 300-level, <em>or</em> 400-level</li>
           <li>1000-level, 2000-level, 3000-level, or 4000-level</li>
           <li>lower-division (<em>Catalog number starts with 0, 1, or 2</em>)</li>
           <li>upper-division (<em>Catalog number starts with 3, 4, 5, or 6</em>)</li>
           <li>any, all, <em>or</em> * (<em>All courses in the discipline</em>)
-
         </ul>
-
+        If there are suffix versions of a catalog number (101, 101H, etc.) they will all be shown.
       </div>
-      <br/>
       <button type="submit">Please</button>
     </form>
   </section>
