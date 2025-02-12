@@ -35,7 +35,8 @@ with psycopg.connect('dbname=cuny_curriculum') as conn:
                                           'requirement_ids': []
                                           }
         if last_institution is not None:
-          options_dict[last_institution]['options_html'] = '\n'.join(options_dict[last_institution]['options_list'])
+          options_dict[last_institution]['options_html'] = '\n'.join(options_dict[last_institution]
+                                                                                 ['options_list'])
         last_institution = this_institution
         last_block_type = None
 
