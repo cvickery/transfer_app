@@ -9,67 +9,6 @@ def top_menu(msg=''):
 
   return f"""
 {header_str}
-<!--
-<details>
-  <summary>Introduction</summary>
-  <hr>
-  <p>
-    In order to obtain a college degree, a student must complete a certain number of course
-    credits and must satisfy the requirements specified for an academic program at the college
-    that awards the degree. For example, to earn a bachelor’s degree at a CUNY college, students
-    must complete 120 credits of coursework, must satisfy a set of University-wide General
-    Education course requirements known as “Pathways,” and must complete a set of course
-    requirements for a college-specific “major,” such as psychology, mathematics, or English.
-  </p>
-  <p>
-    When a student transfers from one college to another, the coursework they have already
-    completed <em>should</em> apply seamlessly to the degree requirements at their destination
-    college. Making the transfer process work smoothly across a university with 20 colleges and a
-    quarter million students is a major challenge; one that CUNY addresses in many ways. At a high
-    level, these may be grouped as <em>university policies</em>, <em>course mappings</em>, and
-    <em>articulation agreements</em>.
-  </p>
-  <dl id="mechanisms-list">
-
-    <dt>University Policies</dt>
-    <dd>
-      Examples of CUNY policies include uniform credit requirements for degrees (120 for
-      bachelor’s; 30 for associate’s); guaranteed transferability of all credits earned at any
-      CUNY college; guaranteed transfer across campuses of all Pathways requirements satisfied
-      at any campus; and transferability of SUNY General Education requirements to CUNY.
-    </dd>
-
-    <dt>Course Mappings</dt>
-    <dd>
-      CUNYfirst (the name of the Student Information System (SIS) used by all CUNY colleges) has
-      over a million<sup>&dagger;</sup> <em>transfer rules</em> that tell how courses at any CUNY
-      college map onto courses at any other college.
-    </dd>
-
-    <dt>Articulation Agreements</dt>
-    <dd>
-      An articulation agreement is a document that helps students make the best choices among the
-      possible courses they might take to satisfy program requirements at one college before
-      transferring to another college. Articulation agreements typically list the course transfer
-      rules that will apply when the student transfers, and often contain additional guidance to
-      help students plan for an efficient transfer experience.
-    </dd>
-
-  </dl>
-  <p>
-   This website is used to explore the transfer rules in CUNYfirst in manageable chunks. Faculty
-   and administrators can use it to see what rules are missing or need to be changed. Students can
-   use it to explore what will happen to their course credits when they transfer and/or need to
-   take courses at another campus to satisfy a requirement at their home campus.
-  </p>
-  <h2>A Note on “Blanket Credits”</h2>
-  <p>
-    Some courses do not have an equivalent course at the receiving college. In those cases, the
-    credits will transfer as “blanket credits,” which will count towards the number needed for a
-    degree, but are unlikely to satisfy any other requirements, such as part of a major.
-  </p>
-</details>
--->
 <div class="instructions">
 <h1>Welcome to T-Rex Labs!</h1>
 <p>
@@ -80,20 +19,56 @@ def top_menu(msg=''):
 </p>
 <p>
   Feel free to browse what’s available here. Most of the code behind this site is publicly available
-  on <a href="https://github.com/cvickery">GitHub</a> if you are interested.
+  on <a href="https://github.com/cvickery">GitHub</a> if you are interested. You can reach me <a
+  href="mailto:cvickery@qc.cuny.edu?subject='Transfer App Question'">by email</a> if you have
+  questions about the site or the code.
 </p>
 <h1 style="text-align:center; color:#909">
-  For the real T-Rex experience, which includes many features not developed here, use
-  the <a href="https://explorer.cuny.edu">CUNY Transfer Explorer</a> site.</h1>
+  For the real T-Rex experience, which includes many features not developed here:<br/>
+  <span id="goto-cuny">
+    Use the <a href="https://explorer.cuny.edu">CUNY Transfer Explorer</a> Site.
+  </span>
+</h1>
 </div>
 
 <div id="menu">
   <h1>Menu</h1><hr>
   <dl id="menu-list">
 
-    <dt><a href="/course_requirements">What Requirements Do Courses Satisfy?</a></dt
+    <dt><a href="/course_requirements">What Requirements Can Courses Satisfy?</a></dt
     <dd>
-      <p>See what requirements courses can satisfy.</p>
+      <p>
+        Courses can be applied to three different types of requirements: credits needed for for a
+        degree or certificate, general education requirements, requirements for majors. Courses can
+        also be applied to requirements for a minor, but we don’t deal with those here because
+        minors are optional at CUNY.
+      </p>
+      <p>
+        Generally, course can be applied to only one general education requirement and to only one
+        requirement for a major. If a student has more than one major, it’s possible that a
+        particular course can be applied to more than one major. These are called “sharing
+        restrictions,” and are not currently shown here.
+      </p>
+      <p>
+        There are two other types of restrictions that determine whether a course can actually be
+        used to satisfy a particular requirement: residency and minimum grade restrictions. These
+        restrictions can be particularly vexing because they can apply in so many different
+        contexts, possibly with different values:
+      </p>
+      <ul>
+        <li>Degree</li>
+        <li>Program (GenEd, Major, Minor)</li>
+        <li>Subrogram (aka “specialization,” “track,” “concentration,” etc. )</li>
+        <li>A subset of the requirements for a program or subprogram</li>
+        <li>A single requirement for a program or subprogram</li>
+        <li>Just some, not all, of the courses that can satisfy a single requirement</li>
+      </ul>
+      <p>
+        There is one other type of requirement that is different from the previous ones. CUNY has
+        established certain major equivalencies across campuses. A course that has a major
+        equivalency attribute is guaranteed to satisfy a particular major requirement at any other
+        CUNY college. This page shows a course’s major equivalency attribute if it has one.
+      </p>
     </dd>
 
     <dt><a href="/requirements">Degree and Program Requirements</a></dt>
