@@ -38,15 +38,15 @@ def top_menu(msg=''):
     <dt><a href="/course_requirements">What Requirements Can Courses Satisfy?</a></dt
     <dd>
       <p>
-        Courses can be applied to three different types of requirements: credits needed for for a
-        degree or certificate, general education requirements, requirements for majors. Courses can
-        also be applied to requirements for a minor, but we don’t deal with those here because
-        minors are optional at CUNY.
+        Courses can be applied to three different types of requirements: (1) credits needed for for
+        a degree or certificate, (2) general education requirements, and (3) requirements for
+        majors. Courses can also be applied to requirements for a minor, but we don’t deal with
+        those here because minors are optional at CUNY.
       </p>
       <p>
         Generally, course can be applied to only one general education requirement and to only one
         requirement for a major. If a student has more than one major, it’s possible that a
-        particular course can be applied to more than one major. These are called “sharing
+        particular course can be applied to more than one major. These policies are called “sharing
         restrictions,” and are not currently shown here.
       </p>
       <p>
