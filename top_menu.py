@@ -38,10 +38,10 @@ def top_menu(msg=''):
     <dt><a href="/course_requirements">What Requirements Can Courses Satisfy?</a></dt
     <dd>
       <p>
-        Courses can be applied to three different types of requirements: (1) credits needed for for
-        a degree or certificate, (2) general education requirements, and (3) requirements for
-        majors. Courses can also be applied to requirements for a minor, but we don’t deal with
-        those here because minors are optional at CUNY.
+        Courses can be applied to three different types of requirements: (1) credits needed for a
+        degree or certificate, (2) general education requirements, and (3) requirements for majors.
+        Courses can also be applied to requirements for a minor, but we don’t deal with those here
+        because minors are optional at CUNY.
       </p>
       <p>
         Generally, course can be applied to only one general education requirement and to only one
