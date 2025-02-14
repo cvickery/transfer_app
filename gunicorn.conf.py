@@ -5,7 +5,7 @@ import os
 port_num = 5000 if os.getenv('TREX_PORT') is None else int(os.getenv('TREX_PORT'))
 print(f'Using port {port_num}')
 workers = multiprocessing.cpu_count() * 2 + 1
-bind = f'0.0.0.0:{port_num}'
+bind = f'127.0.0.1:{port_num}'
 timeout = 120
 
 accesslog = './Logs/transfer_access.log'
@@ -23,14 +23,3 @@ reload = True
 """
 # forwarded_allow_ips = '*'
 # secure_scheme_headers = {'X-APPENGINE-HTTPS': 'on'}
-
-"""
-  Gunicorn uses workers to handle requests. By default, Gunicorn uses sync workers. This worker
-  class is compatible with all web applications, but each worker can only handle one request at a
-  time. By default, gunicorn only uses one of these workers. This can often cause your instances to
-  be underutilized and increase latency in applications under high load.
-
-  We recommend setting the number of workers to 2-4 times the number of cpu_count cores for your
-  instance plus one. You can specify this in gunicorn.conf.py as:
-"""
-# workers = multiprocessing.cpu_count() * 2 + 1
