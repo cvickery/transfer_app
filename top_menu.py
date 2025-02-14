@@ -26,7 +26,7 @@ def top_menu(msg=''):
 <h1 style="text-align:center; color:#909">
   For the real T-Rex experience, which includes many features not developed here:<br/>
   <span id="goto-cuny">
-    Use the <a href="https://explorer.cuny.edu">CUNY Transfer Explorer</a> Site.
+    Use the <a href="https://explorer.cuny.edu">CUNY Transfer Explorer</a> Site!
   </span>
 </h1>
 </div>
