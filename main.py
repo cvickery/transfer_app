@@ -2260,26 +2260,8 @@ def server_error(e):
 def not_found_error(e):
   """Handle 404 errors."""
   result = f"""
-  {header(title='CDIV', nav_items=[{'type': 'link',
-                                           'text': 'Main Menu',
-                                            'href': '/'
-                                            }])}
+  {header(title='CDIV', nav_items=[])}
   <h1 class="error">Not Found!</h1>
-  <ul>
-    <li>
-      The app is being updated often. so you may need to refresh your browser to get the current
-      versions of internal links.
-    </li>
-    <li>
-      If you are coming from a saved URL, you may need to go back to the Main Menu to access
-      current links.
-    </li>
-    <li>
-      If this is a broken link in the app (or any other problem with it), please let me know.<br>
-      <em><a href="mailto:cvickery@qc.cuny.edu?subject='Transfer App issue'">Christopher
-      Vickery</a></em>.
-    </li>
-  </ul>
   """
   return render_template('404.html', result=Markup(result), )
 

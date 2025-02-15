@@ -1,0 +1,8 @@
+#! /usr/local/bin/bash
+
+brew services stop httpd
+./stop
+sleep 30
+./start
+brew services start httpd
+
