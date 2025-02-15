@@ -10,9 +10,17 @@
     <script>
     $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
     </script>
+
+    {% if csv_rows %}
+    <script>
+      const csvRows = {{ csv_rows|tojson }};
+    </script>
+    {% endif %}
+
   {% if not omitjs %}
     <script src="/static/js/rule_changes.js"></script>
   {% endif %}
+
   {% block scripts %}{% endblock %}
 
   </head>

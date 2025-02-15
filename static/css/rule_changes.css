@@ -28,3 +28,17 @@ th:first-child {
 .good {
   color:#161;
 }
+
+.csv-download-button {
+  margin-bottom: 1em;
+  padding: 8px 16px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.csv-download-button:hover {
+  background-color: #45a049;
+}

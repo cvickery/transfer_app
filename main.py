@@ -1474,9 +1474,9 @@ def rule_changes():
     first_date, last_date = archive_dates()
     result = f"""
     {header(title='Rule Changes', nav_items=[{'type': 'link',
-                                                     'text': 'Main Menu',
-                                                     'href': '/'
-                                                    }])}
+                                              'text': 'Main Menu',
+                                              'href': '/'
+                                              }])}
     <h1>Select Dates</h1>
     <p>
       Select two dates to see what transfer rules have changed between them. Currently, there
@@ -1502,13 +1502,14 @@ def rule_changes():
     second_date_str = date.fromisoformat(second_date).strftime('%B %-d, %Y')
     result = f"""
     {header(title='Rule Changes', nav_items=[{'type': 'link',
-                                                     'text': 'Main Menu',
-                                                     'href': '/'
-                                                    }])}
+                                              'text': 'Main Menu',
+                                              'href': '/'
+                                              }])}
     <h1>Rule Changes</h1>
     <p>
       The following {len(diffs)} rules changed between {first_date_str} and {second_date_str}.
     </p>
+    <div id="csv-download-placeholder"></div>
     <table>
       <tr>
         <th>Type</th>
@@ -1518,21 +1519,25 @@ def rule_changes():
     """
     # Format table rows based on the diffs.
     table_rows = []
+    csv_rows = [['Type', first_date_str, second_date_str, 'Rule Key']]
     with psycopg.connect('dbname=cuny_curriculum') as conn:
       with conn.cursor(row_factory=namedtuple_row) as cursor:
         for rule_key in sorted(diffs.keys()):
           rule_key_str = rule_key.replace('-', ':')
-          delta_type, first_rule_text, second_rule_text = expand_delta(first_date,
-                                                                       second_date,
-                                                                       diffs[rule_key],
-                                                                       cursor)
+          (delta_type,
+           first_rule_html, second_rule_html,
+           first_rule_csv, second_rule_csv) = expand_delta(first_date,
+                                                           second_date,
+                                                           diffs[rule_key],
+                                                           cursor)
           table_rows.append(f"""
             <tr>
               <th>{delta_type}</th>
-              <td>{first_rule_text}</td>
-              <td>{second_rule_text}</td>
+              <td>{first_rule_html}</td>
+              <td>{second_rule_html}</td>
               <td>{rule_key_str}</td>
             </tr>""")
+          csv_rows.append([delta_type, first_rule_csv, second_rule_csv, rule_key_str])
 
     nl = '\n'
     result += f"""
@@ -1544,6 +1549,8 @@ def rule_changes():
                """
   return render_template('rule_changes.html',
                          result=Markup(result),
+                         csv_rows=csv_rows if 'csv_rows' in locals() and len(csv_rows) > 1
+                         else None,
                          title='Rule Changes')
 
 
@@ -1552,7 +1559,8 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
   """
   delta_type = 'Change'
   if rules_dict[first_date] is None:
-    first_rule_text = 'None'
+    first_rule_html = 'None'
+    first_rule_csv = 'None'
     delta_type = 'Add'
   else:
     course_ids = ','.join(rules_dict[first_date][0])
@@ -1563,11 +1571,15 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          order by discipline, numeric_part(catalog_number)
          """)
     if cursor.rowcount > 0:
-      first_rule_send = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                  f'{row.discipline} {row.catalog_number}</span>'
-                                  for row in cursor.fetchall()])
+      rows = cursor.fetchall()
+      first_rule_send_html = ', '.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                        f'{row.discipline} {row.catalog_number}</span>'
+                                        for row in rows])
+      first_rule_send_csv = rows[0].institution[0:3] + ' '
+      first_rule_send_csv += ', '.join([f'{row.discipline} {row.catalog_number} '
+                                        f'{row.title}' for row in rows])
     else:
-      first_rule_send = 'No sending courses'
+      first_rule_send_html = first_rule_send_csv = 'No sending courses'
 
     course_ids = ','.join(rules_dict[first_date][1])
     cursor.execute(f"""
@@ -1577,16 +1589,22 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          order by discipline, numeric_part(catalog_number)
          """)
     if cursor.rowcount > 0:
-      first_rule_recv = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                  f'{row.discipline} {row.catalog_number}</span>'
-                                  for row in cursor.fetchall()])
+      rows = cursor.fetchall()
+      first_rule_recv_html = ', '.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                        f'{row.discipline} {row.catalog_number}</span>'
+                                        for row in rows])
+      first_rule_recv_csv = rows[0].institution[0:3] + ' '
+      first_rule_recv_csv += ', '.join([f'{row.discipline} {row.catalog_number} '
+                                        f'{row.title}' for row in rows])
     else:
-      first_rule_recv = 'No receiving courses'
+      first_rule_recv_html = first_rule_recv_csv = 'No receiving courses'
 
-    first_rule_text = f'{first_rule_send} => {first_rule_recv}'
+    first_rule_html = f'{first_rule_send_html} => {first_rule_recv_html}'
+    first_rule_csv = f'{first_rule_send_csv} => {first_rule_recv_csv}'
 
   if rules_dict[second_date] is None:
-    second_rule_text = 'None'
+    second_rule_html = 'None'
+    second_rule_csv = 'None'
     delta_type = 'Delete'
   else:
     course_ids = ','.join(rules_dict[second_date][0])
@@ -1597,11 +1615,15 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          order by discipline, numeric_part(catalog_number)
          """)
     if cursor.rowcount > 0:
-      second_rule_send = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                   f'{row.discipline} {row.catalog_number}</span>'
-                                   for row in cursor.fetchall()])
+      rows = cursor.fetchall()
+      second_rule_send_html = ', '.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                         f'{row.discipline} {row.catalog_number}</span>'
+                                         for row in rows])
+      second_rule_send_csv = rows[0].institution[0:3] + ' '
+      second_rule_send_csv += ', '.join([f'{row.discipline} {row.catalog_number} '
+                                         f'{row.title}' for row in rows])
     else:
-      second_rule_send = 'No sending courses'
+      second_rule_send_html = second_rule_send_csv = 'No sending courses'
 
     course_ids = ','.join(rules_dict[second_date][1])
     cursor.execute(f"""
@@ -1611,15 +1633,20 @@ def expand_delta(first_date, second_date, rules_dict, cursor):
          order by discipline, numeric_part(catalog_number)
          """)
     if cursor.rowcount > 0:
-      second_rule_recv = ','.join([f'<span title="{row.title}">{row.institution[0:3]}: '
-                                   f'{row.discipline} {row.catalog_number}</span>'
-                                   for row in cursor.fetchall()])
+      rows = cursor.fetchall()
+      second_rule_recv_html = ', '.join([f'<span title="{row.title}">{row.institution[0:3]}: '
+                                         f'{row.discipline} {row.catalog_number}</span>'
+                                         for row in rows])
+      second_rule_recv_csv = rows[0].institution[0:3] + ' '
+      second_rule_recv_csv += ', '.join([f'{row.discipline} {row.catalog_number} '
+                                         f'{row.title}' for row in rows])
     else:
-      second_rule_recv = 'No receiving courses'
+      second_rule_recv_html = second_rule_recv_csv = 'No receiving courses'
 
-    second_rule_text = f'{second_rule_send} => {second_rule_recv}'
+    second_rule_html = f'{second_rule_send_html} => {second_rule_recv_html}'
+    second_rule_csv = f'{second_rule_send_csv} => {second_rule_recv_csv}'
 
-  return delta_type, first_rule_text, second_rule_text
+  return delta_type, first_rule_html, second_rule_html, first_rule_csv, second_rule_csv
 
 
 # _archive_dates()

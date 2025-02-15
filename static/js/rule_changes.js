@@ -1,4 +1,41 @@
+//  downloadCSV()
+//  -----------------------------------------------------------------------------------------------
+function downloadCSV() {
+  const rows = csvRows;  // Will come from the template
+  const csvContent = rows.map(row =>
+    row.map(cell => {
+      if (cell === null) return '';
+      const str = String(cell);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    }).join(',')
+  ).join('\n');
 
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'rule_changes.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+//  addDownloadButton()
+//  -----------------------------------------------------------------------------------------------
+function addDownloadButton() {
+  const placeholder = document.getElementById('csv-download-placeholder');
+  if (placeholder && typeof csvRows !== 'undefined') {
+    const button = document.createElement('button');
+    button.onclick = downloadCSV;
+    button.textContent = 'Download as CSV';
+    button.className = 'csv-download-button';
+    placeholder.appendChild(button);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', addDownloadButton);
 window.addEventListener('load', function()
 {
 
