@@ -4,12 +4,15 @@
 (
 # Must be run from transfer-app dir.
 cd ~/Projects/transfer_app || exit
+
+# Kill the app if it is already running
 if [[ -r gunicorn.pid ]]
 then kill "$(cat gunicorn.pid)"
      prefix='re'
 fi
 rm -f gunicorn.pid
 
+# (Re-)start the app
 python3 -m gunicorn --config ./gunicorn.conf.py main:app >> ./Logs/transfer-app.log 2>&1 &
 echo $! > gunicorn.pid
 echo gunicorn "${prefix}"started with pid $!
