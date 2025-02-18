@@ -1,8 +1,13 @@
 #! /usr/local/bin/bash
 
+# Restart both apache and the app because “something” is causing them to crash.
+# Launchctl runs this at 5 am daily.
+# Trying long delays to see if they make the process more reliable.
+
 brew services stop httpd
 ./stop
 sleep 30
 ./start
+sleep 30
 brew services start httpd
 

@@ -3,14 +3,14 @@
 # Start the transfer-app with log file in Logs dir.
 (
 # Must be run from transfer-app dir.
-cd ~/Projects/transfer_app
+cd ~/Projects/transfer_app || exit
 if [[ -r gunicorn.pid ]]
-then kill `cat gunicorn.pid`
+then kill "$(cat gunicorn.pid)"
      prefix='re'
 fi
 rm -f gunicorn.pid
 
 python3 -m gunicorn --config ./gunicorn.conf.py main:app >> ./Logs/transfer-app.log 2>&1 &
 echo $! > gunicorn.pid
-echo gunicorn ${prefix}started with pid $!
+echo gunicorn "${prefix}"started with pid $!
 )
