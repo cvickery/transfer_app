@@ -4,10 +4,15 @@
 # Launchctl runs this at 5 am daily.
 # Trying long delays to see if they make the process more reliable.
 
-brew services stop httpd
+if command -v brew >/dev/null 2>&1; then
+    brew services stop httpd
+fi
+
 ./stop
 sleep 30
 ./start
 sleep 30
-brew services start httpd
 
+if command -v brew >/dev/null 2>&1; then
+    brew services start httpd
+fi
