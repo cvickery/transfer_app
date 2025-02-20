@@ -99,9 +99,6 @@ def find_programs(search_request: dict):
   assert isinstance(search_request, dict)
 
   # Extract info about what to find from the search_request dict
-  colleges = [college.upper().strip('01') + '01' for college in search_request['colleges']]
-  do_plans = search_request['plans']
-  do_subplans = search_request['subplans']
   search_text = search_request['search_text']
   try:
     large_enough = float(search_request['enough'])

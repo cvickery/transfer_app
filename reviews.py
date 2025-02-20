@@ -58,7 +58,6 @@ def process_pending(row):
     cursor.execute(q, (new_status, rule_id))
 
     # Generate a summary of this review
-    old_status_str = status_string(old_status)
     new_status_str = status_string(new_status)
     # Convert to event-history link for the rule
     new_status_str = f"""

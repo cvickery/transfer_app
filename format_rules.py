@@ -308,7 +308,6 @@ def format_rule(rule, rule_key=None):
   cursor = conn.cursor(row_factory=namedtuple_row)
 
   # Extract disciplines and courses from the rule
-  source_disciplines = rule.source_disciplines.strip(':').split(':')
   source_courses = rule.source_courses
   destination_courses = rule.destination_courses
 
@@ -336,8 +335,6 @@ def format_rule(rule, rule_key=None):
           'cross-listed source course counts do not match'
       cross_listed_with[course.course_id] = cursor.fetchall()
   cursor.close()
-
-  source_class = ''  # for the HTML credit-mismatch indicator
 
   # The course ids parts of the table row id
   row_id = '{}|{}|{}'.format(rule_key, source_course_id_str, destination_course_id_str)
@@ -469,7 +466,7 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   if args.debug:
-    DEBUG = true
+    DEBUG = True
   if args.grade:
     min_gpa = float(args.grade[0])
     max_gpa = float(args.grade[1])

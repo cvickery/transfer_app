@@ -137,7 +137,6 @@ def _to_html(institution: str, discipline: str, course_dict: dict, program_types
     college = college_names[institution]
     catalog_number = course_dict['catalog_number']
     course_id = int(course_dict['course_id'])
-    title = course_dict['title']
     conn = PgConnection()
     cursor = conn.cursor()
     cursor.execute(f"""

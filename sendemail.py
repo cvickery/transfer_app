@@ -51,10 +51,7 @@ def send_message(to_list, from_addr, subject, html_msg,
   # Bcc lists, so first analyze those lists and remove duplicates.
   unique_set = set()
   for person in to_list:
-    if person['email'].lower() in unique_set:
-      to_emails.remove(person)
-    else:
-      unique_set.add(person['email'].lower())
+    unique_set.add(person['email'].lower())
   sg_message = {'personalizations': [{'to': to_list, 'subject': subject}],
                 'from': from_addr,
                 'content': [{'type': 'text/plain', 'value': text_msg},

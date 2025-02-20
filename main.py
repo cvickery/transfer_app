@@ -2263,7 +2263,7 @@ def not_found_error(e):
   {header(title='CDIV', nav_items=[])}
   <h1 class="error">Not Found!</h1>
   """
-  return render_template('404.html', result=Markup(result), )
+  return render_template('404.html', result=Markup(result))
 
 
 if __name__ == '__main__':
