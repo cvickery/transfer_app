@@ -2,8 +2,14 @@
 # Stop gunicorn
 if [[ -r gunicorn.pid ]]
 then
-  kill "$(cat gunicorn.pid)"
+  if ps -p "$(cat gunicorn.pid)" > /dev/null
+  then
+    kill "$(cat gunicorn.pid)"
+    echo Killed "$(cat gunicorn.pid)"
+  else
+    echo Removed stale pid "$(cat gunicorn.pid)"
+  fi
 else
-  echo Not running
+  echo No process to stop
 fi
 rm -f gunicorn.pid

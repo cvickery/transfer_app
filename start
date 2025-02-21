@@ -7,9 +7,18 @@ cd ~/Projects/transfer_app || exit
 
 # Kill the app if it is already running
 if [[ -r gunicorn.pid ]]
-then kill "$(cat gunicorn.pid)"
-     prefix='re'
+then
+  if ps -p "$(cat gunicorn.pid)" > /dev/null
+  then
+    kill "$(cat gunicorn.pid)"
+    echo Killed "$(cat gunicorn.pid)"
+    prefix='re'
+    sleep 10  # an experiment
+  else
+    echo Removed stale pid "$(cat gunicorn.pid)"
+  fi
 fi
+
 rm -f gunicorn.pid
 
 # (Re-)start the app

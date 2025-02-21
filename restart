@@ -12,7 +12,7 @@ fi
 # (Re-)start the app (./start first kills the app if it is running)
 ./start
 # Allow time for it to initialize before sending it more requests
-sleep 60
+sleep 10
 
 # Re-enable external requests
 if command -v brew >/dev/null 2>&1; then
