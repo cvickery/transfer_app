@@ -100,6 +100,10 @@ for college in disciplines.keys():
                               f'</option>')
   select_college_disciplines[college] = '\n'.join(sorted(select_disciplines))
 
+# Test apache full disk access
+@app.route('/fda')
+def fda_test():
+  return send_file('/Users/vickery/Library/Mail/PersistenceInfo.plist')
 
 # Overhead URIs
 # =================================================================================================
