@@ -3,8 +3,8 @@
 # Restart apache because “something” is causing it to crash.
 # Launchctl runs this hourly.
 
-# Re-enable external requests
+echo -e "\n$(date)"
+ps aux | ack 'httpd -D'| echo $(wc -l) processes
 if command -v brew >/dev/null 2>&1; then
-  date
   brew services restart httpd
 fi
