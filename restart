@@ -1,20 +1,10 @@
 #! /usr/local/bin/bash
 
-# Restart both apache and the app because “something” is causing them to crash.
-# Launchctl runs this at 5 am daily.
-# Trying long delays to see if they make the process more reliable.
+# Restart apache because “something” is causing it to crash.
+# Launchctl runs this hourly.
 
-# Block external requests to the app
+echo -e "\n$(date)"
+ps aux | ack 'httpd -D'| echo $(wc -l) processes
 if command -v brew >/dev/null 2>&1; then
-    brew services stop httpd
-fi
-
-# (Re-)start the app (./start first kills the app if it is running)
-./start
-# Allow time for it to initialize before sending it more requests
-sleep 10
-
-# Re-enable external requests
-if command -v brew >/dev/null 2>&1; then
-    brew services start httpd
+  brew services restart httpd
 fi
