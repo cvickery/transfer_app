@@ -1,4 +1,5 @@
-from pgconnection import PgConnection
+import psycopg
+from psycopg.rows import namedtuple_row
 from format_rules import format_rule_by_key
 
 
@@ -7,8 +8,8 @@ from format_rules import format_rule_by_key
 def rule_history(rule_key):
   """ Generate HTML for the review-history of a transfer rule.
   """
-  conn = PgConnection()
-  cursor = conn.cursor()
+  conn = psycopg.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(row_factory=namedtuple_row)
   cursor.execute("""
       select  s.description,
               e.who,

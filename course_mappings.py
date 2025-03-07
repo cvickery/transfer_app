@@ -1,14 +1,13 @@
 #! /usr/local/bin/python3
 
-
-from collections import namedtuple, defaultdict
-
 from app_header import header
-from pgconnection import PgConnection
+from collections import namedtuple, defaultdict
+import psycopg
+from psycopg.rows import namedtuple_row
 
 # Dict of CUNY college names
-conn = PgConnection()
-cursor = conn.cursor()
+conn = psycopg.connect('dbname=cuny_curriculum')
+cursor = conn.cursor(row_factory=namedtuple_row)
 cursor.execute('select code, name from cuny_institutions')
 college_names = {row.code: row.name for row in cursor.fetchall()}
 
@@ -137,8 +136,8 @@ def _to_html(institution: str, discipline: str, course_dict: dict, program_types
     college = college_names[institution]
     catalog_number = course_dict['catalog_number']
     course_id = int(course_dict['course_id'])
-    conn = PgConnection()
-    cursor = conn.cursor()
+    conn = psycopg.connect('dbname=cuny_curriculum')
+    cursor = conn.cursor(row_factory=namedtuple_row)
     cursor.execute(f"""
     select r.*, b.block_type
       from program_requirements r, requirement_blocks b
@@ -269,8 +268,8 @@ def course_mappings_impl(request):
     </p>
   </div>
   """
-  conn = PgConnection()
-  cursor = conn.cursor()
+  conn = psycopg.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(row_factory=namedtuple_row)
 
   # Look up all colleges; preselect one if known.
   cursor.execute('select code, prompt from cuny_institutions')

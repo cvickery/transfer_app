@@ -1,5 +1,6 @@
 from typing import Dict
-from pgconnection import PgConnection
+import psycopg
+from psycopg.rows import namedtuple_row
 
 # Copy of the review_status_bits table
 # value: bitmask
@@ -12,8 +13,8 @@ bitmask_to_description: Dict[int, str] = dict()
 abbr_to_bitmask: Dict[str, int] = dict()
 event_type_bits: Dict[int, str] = dict()
 
-conn = PgConnection()
-with conn.cursor() as cursor:
+conn = psycopg.connect('dbname=cuny_curriculum')
+with conn.cursor(row_factory=namedtuple_row) as cursor:
   cursor.execute('select * from review_status_bits')
   for row in cursor.fetchall():
     abbr_to_bitmask[row.abbr] = row.bitmask

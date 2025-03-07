@@ -1,12 +1,12 @@
 #! /usr/bin/env python3
 import os
+import psycopg
 from pprint import pprint
 from sendgrid import SendGridAPIClient
+from psycopg.rows import namedtuple_row
 
-from pgconnection import PgConnection
-
-conn = PgConnection()
-cursor = conn.cursor()
+conn = psycopg.connect('dbname=cuny_curriculum')
+cursor = conn.cursor(row_factory=namedtuple_row)
 cursor.execute('select * from person_roles')
 people = dict()
 for person in cursor.fetchall():

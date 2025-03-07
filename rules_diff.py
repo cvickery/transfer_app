@@ -12,7 +12,8 @@ from argparse import ArgumentParser
 from collections import defaultdict, namedtuple
 from datetime import date
 from pathlib import Path
-from pgconnection import PgConnection
+import psycopg
+from psycopg.rows import namedtuple_row
 
 # An ArchiveSet consists of lists of source courses and destination courses, linked by a common
 # rule_key.
@@ -54,8 +55,8 @@ for key in _all_archive_keys:
 def is_bkcr(course_id):
   """Look up the course to see if it has the BKCR attribute."""
   course_id = int(course_id)
-  conn = PgConnection()
-  cursor = conn.cursor()
+  conn = psycopg.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(row_factory=namedtuple_row)
   cursor.execute(f"""
 select * from cuny_courses
  where course_id = {course_id}

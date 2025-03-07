@@ -4,7 +4,8 @@
 """
 import json
 
-from pgconnection import PgConnection
+import psycopg
+from psycopg.rows import namedtuple_row
 from reviews_status_utils import abbr_to_bitmask, status_string
 from collections import namedtuple
 
@@ -24,8 +25,8 @@ def process_pending(row):
   when_entered = row.when_entered
   summaries = ''
 
-  conn = PgConnection()
-  cursor = conn.cursor()
+  conn = psycopg.connect('db_name=cuny_curriculum')
+  cursor = conn.cursor(row_factory=namedtuple_row)
 
   institutions = set()
   for review in reviews:
