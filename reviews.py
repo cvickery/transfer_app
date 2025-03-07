@@ -25,56 +25,54 @@ def process_pending(row):
   when_entered = row.when_entered
   summaries = ''
 
-  conn = psycopg.connect('db_name=cuny_curriculum')
-  cursor = conn.cursor(row_factory=namedtuple_row)
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
 
-  institutions = set()
-  for review in reviews:
-    key = RuleKey._make(review['rule_key'].split(':'))
-    institutions.add(key.source_institution)
-    institutions.add(key.destination_institution)
-    cursor.execute("""
-      select id, review_status
-        from transfer_rules
-       where source_institution = %s
-         and destination_institution = %s
-         and subject_area = %s
-         and group_number = %s
-      """, key)
-    rule_id, old_status = cursor.fetchone()
-    # Generate an event for this review
-    q = """
-    insert into events (rule_id, event_type,
-                        who, what, event_time)
-                       values (%s, %s, %s, %s, %s)"""
-    cursor.execute(q, (rule_id,
-                       review['event_type'],
-                       email,
-                       review['comment_text'],
-                       when_entered))
+      institutions = set()
+      for review in reviews:
+        key = RuleKey._make(review['rule_key'].split(':'))
+        institutions.add(key.source_institution)
+        institutions.add(key.destination_institution)
+        cursor.execute("""
+          select id, review_status
+            from transfer_rules
+          where source_institution = %s
+            and destination_institution = %s
+            and subject_area = %s
+            and group_number = %s
+          """, key)
+        rule_id, old_status = cursor.fetchone()
+        # Generate an event for this review
+        q = """
+        insert into events (rule_id, event_type,
+                            who, what, event_time)
+                          values (%s, %s, %s, %s, %s)"""
+        cursor.execute(q, (rule_id,
+                           review['event_type'],
+                           email,
+                           review['comment_text'],
+                           when_entered))
 
-    # Update the review state for this rule.
-    new_status = old_status | abbr_to_bitmask[review['event_type']]
-    q = 'update transfer_rules set review_status = %s where id = %s'
-    cursor.execute(q, (new_status, rule_id))
+        # Update the review state for this rule.
+        new_status = old_status | abbr_to_bitmask[review['event_type']]
+        q = 'update transfer_rules set review_status = %s where id = %s'
+        cursor.execute(q, (new_status, rule_id))
 
-    # Generate a summary of this review
-    new_status_str = status_string(new_status)
-    # Convert to event-history link for the rule
-    new_status_str = f"""
-    <a href="/history/{review['rule_key']}"
-       target="_blank"
-       rel="noopener noreferrer">{new_status_str}</a>"""
-    summaries += f"""
-    <tr>
-      {review['rule_str']}
-    </tr>
-    """
+        # Generate a summary of this review
+        new_status_str = status_string(new_status)
+        # Convert to event-history link for the rule
+        new_status_str = f"""
+        <a href="/history/{review['rule_key']}"
+          target="_blank"
+          rel="noopener noreferrer">{new_status_str}</a>"""
+        summaries += f"""
+        <tr>
+          {review['rule_str']}
+        </tr>
+        """
 
-  # Remove record from pending_reviews
-  cursor.execute('delete from pending_reviews where token = %s', (token, ))
-  conn.commit()
-  conn.close()
+      # Remove record from pending_reviews
+      cursor.execute('delete from pending_reviews where token = %s', (token, ))
 
   suffix = 's'
   have_has = 'were'

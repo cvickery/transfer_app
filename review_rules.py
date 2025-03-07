@@ -31,15 +31,12 @@ def do_form_0(request, session):
   """
   if DEBUG:
     print(f'*** do_form_0({session})')
-  conn = psycopg.connect('dbname=cuny_curriculum')
-  cursor = conn.cursor(row_factory=namedtuple_row)
-
-  cursor.execute("select count(*) from transfer_rules")
-  num_rules = cursor.fetchone()[0]
-  cursor.execute("select update_date from updates where table_name = 'transfer_rules'")
-  rules_date = cursor.fetchone().update_date.strftime('%B %e, %Y')
-  cursor.close()
-  conn.close()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute("select count(*) from transfer_rules")
+      num_rules = cursor.fetchone()[0]
+      cursor.execute("select update_date from updates where table_name = 'transfer_rules'")
+      rules_date = cursor.fetchone().update_date.strftime('%B %e, %Y')
 
   source_prompt = """
     <fieldset id="sending-field"><h2>Sending College(s)</h2>
@@ -98,7 +95,7 @@ def do_form_0(request, session):
             nav_items=[{'type': 'link',
                         'href': '/',
                         'text': 'Main Menu'}])}
-    <DETAILS>
+    <details>
       <summary>
         Instructions
       </summary>
@@ -185,60 +182,58 @@ def do_form_1(request, session):
 
   # Database lookups
   # ----------------
-  conn = psycopg.connect('dbname=cuny_curriculum')
-  cursor = conn.cursor(row_factory=namedtuple_row)
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_fctory=namedtuple_row) as cursor:
 
-  # The CUNY Subjects table, for getting subject descriptions from their abbreviations
-  cursor.execute("select * from cuny_subjects order by subject")
-  subject_names = {row.subject: row.subject_name for row in cursor}
+      # The CUNY Subjects table, for getting subject descriptions from their abbreviations
+      cursor.execute("select * from cuny_subjects order by subject")
+      subject_names = {row.subject: row.subject_name for row in cursor}
 
-  # Generate table headings for source and destination institutions
-  sending_is_singleton = False
-  sending_heading = 'Sending Colleges’'
-  receiving_is_singleton = False
-  receiving_heading = 'Receiving Colleges’'
-  criterion = ''
-  if len(session['source_institutions']) == 1:
-    sending_is_singleton = True
-    criterion = 'the sending college is ' + institution_names[session['source_institutions'][0]]
-    sending_heading = f"{institution_names[session['source_institutions'][0]]}’s".replace('s’s',
-                                                                                          's’')
-  if len(session['destination_institutions']) == 1:
-    receiving_is_singleton = True
-    receiving_heading = f"{institution_names[session['destination_institutions'][0]]}’s".replace(
-        's’s', 's’')
-    if sending_is_singleton:
-      criterion += ' and '
-    criterion += 'the receiving college is ' + \
-      institution_names[session['destination_institutions'][0]]
+      # Generate table headings for source and destination institutions
+      sending_is_singleton = False
+      sending_heading = 'Sending Colleges’'
+      receiving_is_singleton = False
+      receiving_heading = 'Receiving Colleges’'
+      criterion = ''
+      if len(session['source_institutions']) == 1:
+        sending_is_singleton = True
+        criterion = 'the sending college is ' + institution_names[session['source_institutions'][0]]
+        sending_heading = f"{institution_names[session['source_institutions'][0]]}’s".replace('s’s',
+                                                                                              's’')
+      if len(session['destination_institutions']) == 1:
+        receiving_is_singleton = True
+        receiving_heading = (f"{institution_names[session['destination_institutions'][0]]}’s"
+                             .replace('s’s', 's’'))
+        if sending_is_singleton:
+          criterion += ' and '
+        criterion += 'the receiving college is ' + \
+          institution_names[session['destination_institutions'][0]]
 
-  # Look up all {source_institution, source_discipline, cuny_subject}
-  #         and {destination_institution, destination_discipline, cuny_subject}
-  # tuples for the selected source and destination institutions.
+      # Look up all {source_institution, source_discipline, cuny_subject}
+      #         and {destination_institution, destination_discipline, cuny_subject}
+      # tuples for the selected source and destination institutions.
 
-  source_institution_params = ', '.join('%s' for i in session['source_institutions'])
-  q = """
-  select institution,
-         '<span title="'||discipline_name||'">'||discipline||'</span>' as discipline,
-         cuny_subject
-     from cuny_disciplines
-    where institution in ({})
-    """.format(source_institution_params)
-  cursor.execute(q, session['source_institutions'])
-  source_disciplines = cursor.fetchall()
+      source_institution_params = ', '.join('%s' for i in session['source_institutions'])
+      q = """
+      select institution,
+            '<span title="'||discipline_name||'">'||discipline||'</span>' as discipline,
+            cuny_subject
+        from cuny_disciplines
+        where institution in ({})
+        """.format(source_institution_params)
+      cursor.execute(q, session['source_institutions'])
+      source_disciplines = cursor.fetchall()
 
-  destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
-  q = f"""
-  select institution,
-         '<span title="'||discipline_name||'">'||discipline||'</span>' as discipline,
-         cuny_subject
-     from cuny_disciplines
-    where institution in ({destination_institution_params})
-    """
-  cursor.execute(q, session['destination_institutions'])
-  destination_disciplines = cursor.fetchall()
-  cursor.close()
-  conn.close()
+      destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
+      q = f"""
+      select institution,
+            '<span title="'||discipline_name||'">'||discipline||'</span>' as discipline,
+            cuny_subject
+        from cuny_disciplines
+        where institution in ({destination_institution_params})
+        """
+      cursor.execute(q, session['destination_institutions'])
+      destination_disciplines = cursor.fetchall()
 
   # do_form_1: generate form 2
   # -----------------------------------------------------------------------------------------------
@@ -472,144 +467,142 @@ def do_form_2(request, session):
   for k, v in session.items():
     print(f'{k}: {v}')
 
-  conn = psycopg.connect('dbname=cuny_curriculum')
-  cursor = conn.cursor(row_factory=namedtuple_row)
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_fctory=namedtuple_row) as cursor:
 
-  # Look up transfer rules where the sending course belongs to a sending institution and is one of
-  # the source disciplines and the receiving course belongs to a receiving institution and is one of
-  # the receiving disciplines.
-  try:
-    source_institution_params = ', '.join('%s' for i in session['source_institutions'])
-    destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
-  except KeyError:
-    # the session is expired or invalid. Go back to Step 1.
-    return render_template('review_rules.html', result=Markup("""
-                                                           <h1>Session Expired</h1>
-                                                           <p>
-                                                             <a href="/" class="button">
-                                                                Main Menu</a>
-                                                             <a href="/review_rules"
-                                                                  class="restart button">Restart
-                                                              </a>
-                                                           </p>
+      # Look up transfer rules where the sending course belongs to a sending institution and is one
+      # of the source disciplines and the receiving course belongs to a receiving institution and
+      # is one of the receiving disciplines.
+      try:
+        source_institution_params = ', '.join('%s' for i in session['source_institutions'])
+        destination_institution_params = ', '.join('%s' for i in session['destination_institutions'])
+      except KeyError:
+        # the session is expired or invalid. Go back to Step 1.
+        return render_template('review_rules.html', result=Markup("""
+                                                              <h1>Session Expired</h1>
+                                                              <p>
+                                                                <a href="/" class="button">
+                                                                    Main Menu</a>
+                                                                <a href="/review_rules"
+                                                                      class="restart button">Restart
+                                                                  </a>
+                                                              </p>
 
-                                                           """))
+                                                              """))
 
-  # Be sure there is the possibility there will be some rules
-  source_subject_list = request.form.getlist('source_subject')
-  destination_subject_list = request.form.getlist('destination_subject')
+      # Be sure there is the possibility there will be some rules
+      source_subject_list = request.form.getlist('source_subject')
+      destination_subject_list = request.form.getlist('destination_subject')
 
-  if len(source_subject_list) < 1:
-    return render_template('review_rules.html', result=Markup(
-                           '<h1 class="error">No sending disciplines selected.</h1>'))
-  if len(destination_subject_list) < 1:
-    return render_template('review_rules.html', result=Markup(
-                           '<h1 class="error">No receiving disciplines selected.</h1>'))
+      if len(source_subject_list) < 1:
+        return render_template('review_rules.html', result=Markup(
+                              '<h1 class="error">No sending disciplines selected.</h1>'))
+      if len(destination_subject_list) < 1:
+        return render_template('review_rules.html', result=Markup(
+                              '<h1 class="error">No receiving disciplines selected.</h1>'))
 
-  # Prepare the query to get the set of rules that match the institutions and cuny_subjects
-  # selected.
-  if request.form.get('all-source-subjects'):
-    source_subjects_clause = ''
-  else:
-    source_subjects_str = '|'.join(f':{s}:' for s in source_subject_list)
-    source_subjects_clause = f"  and '{source_subjects_str}' ~ source_subjects"
-    source_subjects = ', '.join(f"'{s}'" for s in source_subject_list)
-    source_subjects_clause = f"""
-      and id in (select rule_id from subject_rule_map where subject in ({source_subjects}))"""
+      # Prepare the query to get the set of rules that match the institutions and cuny_subjects
+      # selected.
+      if request.form.get('all-source-subjects'):
+        source_subjects_clause = ''
+      else:
+        source_subjects_str = '|'.join(f':{s}:' for s in source_subject_list)
+        source_subjects_clause = f"  and '{source_subjects_str}' ~ source_subjects"
+        source_subjects = ', '.join(f"'{s}'" for s in source_subject_list)
+        source_subjects_clause = f"""
+          and id in (select rule_id from subject_rule_map where subject in ({source_subjects}))"""
 
-  # Get all the rules where,
-  #  - The source and destination institutions have been selected
-  #  and
-  #  - The source_subjects have been selected
-  q = f"""
-  select *
-    from transfer_rules
-   where source_institution in ({source_institution_params})
-     and destination_institution in ({destination_institution_params})
-     {source_subjects_clause}
-  order by source_institution, destination_institution, subject_area, group_number"""
-  cursor.execute(q, (session['source_institutions'] + session['destination_institutions']))
+      # Get all the rules where,
+      #  - The source and destination institutions have been selected
+      #  and
+      #  - The source_subjects have been selected
+      q = f"""
+      select *
+        from transfer_rules
+      where source_institution in ({source_institution_params})
+        and destination_institution in ({destination_institution_params})
+        {source_subjects_clause}
+      order by source_institution, destination_institution, subject_area, group_number"""
+      cursor.execute(q, (session['source_institutions'] + session['destination_institutions']))
 
-  if cursor.rowcount < 1:
-    return render_template('review_rules.html', result=Markup(
-                           '<h1 class="error">There are no matching rules.</h1>'))
+      if cursor.rowcount < 1:
+        return render_template('review_rules.html', result=Markup(
+                              '<h1 class="error">There are no matching rules.</h1>'))
 
-  all_rules = cursor.fetchall()
-  selected_rules = []
-  # Get the source and destination course lists from the above set of rules where the destination
-  # subject was selected. It's possible to have selected rules that don’t transfer to any of the
-  # selected destination subjects, so those rules are dropped while building the selected-rules
-  # list.
-  if request.form.get('all-destination-subjects'):
-    destination_subjects_clause = ''
-  else:
-    # Create a clause that makes sure the destination course has one of the destination subjects
-    destination_subject_list = request.form.getlist('destination_subject')
-    destination_subject_params = ', '.join(f"'{s}'" for s in destination_subject_list)
-    destination_subjects_clause = f" and dc.cuny_subject in ({destination_subject_params})"
+      all_rules = cursor.fetchall()
+      selected_rules = []
+      # Get the source and destination course lists from the above set of rules where the
+      # destination subject was selected. It's possible to have selected rules that don’t transfer
+      # to any of the selected destination subjects, so those rules are dropped while building the
+      # selected-rules list.
+      if request.form.get('all-destination-subjects'):
+        destination_subjects_clause = ''
+      else:
+        # Create a clause that makes sure the destination course has one of the destination subjects
+        destination_subject_list = request.form.getlist('destination_subject')
+        destination_subject_params = ', '.join(f"'{s}'" for s in destination_subject_list)
+        destination_subjects_clause = f" and dc.cuny_subject in ({destination_subject_params})"
 
-  for rule in all_rules:
-    # It’s possible some of the selected rules don’t have destination courses in any of the selected
-    # disciplines, so that has to be checked first.
-    cursor.execute(f"""
-   select  dc.course_id,
-           dc.offer_nbr,
-           dc.offer_count,
-           dc.discipline,
-           dc.catalog_number,
-           dn.discipline_name,
-           dc.cuny_subject,
-           dc.cat_num,
-           dc.transfer_credits,
-           dc.credit_source,
-           dc.is_mesg,
-           dc.is_bkcr
-      from destination_courses dc, cuny_disciplines dn
-      where dc.rule_id = %s
-        and dn.institution = %s
-        and dn.discipline = dc.discipline
-        {destination_subjects_clause}
-       order by discipline, cat_num
-    """, (rule.id, rule.destination_institution))
-    if cursor.rowcount > 0:
-      destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
-      cursor.execute("""
-         select  sc.course_id,
-                 sc.offer_nbr,
-                 sc.offer_count,
-                 sc.discipline,
-                 sc.catalog_number,
-                 dn.discipline_name,
-                 sc.cuny_subject,
-                 sc.cat_num,
-                 sc.min_credits,
-                 sc.max_credits,
-                 sc.min_gpa,
-                 sc.max_gpa
-         from source_courses sc, cuny_disciplines dn
-        where sc.rule_id = %s
-          and dn.institution = %s
-          and dn.discipline = sc.discipline
-        order by discipline, cat_num
-        """, (rule.id, rule.source_institution))
-      if cursor.rowcount > 0:
-        source_courses = [Source_Course._make(c)for c in cursor.fetchall()]
+      for rule in all_rules:
+        # It’s possible some of the selected rules don’t have destination courses in any of the
+        # selected disciplines, so that has to be checked first.
+        cursor.execute(f"""
+        select  dc.course_id,
+                dc.offer_nbr,
+                dc.offer_count,
+                dc.discipline,
+                dc.catalog_number,
+                dn.discipline_name,
+                dc.cuny_subject,
+                dc.cat_num,
+                dc.transfer_credits,
+                dc.credit_source,
+                dc.is_mesg,
+                dc.is_bkcr
+            from destination_courses dc, cuny_disciplines dn
+            where dc.rule_id = %s
+              and dn.institution = %s
+              and dn.discipline = dc.discipline
+              {destination_subjects_clause}
+            order by discipline, cat_num
+          """, (rule.id, rule.destination_institution))
+        if cursor.rowcount > 0:
+          destination_courses = [Destination_Course._make(c) for c in cursor.fetchall()]
+          cursor.execute("""
+            select  sc.course_id,
+                    sc.offer_nbr,
+                    sc.offer_count,
+                    sc.discipline,
+                    sc.catalog_number,
+                    dn.discipline_name,
+                    sc.cuny_subject,
+                    sc.cat_num,
+                    sc.min_credits,
+                    sc.max_credits,
+                    sc.min_gpa,
+                    sc.max_gpa
+            from source_courses sc, cuny_disciplines dn
+            where sc.rule_id = %s
+              and dn.institution = %s
+              and dn.discipline = sc.discipline
+            order by discipline, cat_num
+            """, (rule.id, rule.source_institution))
+          if cursor.rowcount > 0:
+            source_courses = [Source_Course._make(c)for c in cursor.fetchall()]
 
-      # Create the Transfer_Rule tuple suitable for passing to format_rules, and add it to the
-      # list of rules to pass.
-      selected_rules.append(Transfer_Rule._make(
-          [rule.id,
-           rule.source_institution,
-           rule.destination_institution,
-           rule.subject_area,
-           rule.group_number,
-           rule.source_disciplines,
-           rule.source_subjects,
-           rule.review_status,
-           source_courses,
-           destination_courses]))
-  cursor.close()
-  conn.close()
+          # Create the Transfer_Rule tuple suitable for passing to format_rules, and add it to the
+          # list of rules to pass.
+          selected_rules.append(Transfer_Rule._make(
+              [rule.id,
+              rule.source_institution,
+              rule.destination_institution,
+              rule.subject_area,
+              rule.group_number,
+              rule.source_disciplines,
+              rule.source_subjects,
+              rule.review_status,
+              source_courses,
+              destination_courses]))
 
   if len(selected_rules) == 0:
     num_rules = 'No matching transfer rules found.'
@@ -691,14 +684,12 @@ def do_form_3(request, session):
       message_tail = '{} reviews'.format(num_reviews)
 
     # Insert these reviews into the pending_reviews table of the db.
-    conn = psycopg.connect('dbname=cuny_curriculum')
-    cursor = conn.cursor(row_factory=namedtuple_row)
-    token = str(uuid.uuid4())
-    reviews = json.dumps(kept_reviews)
-    q = "insert into pending_reviews (token, email, reviews) values(%s, %s, %s)"
-    cursor.execute(q, (token, email, reviews))
-    conn.commit()
-    conn.close()
+    with psycopg.connect('dbname=cuny_curriculum') as conn:
+      with conn.cursor(row_fctory=namedtuple_row) as cursor:
+        token = str(uuid.uuid4())
+        reviews = json.dumps(kept_reviews)
+        q = "insert into pending_reviews (token, email, reviews) values(%s, %s, %s)"
+        cursor.execute(q, (token, email, reviews))
 
     # Description message templates
     review_dict = dict()

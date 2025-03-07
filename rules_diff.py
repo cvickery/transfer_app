@@ -55,16 +55,15 @@ for key in _all_archive_keys:
 def is_bkcr(course_id):
   """Look up the course to see if it has the BKCR attribute."""
   course_id = int(course_id)
-  conn = psycopg.connect('dbname=cuny_curriculum')
-  cursor = conn.cursor(row_factory=namedtuple_row)
-  cursor.execute(f"""
-select * from cuny_courses
- where course_id = {course_id}
-   and attributes ~* 'BKCR'
-   """)
-  assert cursor.rowcount < 2
-  rowcount = cursor.rowcount
-  conn.close()
+  with psycopg.connect('dbname=cuny_curriculum') as conn:
+    with conn.cursor(row_factory=namedtuple_row) as cursor:
+      cursor.execute(f"""
+      select * from cuny_courses
+      where course_id = {course_id}
+        and attributes ~* 'BKCR'
+      """)
+      assert cursor.rowcount < 2
+      rowcount = cursor.rowcount
 
   return rowcount > 0
 
