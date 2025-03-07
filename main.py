@@ -251,11 +251,14 @@ def pending():
                                                         'text': 'Review Rules'}])
   with psycopg.connect('dbname=cuny_curriculum') as conn:
     with conn.cursor(row_factory=namedtuple_row) as cursor:
-      cursor.execute("""
-        select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
-          from pending_reviews""")
+      try:
+        cursor.execute("""
+          select email, reviews, to_char(when_entered, 'Month DD, YYYY HH12:MI am') as when_entered
+            from pending_reviews""")
+      except psycopg.errors.UndefinedTable:
+        pass
 
-      if cursor.rowcount == 0:
+      if cursor.rowcount < 1:
         return render_template('review_rules.html', result=Markup(f"""
             {heading}
             <p class="instructions">There are no pending reviews.</p>
