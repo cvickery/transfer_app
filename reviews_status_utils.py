@@ -13,13 +13,12 @@ bitmask_to_description: Dict[int, str] = dict()
 abbr_to_bitmask: Dict[str, int] = dict()
 event_type_bits: Dict[int, str] = dict()
 
-conn = psycopg.connect('dbname=cuny_curriculum')
-with conn.cursor(row_factory=namedtuple_row) as cursor:
-  cursor.execute('select * from review_status_bits')
-  for row in cursor.fetchall():
-    abbr_to_bitmask[row.abbr] = row.bitmask
-    bitmask_to_description[row.bitmask] = row.description
-conn.close()
+with psycopg.connect('dbname=cuny_curriculum') as conn:
+  with conn.cursor(row_factory=namedtuple_row) as cursor:
+    cursor.execute('select * from review_status_bits')
+    for row in cursor.fetchall():
+      abbr_to_bitmask[row.abbr] = row.bitmask
+      bitmask_to_description[row.bitmask] = row.description
 
 
 def get_abbr_to_bitmask():

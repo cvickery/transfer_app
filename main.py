@@ -22,7 +22,6 @@ from app_header import header
 from course_info import _course_info
 from course_lookup import lookup_courses, lookup_course
 from course_lookup import course_attribute_rows, course_search
-# from course_mappings import course_mappings_impl
 import course_requirements
 from find_programs import find_programs
 from format_rules import format_rule, format_rule_by_key
@@ -1745,12 +1744,12 @@ def program_descriptions():
 
   result = f"""
   {header(title='Describe Programs', nav_items=[{'type': 'link',
-                                                  'text': 'Main Menu',
-                                                  'href': '/'
+                                                 'text': 'Main Menu',
+                                                 'href': '/'
                                                  },
-                                                 {'type': 'link',
-                                                  'text': 'Programs',
-                                                  'href': '/registered_programs'
+                                                {'type': 'link',
+                                                 'text': 'Programs',
+                                                 'href': '/registered_programs'
                                                  }])}
   <div class="instructions">
     <p>
@@ -1814,11 +1813,11 @@ def what_requirements_does_this_course_satisfy():
   {header(title='What Requirements?', nav_items=[{'type': 'link',
                                                   'text': 'Main Menu',
                                                   'href': '/'
-                                                 },
+                                                  },
                                                  {'type': 'link',
                                                   'text': 'Programs',
                                                   'href': '/registered_programs'
-                                                 }])}
+                                                  }])}
   <h1>What Requirements Does This Course Satisfy?</h1>
   <div class="instructions">
     <p>
@@ -1889,7 +1888,8 @@ def what_requirements_does_this_course_satisfy():
               attributes = 'None'
             result += (f'<h2>{course_id_str} {row.institution[0:3]} {row.discipline:>6} '
                        f'{row.catalog_number:6} {row.designation:5} {attributes}</h2>')
-            result += '<pre>' + ('\n'.join(what_requirements(course_id_str, full_context))) + '</pre>'
+            result += f"""
+            <pre>{('\n'.join(what_requirements(course_id_str, full_context)))}</pre>"""
 
   return render_template('what_requirements.html',
                          result=Markup(result),
@@ -1971,8 +1971,7 @@ def requirements(college=None, type=None, name=None, period=None):
     with psycopg.connect('dbname=cuny_curriculum') as conn:
       with conn.cursor(row_factory=namedtuple_row) as cursor:
         cursor.execute("select update_date from updates where table_name = 'requirement_blocks'")
-        dgw_date = datetime.strptime(cursor.fetchone().update_date, '%Y-%m-%d')
-        dgw_date = dgw_date.strftime('%B %d, %Y')
+        dgw_date = cursor.fetchone().update_date.strftime('%B %d, %Y')
 
         cursor.execute('select code, prompt from cuny_institutions')
         college_choices = '<p><strong>Select a College:</strong></p>\n'
@@ -1988,13 +1987,13 @@ def requirements(college=None, type=None, name=None, period=None):
 
     result = f"""
     {header(title='Requirements Search', nav_items=[{'type': 'link',
-                                                      'text': 'Main Menu',
-                                                      'href': '/'
-                                                      },
-                                                      {'type': 'link',
-                                                       'text': 'Programs',
-                                                       'href': '/registered_programs'
-                                                      }])}
+                                                     'text': 'Main Menu',
+                                                     'href': '/'
+                                                     },
+                                                    {'type': 'link',
+                                                     'text': 'Programs',
+                                                     'href': '/registered_programs'
+                                                     }])}
     <details class="disclaimer">
       <summary class="error">Research Project: Work in Progress</summary>
       <p class="error">
@@ -2118,14 +2117,14 @@ def requirements(college=None, type=None, name=None, period=None):
                         'text': 'Main Menu',
                         'href': '/'
                         },
-                        {'type': 'link',
-                         'text': 'Back',
-                         'href': 'javascript:history.back()'
+                       {'type': 'link',
+                        'text': 'Back',
+                        'href': 'javascript:history.back()'
                         },
 
-                        {'type': 'link',
-                         'text': 'Search',
-                         'href': '/requirements'
+                       {'type': 'link',
+                        'text': 'Search',
+                        'href': '/requirements'
                         }])}
     {requirements_html}
     """
@@ -2188,7 +2187,7 @@ def search_programs():
               nav_items=[{'type': 'link',
                           'text': 'Main Menu',
                           'href': '/'
-                        }])}
+                          }])}
   <h1>Search For Programs</h1>
 
   <h3>Use 2, 4, or 6 digit CIP codes to get lists of matching CUNY programs</h3>
