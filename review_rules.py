@@ -4,14 +4,13 @@
 import os
 
 import json
+import psycopg
 import uuid
-
-from datetime import datetime
 
 from flask import render_template
 from markupsafe import Markup
 
-from pgconnection import PgConnection
+from psycopg.rows import namedtuple_row
 
 from app_header import header
 from sendemail import send_token
@@ -32,18 +31,13 @@ def do_form_0(request, session):
   """
   if DEBUG:
     print(f'*** do_form_0({session})')
-  conn = PgConnection()
-  cursor = conn.cursor()
+  conn = psycopg.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(row_factory=namedtuple_row)
 
   cursor.execute("select count(*) from transfer_rules")
   num_rules = cursor.fetchone()[0]
-  cursor.execute("select * from updates")
-  updates = cursor.fetchall()
-  rules_date = 'unknown'
-  for update in updates:
-    if update.table_name == 'transfer_rules':
-      rules_date = datetime.fromisoformat(update.update_date)\
-          .strftime('%B %e, %Y')
+  cursor.execute("select update from updates where table_name = 'transfer_rules'")
+  rules_date = cursor.fetchone.update_date.strftime('%B %e, %Y')
   cursor.close()
   conn.close()
 
@@ -191,8 +185,8 @@ def do_form_1(request, session):
 
   # Database lookups
   # ----------------
-  conn = PgConnection()
-  cursor = conn.cursor()
+  conn = psycopg.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(row_factory=namedtuple_row)
 
   # The CUNY Subjects table, for getting subject descriptions from their abbreviations
   cursor.execute("select * from cuny_subjects order by subject")
@@ -478,8 +472,8 @@ def do_form_2(request, session):
   for k, v in session.items():
     print(f'{k}: {v}')
 
-  conn = PgConnection()
-  cursor = conn.cursor()
+  conn = psycopg.connect('dbname=cuny_curriculum')
+  cursor = conn.cursor(row_factory=namedtuple_row)
 
   # Look up transfer rules where the sending course belongs to a sending institution and is one of
   # the source disciplines and the receiving course belongs to a receiving institution and is one of
@@ -697,8 +691,8 @@ def do_form_3(request, session):
       message_tail = '{} reviews'.format(num_reviews)
 
     # Insert these reviews into the pending_reviews table of the db.
-    conn = PgConnection()
-    cursor = conn.cursor()
+    conn = psycopg.connect('dbname=cuny_curriculum')
+    cursor = conn.cursor(row_factory=namedtuple_row)
     token = str(uuid.uuid4())
     reviews = json.dumps(kept_reviews)
     q = "insert into pending_reviews (token, email, reviews) values(%s, %s, %s)"
