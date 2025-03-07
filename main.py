@@ -100,10 +100,12 @@ for college in disciplines.keys():
                               f'</option>')
   select_college_disciplines[college] = '\n'.join(sorted(select_disciplines))
 
+
 # Test apache full disk access
 @app.route('/fda')
 def fda_test():
   return send_file('/Users/vickery/Library/Mail/PersistenceInfo.plist')
+
 
 # Overhead URIs
 # =================================================================================================
@@ -171,12 +173,8 @@ def index_page():
     with conn.cursor(row_factory=namedtuple_row) as cursor:
       cursor.execute("select count(*) from transfer_rules")
       num_rules = cursor.fetchone()[0]
-      cursor.execute("select * from updates")
-      updates = cursor.fetchall()
-      rules_date = 'unknown'
-      for update in updates:
-        if update.table_name == 'transfer_rules':
-          rules_date = date2str(update.update_date)
+      cursor.execute("select update_date from updates where table_name = 'transfer_rules'")
+      rules_date = cursor.fetchone().update_date.strftime("%B %d, %Y")
 
   # You can put messages for below the menu here:
   msg = f"""
