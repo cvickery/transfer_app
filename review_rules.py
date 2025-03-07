@@ -36,7 +36,7 @@ def do_form_0(request, session):
 
   cursor.execute("select count(*) from transfer_rules")
   num_rules = cursor.fetchone()[0]
-  cursor.execute("select update from updates where table_name = 'transfer_rules'")
+  cursor.execute("select update_date from updates where table_name = 'transfer_rules'")
   rules_date = cursor.fetchone.update_date.strftime('%B %e, %Y')
   cursor.close()
   conn.close()
