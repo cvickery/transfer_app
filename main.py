@@ -22,7 +22,6 @@ from app_header import header
 from course_info import _course_info
 from course_lookup import lookup_courses, lookup_course
 from course_lookup import course_attribute_rows, course_search
-# from course_mappings import course_mappings_impl
 import course_requirements
 from find_programs import find_programs
 from format_rules import format_rule, format_rule_by_key
