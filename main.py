@@ -182,7 +182,7 @@ def index_page():
   </footer>
             """
   return render_template('top-menu.html',
-                         title='Transfer Explorer',
+                         title='T-Rex Labs',
                          result=Markup(top_menu(msg)),
                          omitjs=True)
 
