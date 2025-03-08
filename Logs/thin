@@ -5,7 +5,7 @@ then
   ./filter_access.py < transfer_access.log
   csv_size=$(wc -c < access.csv)
   if [[ $? == 0 && $csv_size -ge 50 ]]
-  then sendemail -s "Access log from $(hostname)" -t ./access.csv cvickery@qc.cuny.edu
+  then sendemail -s "Access log from $(hostname)" -t ./access.csv christopher.vickery@qc.cuny.edu
   fi
   logrotate -s ./logrotate.status ./logrotate.conf
 fi

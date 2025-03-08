@@ -118,7 +118,8 @@ def send_token(email, url, review_rows):
   <p>This link will expire in 48 hours.</p>
   """
   return send_message(to_list=[{'email': email, 'name': ''}],
-                      from_addr={'email': 'cvickery@qc.cuny.edu', 'name': 'CUNY Transfer App'},
+                      from_addr={'email': 'christopher.vickery@qc.cuny.edu',
+                                 'name': 'T-Rex Labs'},
                       subject=subject_line,
                       html_msg=html_body)
 

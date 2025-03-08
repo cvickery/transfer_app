@@ -263,8 +263,8 @@ def course_mappings_impl(request):
       Requirements are extracted from Degree Works Scribe Blocks.
     </p>
     <p class="error">This project is still under development. Please report errors and feature
-      requests to <a href="mailto:cvickery@qc.cuny.edu?subject='Program Requirements'">Christopher
-      Vickery</a>
+      requests to <a href="mailto:christopher.vickery@qc.cuny.edu?subject='Program Requirements'">
+      Christopher Vickery</a>
     </p>
   </div>
   """

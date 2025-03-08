@@ -346,7 +346,7 @@ def confirmation(token):
           from_person = bc_people.pop()
           from_addr = {'email': from_person.email, 'name': '  T-Rex Labs'}
         except KeyError:
-          from_addr = {'email': 'cvickery@qc.cuny.edu', 'name': '  T-Rex Labs'}
+          from_addr = {'email': 'christopher.vickery@qc.cuny.edu', 'name': '  T-Rex Labs'}
         # Embed the html table in a complete web page
         html_body = """ <html><head><style>
                           table {border-collapse: collapse;}

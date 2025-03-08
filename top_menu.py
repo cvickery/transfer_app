@@ -180,7 +180,8 @@ def top_menu(msg=''):
   <h2>Problems?</h2>
   <em>
     Please report any issues with this site to <a
-    href="mailto:cvickery@qc.cuny.edu?subject='Transfer App issue'">Christopher Vickery</a>.
+    href="mailto:christopher.vickery@qc.cuny.edu?subject='Transfer App issue'">
+    Christopher Vickery</a>.
   </em>
   <!-- Messages -->
   <hr>
