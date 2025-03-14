@@ -1,10 +1,12 @@
 #! /usr/local/bin/bash
 
-# Restart apache because “something” is causing it to crash.
-# Launchctl runs this hourly.
+# Restart apache when “something” causes it to crash.
+# Launchctl runs this every 5 minutes.
 
-echo -e "\n$(date)"
-ps aux | ack 'httpd -D'| echo $(wc -l) processes
-if command -v brew >/dev/null 2>&1; then
+#echo -e "\n$(date)"
+n=$(ps aux | ack 'httpd -D'| wc -l)
+if [[ $n -lt 5 ]]
+then echo -e "\n$n processes at $(date)"
+  log show --predicate 'process == "httpd"' --last 10m
   brew services restart httpd
 fi
