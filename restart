@@ -1,12 +1,107 @@
 #! /usr/local/bin/bash
 
-# Restart apache when “something” causes it to crash.
-# Launchctl runs this every 5 minutes.
+# Enhanced Apache monitoring script
+# Detects various types of crashes and collects diagnostic information
+# launchd will direct output to ~/Logs/restart.log
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+echo -e "\n--- Apache Monitor Check: $TIMESTAMP ---"
 
-#echo -e "\n$(date)"
-n=$(ps aux | ack 'httpd -D'| wc -l)
-if [[ $n -lt 5 ]]
-then echo -e "\n$n processes at $(date)"
+# Function to check if Apache is responding correctly
+check_apache_response() {
+  local port=$1
+  local http_code
+  
+  # Use https for port 443
+  if [[ "$port" == "443" ]]; then
+    # Add option to ignore SSL certificate errors and specify SNI
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" -k --resolve trexlabs.org:443:127.0.0.1 "https://trexlabs.org/")
+  else
+    # For HTTP, try localhost
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 "http://localhost:${port}/")
+  fi
+  
+  if [[ $http_code -ge 200 && $http_code -lt 500 ]]; then
+    return 0
+  else
+    if [[ "$port" == "443" ]]; then
+      echo "ERROR: Apache failed to respond correctly on https://trexlabs.org/ - status code: $http_code"
+    else
+      echo "ERROR: Apache failed to respond correctly on http://localhost:${port}/ - status code: $http_code"
+    fi
+    return 1
+  fi
+}
+
+# Check number of processes (original check)
+PROCESS_COUNT=$(ps aux | ack 'httpd -D' | wc -l | tr -d '[:space:]')
+
+# Check if Apache is listening on ports 80 and 443
+APACHE_FAILING=false
+if ! netstat -an | ack "\.80\s.*LISTEN" > /dev/null; then
+  echo "ERROR: Apache is not listening on port 80"
+  APACHE_FAILING=true
+fi
+if ! netstat -an | ack "\.443\s.*LISTEN" > /dev/null; then
+  echo "ERROR: Apache is not listening on port 443"
+  APACHE_FAILING=true
+fi
+
+# Check HTTP responses
+if ! check_apache_response 80; then
+  APACHE_FAILING=true
+fi
+if ! check_apache_response 443; then
+  APACHE_FAILING=true
+fi
+
+# Check Apache error logs for recent errors
+RECENT_ERRORS=$(grep -i "fatal\|error\|segfault" /var/log/apache2/error_log /var/log/httpd/error_log 2>/dev/null | tail -20)
+if [[ -n "$RECENT_ERRORS" ]]; then
+  echo "Recent Apache errors found:"
+  echo "$RECENT_ERRORS"
+fi
+
+# Check if we need to restart Apache
+if [[ "$PROCESS_COUNT" -lt 5 || "$APACHE_FAILING" == true ]]; then
+
+  echo "Problem Diagnosis"
+  echo "Apache process count: $PROCESS_COUNT"
+  echo "Memory usage:"
+  vm_stat | grep "Pages free"  
+  echo "Load average:"
+  uptime
+    
+  # Get system logs
+  echo "System logs:"
   log show --predicate 'process == "httpd"' --last 10m
+  
+  # Check open files by httpd processes
+  if pgrep httpd >/dev/null; then
+    echo "Open files by httpd:"
+    lsof -p "$(pgrep httpd | tr '\n' ',' | sed 's/,$//')" 2>/dev/null | tail -20
+  fi
+  
+  # Check for segmentation faults using system logs instead of dmesg
+  echo "Checking for segmentation faults in system logs:"
+  log show --predicate 'eventMessage contains "segfault"' --last 1h --style compact
+  
+  # Alternative check in system log files that doesn't require root
+  if [ -f /var/log/system.log ]; then
+    grep -i "segfault" /var/log/system.log | tail -5
+  fi
+  
+  # Restart Apache
+  echo "Restarting Apache..."
   brew services restart httpd
+  
+  # Verify restart was successful
+  sleep 5
+  NEW_COUNT=$(ps aux | ack 'httpd -D' | wc -l | tr -d '[:space:]')
+  if [[ "$NEW_COUNT" -gt 4 ]]; then
+    echo "Apache restarted successfully (Process count: $NEW_COUNT)"
+  else
+    echo "WARNING: Apache failed to restart properly (Process count: $NEW_COUNT)"
+  fi
+else
+  echo "Apache appears to be running normally"
 fi
