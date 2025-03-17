@@ -4,7 +4,6 @@
 # Detects various types of crashes and collects diagnostic information
 # launchd will direct output to ~/Logs/restart.log
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-echo -e "\n--- Apache Monitor Check: $TIMESTAMP ---"
 
 # Function to check if Apache is responding correctly
 check_apache_response() {
@@ -64,6 +63,7 @@ fi
 # Check if we need to restart Apache
 if [[ "$PROCESS_COUNT" -lt 5 || "$APACHE_FAILING" == true ]]; then
 
+  echo -e "\n--- Apache Monitor: $TIMESTAMP ---"
   echo "Problem Diagnosis"
   echo "Apache process count: $PROCESS_COUNT"
   echo "Memory usage:"
@@ -102,6 +102,4 @@ if [[ "$PROCESS_COUNT" -lt 5 || "$APACHE_FAILING" == true ]]; then
   else
     echo "WARNING: Apache failed to restart properly (Process count: $NEW_COUNT)"
   fi
-else
-  echo "Apache appears to be running normally"
 fi
