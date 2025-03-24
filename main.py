@@ -187,6 +187,13 @@ def index_page():
                          omitjs=True)
 
 
+# Let’s Encrypt for babbage.dyndns-home.com
+# =================================================================================================
+@app.route('/.well-known/acme-challenge/<path:filename>')
+def acme_challenge(filename):
+    return send_from_directory('/Users/vickery/Sites/.well-known/acme-challenge/', filename)
+
+
 # COURSE INFO PAGE
 # =================================================================================================
 @app.route('/course_info', methods=['GET'])
