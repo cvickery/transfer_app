@@ -36,7 +36,6 @@ from sendemail import send_message
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
 from top_menu import top_menu
-from what_requirements import what_requirements
 
 from flask import Flask, render_template, make_response, \
     send_file, request, jsonify, session
