@@ -1419,8 +1419,8 @@ def registered_programs(institution, default=None):
                          """, (institution, ))
         html_data_rows = [f'{row.html}' for row in cursor.fetchall()]
         html_table_rows = html_heading_row + '<tbody>' + '\n'.join(html_data_rows) + '</tbody>'
-        html_table = (f'<div class="table-height"><table class="scrollable">{html_table_rows}'
-                      f'</table></div>')
+        html_table = (f'<div class="table-height"><table class="scrollable" height="50%">'
+                      f'{html_table_rows}</table></div>')
 
       result = f"""
           {header(title='Registered Programs', nav_items=[{'type': 'link',

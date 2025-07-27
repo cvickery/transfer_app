@@ -18,9 +18,30 @@ window.addEventListener('load', function ()
 {
   // Make the table (if there is one) scrollable.
   const tables = document.getElementsByClassName('scrollable');
-  if (tables.length > 0)
+  for (const table_element of tables)
   {
-    const the_table = new ScrollableTable({table: tables[0], use_heading: true});
+    let height_value = 100;
+    let height_unit = 'vu';
+    const height_attribute = table_element.getAttribute('height').trim();
+    if (height_attribute)
+    {
+      // Allowed units are px and vh: treat % as vh
+      const match = height_attribute.match(/^([\d.]+)(px|%|vh)$/i);
+      if (match)
+      {
+        height_value = parseFloat(match[1]);
+        height_unit = match[2].toLowerCase() === '%' ? 'vh' : match[2].toLowerCase();;
+
+      }
+      else
+      {
+        console.warn(`Invalid scrollable table height: "${height}"`);
+      }
+    }
+    console.log(`Scrollable table height: ${height_value} ${height_unit}`);
+
+    const the_table = new ScrollableTable({table: table_element, use_heading: true,
+                                           height_value: height_value, height_unit: height_unit});
     const adjust_table = the_table.get_adjustment_callback();
 
     // Need to re-process the table's height when viewport is resized.
