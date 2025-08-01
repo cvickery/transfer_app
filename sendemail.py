@@ -16,7 +16,7 @@ from html2text import html2text
 # send_email()
 # -------------------------------------------------------------------------------------------------
 def send_email(from_addr, to_addrs, subject, html_body, text_body,
-               cc_addrs=None, bcc_addrs=None, reply_to=None):
+               cc_addrs=[], bcc_addrs=[], reply_to=None):
   """Populate an EmailMessage object from the given parameters, and send it via smtp.
   """
   msg = EmailMessage()
@@ -28,8 +28,7 @@ def send_email(from_addr, to_addrs, subject, html_body, text_body,
   msg.add_alternative(html_body, subtype='html')
 
   # Optional headers
-  if cc_addrs:
-    msg['Cc'] = ', '.join(cc_addrs)
+  msg['Cc'] = ', '.join(cc_addrs)
   if reply_to:
     msg['Reply-To'] = reply_to
 
