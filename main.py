@@ -29,10 +29,9 @@ from htmlificization import scribe_block_to_html
 from plan_subplan_options import options_dict
 from program_descriptions import describe, to_html
 from review_rules import do_form_0, do_form_1, do_form_2, do_form_3
-from reviews import process_pending
 from rules_diff import diff_rules, archive_dates, available_archive_dates
 from rule_history import rule_history
-from sendemail import send_message
+from sendemail import send_email
 from system_status import app_available, app_unavailable, get_reason, \
     start_update_db, end_update_db, start_maintenance, end_maintenance
 from top_menu import top_menu
@@ -186,13 +185,6 @@ def index_page():
                          omitjs=True)
 
 
-# Let’s Encrypt for babbage.dyndns-home.com
-# =================================================================================================
-@app.route('/.well-known/acme-challenge/<path:filename>')
-def acme_challenge(filename):
-    return send_from_directory('/Users/vickery/Sites/.well-known/acme-challenge/', filename)
-
-
 # COURSE INFO PAGE
 # =================================================================================================
 @app.route('/course_info', methods=['GET'])
@@ -301,82 +293,82 @@ def pending():
   return render_template('review_rules.html', result=Markup(result), title='Pending Reviews')
 
 
-# CONFIRMATION PAGE
-# -------------------------------------------------------------------------------------------------
-# This is the handler for clicks in the confirmation email.
-# Notifications go to university_registrar, webmaster, and anyone identified with any sending or
-# receiving college in the covered rules.
-@app.route('/confirmation/<token>', methods=['GET'])
-def confirmation(token):
-  if app_unavailable():
-    return render_template('app_unavailable.html', result=Markup(get_reason()))
-
-  with psycopg.connect('dbname=cuny_curriculum') as conn:
-    with conn.cursor(row_factory=namedtuple_row) as cursor:
-      # Make sure the token is received and is in the pending table.
-      heading = header(title='Review Confirmation', nav_items=[{'type': 'link',
-                                                                'href': '/',
-                                                                'text': 'Main Menu'},
-                                                               {'type': 'link',
-                                                                'href': '/review_rules',
-                                                                'text': 'Review Rules'}])
-
-      q = 'select * from pending_reviews where token = %s'
-      cursor.execute(q, (token,))
-      if cursor.rowcount == 0:
-        msg = '<p class="error">This report has either expired or already been recorded.</p>'
-      elif cursor.rowcount != 1:
-        msg = f'<p class="error">Program Error: {cursor.rowcount} pending_reviews.</p>'
-      else:
-        msg, colleges = process_pending(cursor.fetchone())
-
-        # Get list of people to notify
-        q = """ select * from person_roles
-                where role in ('cuny_registrar', 'webmaster')
-                   or institution in ({})""".format(', '.join([f"'{c}'" for c in colleges]))
-        cursor.execute(q)
-        to_people = set()
-        cc_people = set()
-        bc_people = set()
-        for person_role in cursor.fetchall():
-          if person_role.role == 'cuny_registrar':
-            cc_people.add(person_role)
-          elif person_role.role == 'webmaster':
-            bc_people.add(person_role)
-          else:
-            to_people.add(person_role)
-        to_list = [{'email': p.email, 'name': p.name} for p in to_people]
-        cc_list = [{'email': p.email, 'name': p.name} for p in cc_people]
-        bcc_list = [{'email': p.email, 'name': p.name} for p in bc_people]
-        try:
-          from_person = bc_people.pop()
-          from_addr = {'email': from_person.email, 'name': '  T-Rex Labs'}
-        except KeyError:
-          from_addr = {'email': 'christopher.vickery@qc.cuny.edu', 'name': '  T-Rex Labs'}
-        # Embed the html table in a complete web page
-        html_body = """ <html><head><style>
-                          table {border-collapse: collapse;}
-                          td, th {
-                            border: 1px solid blue;
-                            padding:0.25em;
-                          }
-                        </style></head><body>
-                    """ + msg.replace('/history', request.url_root + 'history') + '</body></html>'
-        response = send_message(to_list,
-                                from_addr,
-                                subject='Transfer Rule Evaluation Received',
-                                html_msg=html_body,
-                                cc_list=cc_list,
-                                bcc_list=bcc_list)
-        if response.status_code != 202:
-          msg += f'<p>Error sending notifications: {response.body}</p>'
-
-  result = f"""
-  {heading}
-  <p><em>Review Report ID {token}</em></p>
-  {msg}
-  """
-  return render_template('review_rules.html', result=Markup(result), title="Review Confirmation")
+# # CONFIRMATION PAGE (No longer available)
+# # -------------------------------------------------------------------------------------------------
+# # This is the handler for clicks in the confirmation email.
+# # Notifications go to university_registrar, webmaster, and anyone identified with any sending or
+# # receiving college in the covered rules.
+# @app.route('/confirmation/<token>', methods=['GET'])
+# def confirmation(token):
+  # if app_unavailable():
+  #   return render_template('app_unavailable.html', result=Markup(get_reason()))
+#
+  # with psycopg.connect('dbname=cuny_curriculum') as conn:
+  #   with conn.cursor(row_factory=namedtuple_row) as cursor:
+  #     # Make sure the token is received and is in the pending table.
+  #     heading = header(title='Review Confirmation', nav_items=[{'type': 'link',
+  #                                                               'href': '/',
+  #                                                               'text': 'Main Menu'},
+  #                                                              {'type': 'link',
+  #                                                               'href': '/review_rules',
+  #                                                               'text': 'Review Rules'}])
+#
+  #     q = 'select * from pending_reviews where token = %s'
+  #     cursor.execute(q, (token,))
+  #     if cursor.rowcount == 0:
+  #       msg = '<p class="error">This report has either expired or already been recorded.</p>'
+  #     elif cursor.rowcount != 1:
+  #       msg = f'<p class="error">Program Error: {cursor.rowcount} pending_reviews.</p>'
+  #     else:
+  #       msg, colleges = process_pending(cursor.fetchone())
+#
+  #       # Get list of people to notify
+  #       q = """ select * from person_roles
+  #               where role in ('cuny_registrar', 'webmaster')
+  #                  or institution in ({})""".format(', '.join([f"'{c}'" for c in colleges]))
+  #       cursor.execute(q)
+  #       to_people = set()
+  #       cc_people = set()
+  #       bc_people = set()
+  #       for person_role in cursor.fetchall():
+  #         if person_role.role == 'cuny_registrar':
+  #           cc_people.add(person_role)
+  #         elif person_role.role == 'webmaster':
+  #           bc_people.add(person_role)
+  #         else:
+  #           to_people.add(person_role)
+  #       to_list = [{'email': p.email, 'name': p.name} for p in to_people]
+  #       cc_list = [{'email': p.email, 'name': p.name} for p in cc_people]
+  #       bcc_list = [{'email': p.email, 'name': p.name} for p in bc_people]
+  #       try:
+  #         from_person = bc_people.pop()
+  #         from_addr = {'email': from_person.email, 'name': '  T-Rex Labs'}
+  #       except KeyError:
+  #         from_addr = {'email': 'christopher.vickery@qc.cuny.edu', 'name': '  T-Rex Labs'}
+  #       # Embed the html table in a complete web page
+  #       html_body = """ <html><head><style>
+  #                         table {border-collapse: collapse;}
+  #                         td, th {
+  #                           border: 1px solid blue;
+  #                           padding:0.25em;
+  #                         }
+  #                       </style></head><body>
+  #                   """ + msg.replace('/history', request.url_root + 'history') + '</body></html>'
+  #       response = send_message(to_list,
+  #                               from_addr,
+  #                               subject='Transfer Rule Evaluation Received',
+  #                               html_msg=html_body,
+  #                               cc_list=cc_list,
+  #                               bcc_list=bcc_list)
+  #       if response.status_code != 202:
+  #         msg += f'<p>Error sending notifications: {response.body}</p>'
+#
+  # result = f"""
+  # {heading}
+  # <p><em>Review Report ID {token}</em></p>
+  # {msg}
+  # """
+  # return render_template('review_rules.html', result=Markup(result), title="Review Confirmation")
 
 
 # HISTORY PAGE
@@ -1359,14 +1351,12 @@ def registered_programs(institution, default=None):
                       f'class="button">Download {filename}</a>')
         except (OSError, RuntimeError, json.JSONDecodeError):
           hostname = socket.gethostname()
-          response = send_message(to_list=[{'email': 'Christopher.Vickery@qc.cuny.edu',
-                                            'name': 'Christopher Vickery'}],
-                                  from_addr={'email': 'Christopher.Vickery@qc.cuny.edu',
-                                             'name': 'Christopher Vickery'},
-                                  subject='Missing CSVs for registered programs',
-                                  html_msg=f"""
+          response = send_email(from_addr=f'Transfer App ({hostname})',
+                                to_addrs=['Christopher Vickery <christopher.vickery@qc.cuny.edu>'],
+                                subject='Missing CSVs for registered programs',
+                                html_msg=f"""
                                   <p>You need to run <em>generate_html.py</em> on {hostname}</p>
-                                  """)
+                                """)
           if response.status_code == 202:
             link = """
             <br>

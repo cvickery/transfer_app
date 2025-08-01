@@ -13,6 +13,13 @@ from email.message import EmailMessage
 from html2text import html2text
 
 
+# send_token()
+# -------------------------------------------------------------------------------------------------
+def send_token(*args, **kwargs):
+  """No longer available: review process no longer implemented."""
+  ...
+
+
 # send_email()
 # -------------------------------------------------------------------------------------------------
 def send_email(from_addr, to_addrs, subject, html_body, text_body,
@@ -87,7 +94,7 @@ if __name__ == "__main__":
       text_body += line
     if not text_body:
       # Allow this: the subject line may be all that’s needed.
-      ...
+      text_body = ''
 
   # Text from file?
   if args.text_file:
