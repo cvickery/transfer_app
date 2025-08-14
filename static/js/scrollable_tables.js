@@ -1,9 +1,28 @@
 /*  scrollable_tables.js
+ *
  *  Support for making table bodies scrollable with headers remaining stationary and header/body
- *  column widths remaining matched.
+ *  column widths remaining matched. A scrollable table is a table element contained in a block
+ *  element, normally a div, which is used for sizing. The following attributes control scrolling:
+ *  attributes:
+ *    scrollable          Required: value does not matter.
+ *    desired_height      Optional: units may be px, vh, or %; vh and % are the equivalent
+ *                          Default value is '100vh'
+ *    use_heading_widths  Optional: false means adjust heading column widths to body instead of body
+ *                        column widths to heading
+ *                          Default value is true
+ */
+ 
+ // THIS CODE IS OBSOLETE AND IS NO LONGER USED IN THIS PROJECT.
+ // USE CSS TO MAKE THE <thead> ELEMENT “sticky”:
+ /*
+ thead {
+  position: sticky;
+  top: 0;
+  }
  */
 
-const DEBUG_HEIGHT = false;
+
+const DEBUG_HEIGHT = true;
 const DEBUG_WIDTHS = false;
 
 //  content_width()
@@ -47,7 +66,9 @@ export default class ScrollableTable
       console.log(args);
     }
     this.table = args.table;
-    this.desired_height = args.height;
+    this.desired_height = args.desired_height;
+    this.height_value = args.height_value;
+    this.height_unit = args.height_unit;
     this.initial_delay = args.delay ? args.delay : 2000;
     this.padding_bottom = args.padding ? args.padding : 2;
     this.use_heading_widths = args.use_heading;

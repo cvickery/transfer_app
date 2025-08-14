@@ -1338,17 +1338,16 @@ def registered_programs(institution, default=None):
               raise RuntimeError('No csv')
 
             # Try to (re-)create the csv file. If anything goes wrong, let me know.
-            for row in cursor:
-              csv_dir = Path(app.root_path + '/static/csv')
-              csv_dir.mkdir(exist_ok=True)
-              with open(f'{csv_dir}/{filename}', 'w') as outfile:
-                writer = csv.writer(outfile)
-                writer.writerow(csv_headings)
-                for row in cursor.fetchall():
-                  line = json.loads(row.csv)
-                  writer.writerow(line)
-              link = (f' <a href="/static/csv/{filename}" download="{filename}"'
-                      f'class="button">Download {filename}</a>')
+            csv_dir = Path(app.root_path + '/static/csv')
+            csv_dir.mkdir(exist_ok=True)
+            with open(f'{csv_dir}/{filename}', 'w') as outfile:
+              writer = csv.writer(outfile)
+              writer.writerow(csv_headings)
+              for row in cursor.fetchall():
+                line = json.loads(row.csv)
+                writer.writerow(line)
+            link = (f' <a href="/static/csv/{filename}" download="{filename}"'
+                    f'class="button">Download {filename}</a>')
         except (OSError, RuntimeError, json.JSONDecodeError):
           hostname = socket.gethostname()
           response = send_email(from_addr=f'Transfer App ({hostname})',
@@ -1409,8 +1408,7 @@ def registered_programs(institution, default=None):
                          """, (institution, ))
         html_data_rows = [f'{row.html}' for row in cursor.fetchall()]
         html_table_rows = html_heading_row + '<tbody>' + '\n'.join(html_data_rows) + '</tbody>'
-        html_table = (f'<div class="table-height"><table class="scrollable" height="50%">'
-                      f'{html_table_rows}</table></div>')
+        html_table = (f'<table>{html_table_rows}</table>')
 
       result = f"""
           {header(title='Registered Programs', nav_items=[{'type': 'link',

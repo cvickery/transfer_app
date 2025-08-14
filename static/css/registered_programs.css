@@ -15,6 +15,11 @@ td, th {
   padding: 0.25em;
 }
 
+thead {
+  position: sticky;
+  top: 0;
+}
+
 th {
   background-color:#ccc;
   color:#333;
