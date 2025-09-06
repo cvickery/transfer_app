@@ -294,7 +294,7 @@ def pending():
 
 
 # # CONFIRMATION PAGE (No longer available)
-# # -------------------------------------------------------------------------------------------------
+# # ------------------------------------------------------------------------------------------------
 # # This is the handler for clicks in the confirmation email.
 # # Notifications go to university_registrar, webmaster, and anyone identified with any sending or
 # # receiving college in the covered rules.
@@ -804,8 +804,8 @@ def lookup_rules():
   original_catalog_number = request.args.get('catalog_number')
   # Munge the catalog_number so it makes a good regex and doesn't get tripped up by whitespace in
   # the CF catalog numbers.
-  catalog_number = r'^\s*' + \
-    original_catalog_number.strip(' ^').replace(r'\.', r'\\\.').replace(r'\\\\', r'\\')
+  catalog_number = r'^\s*' + original_catalog_number.strip(' ^').replace(r'\.', r'\\\.')\
+      .replace(r'\\\\', r'\\')
   # Make sure it will compile when it gets to the db
   try:
     re.compile(catalog_number)
