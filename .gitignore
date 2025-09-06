@@ -21,3 +21,4 @@ __pycache__/
 /transfer_access.log
 /transfer_error.log
 /Logs/logrotate.status
+.flake8
