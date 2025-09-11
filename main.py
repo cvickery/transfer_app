@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-"""Transfer Explorer: “Laboratory” app.
+"""Transfer Explorer: “Laboratory” application.
    Christopher Vickery
 """
 import os
