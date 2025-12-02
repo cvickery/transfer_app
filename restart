@@ -8,29 +8,48 @@ TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 # Function to check if Apache is responding correctly
 check_apache_response() {
   local port=$1
-  local http_code
-  
-  # Use https for port 443
+  local url
+  local curl_args=()
+  local resp rc code t_connect t_app t_first t_total dump
+
   if [[ "$port" == "443" ]]; then
-    # Add option to ignore SSL certificate errors and specify SNI
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" -k --resolve trexlabs.org:443:127.0.0.1 "https://trexlabs.org/")
+    url="https://trexlabs.org/"
+    curl_args=(-k --resolve trexlabs.org:443:127.0.0.1)
   else
-    # For HTTP, try localhost
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 "http://localhost:${port}/")
+    url="http://localhost:${port}/"
+    curl_args=(--connect-timeout 3)
   fi
-  
-  if [[ $http_code -ge 200 && $http_code -lt 500 ]]; then
-    return 0
-  else
-    if [[ "$port" == "443" ]]; then
-      echo "ERROR: Apache failed to respond correctly on https://trexlabs.org/ - status code: $http_code"
-    else
-      echo "ERROR: Apache failed to respond correctly on http://localhost:${port}/ - status code: $http_code"
-    fi
+
+  # Ask curl for status + timing info, but don't print anything on success
+  resp=$(curl -s -o /dev/null \
+             -w "%{http_code} %{time_connect} %{time_appconnect} %{time_starttransfer} %{time_total}" \
+             "${curl_args[@]}" "$url")
+  rc=$?
+
+  # Parse fields from write-out
+  set -- $resp
+  code=$1
+  t_connect=$2
+  t_app=$3
+  t_first=$4
+  t_total=$5
+
+  # Treat rc != 0 OR HTTP <200 or >=500 as failure
+  if [[ $rc -ne 0 || $code -lt 200 || $code -ge 500 ]]; then
+    # One-line summary that will end up in the mailed log
+    echo "$TIMESTAMP ERROR port=$port url=$url rc=$rc code=$code connect=$t_connect app=$t_app first=$t_first total=$t_total"
+
+    # Capture a verbose trace of the failure for later debugging
+    dump="/tmp/trexlabs-health-fail-${port}-$(date +%s).log"
+    curl -vk -o /dev/null "${curl_args[@]}" "$url" >"$dump" 2>&1 || true
+    echo "$TIMESTAMP saved verbose curl output to $dump"
+
     return 1
   fi
-}
 
+  # Success: no output at all
+  return 0
+}
 # Check number of processes (original check)
 PROCESS_COUNT=$(ps aux | ack 'httpd -D' | wc -l | tr -d '[:space:]')
 
@@ -67,33 +86,33 @@ if [[ "$PROCESS_COUNT" -lt 5 || "$APACHE_FAILING" == true ]]; then
   echo "Problem Diagnosis"
   echo "Apache process count: $PROCESS_COUNT"
   echo "Memory usage:"
-  vm_stat | grep "Pages free"  
+  vm_stat | grep "Pages free"
   echo "Load average:"
   uptime
-    
+
   # Get system logs
   echo "System logs:"
   log show --predicate 'process == "httpd"' --last 10m
-  
+
   # Check open files by httpd processes
   if pgrep httpd >/dev/null; then
     echo "Open files by httpd:"
     lsof -p "$(pgrep httpd | tr '\n' ',' | sed 's/,$//')" 2>/dev/null | tail -20
   fi
-  
+
   # Check for segmentation faults using system logs instead of dmesg
   echo "Checking for segmentation faults in system logs:"
   log show --predicate 'eventMessage contains "segfault"' --last 1h --style compact
-  
+
   # Alternative check in system log files that doesn't require root
   if [ -f /var/log/system.log ]; then
     grep -i "segfault" /var/log/system.log | tail -5
   fi
-  
+
   # Restart Apache
   echo "Restarting Apache..."
   brew services restart httpd
-  
+
   # Verify restart was successful
   sleep 5
   NEW_COUNT=$(ps aux | ack 'httpd -D' | wc -l | tr -d '[:space:]')
