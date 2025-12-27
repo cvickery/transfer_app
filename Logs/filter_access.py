@@ -2,8 +2,8 @@
 """Filter the access log to get rid of health checks and to columnificizate fields of interest."""
 
 lookups = dict()
-with open('./access.csv', 'w') as csv_file:
-  csv_file.write('Address, Lookup, Date, Query, Referer\n')
+with open("./access.csv", "w") as csv_file:
+    csv_file.write("Address, Lookup, Date, Query, Referer\n")
 exit()
 
 # Ignore this; it's not working and not worth fixing right now!
