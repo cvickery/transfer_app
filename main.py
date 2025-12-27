@@ -145,7 +145,8 @@ def _status(command):
 # date2str()
 # --------------------------------------------------------------------------------------------------
 def date2str(date_arg):
-  """Takes a string in YYYY-MM-DD form or a datetime object and returns a text string with the date in full English form.
+  """Takes a string in YYYY-MM-DD form or a datetime object and returns a text string with the date
+     in full English form.
   """
   match date_arg:
     case str():

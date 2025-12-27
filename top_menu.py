@@ -1,13 +1,14 @@
 #! /usr/local/bin/python3
 """Top-level manu for T-Rex Labs."""
+
 from app_header import header
 
 
-def top_menu(msg=''):
-  """Generate the "landing page" for the app."""
-  header_str = header(title='T-Rex Laboratories')
+def top_menu(msg=""):
+    """Generate the "landing page" for the app."""
+    header_str = header(title="T-Rex Laboratories")
 
-  return f"""
+    return f"""
 {header_str}
 <div class="instructions">
 <h1>Welcome to T-Rex Labs!</h1>

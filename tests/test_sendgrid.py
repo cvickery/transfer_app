@@ -5,34 +5,33 @@ from pprint import pprint
 from sendgrid import SendGridAPIClient
 from psycopg.rows import namedtuple_row
 
-conn = psycopg.connect('dbname=cuny_curriculum')
+conn = psycopg.connect("dbname=cuny_curriculum")
 cursor = conn.cursor(row_factory=namedtuple_row)
-cursor.execute('select * from person_roles')
+cursor.execute("select * from person_roles")
 people = dict()
 for person in cursor.fetchall():
-  people[person.role] = {'name': person.name, 'email': person.email}
+    people[person.role] = {"name": person.name, "email": person.email}
 conn.close()
 
-message = {'personalizations': [{'to': [people['webmaster']],
-                                 'subject': 'Testing SendGrid'}],
-           'from': {'email': 'christopher.vickery@qc.cuny.edu',
-                    'name': 'T-Rex Labs'},
-           'content': [{'type': 'text/plain',
-                        'value': 'Don’t worry at all.'},
-                       {'type': 'text/html',
-                        'value': '<h1>It’s Good</h1>'}]
-           }
+message = {
+    "personalizations": [{"to": [people["webmaster"]], "subject": "Testing SendGrid"}],
+    "from": {"email": "christopher.vickery@qc.cuny.edu", "name": "T-Rex Labs"},
+    "content": [
+        {"type": "text/plain", "value": "Don’t worry at all."},
+        {"type": "text/html", "value": "<h1>It’s Good</h1>"},
+    ],
+}
 
 
 def send_message(message):
-  try:
-    sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-    response = sg.send(message)
-    print(response.status_code)
-    print(response.body)
-    print(response.headers)
-  except Exception as e:
-    print(e)
+    try:
+        sg = SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
+        response = sg.send(message)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+    except Exception as e:
+        print(e)
 
 
 html_value = """
@@ -76,6 +75,6 @@ td, th {
   </table></body>
 """
 
-if __name__ == '__main__':
-  pprint(message)
-  send_message(message)
+if __name__ == "__main__":
+    pprint(message)
+    send_message(message)

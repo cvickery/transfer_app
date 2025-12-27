@@ -1,12 +1,12 @@
 #! /usr/bin/env python3
-""" Provide postgres db connections from a pool of limited size.
-"""
+"""Provide postgres db connections from a pool of limited size."""
+
 import psycopg
 from psycopg.rows import namedtuple_row
 
 import os
 
-DEBUG = os.getenv('DEBUG')
+DEBUG = os.getenv("DEBUG")
 
 # This is a newer version, based on psycopg3. It should remain compatible with previous versions.
 # No pool support
@@ -38,20 +38,21 @@ DEBUG = os.getenv('DEBUG')
 
 # class PgConnection
 # -------------------------------------------------------------------------------------------------
-class PgConnection():
-  """ This version is just a set of shims for psycopg, with default values for the database name
-      and row_factory.
-      This implementation does NOT support the context manager features of psycopg; it just works
-      like psycopg2. New code should use psycopg, psycopg.rows, and possibly psycopg.pools directly.
-  """
-  def __init__(self, dbname='cuny_curriculum'):
-    self.conn = psycopg.connect(conninfo=f'dbname={dbname}')
+class PgConnection:
+    """This version is just a set of shims for psycopg, with default values for the database name
+    and row_factory.
+    This implementation does NOT support the context manager features of psycopg; it just works
+    like psycopg2. New code should use psycopg, psycopg.rows, and possibly psycopg.pools directly.
+    """
 
-  def cursor(self, factory_name=namedtuple_row):
-    return self.conn.cursor(row_factory=factory_name)
+    def __init__(self, dbname="cuny_curriculum"):
+        self.conn = psycopg.connect(conninfo=f"dbname={dbname}")
 
-  def close(self):
-    self.conn.close()
+    def cursor(self, factory_name=namedtuple_row):
+        return self.conn.cursor(row_factory=factory_name)
 
-  def commit(self):
-    self.conn.commit()
+    def close(self):
+        self.conn.close()
+
+    def commit(self):
+        self.conn.commit()

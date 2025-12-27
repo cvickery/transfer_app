@@ -1,17 +1,18 @@
 """Configuration module for gunicorn."""
+
 import multiprocessing
 import os
 
-port_num = 5000 if os.getenv('TREX_PORT') is None else int(os.getenv('TREX_PORT'))
-print(f'Using port {port_num}')
-workers = multiprocessing.cpu_count()   # * 2 + 1
-bind = f'127.0.0.1:{port_num}'
+port_num = 5000 if os.getenv("TREX_PORT") is None else int(os.getenv("TREX_PORT"))
+print(f"Using port {port_num}")
+workers = multiprocessing.cpu_count()  # * 2 + 1
+bind = f"127.0.0.1:{port_num}"
 timeout = 120
 
-accesslog = './Logs/transfer_access.log'
-errorlog = './Logs/transfer_error.log'
-loglevel = 'info'
-access_log_format = '%(h)s %({x-forwarded-for}i)s %(t)s %(r)s %(s)s %(b)s %(f)s'
+accesslog = "./Logs/transfer_access.log"
+errorlog = "./Logs/transfer_error.log"
+loglevel = "info"
+access_log_format = "%(h)s %({x-forwarded-for}i)s %(t)s %(r)s %(s)s %(b)s %(f)s"
 
 reload = False
 
