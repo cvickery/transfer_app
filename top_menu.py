@@ -11,7 +11,7 @@ def top_menu(msg=""):
     return f"""
 {header_str}
 <div class="instructions">
-<h1>Welcome to T-Rex Labs!</h1>
+<h1 style="text-align: center; font-size:1.3em">Welcome to T-Rex Labs!</h1>
 <p>
   This is a development and prototyping site for the CUNY Transfer Explorer (T-Rex) tool. While
   everything here works (<a href="mailto:cvickery@qc.cuny.edu?subject='Transfer App issue'">let me
