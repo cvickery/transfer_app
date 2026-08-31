@@ -48,18 +48,16 @@ def top_menu(msg=""):
         Courses can also be applied to requirements for a minor, but we don’t deal with those here
         because minors are optional at CUNY.
       </em></p>
-      <p><em>
-        Generally, a course can be applied to only one general education requirement and to only
-        one requirement for a major. If a student has more than one major, it’s possible that a
-        particular course can be applied to more than one major. These policies are called “sharing
-        restrictions,” and are not currently shown here.
-      </em></p>
-      <p><em>
-        There are two other types of restrictions that determine whether a course can actually be
-        used to satisfy a particular requirement: residency and minimum grade restrictions. These
-        restrictions can be particularly vexing because they can apply in so many different
+      <p>
+        <strong>About Restrictions:</strong> Just because a course <em>can</em> satisfy a
+        requirement, it doesn’t mean it <em>will</em> satisfy a particular requirement for a
+        particular student, because there may be residency restrictions on such things as whether
+        the course was taken at the college or was transferred from another college or minimum
+        grade requirements. This page doesn’t look at any student’s record, so it can only show the
+        restrictions it knows about, not how they apply to any particular student’s situation.
+        These restrictions can be particularly vexing because they can apply in so many different
         contexts, possibly with different values:
-      </em></p>
+      </p>
       <ul>
         <li>Degree</li>
         <li>Program (GenEd, Major, Minor)</li>
@@ -68,6 +66,12 @@ def top_menu(msg=""):
         <li>A single requirement for a program or subprogram</li>
         <li>Just some, not all, of the courses that can satisfy a single requirement</li>
       </ul>
+      <p><em>
+        Generally, a course can be applied to only one general education requirement and to only
+        one requirement for a major. However, if a student has more than one major, it’s normally
+        possible that a particular course can be applied to more than one major. These policies
+        are called “sharing restrictions,” and are not currently shown here.
+      </em></p>
       <p><em>
         There is one other type of requirement that is different from the previous ones. CUNY has
         established certain major equivalencies across campuses. A course that has a major
