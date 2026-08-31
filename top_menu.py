@@ -41,7 +41,7 @@ def top_menu(msg=""):
       <p>
         Go to this page to see all the requirements any course at any CUNY college can satisfy at
         that college.
-      </em></p>
+      </p>
       <p><em>
         Courses can be applied to three different types of requirements: (1) credits needed for a
         degree or certificate, (2) general education requirements, and (3) requirements for majors.
