@@ -39,23 +39,27 @@ def top_menu(msg=""):
     <dt><a href="/course_requirements">What Requirements Can Courses Satisfy?</a></dt
     <dd>
       <p>
+        Go to this page to see all the requirements any course at any CUNY college can satisfy at
+        that college.
+      </em></p>
+      <p><em>
         Courses can be applied to three different types of requirements: (1) credits needed for a
         degree or certificate, (2) general education requirements, and (3) requirements for majors.
         Courses can also be applied to requirements for a minor, but we don’t deal with those here
         because minors are optional at CUNY.
-      </p>
-      <p>
-        Generally, course can be applied to only one general education requirement and to only one
-        requirement for a major. If a student has more than one major, it’s possible that a
+      </em></p>
+      <p><em>
+        Generally, a course can be applied to only one general education requirement and to only
+        one requirement for a major. If a student has more than one major, it’s possible that a
         particular course can be applied to more than one major. These policies are called “sharing
         restrictions,” and are not currently shown here.
-      </p>
-      <p>
+      </em></p>
+      <p><em>
         There are two other types of restrictions that determine whether a course can actually be
         used to satisfy a particular requirement: residency and minimum grade restrictions. These
         restrictions can be particularly vexing because they can apply in so many different
         contexts, possibly with different values:
-      </p>
+      </em></p>
       <ul>
         <li>Degree</li>
         <li>Program (GenEd, Major, Minor)</li>
@@ -64,12 +68,12 @@ def top_menu(msg=""):
         <li>A single requirement for a program or subprogram</li>
         <li>Just some, not all, of the courses that can satisfy a single requirement</li>
       </ul>
-      <p>
+      <p><em>
         There is one other type of requirement that is different from the previous ones. CUNY has
         established certain major equivalencies across campuses. A course that has a major
         equivalency attribute is guaranteed to satisfy a particular major requirement at any other
         CUNY college. This page shows a course’s major equivalency attribute if it has one.
-      </p>
+      </em></p>
     </dd>
 
     <dt><a href="/requirements">Degree and Program Requirements</a></dt>
