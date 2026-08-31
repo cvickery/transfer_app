@@ -61,8 +61,8 @@ def top_menu(msg=""):
       </p>
       <ul>
         <li>Degree-wide Requirements</li>
-        <li>Program (GenEd, Major, Minor) Requirements</li>
-        <li>Subrogram (aka “specialization,” “track,” “concentration,” etc. ) Requirements</li>
+        <li>Program Requirements (GenEd, Major, Minor)</li>
+        <li>Subrogram Requirements (aka “specialization,” “track,” “concentration,” etc. )</li>
         <li>A subset of the requirements for a program or subprogram</li>
         <li>A single requirement for a program or subprogram</li>
         <li>Just some, but not all, of the courses that can satisfy a single requirement</li>
