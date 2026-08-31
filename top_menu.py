@@ -51,20 +51,21 @@ def top_menu(msg=""):
       <p>
         <strong>About Restrictions:</strong> Just because a course <em>can</em> satisfy a
         requirement, it doesn’t mean it <em>will</em> satisfy a particular requirement for a
-        particular student, because there may be residency restrictions on such things as whether
-        the course was taken at the college or was transferred from another college or minimum
-        grade requirements. This page doesn’t look at any student’s record, so it can only show the
+        particular student. There may be <em>residency restrictions</em> that depend on whether
+        the course was taken at the college or was transferred from another college, or there can
+        be minimum grade restrictions that limit whether a course will count for a requirement or
+        not. This page doesn’t look at any student’s record, so it can only show the
         restrictions it knows about, not how they apply to any particular student’s situation.
         These restrictions can be particularly vexing because they can apply in so many different
         contexts, possibly with different values:
       </p>
       <ul>
-        <li>Degree</li>
-        <li>Program (GenEd, Major, Minor)</li>
-        <li>Subrogram (aka “specialization,” “track,” “concentration,” etc. )</li>
+        <li>Degree-wide Requirements</li>
+        <li>Program (GenEd, Major, Minor) Requirements</li>
+        <li>Subrogram (aka “specialization,” “track,” “concentration,” etc. ) Requirements</li>
         <li>A subset of the requirements for a program or subprogram</li>
         <li>A single requirement for a program or subprogram</li>
-        <li>Just some, not all, of the courses that can satisfy a single requirement</li>
+        <li>Just some, but not all, of the courses that can satisfy a single requirement</li>
       </ul>
       <p><em>
         Generally, a course can be applied to only one general education requirement and to only
