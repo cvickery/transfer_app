@@ -50,6 +50,8 @@ check_apache_response() {
   # Success: no output at all
   return 0
 }
+
+
 # Check number of processes (original check)
 PROCESS_COUNT=$(ps aux | ack 'httpd -D' | wc -l | tr -d '[:space:]')
 
