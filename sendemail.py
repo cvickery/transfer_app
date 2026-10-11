@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 """This is sendemail.py modified to use smtplib instead of SendGrid."""
 
 import argparse

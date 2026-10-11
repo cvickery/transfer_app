@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 """This is the algorithm for returning program info bsed on what the user has typed."""
 
 import argparse

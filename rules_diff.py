@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 """Compare two rule archives and report changes.
 
 The default is to compare the two latest archive sets.

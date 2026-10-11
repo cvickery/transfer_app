@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 """Filter the access log to get rid of health checks and to columnificizate fields of interest."""
 
 lookups = dict()
