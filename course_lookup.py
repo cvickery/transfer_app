@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 """Code for the course_info route.
 Never fully implemented; does not appear in top-level menu.
 """

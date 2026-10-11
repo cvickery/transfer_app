@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#! /usr/bin/env python3
 """Provide dicts of html <option> elements for the plans and subplans
 by institution.
 f'<optgroup label="{block_type}"'
