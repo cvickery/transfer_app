@@ -1,5 +1,7 @@
 #! /usr/local/bin/bash
 
+exit 0 # There is no need to try to get this working
+
 if [[ -f transfer_access.log ]]
 then
   ./filter_access.py < transfer_access.log
